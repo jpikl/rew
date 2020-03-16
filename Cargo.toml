@@ -1,0 +1,5 @@
+[package]
+name = "mmvv"
+version = "0.1.0"
+authors = ["Jan Pikl <pikl.jan@gmail.com>"]
+edition = "2018"
