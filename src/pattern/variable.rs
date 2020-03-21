@@ -17,10 +17,7 @@ pub fn parse_variable(string: &str) -> Result<Variable, ParseError> {
     let mut source = Source::new(string);
 
     let variable = match source.peek() {
-        Some('0'..='9') => match parse_usize(&mut source) {
-            Ok(number) => Variable::RegexGroup(number),
-            Err(error) => return Err(error),
-        },
+        Some('0'..='9') => Variable::RegexGroup(parse_usize(&mut source)?),
         Some(ch) => {
             source.consume();
             match ch {
