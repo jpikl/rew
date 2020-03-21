@@ -4,7 +4,7 @@ pub struct Source {
 }
 
 impl Source {
-    fn new(string: &str) -> Self {
+    pub fn new(string: &str) -> Self {
         Self {
             chars: string.chars().collect(),
             position: 0,
@@ -32,7 +32,7 @@ impl Source {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
 
     #[test]
