@@ -37,57 +37,57 @@ mod tests {
 
     #[test]
     fn consume_returns_none_for_empty() {
-        assert_eq!(None, Source::new("").consume());
+        assert_eq!(Source::new("").consume(), None);
     }
 
     #[test]
     fn consume_processes_chars() {
         let mut source = Source::new("abc");
-        assert_eq!(Some('a'), source.consume());
-        assert_eq!(Some('b'), source.consume());
-        assert_eq!(Some('c'), source.consume());
-        assert_eq!(None, source.peek());
+        assert_eq!(source.consume(), Some('a'));
+        assert_eq!(source.consume(), Some('b'));
+        assert_eq!(source.consume(), Some('c'));
+        assert_eq!(source.peek(), None);
     }
 
     #[test]
     fn peek_returns_none_for_empty() {
-        assert_eq!(None, Source::new("").peek());
+        assert_eq!(Source::new("").peek(), None);
     }
 
     #[test]
     fn peek_returns_chars_at_positions() {
         let mut source = Source::new("abc");
-        assert_eq!(Some('a'), source.peek());
+        assert_eq!(source.peek(), Some('a'));
         source.consume();
-        assert_eq!(Some('b'), source.peek());
+        assert_eq!(source.peek(), Some('b'));
         source.consume();
-        assert_eq!(Some('c'), source.peek());
+        assert_eq!(source.peek(), Some('c'));
         source.consume();
-        assert_eq!(None, source.peek());
+        assert_eq!(source.peek(), None);
     }
 
     #[test]
     fn position_starts_at_zero() {
-        assert_eq!(0, Source::new("").position());
-        assert_eq!(0, Source::new("abc").position());
+        assert_eq!(Source::new("").position(), 0);
+        assert_eq!(Source::new("abc").position(), 0);
     }
 
     #[test]
     fn position_is_unchanged_by_peek() {
         let source = Source::new("abc");
         source.peek();
-        assert_eq!(0, source.position());
+        assert_eq!(source.position(), 0);
     }
 
     #[test]
     fn position_is_incremented_by_consume() {
         let mut source = Source::new("abc");
-        assert_eq!(0, source.position());
+        assert_eq!(source.position(), 0);
         source.consume();
-        assert_eq!(1, source.position());
+        assert_eq!(source.position(), 1);
         source.consume();
-        assert_eq!(2, source.position());
+        assert_eq!(source.position(), 2);
         source.consume();
-        assert_eq!(3, source.position());
+        assert_eq!(source.position(), 3);
     }
 }
