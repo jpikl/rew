@@ -1,3 +1,4 @@
+use crate::pattern::lexer::TokenType::Pipe;
 use crate::pattern::source::Source;
 
 const EXPR_START: char = '{';
@@ -54,6 +55,8 @@ impl Lexer {
 
         loop {
             match self.character {
+                // '{{' is escaped '{'.
+                // '}}' is escaped '}'.
                 Some(ch @ EXPR_START) | Some(ch @ EXPR_END) => {
                     if self.source.peek() == self.character {
                         self.fetch_character();
@@ -100,7 +103,21 @@ impl Lexer {
 
         loop {
             match self.character {
-                Some(EXPR_START) | Some(EXPR_END) | Some(PIPE) | None => break,
+                // '|{' is escaped '{'.
+                // '||' is escaped '|'.
+                // '|}' is escaped '}'.
+                Some(PIPE) => {
+                    if let Some(ch @ EXPR_START) | Some(ch @ EXPR_END) | Some(ch @ PIPE) =
+                        self.source.peek()
+                    {
+                        self.fetch_character();
+                        self.fetch_character();
+                        raw.push(ch);
+                    } else {
+                        break;
+                    }
+                }
+                Some(EXPR_START) | Some(EXPR_END) | None => break,
                 Some(ch) => {
                     self.fetch_character();
                     raw.push(ch);
@@ -269,6 +286,14 @@ mod tests {
     }
 
     #[test]
+    fn escaped_pipe_inside_expression() {
+        let mut tester = LexerTester::new("{||");
+        tester.assert_expr_start(0);
+        tester.assert_raw("|", 1);
+        tester.assert_none();
+    }
+
+    #[test]
     fn raw_inside_expression() {
         let mut tester = LexerTester::new("{a");
         tester.assert_expr_start(0);
@@ -294,6 +319,14 @@ mod tests {
     }
 
     #[test]
+    fn escaped_expression_start_inside_expression() {
+        let mut tester = LexerTester::new("{|{");
+        tester.assert_expr_start(0);
+        tester.assert_raw("{", 1);
+        tester.assert_none();
+    }
+
+    #[test]
     fn empty_expression() {
         let mut tester = LexerTester::new("{}");
         tester.assert_expr_start(0);
@@ -302,11 +335,20 @@ mod tests {
     }
 
     #[test]
-    fn expression_with_pipe() {
+    fn escaped_expression_end_inside_expression() {
         let mut tester = LexerTester::new("{|}");
         tester.assert_expr_start(0);
+        tester.assert_raw("}", 1);
+        tester.assert_none();
+    }
+
+    #[test]
+    fn expression_with_pipe() {
+        let mut tester = LexerTester::new("{| }");
+        tester.assert_expr_start(0);
         tester.assert_pipe(1);
-        tester.assert_expr_end(2);
+        tester.assert_raw(" ", 2);
+        tester.assert_expr_end(3);
         tester.assert_none();
     }
 
@@ -330,15 +372,14 @@ mod tests {
 
     #[test]
     fn complex_expression() {
-        let mut tester = LexerTester::new("{a|bc||def}");
+        let mut tester = LexerTester::new("{a|bc|||def|{|}}");
         tester.assert_expr_start(0);
         tester.assert_raw("a", 1);
         tester.assert_pipe(2);
-        tester.assert_raw("bc", 3);
-        tester.assert_pipe(5);
-        tester.assert_pipe(6);
-        tester.assert_raw("def", 7);
-        tester.assert_expr_end(10);
+        tester.assert_raw("bc|", 3);
+        tester.assert_pipe(7);
+        tester.assert_raw("def{}", 8);
+        tester.assert_expr_end(15);
         tester.assert_none();
     }
 
