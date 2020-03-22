@@ -8,8 +8,8 @@ pub fn parse_usize(source: &mut Source) -> Result<usize, ParseError> {
             Ok(0)
         }
         Some(ch @ '1'..='9') => {
-            source.consume();
             let mut number = ch.to_digit(10).unwrap() as usize;
+            source.consume();
             while let Some(ch @ '0'..='9') = source.peek() {
                 number = 10 * number + ch.to_digit(10).unwrap() as usize;
                 source.consume();

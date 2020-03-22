@@ -7,6 +7,7 @@ pub enum Variable {
     Filename,
     Basename,
     Extension,
+    ExtensionWithDot,
     LocalCounter,
     GlobalCounter,
     RegexGroup(usize),
@@ -24,6 +25,7 @@ pub fn parse_variable(string: &str) -> Result<Variable, ParseError> {
                 'f' => Variable::Filename,
                 'b' => Variable::Basename,
                 'e' => Variable::Extension,
+                'E' => Variable::ExtensionWithDot,
                 'c' => Variable::LocalCounter,
                 'C' => Variable::GlobalCounter,
                 'u' => Variable::Uuid,
@@ -81,6 +83,11 @@ mod tests {
     #[test]
     fn parse_extension() {
         assert_eq!(parse_variable("e"), Ok(Variable::Extension));
+    }
+
+    #[test]
+    fn parse_extension_with_dot() {
+        assert_eq!(parse_variable("E"), Ok(Variable::ExtensionWithDot));
     }
 
     #[test]
