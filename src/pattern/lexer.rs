@@ -1,5 +1,5 @@
 use crate::pattern::lexer::TokenType::Pipe;
-use crate::pattern::source::Source;
+use crate::pattern::reader::Reader;
 
 const EXPR_START: char = '{';
 const EXPR_END: char = '}';
@@ -20,7 +20,7 @@ pub struct Token {
 }
 
 pub struct Lexer {
-    source: Source,
+    reader: Reader,
     position: usize,
     character: Option<char>,
     in_expression: bool,
@@ -41,7 +41,7 @@ impl Iterator for Lexer {
 impl Lexer {
     pub fn new(string: &str) -> Self {
         let mut lexer = Self {
-            source: Source::new(string),
+            reader: Reader::new(string),
             position: 0,
             character: None,
             in_expression: false,
@@ -58,7 +58,7 @@ impl Lexer {
                 // '{{' is escaped '{'.
                 // '}}' is escaped '}'.
                 Some(ch @ EXPR_START) | Some(ch @ EXPR_END) => {
-                    if self.source.peek() == self.character {
+                    if self.reader.peek() == self.character {
                         self.fetch_character();
                         self.fetch_character();
                         raw.push(ch);
@@ -108,7 +108,7 @@ impl Lexer {
                 // '|}' is escaped '}'.
                 Some(PIPE) => {
                     if let Some(ch @ EXPR_START) | Some(ch @ EXPR_END) | Some(ch @ PIPE) =
-                        self.source.peek()
+                        self.reader.peek()
                     {
                         self.fetch_character();
                         self.fetch_character();
@@ -152,7 +152,7 @@ impl Lexer {
     }
 
     fn fetch_character(&mut self) -> Option<char> {
-        self.character = self.source.consume();
+        self.character = self.reader.next();
         self.character
     }
 
@@ -178,7 +178,7 @@ impl Lexer {
             position: self.position,
         };
         // We expect that the character for the next token is already fetched.
-        self.position = self.source.position() - 1;
+        self.position = self.reader.position() - 1;
         Some(token)
     }
 }

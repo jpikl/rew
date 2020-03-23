@@ -1,18 +1,18 @@
 use crate::pattern::error::ParseError;
-use crate::pattern::source::Source;
+use crate::pattern::reader::Reader;
 
-pub fn parse_usize(source: &mut Source) -> Result<usize, ParseError> {
-    match source.peek() {
+pub fn parse_usize(reader: &mut Reader) -> Result<usize, ParseError> {
+    match reader.peek() {
         Some('0') => {
-            source.consume();
+            reader.next();
             Ok(0)
         }
         Some(ch @ '1'..='9') => {
             let mut number = ch.to_digit(10).unwrap() as usize;
-            source.consume();
-            while let Some(ch @ '0'..='9') = source.peek() {
+            reader.next();
+            while let Some(ch @ '0'..='9') = reader.peek() {
                 number = 10 * number + ch.to_digit(10).unwrap() as usize;
-                source.consume();
+                reader.next();
             }
             Ok(number)
         }
@@ -29,76 +29,76 @@ mod tests {
 
     #[test]
     fn parse_empty_as_error() {
-        let mut source = Source::new("");
+        let mut reader = Reader::new("");
         assert_eq!(
-            parse_usize(&mut source),
+            parse_usize(&mut reader),
             Err(ParseError {
                 message: "Expected number",
                 position: 0,
             })
         );
-        assert_eq!(source.position(), 0);
+        assert_eq!(reader.position(), 0);
     }
 
     #[test]
     fn parse_non_digit_as_error() {
-        let mut source = Source::new("a");
+        let mut reader = Reader::new("a");
         assert_eq!(
-            parse_usize(&mut source),
+            parse_usize(&mut reader),
             Err(ParseError {
                 message: "Expected number",
                 position: 0,
             })
         );
-        assert_eq!(source.position(), 0);
+        assert_eq!(reader.position(), 0);
     }
 
     #[test]
     fn parse_zero() {
-        let mut source = Source::new("0");
-        assert_eq!(parse_usize(&mut source), Ok(0));
-        assert_eq!(source.position(), 1);
+        let mut reader = Reader::new("0");
+        assert_eq!(parse_usize(&mut reader), Ok(0));
+        assert_eq!(reader.position(), 1);
     }
 
     #[test]
     fn parse_zero_ignore_rest() {
-        let mut source = Source::new("0a");
-        assert_eq!(parse_usize(&mut source), Ok(0));
-        assert_eq!(source.position(), 1);
+        let mut reader = Reader::new("0a");
+        assert_eq!(parse_usize(&mut reader), Ok(0));
+        assert_eq!(reader.position(), 1);
     }
 
     #[test]
     fn parse_only_a_first_zero() {
-        let mut source = Source::new("00");
-        assert_eq!(parse_usize(&mut source), Ok(0));
-        assert_eq!(source.position(), 1);
+        let mut reader = Reader::new("00");
+        assert_eq!(parse_usize(&mut reader), Ok(0));
+        assert_eq!(reader.position(), 1);
     }
 
     #[test]
     fn parse_positive_number_single_digit() {
-        let mut source = Source::new("1");
-        assert_eq!(parse_usize(&mut source), Ok(1));
-        assert_eq!(source.position(), 1);
+        let mut reader = Reader::new("1");
+        assert_eq!(parse_usize(&mut reader), Ok(1));
+        assert_eq!(reader.position(), 1);
     }
 
     #[test]
     fn parse_positive_number_single_digit_ignore_rest() {
-        let mut source = Source::new("1a");
-        assert_eq!(parse_usize(&mut source), Ok(1));
-        assert_eq!(source.position(), 1);
+        let mut reader = Reader::new("1a");
+        assert_eq!(parse_usize(&mut reader), Ok(1));
+        assert_eq!(reader.position(), 1);
     }
 
     #[test]
     fn parse_positive_number_multiple_digits() {
-        let mut source = Source::new("1234567890");
-        assert_eq!(parse_usize(&mut source), Ok(1234567890));
-        assert_eq!(source.position(), 10);
+        let mut reader = Reader::new("1234567890");
+        assert_eq!(parse_usize(&mut reader), Ok(1234567890));
+        assert_eq!(reader.position(), 10);
     }
 
     #[test]
     fn parse_positive_number_multiple_digits_ignore_rest() {
-        let mut source = Source::new("1234567890a");
-        assert_eq!(parse_usize(&mut source), Ok(1234567890));
-        assert_eq!(source.position(), 10);
+        let mut reader = Reader::new("1234567890a");
+        assert_eq!(parse_usize(&mut reader), Ok(1234567890));
+        assert_eq!(reader.position(), 10);
     }
 }

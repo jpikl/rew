@@ -1,6 +1,6 @@
 use crate::pattern::error::ParseError;
 use crate::pattern::number::parse_usize;
-use crate::pattern::source::Source;
+use crate::pattern::reader::Reader;
 
 #[derive(Debug, PartialEq)]
 pub enum Variable {
@@ -16,12 +16,12 @@ pub enum Variable {
 
 impl Variable {
     pub fn parse(string: &str) -> Result<Variable, ParseError> {
-        let mut source = Source::new(string);
+        let mut reader = Reader::new(string);
 
-        let variable = match source.peek() {
-            Some('0'..='9') => Variable::RegexGroup(parse_usize(&mut source)?),
+        let variable = match reader.peek() {
+            Some('0'..='9') => Variable::RegexGroup(parse_usize(&mut reader)?),
             Some(ch) => {
-                source.consume();
+                reader.next();
                 match ch {
                     'f' => Variable::Filename,
                     'b' => Variable::Basename,
@@ -46,12 +46,12 @@ impl Variable {
             }
         };
 
-        if source.peek().is_none() {
+        if reader.peek().is_none() {
             Ok(variable)
         } else {
             Err(ParseError {
                 message: "Unexpected character",
-                position: source.position(),
+                position: reader.position(),
             })
         }
     }

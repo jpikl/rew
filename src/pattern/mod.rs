@@ -1,5 +1,5 @@
 mod error;
 mod lexer;
 mod number;
-mod source;
+mod reader;
 mod variable;
