@@ -1,4 +1,4 @@
-use crate::pattern::reader::Reader;
+use crate::pattern::parse::reader::Reader;
 
 const EXPR_START: char = '{';
 const EXPR_END: char = '}';
@@ -186,23 +186,230 @@ impl Lexer {
 mod tests {
     use super::*;
 
-    struct LexerTester {
-        lexer: Lexer,
+    #[test]
+    fn empty_input() {
+        Lexer::new("").assert_none();
     }
 
-    impl LexerTester {
-        fn new(string: &str) -> Self {
-            Self {
-                lexer: Lexer::new(string),
-            }
-        }
+    #[test]
+    fn raw() {
+        let mut lexer = Lexer::new("a");
+        lexer.assert_raw("a", 0);
+        lexer.assert_none();
+    }
 
+    #[test]
+    fn long_raw() {
+        let mut lexer = Lexer::new("abc");
+        lexer.assert_raw("abc", 0);
+        lexer.assert_none();
+    }
+
+    #[test]
+    fn expression_start() {
+        let mut lexer = Lexer::new("{");
+        lexer.assert_expr_start(0);
+        lexer.assert_none();
+    }
+
+    #[test]
+    fn expression_end() {
+        let mut lexer = Lexer::new("}");
+        lexer.assert_expr_end(0);
+        lexer.assert_none();
+    }
+
+    #[test]
+    fn escaped_expression_start() {
+        let mut lexer = Lexer::new("{{");
+        lexer.assert_raw("{", 0);
+        lexer.assert_none();
+    }
+
+    #[test]
+    fn escaped_expression_end() {
+        let mut lexer = Lexer::new("}}");
+        lexer.assert_raw("}", 0);
+        lexer.assert_none();
+    }
+
+    #[test]
+    fn pipe_outside_expression() {
+        let mut lexer = Lexer::new("|");
+        lexer.assert_raw("|", 0);
+        lexer.assert_none();
+    }
+
+    #[test]
+    fn pipe_inside_expression() {
+        let mut lexer = Lexer::new("{|");
+        lexer.assert_expr_start(0);
+        lexer.assert_pipe(1);
+        lexer.assert_none();
+    }
+
+    #[test]
+    fn escaped_pipe_inside_expression() {
+        let mut lexer = Lexer::new("{||");
+        lexer.assert_expr_start(0);
+        lexer.assert_raw("|", 1);
+        lexer.assert_none();
+    }
+
+    #[test]
+    fn raw_inside_expression() {
+        let mut lexer = Lexer::new("{a");
+        lexer.assert_expr_start(0);
+        lexer.assert_raw("a", 1);
+        lexer.assert_none();
+    }
+
+    #[test]
+    fn long_raw_inside_expression() {
+        let mut lexer = Lexer::new("{abc");
+        lexer.assert_expr_start(0);
+        lexer.assert_raw("abc", 1);
+        lexer.assert_none();
+    }
+
+    #[test]
+    fn expression_start_inside_expression() {
+        let mut lexer = Lexer::new("{ {");
+        lexer.assert_expr_start(0);
+        lexer.assert_raw(" ", 1);
+        lexer.assert_expr_start(2);
+        lexer.assert_none();
+    }
+
+    #[test]
+    fn escaped_expression_start_inside_expression() {
+        let mut lexer = Lexer::new("{|{");
+        lexer.assert_expr_start(0);
+        lexer.assert_raw("{", 1);
+        lexer.assert_none();
+    }
+
+    #[test]
+    fn empty_expression() {
+        let mut lexer = Lexer::new("{}");
+        lexer.assert_expr_start(0);
+        lexer.assert_expr_end(1);
+        lexer.assert_none();
+    }
+
+    #[test]
+    fn escaped_expression_end_inside_expression() {
+        let mut lexer = Lexer::new("{|}");
+        lexer.assert_expr_start(0);
+        lexer.assert_raw("}", 1);
+        lexer.assert_none();
+    }
+
+    #[test]
+    fn expression_with_pipe() {
+        let mut lexer = Lexer::new("{| }");
+        lexer.assert_expr_start(0);
+        lexer.assert_pipe(1);
+        lexer.assert_raw(" ", 2);
+        lexer.assert_expr_end(3);
+        lexer.assert_none();
+    }
+
+    #[test]
+    fn expression_with_raw() {
+        let mut lexer = Lexer::new("{a}");
+        lexer.assert_expr_start(0);
+        lexer.assert_raw("a", 1);
+        lexer.assert_expr_end(2);
+        lexer.assert_none();
+    }
+
+    #[test]
+    fn expression_with_long_raw() {
+        let mut lexer = Lexer::new("{abc}");
+        lexer.assert_expr_start(0);
+        lexer.assert_raw("abc", 1);
+        lexer.assert_expr_end(4);
+        lexer.assert_none();
+    }
+
+    #[test]
+    fn complex_expression() {
+        let mut lexer = Lexer::new("{a|bc|||def|{|}}");
+        lexer.assert_expr_start(0);
+        lexer.assert_raw("a", 1);
+        lexer.assert_pipe(2);
+        lexer.assert_raw("bc|", 3);
+        lexer.assert_pipe(7);
+        lexer.assert_raw("def{}", 8);
+        lexer.assert_expr_end(15);
+        lexer.assert_none();
+    }
+
+    #[test]
+    fn complex_escaped_raw() {
+        let mut lexer = Lexer::new("{{}}{{{{}}}}a{{b}}c{{{{d}}}}e{{f{{g}}h}}i}}");
+        lexer.assert_raw("{}{{}}a{b}c{{d}}e{f{g}h}i}", 0);
+        lexer.assert_none();
+    }
+
+    #[test]
+    fn multiple_expressions() {
+        let mut lexer = Lexer::new("{}{a}{bc}");
+        lexer.assert_expr_start(0);
+        lexer.assert_expr_end(1);
+        lexer.assert_expr_start(2);
+        lexer.assert_raw("a", 3);
+        lexer.assert_expr_end(4);
+        lexer.assert_expr_start(5);
+        lexer.assert_raw("bc", 6);
+        lexer.assert_expr_end(8);
+        lexer.assert_none();
+    }
+
+    #[test]
+    fn multiple_raws_and_expressions() {
+        let mut lexer = Lexer::new("a{}bc{de}ghi");
+        lexer.assert_raw("a", 0);
+        lexer.assert_expr_start(1);
+        lexer.assert_expr_end(2);
+        lexer.assert_raw("bc", 3);
+        lexer.assert_expr_start(5);
+        lexer.assert_raw("de", 6);
+        lexer.assert_expr_end(8);
+        lexer.assert_raw("ghi", 9);
+        lexer.assert_none();
+    }
+
+    #[test]
+    fn multiple_escaped_raws_and_expressions() {
+        let mut lexer = Lexer::new("{{}}{{{}}}");
+        lexer.assert_raw("{}{", 0);
+        lexer.assert_expr_start(6);
+        lexer.assert_expr_end(7);
+        lexer.assert_raw("}", 8);
+        lexer.assert_none();
+    }
+
+    #[test]
+    fn complex_input() {
+        let mut lexer = Lexer::new("name_{{{c}}}.{e|s1-3}");
+        lexer.assert_raw("name_{", 0);
+        lexer.assert_expr_start(7);
+        lexer.assert_raw("c", 8);
+        lexer.assert_expr_end(9);
+        lexer.assert_raw("}.", 10);
+        lexer.assert_expr_start(13);
+        lexer.assert_raw("e", 14);
+        lexer.assert_pipe(15);
+        lexer.assert_raw("s1-3", 16);
+        lexer.assert_expr_end(20);
+        lexer.assert_none();
+    }
+
+    impl Lexer {
         fn assert_none(&mut self) {
-            assert_eq!(self.lexer.next(), None);
-        }
-
-        fn assert_token(&mut self, typ: TokenType, position: usize) {
-            assert_eq!(self.lexer.next(), Some(Token { typ, position }));
+            assert_eq!(self.next(), None);
         }
 
         fn assert_raw(&mut self, raw: &str, position: usize) {
@@ -220,226 +427,9 @@ mod tests {
         fn assert_pipe(&mut self, position: usize) {
             self.assert_token(TokenType::Pipe, position);
         }
-    }
 
-    #[test]
-    fn empty_input() {
-        LexerTester::new("").assert_none();
-    }
-
-    #[test]
-    fn raw() {
-        let mut tester = LexerTester::new("a");
-        tester.assert_raw("a", 0);
-        tester.assert_none();
-    }
-
-    #[test]
-    fn long_raw() {
-        let mut tester = LexerTester::new("abc");
-        tester.assert_raw("abc", 0);
-        tester.assert_none();
-    }
-
-    #[test]
-    fn expression_start() {
-        let mut tester = LexerTester::new("{");
-        tester.assert_expr_start(0);
-        tester.assert_none();
-    }
-
-    #[test]
-    fn expression_end() {
-        let mut tester = LexerTester::new("}");
-        tester.assert_expr_end(0);
-        tester.assert_none();
-    }
-
-    #[test]
-    fn escaped_expression_start() {
-        let mut tester = LexerTester::new("{{");
-        tester.assert_raw("{", 0);
-        tester.assert_none();
-    }
-
-    #[test]
-    fn escaped_expression_end() {
-        let mut tester = LexerTester::new("}}");
-        tester.assert_raw("}", 0);
-        tester.assert_none();
-    }
-
-    #[test]
-    fn pipe_outside_expression() {
-        let mut tester = LexerTester::new("|");
-        tester.assert_raw("|", 0);
-        tester.assert_none();
-    }
-
-    #[test]
-    fn pipe_inside_expression() {
-        let mut tester = LexerTester::new("{|");
-        tester.assert_expr_start(0);
-        tester.assert_pipe(1);
-        tester.assert_none();
-    }
-
-    #[test]
-    fn escaped_pipe_inside_expression() {
-        let mut tester = LexerTester::new("{||");
-        tester.assert_expr_start(0);
-        tester.assert_raw("|", 1);
-        tester.assert_none();
-    }
-
-    #[test]
-    fn raw_inside_expression() {
-        let mut tester = LexerTester::new("{a");
-        tester.assert_expr_start(0);
-        tester.assert_raw("a", 1);
-        tester.assert_none();
-    }
-
-    #[test]
-    fn long_raw_inside_expression() {
-        let mut tester = LexerTester::new("{abc");
-        tester.assert_expr_start(0);
-        tester.assert_raw("abc", 1);
-        tester.assert_none();
-    }
-
-    #[test]
-    fn expression_start_inside_expression() {
-        let mut tester = LexerTester::new("{ {");
-        tester.assert_expr_start(0);
-        tester.assert_raw(" ", 1);
-        tester.assert_expr_start(2);
-        tester.assert_none();
-    }
-
-    #[test]
-    fn escaped_expression_start_inside_expression() {
-        let mut tester = LexerTester::new("{|{");
-        tester.assert_expr_start(0);
-        tester.assert_raw("{", 1);
-        tester.assert_none();
-    }
-
-    #[test]
-    fn empty_expression() {
-        let mut tester = LexerTester::new("{}");
-        tester.assert_expr_start(0);
-        tester.assert_expr_end(1);
-        tester.assert_none();
-    }
-
-    #[test]
-    fn escaped_expression_end_inside_expression() {
-        let mut tester = LexerTester::new("{|}");
-        tester.assert_expr_start(0);
-        tester.assert_raw("}", 1);
-        tester.assert_none();
-    }
-
-    #[test]
-    fn expression_with_pipe() {
-        let mut tester = LexerTester::new("{| }");
-        tester.assert_expr_start(0);
-        tester.assert_pipe(1);
-        tester.assert_raw(" ", 2);
-        tester.assert_expr_end(3);
-        tester.assert_none();
-    }
-
-    #[test]
-    fn expression_with_raw() {
-        let mut tester = LexerTester::new("{a}");
-        tester.assert_expr_start(0);
-        tester.assert_raw("a", 1);
-        tester.assert_expr_end(2);
-        tester.assert_none();
-    }
-
-    #[test]
-    fn expression_with_long_raw() {
-        let mut tester = LexerTester::new("{abc}");
-        tester.assert_expr_start(0);
-        tester.assert_raw("abc", 1);
-        tester.assert_expr_end(4);
-        tester.assert_none();
-    }
-
-    #[test]
-    fn complex_expression() {
-        let mut tester = LexerTester::new("{a|bc|||def|{|}}");
-        tester.assert_expr_start(0);
-        tester.assert_raw("a", 1);
-        tester.assert_pipe(2);
-        tester.assert_raw("bc|", 3);
-        tester.assert_pipe(7);
-        tester.assert_raw("def{}", 8);
-        tester.assert_expr_end(15);
-        tester.assert_none();
-    }
-
-    #[test]
-    fn complex_escaped_raw() {
-        let mut tester = LexerTester::new("{{}}{{{{}}}}a{{b}}c{{{{d}}}}e{{f{{g}}h}}i}}");
-        tester.assert_raw("{}{{}}a{b}c{{d}}e{f{g}h}i}", 0);
-        tester.assert_none();
-    }
-
-    #[test]
-    fn multiple_expressions() {
-        let mut tester = LexerTester::new("{}{a}{bc}");
-        tester.assert_expr_start(0);
-        tester.assert_expr_end(1);
-        tester.assert_expr_start(2);
-        tester.assert_raw("a", 3);
-        tester.assert_expr_end(4);
-        tester.assert_expr_start(5);
-        tester.assert_raw("bc", 6);
-        tester.assert_expr_end(8);
-        tester.assert_none();
-    }
-
-    #[test]
-    fn multiple_raws_and_expressions() {
-        let mut tester = LexerTester::new("a{}bc{de}ghi");
-        tester.assert_raw("a", 0);
-        tester.assert_expr_start(1);
-        tester.assert_expr_end(2);
-        tester.assert_raw("bc", 3);
-        tester.assert_expr_start(5);
-        tester.assert_raw("de", 6);
-        tester.assert_expr_end(8);
-        tester.assert_raw("ghi", 9);
-        tester.assert_none();
-    }
-
-    #[test]
-    fn multiple_escaped_raws_and_expressions() {
-        let mut tester = LexerTester::new("{{}}{{{}}}");
-        tester.assert_raw("{}{", 0);
-        tester.assert_expr_start(6);
-        tester.assert_expr_end(7);
-        tester.assert_raw("}", 8);
-        tester.assert_none();
-    }
-
-    #[test]
-    fn complex_input() {
-        let mut tester = LexerTester::new("name_{{{c}}}.{e|s1-3}");
-        tester.assert_raw("name_{", 0);
-        tester.assert_expr_start(7);
-        tester.assert_raw("c", 8);
-        tester.assert_expr_end(9);
-        tester.assert_raw("}.", 10);
-        tester.assert_expr_start(13);
-        tester.assert_raw("e", 14);
-        tester.assert_pipe(15);
-        tester.assert_raw("s1-3", 16);
-        tester.assert_expr_end(20);
-        tester.assert_none();
+        fn assert_token(&mut self, typ: TokenType, position: usize) {
+            assert_eq!(self.next(), Some(Token { typ, position }));
+        }
     }
 }

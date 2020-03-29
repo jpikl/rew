@@ -1,5 +1,3 @@
-mod error;
-mod lexer;
-mod number;
-mod reader;
-mod variable;
+mod eval;
+mod parse;
+mod types;
