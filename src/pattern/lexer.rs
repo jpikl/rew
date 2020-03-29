@@ -1,4 +1,3 @@
-use crate::pattern::lexer::TokenType::Pipe;
 use crate::pattern::reader::Reader;
 
 const EXPR_START: char = '{';

@@ -3,3 +3,7 @@ name = "mmvv"
 version = "0.1.0"
 authors = ["Jan Pikl <pikl.jan@gmail.com>"]
 edition = "2018"
+
+[dependencies]
+regex = "1"
+uuid = { version = "0.8", features = ["v4"] }
