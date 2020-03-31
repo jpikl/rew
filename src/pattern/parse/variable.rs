@@ -4,13 +4,13 @@ use crate::pattern::parse::types::ParseError;
 use crate::pattern::types::Variable;
 
 impl Variable {
-    pub fn parse(string: &str) -> Result<Variable, ParseError> {
+    pub fn parse(string: &str) -> Result<Self, ParseError> {
         let mut reader = Reader::new(string);
 
         let variable = match reader.peek() {
             Some('0'..='9') => Variable::CaptureGroup(parse_usize(&mut reader)?),
             Some(ch) => {
-                reader.next();
+                reader.read();
                 match ch {
                     'f' => Variable::Filename,
                     'b' => Variable::Basename,
@@ -40,7 +40,7 @@ impl Variable {
         } else {
             Err(ParseError {
                 message: "Unexpected character",
-                position: reader.position(),
+                position: reader.posistion(),
             })
         }
     }

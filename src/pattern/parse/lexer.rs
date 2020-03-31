@@ -151,7 +151,7 @@ impl Lexer {
     }
 
     fn fetch_character(&mut self) -> Option<char> {
-        self.character = self.reader.next();
+        self.character = self.reader.read();
         self.character
     }
 
@@ -177,7 +177,7 @@ impl Lexer {
             position: self.position,
         };
         // We expect that the character for the next token is already fetched.
-        self.position = self.reader.position() - 1;
+        self.position = self.reader.posistion() - 1;
         Some(token)
     }
 }

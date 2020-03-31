@@ -26,23 +26,31 @@ pub enum Variable {
 
 #[derive(Debug, PartialEq)]
 pub enum Transform {
-    Character(usize),
-    SubstrFrom(usize),
-    SubstrTo(usize),
-    SubstrFromTo(usize, usize),
-    EndCharacter(usize),
-    EndSubstrFrom(usize),
-    EndSubstrTo(usize),
-    EndSubstrFromTo(usize, usize),
-    ReplaceFirst(String, String),
-    ReplaceAll(String, String),
+    Substring(Range),
+    SubstringFromEnd(Range),
+    ReplaceFirst(Substitution),
+    ReplaceAll(Substitution),
     Trim,
-    Lowercase,
-    Uppercase,
+    LowerCase,
+    UpperCase,
     ToAscii,
     RemoveNonAscii,
-    LeftPad(String),
-    RightPad(String),
+    LeftPad(Vec<char>),
+    RightPad(Vec<char>),
+}
+
+#[derive(Debug, PartialEq)]
+pub enum Range {
+    Full,
+    From(usize),
+    To(usize),
+    FromTo(usize, usize),
+}
+
+#[derive(Debug, PartialEq)]
+pub struct Substitution {
+    pub value: String,
+    pub replacement: String,
 }
 
 #[derive(Debug, PartialEq)]
