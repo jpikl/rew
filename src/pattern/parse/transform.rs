@@ -58,23 +58,38 @@ mod tests {
         );
         assert_eq!(
             Transform::parse("s5"),
-            Ok(Transform::Substring(Range::FromTo(5, 5)))
+            Ok(Transform::Substring(Range {
+                offset: 4,
+                length: 1
+            }))
         );
         assert_eq!(
             Transform::parse("s2-10"),
-            Ok(Transform::Substring(Range::FromTo(2, 10)))
+            Ok(Transform::Substring(Range {
+                offset: 1,
+                length: 9
+            }))
         );
         assert_eq!(
             Transform::parse("s2-"),
-            Ok(Transform::Substring(Range::From(2)))
+            Ok(Transform::Substring(Range {
+                offset: 1,
+                length: 0
+            }))
         );
         assert_eq!(
             Transform::parse("s-10"),
-            Ok(Transform::Substring(Range::To(10)))
+            Ok(Transform::Substring(Range {
+                offset: 0,
+                length: 10
+            }))
         );
         assert_eq!(
             Transform::parse("s-"),
-            Ok(Transform::Substring(Range::Full))
+            Ok(Transform::Substring(Range {
+                offset: 0,
+                length: 0
+            }))
         );
     }
 
@@ -89,23 +104,38 @@ mod tests {
         );
         assert_eq!(
             Transform::parse("S5"),
-            Ok(Transform::SubstringFromEnd(Range::FromTo(5, 5)))
+            Ok(Transform::SubstringFromEnd(Range {
+                offset: 4,
+                length: 1
+            }))
         );
         assert_eq!(
             Transform::parse("S2-10"),
-            Ok(Transform::SubstringFromEnd(Range::FromTo(2, 10)))
+            Ok(Transform::SubstringFromEnd(Range {
+                offset: 1,
+                length: 9
+            }))
         );
         assert_eq!(
             Transform::parse("S2-"),
-            Ok(Transform::SubstringFromEnd(Range::From(2)))
+            Ok(Transform::SubstringFromEnd(Range {
+                offset: 1,
+                length: 0
+            }))
         );
         assert_eq!(
             Transform::parse("S-10"),
-            Ok(Transform::SubstringFromEnd(Range::To(10)))
+            Ok(Transform::SubstringFromEnd(Range {
+                offset: 0,
+                length: 10
+            }))
         );
         assert_eq!(
             Transform::parse("S-"),
-            Ok(Transform::SubstringFromEnd(Range::Full))
+            Ok(Transform::SubstringFromEnd(Range {
+                offset: 0,
+                length: 0
+            }))
         );
     }
 

@@ -40,11 +40,9 @@ pub enum Transform {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum Range {
-    Full,
-    From(usize),
-    To(usize),
-    FromTo(usize, usize),
+pub struct Range {
+    pub offset: usize,
+    pub length: usize, // Zero length means unlimited
 }
 
 #[derive(Debug, PartialEq)]
