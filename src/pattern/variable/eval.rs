@@ -71,8 +71,8 @@ mod tests {
     use regex::Regex;
 
     #[test]
-    fn eval_filename() {
-        let mut context = make_eval_context();
+    fn filename() {
+        let mut context = make_context();
         let final_context = context.clone();
         assert_eq!(
             Variable::Filename.eval(&mut context),
@@ -82,8 +82,8 @@ mod tests {
     }
 
     #[test]
-    fn eval_basename() {
-        let mut context = make_eval_context();
+    fn basename() {
+        let mut context = make_context();
         let final_context = context.clone();
         assert_eq!(
             Variable::Basename.eval(&mut context),
@@ -93,8 +93,8 @@ mod tests {
     }
 
     #[test]
-    fn eval_extension() {
-        let mut context = make_eval_context();
+    fn extension() {
+        let mut context = make_context();
         let final_context = context.clone();
         assert_eq!(
             Variable::Extension.eval(&mut context),
@@ -104,8 +104,8 @@ mod tests {
     }
 
     #[test]
-    fn eval_extension_no_ext() {
-        let mut context = make_eval_context();
+    fn extension_no_ext() {
+        let mut context = make_context();
         context.path = Path::new("root/parent/image");
         let final_context = context.clone();
         assert_eq!(Variable::Extension.eval(&mut context), Ok("".to_string()));
@@ -113,8 +113,8 @@ mod tests {
     }
 
     #[test]
-    fn eval_extension_with_dot() {
-        let mut context = make_eval_context();
+    fn extension_with_dot() {
+        let mut context = make_context();
         let final_context = context.clone();
         assert_eq!(
             Variable::ExtensionWithDot.eval(&mut context),
@@ -124,8 +124,8 @@ mod tests {
     }
 
     #[test]
-    fn eval_extension_with_dot_no_ext() {
-        let mut context = make_eval_context();
+    fn extension_with_dot_no_ext() {
+        let mut context = make_context();
         context.path = Path::new("root/parent/image");
         let final_context = context.clone();
         assert_eq!(
@@ -136,8 +136,8 @@ mod tests {
     }
 
     #[test]
-    fn eval_local_counter() {
-        let mut context = make_eval_context();
+    fn local_counter() {
+        let mut context = make_context();
         let mut final_context = context.clone();
         final_context.local_counter = 1;
         assert_eq!(
@@ -148,8 +148,8 @@ mod tests {
     }
 
     #[test]
-    fn eval_global_counter() {
-        let mut context = make_eval_context();
+    fn global_counter() {
+        let mut context = make_context();
         let mut final_context = context.clone();
         final_context.global_counter = 1;
         assert_eq!(
@@ -160,8 +160,8 @@ mod tests {
     }
 
     #[test]
-    fn eval_capture_group_below_one() {
-        let mut context = make_eval_context();
+    fn capture_group_below_one() {
+        let mut context = make_context();
         let final_context = context.clone();
         assert_eq!(
             Variable::CaptureGroup(0).eval(&mut context),
@@ -171,8 +171,8 @@ mod tests {
     }
 
     #[test]
-    fn eval_capture_group_over_max() {
-        let mut context = make_eval_context();
+    fn capture_group_over_max() {
+        let mut context = make_context();
         let final_context = context.clone();
         assert_eq!(
             Variable::CaptureGroup(2).eval(&mut context),
@@ -182,8 +182,8 @@ mod tests {
     }
 
     #[test]
-    fn eval_uuid() {
-        let mut context = make_eval_context();
+    fn uuid() {
+        let mut context = make_context();
         let final_context = context.clone();
         let uuid = Variable::Uuid.eval(&mut context).unwrap();
         let uuid_regex =
@@ -193,7 +193,7 @@ mod tests {
         assert_eq!(context, final_context);
     }
 
-    fn make_eval_context<'a>() -> EvalContext<'a> {
+    fn make_context<'a>() -> EvalContext<'a> {
         EvalContext {
             path: Path::new("root/parent/image.png"),
             local_counter: 0,

@@ -85,7 +85,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn parse_empty_as_error() {
+    fn empty_error() {
         let mut reader = Reader::new("");
         assert_eq!(
             Range::parse(&mut reader),
@@ -98,7 +98,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_non_range_as_error() {
+    fn non_range_error() {
         let mut reader = Reader::new("a");
         assert_eq!(
             Range::parse(&mut reader),
@@ -111,7 +111,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_full() {
+    fn full() {
         let mut reader = Reader::new("-");
         assert_eq!(
             Range::parse(&mut reader),
@@ -124,7 +124,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_full_ignore_rest() {
+    fn full_ignore_rest() {
         let mut reader = Reader::new("-a");
         assert_eq!(
             Range::parse(&mut reader),
@@ -137,7 +137,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_zero_start_as_error() {
+    fn zero_start_error() {
         let mut reader = Reader::new("0-");
         assert_eq!(
             Range::parse(&mut reader),
@@ -150,7 +150,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_start() {
+    fn start() {
         let mut reader = Reader::new("1-");
         assert_eq!(
             Range::parse(&mut reader),
@@ -163,7 +163,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_start_ignore_rest() {
+    fn start_ignore_rest() {
         let mut reader = Reader::new("10-a");
         assert_eq!(
             Range::parse(&mut reader),
@@ -176,7 +176,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_zero_end_as_error() {
+    fn zero_end_error() {
         let mut reader = Reader::new("-0");
         assert_eq!(
             Range::parse(&mut reader),
@@ -189,7 +189,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_end() {
+    fn end() {
         let mut reader = Reader::new("-1");
         assert_eq!(
             Range::parse(&mut reader),
@@ -202,7 +202,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_end_ignore_rest() {
+    fn end_ignore_rest() {
         let mut reader = Reader::new("-10a");
         assert_eq!(
             Range::parse(&mut reader),
@@ -215,7 +215,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_start_greater_than_end_as_error() {
+    fn start_greater_than_end_error() {
         let mut reader = Reader::new("6-5");
         assert_eq!(
             Range::parse(&mut reader),
@@ -228,7 +228,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_start_equals_to_end() {
+    fn start_equals_to_end() {
         let mut reader = Reader::new("5-5");
         assert_eq!(
             Range::parse(&mut reader),
@@ -241,7 +241,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_start_less_than_end() {
+    fn start_less_than_end() {
         let mut reader = Reader::new("4-5");
         assert_eq!(
             Range::parse(&mut reader),
@@ -254,7 +254,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_start_less_than_end_ignore_rest() {
+    fn start_less_than_end_ignore_rest() {
         let mut reader = Reader::new("2-10a");
         assert_eq!(
             Range::parse(&mut reader),
@@ -267,7 +267,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_united_start_and_end() {
+    fn united_start_and_end() {
         let mut reader = Reader::new("100");
         assert_eq!(
             Range::parse(&mut reader),
@@ -280,7 +280,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_united_start_and_end_ignore_rest() {
+    fn united_start_and_end_ignore_rest() {
         let mut reader = Reader::new("100a");
         assert_eq!(
             Range::parse(&mut reader),

@@ -1,7 +1,7 @@
 use crate::pattern::range::Range;
 use crate::pattern::substitution::Substitution;
 
-mod eval;
+mod apply;
 mod parse;
 
 #[derive(Debug, PartialEq)]

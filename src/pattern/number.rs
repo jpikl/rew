@@ -28,7 +28,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn parse_empty_as_error() {
+    fn empty_error() {
         let mut reader = Reader::new("");
         assert_eq!(
             parse_usize(&mut reader),
@@ -41,7 +41,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_non_digit_as_error() {
+    fn non_digit_error() {
         let mut reader = Reader::new("a");
         assert_eq!(
             parse_usize(&mut reader),
@@ -54,49 +54,49 @@ mod tests {
     }
 
     #[test]
-    fn parse_zero() {
+    fn zero() {
         let mut reader = Reader::new("0");
         assert_eq!(parse_usize(&mut reader), Ok(0));
         assert_eq!(reader.posistion(), 1);
     }
 
     #[test]
-    fn parse_zero_ignore_rest() {
+    fn zero_ignore_rest() {
         let mut reader = Reader::new("0a");
         assert_eq!(parse_usize(&mut reader), Ok(0));
         assert_eq!(reader.posistion(), 1);
     }
 
     #[test]
-    fn parse_only_a_first_zero() {
+    fn only_a_first_zero() {
         let mut reader = Reader::new("00");
         assert_eq!(parse_usize(&mut reader), Ok(0));
         assert_eq!(reader.posistion(), 1);
     }
 
     #[test]
-    fn parse_positive_number_single_digit() {
+    fn positive_number_single_digit() {
         let mut reader = Reader::new("1");
         assert_eq!(parse_usize(&mut reader), Ok(1));
         assert_eq!(reader.posistion(), 1);
     }
 
     #[test]
-    fn parse_positive_number_single_digit_ignore_rest() {
+    fn positive_number_single_digit_ignore_rest() {
         let mut reader = Reader::new("1a");
         assert_eq!(parse_usize(&mut reader), Ok(1));
         assert_eq!(reader.posistion(), 1);
     }
 
     #[test]
-    fn parse_positive_number_multiple_digits() {
+    fn positive_number_multiple_digits() {
         let mut reader = Reader::new("1234567890");
         assert_eq!(parse_usize(&mut reader), Ok(1234567890));
         assert_eq!(reader.posistion(), 10);
     }
 
     #[test]
-    fn parse_positive_number_multiple_digits_ignore_rest() {
+    fn positive_number_multiple_digits_ignore_rest() {
         let mut reader = Reader::new("1234567890a");
         assert_eq!(parse_usize(&mut reader), Ok(1234567890));
         assert_eq!(reader.posistion(), 10);

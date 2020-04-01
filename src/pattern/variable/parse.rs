@@ -51,37 +51,37 @@ mod tests {
     use super::*;
 
     #[test]
-    fn parse_filename() {
+    fn filename() {
         assert_eq!(Variable::parse("f"), Ok(Variable::Filename));
     }
 
     #[test]
-    fn parse_basename() {
+    fn basename() {
         assert_eq!(Variable::parse("b"), Ok(Variable::Basename));
     }
 
     #[test]
-    fn parse_extension() {
+    fn extension() {
         assert_eq!(Variable::parse("e"), Ok(Variable::Extension));
     }
 
     #[test]
-    fn parse_extension_with_dot() {
+    fn extension_with_dot() {
         assert_eq!(Variable::parse("E"), Ok(Variable::ExtensionWithDot));
     }
 
     #[test]
-    fn parse_local_counter() {
+    fn local_counter() {
         assert_eq!(Variable::parse("c"), Ok(Variable::LocalCounter));
     }
 
     #[test]
-    fn parse_global_counter() {
+    fn global_counter() {
         assert_eq!(Variable::parse("C"), Ok(Variable::GlobalCounter));
     }
 
     #[test]
-    fn parse_regex_group() {
+    fn regex_group() {
         assert_eq!(Variable::parse("1"), Ok(Variable::CaptureGroup(1)));
         assert_eq!(Variable::parse("2"), Ok(Variable::CaptureGroup(2)));
         assert_eq!(Variable::parse("3"), Ok(Variable::CaptureGroup(3)));
@@ -95,12 +95,12 @@ mod tests {
     }
 
     #[test]
-    fn parse_uuid() {
+    fn uuid() {
         assert_eq!(Variable::parse("u"), Ok(Variable::Uuid));
     }
 
     #[test]
-    fn parse_unknown_variable_as_error() {
+    fn unknown_variable_error() {
         assert_eq!(
             Variable::parse("_"),
             Err(ParseError {
@@ -111,7 +111,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_unexpected_character_as_error() {
+    fn unexpected_character_error() {
         assert_eq!(
             Variable::parse("f_"),
             Err(ParseError {
@@ -129,7 +129,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_empty_as_error() {
+    fn empty_error() {
         assert_eq!(
             Variable::parse(""),
             Err(ParseError {

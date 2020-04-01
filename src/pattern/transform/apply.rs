@@ -72,7 +72,7 @@ mod tests {
     use crate::pattern::substitution::Substitution;
 
     #[test]
-    fn apply_substring_full() {
+    fn substring_full() {
         let mut string = "ábčd".to_string();
         string = Transform::Substring(Range {
             offset: 0,
@@ -83,7 +83,7 @@ mod tests {
     }
 
     #[test]
-    fn apply_substring_offset() {
+    fn substring_offset() {
         let mut string = "ábčd".to_string();
         string = Transform::Substring(Range {
             offset: 3,
@@ -94,7 +94,7 @@ mod tests {
     }
 
     #[test]
-    fn apply_substring_offset_over() {
+    fn substring_offset_over() {
         let mut string = "ábčd".to_string();
         string = Transform::Substring(Range {
             offset: 4,
@@ -105,7 +105,7 @@ mod tests {
     }
 
     #[test]
-    fn apply_substring_length() {
+    fn substring_length() {
         let mut string = "ábčd".to_string();
         string = Transform::Substring(Range {
             offset: 0,
@@ -116,7 +116,7 @@ mod tests {
     }
 
     #[test]
-    fn apply_substring_length_max() {
+    fn substring_length_max() {
         let mut string = "ábčd".to_string();
         string = Transform::Substring(Range {
             offset: 0,
@@ -127,7 +127,7 @@ mod tests {
     }
 
     #[test]
-    fn apply_substring_length_over() {
+    fn substring_length_over() {
         let mut string = "ábčd".to_string();
         string = Transform::Substring(Range {
             offset: 0,
@@ -138,7 +138,7 @@ mod tests {
     }
 
     #[test]
-    fn apply_substring_offset_length() {
+    fn substring_offset_length() {
         let mut string = "ábčd".to_string();
         string = Transform::Substring(Range {
             offset: 1,
@@ -149,7 +149,7 @@ mod tests {
     }
 
     #[test]
-    fn apply_substring_offset_over_length() {
+    fn substring_offset_over_length() {
         let mut string = "ábčd".to_string();
         string = Transform::Substring(Range {
             offset: 4,
@@ -160,7 +160,7 @@ mod tests {
     }
 
     #[test]
-    fn apply_substring_offset_length_over() {
+    fn substring_offset_length_over() {
         let mut string = "ábčd".to_string();
         string = Transform::Substring(Range {
             offset: 1,
@@ -171,7 +171,7 @@ mod tests {
     }
 
     #[test]
-    fn apply_substring_fe_full() {
+    fn substring_fe_full() {
         let mut string = "ábčd".to_string();
         string = Transform::SubstringFromEnd(Range {
             offset: 0,
@@ -182,7 +182,7 @@ mod tests {
     }
 
     #[test]
-    fn apply_substring_fe_offset() {
+    fn substring_fe_offset() {
         let mut string = "ábčd".to_string();
         string = Transform::SubstringFromEnd(Range {
             offset: 3,
@@ -193,7 +193,7 @@ mod tests {
     }
 
     #[test]
-    fn apply_substring_fe_offset_over() {
+    fn substring_fe_offset_over() {
         let mut string = "ábčd".to_string();
         string = Transform::SubstringFromEnd(Range {
             offset: 4,
@@ -204,7 +204,7 @@ mod tests {
     }
 
     #[test]
-    fn apply_substring_fe_length() {
+    fn substring_fe_length() {
         let mut string = "ábčd".to_string();
         string = Transform::SubstringFromEnd(Range {
             offset: 0,
@@ -215,7 +215,7 @@ mod tests {
     }
 
     #[test]
-    fn apply_substring_fe_length_max() {
+    fn substring_fe_length_max() {
         let mut string = "ábčd".to_string();
         string = Transform::SubstringFromEnd(Range {
             offset: 0,
@@ -226,7 +226,7 @@ mod tests {
     }
 
     #[test]
-    fn apply_substring_fe_length_over() {
+    fn substring_fe_length_over() {
         let mut string = "ábčd".to_string();
         string = Transform::SubstringFromEnd(Range {
             offset: 0,
@@ -237,7 +237,7 @@ mod tests {
     }
 
     #[test]
-    fn apply_substring_fe_offset_length() {
+    fn substring_fe_offset_length() {
         let mut string = "ábčd".to_string();
         string = Transform::SubstringFromEnd(Range {
             offset: 1,
@@ -248,7 +248,7 @@ mod tests {
     }
 
     #[test]
-    fn apply_substring_fe_offset_over_length() {
+    fn substring_fe_offset_over_length() {
         let mut string = "ábčd".to_string();
         string = Transform::SubstringFromEnd(Range {
             offset: 4,
@@ -259,7 +259,7 @@ mod tests {
     }
 
     #[test]
-    fn apply_substring_fe_offset_length_over() {
+    fn substring_fe_offset_length_over() {
         let mut string = "ábčd".to_string();
         string = Transform::SubstringFromEnd(Range {
             offset: 1,
@@ -270,7 +270,7 @@ mod tests {
     }
 
     #[test]
-    fn apply_replace_first() {
+    fn replace_first() {
         let mut string = "abcd_abcd".to_string();
         string = Transform::ReplaceFirst(Substitution {
             value: "ab".to_string(),
@@ -281,7 +281,7 @@ mod tests {
     }
 
     #[test]
-    fn apply_replace_all() {
+    fn replace_all() {
         let mut string = "abcd_abcd".to_string();
         string = Transform::ReplaceAll(Substitution {
             value: "ab".to_string(),
@@ -292,7 +292,7 @@ mod tests {
     }
 
     #[test]
-    fn apply_remove_first() {
+    fn remove_first() {
         let mut string = "abcd_abcd".to_string();
         string = Transform::ReplaceFirst(Substitution {
             value: "ab".to_string(),
@@ -303,7 +303,7 @@ mod tests {
     }
 
     #[test]
-    fn apply_remove_all() {
+    fn remove_all() {
         let mut string = "abcd_abcd".to_string();
         string = Transform::ReplaceAll(Substitution {
             value: "ab".to_string(),
@@ -314,84 +314,84 @@ mod tests {
     }
 
     #[test]
-    fn apply_trim_none() {
+    fn trim_none() {
         let mut string = "abcd".to_string();
         string = Transform::Trim.apply(string);
         assert_eq!(string, "abcd");
     }
 
     #[test]
-    fn apply_trim() {
+    fn trim() {
         let mut string = " abcd ".to_string();
         string = Transform::Trim.apply(string);
         assert_eq!(string, "abcd");
     }
 
     #[test]
-    fn apply_lowercase() {
+    fn lowercase() {
         let mut string = "ábčdÁBČD".to_string();
         string = Transform::Lowercase.apply(string);
         assert_eq!(string, "ábčdábčd");
     }
 
     #[test]
-    fn apply_uppercase() {
+    fn uppercase() {
         let mut string = "ábčdÁBČD".to_string();
         string = Transform::Uppercase.apply(string);
         assert_eq!(string, "ÁBČDÁBČD");
     }
 
     #[test]
-    fn apply_to_ascii() {
+    fn to_ascii() {
         let mut string = "ábčdÁBČD".to_string();
         string = Transform::ToAscii.apply(string);
         assert_eq!(string, "abcdABCD");
     }
 
     #[test]
-    fn apply_remove_non_ascii() {
+    fn remove_non_ascii() {
         let mut string = "ábčdÁBČD".to_string();
         string = Transform::RemoveNonAscii.apply(string);
         assert_eq!(string, "bdBD");
     }
 
     #[test]
-    fn apply_left_pad_all() {
+    fn left_pad_all() {
         let mut string = "".to_string();
         string = Transform::LeftPad(vec!['0', '1', '2', '3']).apply(string);
         assert_eq!(string, "0123");
     }
 
     #[test]
-    fn apply_left_pad_some() {
+    fn left_pad_some() {
         let mut string = "ab".to_string();
         string = Transform::LeftPad(vec!['0', '1', '2', '3']).apply(string);
         assert_eq!(string, "01ab");
     }
 
     #[test]
-    fn apply_left_pad_none() {
+    fn left_pad_none() {
         let mut string = "abcd".to_string();
         string = Transform::LeftPad(vec!['0', '1', '2', '3']).apply(string);
         assert_eq!(string, "abcd");
     }
 
     #[test]
-    fn apply_right_pad_all() {
+    fn right_pad_all() {
         let mut string = "".to_string();
         string = Transform::RightPad(vec!['0', '1', '2', '3']).apply(string);
         assert_eq!(string, "0123");
     }
 
     #[test]
-    fn apply_right_pad_some() {
+    fn right_pad_some() {
         let mut string = "ab".to_string();
         string = Transform::RightPad(vec!['0', '1', '2', '3']).apply(string);
         assert_eq!(string, "ab23");
     }
 
     #[test]
-    fn apply_right_pad_none() {
+    fn right_pad_none() {
         let mut string = "abcd".to_string();
         string = Transform::RightPad(vec!['0', '1', '2', '3']).apply(string);
         assert_eq!(string, "abcd");

@@ -50,7 +50,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn parse_substring() {
+    fn substring() {
         assert_eq!(
             Transform::parse("s"),
             Err(ParseError {
@@ -96,7 +96,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_substring_from_end() {
+    fn substring_from_end() {
         assert_eq!(
             Transform::parse("S"),
             Err(ParseError {
@@ -142,7 +142,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_replace_first() {
+    fn replace_first() {
         assert_eq!(
             Transform::parse("r"),
             Err(ParseError {
@@ -167,7 +167,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_replace_all() {
+    fn replace_all() {
         assert_eq!(
             Transform::parse("R"),
             Err(ParseError {
@@ -192,32 +192,32 @@ mod tests {
     }
 
     #[test]
-    fn parse_trim() {
+    fn trim() {
         assert_eq!(Transform::parse("t"), Ok(Transform::Trim));
     }
 
     #[test]
-    fn parse_lower_case() {
+    fn lower_case() {
         assert_eq!(Transform::parse("u"), Ok(Transform::Lowercase));
     }
 
     #[test]
-    fn parse_upper_case() {
+    fn upper_case() {
         assert_eq!(Transform::parse("U"), Ok(Transform::Uppercase));
     }
 
     #[test]
-    fn parse_to_ascii() {
+    fn to_ascii() {
         assert_eq!(Transform::parse("a"), Ok(Transform::ToAscii));
     }
 
     #[test]
-    fn parse_remove_non_ascii() {
+    fn remove_non_ascii() {
         assert_eq!(Transform::parse("A"), Ok(Transform::RemoveNonAscii));
     }
 
     #[test]
-    fn parse_left_pad() {
+    fn left_pad() {
         assert_eq!(
             Transform::parse(">abc"),
             Ok(Transform::LeftPad(vec!['a', 'b', 'c']))
@@ -225,12 +225,12 @@ mod tests {
     }
 
     #[test]
-    fn parse_left_pad_empty() {
+    fn left_pad_empty() {
         assert_eq!(Transform::parse(">"), Ok(Transform::LeftPad(Vec::new())));
     }
 
     #[test]
-    fn parse_right_pad() {
+    fn right_pad() {
         assert_eq!(
             Transform::parse("<abc"),
             Ok(Transform::RightPad(vec!['a', 'b', 'c']))
@@ -238,12 +238,12 @@ mod tests {
     }
 
     #[test]
-    fn parse_right_pad_empty() {
+    fn right_pad_empty() {
         assert_eq!(Transform::parse("<"), Ok(Transform::RightPad(Vec::new())));
     }
 
     #[test]
-    fn parse_unknown_transform_as_error() {
+    fn unknown_transform_error() {
         assert_eq!(
             Transform::parse("_"),
             Err(ParseError {
@@ -254,7 +254,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_unexpected_character_as_error() {
+    fn unexpected_character_error() {
         assert_eq!(
             Transform::parse("u_"),
             Err(ParseError {
@@ -265,7 +265,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_empty_as_error() {
+    fn empty_error() {
         assert_eq!(
             Transform::parse(""),
             Err(ParseError {
