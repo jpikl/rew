@@ -1,7 +1,12 @@
-use crate::pattern::parse::number::parse_usize;
-use crate::pattern::parse::reader::Reader;
-use crate::pattern::parse::types::ParseError;
-use crate::pattern::types::Range;
+use crate::pattern::error::ParseError;
+use crate::pattern::number::parse_usize;
+use crate::pattern::reader::Reader;
+
+#[derive(Debug, PartialEq)]
+pub struct Range {
+    pub offset: usize,
+    pub length: usize, // Zero length means unlimited
+}
 
 const DIVIDER: char = '-';
 

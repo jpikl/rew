@@ -1,11 +1,11 @@
-use crate::pattern::parse::reader::Reader;
+use crate::pattern::reader::Reader;
 
 const EXPR_START: char = '{';
 const EXPR_END: char = '}';
 const PIPE: char = '|';
 
 #[derive(Debug, PartialEq)]
-pub enum TokenType {
+enum TokenType {
     Raw(String),
     ExprStart,
     ExprEnd,
@@ -13,12 +13,12 @@ pub enum TokenType {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct Token {
-    pub typ: TokenType,
-    pub position: usize,
+struct Token {
+    typ: TokenType,
+    position: usize,
 }
 
-pub struct Lexer {
+struct Lexer {
     reader: Reader,
     position: usize,
     character: Option<char>,
@@ -38,7 +38,7 @@ impl Iterator for Lexer {
 }
 
 impl Lexer {
-    pub fn new(string: &str) -> Self {
+    fn new(string: &str) -> Self {
         let mut lexer = Self {
             reader: Reader::new(string),
             position: 0,

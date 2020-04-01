@@ -1,10 +1,10 @@
-use crate::pattern::parse::number::parse_usize;
-use crate::pattern::parse::reader::Reader;
-use crate::pattern::parse::types::ParseError;
-use crate::pattern::types::Variable;
+use crate::pattern::error::ParseError;
+use crate::pattern::number::parse_usize;
+use crate::pattern::reader::Reader;
+use crate::pattern::variable::Variable;
 
 impl Variable {
-    pub fn parse(string: &str) -> Result<Self, ParseError> {
+    fn parse(string: &str) -> Result<Self, ParseError> {
         let mut reader = Reader::new(string);
 
         let variable = match reader.peek() {

@@ -1,6 +1,11 @@
-use crate::pattern::parse::reader::Reader;
-use crate::pattern::parse::types::ParseError;
-use crate::pattern::types::Substitution;
+use crate::pattern::error::ParseError;
+use crate::pattern::reader::Reader;
+
+#[derive(Debug, PartialEq)]
+pub struct Substitution {
+    pub value: String,
+    pub replacement: String,
+}
 
 impl Substitution {
     pub fn parse(reader: &mut Reader) -> Result<Self, ParseError> {

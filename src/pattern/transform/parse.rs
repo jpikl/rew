@@ -1,9 +1,11 @@
-use crate::pattern::parse::reader::Reader;
-use crate::pattern::parse::types::ParseError;
-use crate::pattern::types::{Range, Substitution, Transform};
+use crate::pattern::error::ParseError;
+use crate::pattern::range::Range;
+use crate::pattern::reader::Reader;
+use crate::pattern::substitution::Substitution;
+use crate::pattern::transform::Transform;
 
 impl Transform {
-    pub fn parse(string: &str) -> Result<Self, ParseError> {
+    fn parse(string: &str) -> Result<Self, ParseError> {
         let mut reader = Reader::new(string);
 
         let transform = match reader.read() {

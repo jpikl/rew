@@ -1,5 +1,5 @@
-use crate::pattern::parse::reader::Reader;
-use crate::pattern::parse::types::ParseError;
+use crate::pattern::error::ParseError;
+use crate::pattern::reader::Reader;
 
 pub fn parse_usize(reader: &mut Reader) -> Result<usize, ParseError> {
     match reader.peek() {

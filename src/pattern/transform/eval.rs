@@ -1,8 +1,10 @@
-use crate::pattern::types::{Range, Substitution, Transform};
+use crate::pattern::range::Range;
+use crate::pattern::substitution::Substitution;
+use crate::pattern::transform::Transform;
 use unidecode::unidecode;
 
 impl Transform {
-    pub fn apply(&self, mut string: String) -> String {
+    fn apply(&self, mut string: String) -> String {
         match self {
             Transform::Substring(Range { offset, length }) => {
                 if *offset > 0 {
@@ -67,6 +69,7 @@ impl Transform {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::pattern::substitution::Substitution;
 
     #[test]
     fn apply_substring_full() {
