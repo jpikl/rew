@@ -1,5 +1,5 @@
 use crate::pattern::types::{Range, Substitution, Transform};
-use std::str::CharIndices;
+use unidecode::unidecode;
 
 impl Transform {
     pub fn apply(&self, mut string: String) -> String {
@@ -40,8 +40,25 @@ impl Transform {
             Transform::ReplaceAll(Substitution { value, replacement }) => {
                 string.replace(value, replacement)
             }
-            _ => {
-                panic!("Not implemented");
+            Transform::Trim => string.trim().to_string(),
+            Transform::Lowercase => string.to_lowercase(),
+            Transform::Uppercase => string.to_uppercase(),
+            Transform::ToAscii => unidecode(&string),
+            Transform::RemoveNonAscii => {
+                string.retain(|ch| ch.is_ascii());
+                string
+            }
+            Transform::LeftPad(pad_chars) => {
+                for pad_char in pad_chars.iter().rev().skip(string.len()) {
+                    string.insert(0, *pad_char);
+                }
+                string
+            }
+            Transform::RightPad(pad_chars) => {
+                for pad_char in pad_chars.iter().skip(string.len()) {
+                    string.push(*pad_char);
+                }
+                string
             }
         }
     }
@@ -50,7 +67,6 @@ impl Transform {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use regex::Regex;
 
     #[test]
     fn apply_substring_full() {
@@ -292,5 +308,89 @@ mod tests {
         })
         .apply(string);
         assert_eq!(string, "cd_cd");
+    }
+
+    #[test]
+    fn apply_trim_none() {
+        let mut string = "abcd".to_string();
+        string = Transform::Trim.apply(string);
+        assert_eq!(string, "abcd");
+    }
+
+    #[test]
+    fn apply_trim() {
+        let mut string = " abcd ".to_string();
+        string = Transform::Trim.apply(string);
+        assert_eq!(string, "abcd");
+    }
+
+    #[test]
+    fn apply_lowercase() {
+        let mut string = "ábčdÁBČD".to_string();
+        string = Transform::Lowercase.apply(string);
+        assert_eq!(string, "ábčdábčd");
+    }
+
+    #[test]
+    fn apply_uppercase() {
+        let mut string = "ábčdÁBČD".to_string();
+        string = Transform::Uppercase.apply(string);
+        assert_eq!(string, "ÁBČDÁBČD");
+    }
+
+    #[test]
+    fn apply_to_ascii() {
+        let mut string = "ábčdÁBČD".to_string();
+        string = Transform::ToAscii.apply(string);
+        assert_eq!(string, "abcdABCD");
+    }
+
+    #[test]
+    fn apply_remove_non_ascii() {
+        let mut string = "ábčdÁBČD".to_string();
+        string = Transform::RemoveNonAscii.apply(string);
+        assert_eq!(string, "bdBD");
+    }
+
+    #[test]
+    fn apply_left_pad_all() {
+        let mut string = "".to_string();
+        string = Transform::LeftPad(vec!['0', '1', '2', '3']).apply(string);
+        assert_eq!(string, "0123");
+    }
+
+    #[test]
+    fn apply_left_pad_some() {
+        let mut string = "ab".to_string();
+        string = Transform::LeftPad(vec!['0', '1', '2', '3']).apply(string);
+        assert_eq!(string, "01ab");
+    }
+
+    #[test]
+    fn apply_left_pad_none() {
+        let mut string = "abcd".to_string();
+        string = Transform::LeftPad(vec!['0', '1', '2', '3']).apply(string);
+        assert_eq!(string, "abcd");
+    }
+
+    #[test]
+    fn apply_right_pad_all() {
+        let mut string = "".to_string();
+        string = Transform::RightPad(vec!['0', '1', '2', '3']).apply(string);
+        assert_eq!(string, "0123");
+    }
+
+    #[test]
+    fn apply_right_pad_some() {
+        let mut string = "ab".to_string();
+        string = Transform::RightPad(vec!['0', '1', '2', '3']).apply(string);
+        assert_eq!(string, "ab23");
+    }
+
+    #[test]
+    fn apply_right_pad_none() {
+        let mut string = "abcd".to_string();
+        string = Transform::RightPad(vec!['0', '1', '2', '3']).apply(string);
+        assert_eq!(string, "abcd");
     }
 }

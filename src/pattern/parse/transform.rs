@@ -12,8 +12,8 @@ impl Transform {
             Some('r') => Transform::ReplaceFirst(Substitution::parse(&mut reader)?),
             Some('R') => Transform::ReplaceAll(Substitution::parse(&mut reader)?),
             Some('t') => Transform::Trim,
-            Some('u') => Transform::LowerCase,
-            Some('U') => Transform::UpperCase,
+            Some('u') => Transform::Lowercase,
+            Some('U') => Transform::Uppercase,
             Some('a') => Transform::ToAscii,
             Some('A') => Transform::RemoveNonAscii,
             Some('>') => Transform::LeftPad(reader.consume().to_vec()),
@@ -196,12 +196,12 @@ mod tests {
 
     #[test]
     fn parse_lower_case() {
-        assert_eq!(Transform::parse("u"), Ok(Transform::LowerCase));
+        assert_eq!(Transform::parse("u"), Ok(Transform::Lowercase));
     }
 
     #[test]
     fn parse_upper_case() {
-        assert_eq!(Transform::parse("U"), Ok(Transform::UpperCase));
+        assert_eq!(Transform::parse("U"), Ok(Transform::Uppercase));
     }
 
     #[test]
