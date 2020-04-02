@@ -11,7 +11,7 @@ impl Reader {
         }
     }
 
-    pub fn posistion(&self) -> usize {
+    pub fn position(&self) -> usize {
         self.position
     }
 
@@ -82,34 +82,34 @@ mod tests {
 
     #[test]
     fn position_starts_at_zero() {
-        assert_eq!(Reader::new("").posistion(), 0);
-        assert_eq!(Reader::new("abc").posistion(), 0);
+        assert_eq!(Reader::new("").position(), 0);
+        assert_eq!(Reader::new("abc").position(), 0);
     }
 
     #[test]
     fn position_is_unchanged_by_peek() {
         let reader = Reader::new("abc");
         reader.peek();
-        assert_eq!(reader.posistion(), 0);
+        assert_eq!(reader.position(), 0);
     }
 
     #[test]
     fn position_is_incremented_by_read() {
         let mut reader = Reader::new("abc");
-        assert_eq!(reader.posistion(), 0);
+        assert_eq!(reader.position(), 0);
         reader.read();
-        assert_eq!(reader.posistion(), 1);
+        assert_eq!(reader.position(), 1);
         reader.read();
-        assert_eq!(reader.posistion(), 2);
+        assert_eq!(reader.position(), 2);
         reader.read();
-        assert_eq!(reader.posistion(), 3);
+        assert_eq!(reader.position(), 3);
     }
 
     #[test]
     fn position_is_moved_to_the_end_by_consume() {
         let mut reader = Reader::new("abc");
-        assert_eq!(reader.posistion(), 0);
+        assert_eq!(reader.position(), 0);
         reader.consume();
-        assert_eq!(reader.posistion(), 3);
+        assert_eq!(reader.position(), 3);
     }
 }

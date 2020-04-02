@@ -11,7 +11,7 @@ impl Substitution {
     pub fn parse(reader: &mut Reader) -> Result<Self, ParseError> {
         if let Some(separator) = reader.read() {
             let mut value = String::new();
-            let value_position = reader.posistion();
+            let value_position = reader.position();
 
             while let Some(ch) = reader.read() {
                 if ch == separator {
@@ -33,7 +33,7 @@ impl Substitution {
         } else {
             Err(ParseError {
                 message: "Expected substitution",
-                position: reader.posistion(),
+                position: reader.position(),
             })
         }
     }
@@ -53,7 +53,7 @@ mod tests {
                 position: 0,
             })
         );
-        assert_eq!(reader.posistion(), 0);
+        assert_eq!(reader.position(), 0);
     }
 
     #[test]
@@ -66,7 +66,7 @@ mod tests {
                 position: 1,
             })
         );
-        assert_eq!(reader.posistion(), 1);
+        assert_eq!(reader.position(), 1);
     }
 
     #[test]
@@ -79,7 +79,7 @@ mod tests {
                 position: 1,
             })
         );
-        assert_eq!(reader.posistion(), 2);
+        assert_eq!(reader.position(), 2);
     }
 
     #[test]
@@ -92,7 +92,7 @@ mod tests {
                 replacement: "".to_string()
             })
         );
-        assert_eq!(reader.posistion(), 2);
+        assert_eq!(reader.position(), 2);
     }
 
     #[test]
@@ -105,7 +105,7 @@ mod tests {
                 replacement: "".to_string()
             })
         );
-        assert_eq!(reader.posistion(), 4);
+        assert_eq!(reader.position(), 4);
     }
 
     #[test]
@@ -118,7 +118,7 @@ mod tests {
                 replacement: "".to_string()
             })
         );
-        assert_eq!(reader.posistion(), 3);
+        assert_eq!(reader.position(), 3);
     }
 
     #[test]
@@ -131,7 +131,7 @@ mod tests {
                 replacement: "".to_string()
             })
         );
-        assert_eq!(reader.posistion(), 5);
+        assert_eq!(reader.position(), 5);
     }
 
     #[test]
@@ -144,7 +144,7 @@ mod tests {
                 replacement: "d".to_string()
             })
         );
-        assert_eq!(reader.posistion(), 4);
+        assert_eq!(reader.position(), 4);
     }
 
     #[test]
@@ -157,7 +157,7 @@ mod tests {
                 replacement: "def".to_string()
             })
         );
-        assert_eq!(reader.posistion(), 8);
+        assert_eq!(reader.position(), 8);
     }
 
     #[test]
@@ -170,6 +170,6 @@ mod tests {
                 replacement: "d//e/".to_string()
             })
         );
-        assert_eq!(reader.posistion(), 10);
+        assert_eq!(reader.position(), 10);
     }
 }

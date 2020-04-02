@@ -37,7 +37,7 @@ mod tests {
                 position: 0,
             })
         );
-        assert_eq!(reader.posistion(), 0);
+        assert_eq!(reader.position(), 0);
     }
 
     #[test]
@@ -50,55 +50,55 @@ mod tests {
                 position: 0,
             })
         );
-        assert_eq!(reader.posistion(), 0);
+        assert_eq!(reader.position(), 0);
     }
 
     #[test]
     fn zero() {
         let mut reader = Reader::new("0");
         assert_eq!(parse_usize(&mut reader), Ok(0));
-        assert_eq!(reader.posistion(), 1);
+        assert_eq!(reader.position(), 1);
     }
 
     #[test]
     fn zero_ignore_rest() {
         let mut reader = Reader::new("0a");
         assert_eq!(parse_usize(&mut reader), Ok(0));
-        assert_eq!(reader.posistion(), 1);
+        assert_eq!(reader.position(), 1);
     }
 
     #[test]
     fn only_a_first_zero() {
         let mut reader = Reader::new("00");
         assert_eq!(parse_usize(&mut reader), Ok(0));
-        assert_eq!(reader.posistion(), 1);
+        assert_eq!(reader.position(), 1);
     }
 
     #[test]
     fn positive_number_single_digit() {
         let mut reader = Reader::new("1");
         assert_eq!(parse_usize(&mut reader), Ok(1));
-        assert_eq!(reader.posistion(), 1);
+        assert_eq!(reader.position(), 1);
     }
 
     #[test]
     fn positive_number_single_digit_ignore_rest() {
         let mut reader = Reader::new("1a");
         assert_eq!(parse_usize(&mut reader), Ok(1));
-        assert_eq!(reader.posistion(), 1);
+        assert_eq!(reader.position(), 1);
     }
 
     #[test]
     fn positive_number_multiple_digits() {
         let mut reader = Reader::new("1234567890");
         assert_eq!(parse_usize(&mut reader), Ok(1234567890));
-        assert_eq!(reader.posistion(), 10);
+        assert_eq!(reader.position(), 10);
     }
 
     #[test]
     fn positive_number_multiple_digits_ignore_rest() {
         let mut reader = Reader::new("1234567890a");
         assert_eq!(parse_usize(&mut reader), Ok(1234567890));
-        assert_eq!(reader.posistion(), 10);
+        assert_eq!(reader.position(), 10);
     }
 }

@@ -4,7 +4,7 @@ use crate::pattern::reader::Reader;
 use crate::pattern::variable::Variable;
 
 impl Variable {
-    fn parse(string: &str) -> Result<Self, ParseError> {
+    pub fn parse(string: &str) -> Result<Self, ParseError> {
         let mut reader = Reader::new(string);
 
         let variable = match reader.peek() {
@@ -40,7 +40,7 @@ impl Variable {
         } else {
             Err(ParseError {
                 message: "Unexpected character",
-                position: reader.posistion(),
+                position: reader.position(),
             })
         }
     }

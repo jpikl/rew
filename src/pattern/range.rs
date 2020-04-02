@@ -41,14 +41,14 @@ impl Range {
             }
             _ => Err(ParseError {
                 message: "Expected range",
-                position: reader.posistion(),
+                position: reader.position(),
             }),
         }
     }
 }
 
 fn parse_offset(reader: &mut Reader) -> Result<usize, ParseError> {
-    let position = reader.posistion();
+    let position = reader.position();
     let index = parse_usize(reader)?;
 
     if index < 1 {
@@ -62,7 +62,7 @@ fn parse_offset(reader: &mut Reader) -> Result<usize, ParseError> {
 }
 
 fn parse_length(reader: &mut Reader, offset: usize) -> Result<usize, ParseError> {
-    let position = reader.posistion();
+    let position = reader.position();
     let index = parse_usize(reader)?;
 
     if index < 1 {
@@ -94,7 +94,7 @@ mod tests {
                 position: 0,
             })
         );
-        assert_eq!(reader.posistion(), 0);
+        assert_eq!(reader.position(), 0);
     }
 
     #[test]
@@ -107,7 +107,7 @@ mod tests {
                 position: 0,
             })
         );
-        assert_eq!(reader.posistion(), 0);
+        assert_eq!(reader.position(), 0);
     }
 
     #[test]
@@ -120,7 +120,7 @@ mod tests {
                 length: 0
             })
         );
-        assert_eq!(reader.posistion(), 1);
+        assert_eq!(reader.position(), 1);
     }
 
     #[test]
@@ -133,7 +133,7 @@ mod tests {
                 length: 0
             })
         );
-        assert_eq!(reader.posistion(), 1);
+        assert_eq!(reader.position(), 1);
     }
 
     #[test]
@@ -146,7 +146,7 @@ mod tests {
                 position: 0,
             })
         );
-        assert_eq!(reader.posistion(), 1);
+        assert_eq!(reader.position(), 1);
     }
 
     #[test]
@@ -159,7 +159,7 @@ mod tests {
                 length: 0
             })
         );
-        assert_eq!(reader.posistion(), 2);
+        assert_eq!(reader.position(), 2);
     }
 
     #[test]
@@ -172,7 +172,7 @@ mod tests {
                 length: 0
             })
         );
-        assert_eq!(reader.posistion(), 3);
+        assert_eq!(reader.position(), 3);
     }
 
     #[test]
@@ -185,7 +185,7 @@ mod tests {
                 position: 1,
             })
         );
-        assert_eq!(reader.posistion(), 2);
+        assert_eq!(reader.position(), 2);
     }
 
     #[test]
@@ -198,7 +198,7 @@ mod tests {
                 length: 1
             })
         );
-        assert_eq!(reader.posistion(), 2);
+        assert_eq!(reader.position(), 2);
     }
 
     #[test]
@@ -211,7 +211,7 @@ mod tests {
                 length: 10
             })
         );
-        assert_eq!(reader.posistion(), 3);
+        assert_eq!(reader.position(), 3);
     }
 
     #[test]
@@ -224,7 +224,7 @@ mod tests {
                 position: 2,
             })
         );
-        assert_eq!(reader.posistion(), 3);
+        assert_eq!(reader.position(), 3);
     }
 
     #[test]
@@ -237,7 +237,7 @@ mod tests {
                 length: 1
             })
         );
-        assert_eq!(reader.posistion(), 3);
+        assert_eq!(reader.position(), 3);
     }
 
     #[test]
@@ -250,7 +250,7 @@ mod tests {
                 length: 2
             })
         );
-        assert_eq!(reader.posistion(), 3);
+        assert_eq!(reader.position(), 3);
     }
 
     #[test]
@@ -263,7 +263,7 @@ mod tests {
                 length: 9
             })
         );
-        assert_eq!(reader.posistion(), 4);
+        assert_eq!(reader.position(), 4);
     }
 
     #[test]
@@ -276,7 +276,7 @@ mod tests {
                 length: 1
             })
         );
-        assert_eq!(reader.posistion(), 3);
+        assert_eq!(reader.position(), 3);
     }
 
     #[test]
@@ -289,6 +289,6 @@ mod tests {
                 length: 1
             })
         );
-        assert_eq!(reader.posistion(), 3);
+        assert_eq!(reader.position(), 3);
     }
 }

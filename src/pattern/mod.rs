@@ -25,8 +25,8 @@ enum PatternItem {
 }
 
 #[derive(Debug, PartialEq)]
-struct Parsed<T> {
+pub struct Parsed<T> {
     value: T,
-    source_position: usize,
-    source_length: usize,
+    start: usize,
+    end: usize,
 }

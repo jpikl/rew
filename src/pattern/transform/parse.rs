@@ -5,7 +5,7 @@ use crate::pattern::substitution::Substitution;
 use crate::pattern::transform::Transform;
 
 impl Transform {
-    fn parse(string: &str) -> Result<Self, ParseError> {
+    pub fn parse(string: &str) -> Result<Self, ParseError> {
         let mut reader = Reader::new(string);
 
         let transform = match reader.read() {
@@ -39,7 +39,7 @@ impl Transform {
         } else {
             Err(ParseError {
                 message: "Unexpected character",
-                position: reader.posistion(),
+                position: reader.position(),
             })
         }
     }
