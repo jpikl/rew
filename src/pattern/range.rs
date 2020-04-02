@@ -19,21 +19,21 @@ impl Range {
                     reader.read();
                     if let Some('0'..='9') = reader.peek() {
                         let length = parse_length(reader, offset)?;
-                        Ok(Range { offset, length })
+                        Ok(Self { offset, length })
                     } else {
-                        Ok(Range { offset, length: 0 })
+                        Ok(Self { offset, length: 0 })
                     }
                 } else {
-                    Ok(Range { offset, length: 1 })
+                    Ok(Self { offset, length: 1 })
                 }
             }
             Some(DIVIDER) => {
                 reader.read();
                 if let Some('0'..='9') = reader.peek() {
                     let length = parse_length(reader, 0)?;
-                    Ok(Range { offset: 0, length })
+                    Ok(Self { offset: 0, length })
                 } else {
-                    Ok(Range {
+                    Ok(Self {
                         offset: 0,
                         length: 0,
                     })

@@ -29,7 +29,7 @@ impl Substitution {
             }
 
             let replacement = reader.consume().into_iter().collect();
-            Ok(Substitution { value, replacement })
+            Ok(Self { value, replacement })
         } else {
             Err(ParseError {
                 message: "Expected substitution",
