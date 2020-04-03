@@ -1,4 +1,4 @@
-use crate::pattern::error::ParseError;
+use crate::pattern::parse::ParseError;
 use crate::pattern::reader::Reader;
 
 #[derive(Debug, PartialEq)]

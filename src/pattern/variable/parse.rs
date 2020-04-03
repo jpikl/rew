@@ -1,5 +1,5 @@
-use crate::pattern::error::ParseError;
 use crate::pattern::number::parse_usize;
+use crate::pattern::parse::ParseError;
 use crate::pattern::reader::Reader;
 use crate::pattern::variable::Variable;
 

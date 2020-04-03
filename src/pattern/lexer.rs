@@ -1,5 +1,5 @@
+use crate::pattern::parse::Parsed;
 use crate::pattern::reader::Reader;
-use crate::pattern::Parsed;
 
 const EXPR_START: char = '{';
 const EXPR_END: char = '}';

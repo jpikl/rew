@@ -1,8 +1,8 @@
-use crate::pattern::error::ParseError;
 use crate::pattern::lexer::{Lexer, Token};
+use crate::pattern::parse::{ParseError, Parsed};
 use crate::pattern::transform::Transform;
 use crate::pattern::variable::Variable;
-use crate::pattern::{Parsed, PatternItem};
+use crate::pattern::PatternItem;
 
 pub struct Parser {
     lexer: Lexer,

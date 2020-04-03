@@ -1,5 +1,5 @@
+use crate::pattern::eval::EvalContext;
 use crate::pattern::variable::Variable;
-use crate::pattern::EvalContext;
 use std::ffi::OsStr;
 use std::path::Path;
 use uuid::Uuid;
