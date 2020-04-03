@@ -1,18 +1,11 @@
 use crate::pattern::variable::Variable;
+use crate::pattern::EvalContext;
 use std::ffi::OsStr;
 use std::path::Path;
 use uuid::Uuid;
 
-#[derive(Debug, PartialEq, Clone)]
-struct EvalContext<'a> {
-    path: &'a Path,
-    local_counter: u32,
-    global_counter: u32,
-    capture_groups: Vec<String>,
-}
-
 impl Variable {
-    fn eval(&self, context: &mut EvalContext) -> Result<String, &'static str> {
+    pub fn eval(&self, context: &mut EvalContext) -> Result<String, &'static str> {
         match self {
             Variable::Filename => Ok(context
                 .path

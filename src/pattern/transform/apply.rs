@@ -4,7 +4,7 @@ use crate::pattern::transform::Transform;
 use unidecode::unidecode;
 
 impl Transform {
-    fn apply(&self, mut string: String) -> String {
+    pub fn apply(&self, mut string: String) -> String {
         match self {
             Transform::Substring(Range { offset, length }) => {
                 if *offset > 0 {
