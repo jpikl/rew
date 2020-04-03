@@ -24,7 +24,8 @@ impl Substitution {
             if value.is_empty() {
                 return Err(ParseError {
                     message: "No value to substitute",
-                    position: value_position,
+                    start: value_position,
+                    end: value_position,
                 });
             }
 
@@ -33,7 +34,8 @@ impl Substitution {
         } else {
             Err(ParseError {
                 message: "Expected substitution",
-                position: reader.position(),
+                start: reader.position(),
+                end: reader.end(),
             })
         }
     }
@@ -50,7 +52,8 @@ mod tests {
             Substitution::parse(&mut reader),
             Err(ParseError {
                 message: "Expected substitution",
-                position: 0,
+                start: 0,
+                end: 0,
             })
         );
         assert_eq!(reader.position(), 0);
@@ -63,7 +66,8 @@ mod tests {
             Substitution::parse(&mut reader),
             Err(ParseError {
                 message: "No value to substitute",
-                position: 1,
+                start: 1,
+                end: 1,
             })
         );
         assert_eq!(reader.position(), 1);
@@ -76,7 +80,8 @@ mod tests {
             Substitution::parse(&mut reader),
             Err(ParseError {
                 message: "No value to substitute",
-                position: 1,
+                start: 1,
+                end: 1,
             })
         );
         assert_eq!(reader.position(), 2);

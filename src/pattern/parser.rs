@@ -30,7 +30,8 @@ impl Parser {
                 Token::ExprStart => self.parse_expression(),
                 _ => Err(ParseError {
                     message: "Unexpected token",
-                    position: token.start,
+                    start: token.start,
+                    end: token.end,
                 }),
             }
         } else {
@@ -82,7 +83,8 @@ impl Parser {
         } else {
             Err(ParseError {
                 message: "Expected pipe or expression end",
-                position: self.end,
+                start: self.end,
+                end: self.end,
             })
         }
     }
@@ -99,12 +101,14 @@ impl Parser {
         let position = self.end;
         let token = self.fetch_token().ok_or_else(|| ParseError {
             message: err_message,
-            position,
+            start: position,
+            end: position,
         })?;
         if let Token::Raw(raw) = token.value {
             Ok(Parsed {
                 value: parse(&raw).map_err(|mut error| {
-                    error.position += position;
+                    error.start += position;
+                    error.end += position;
                     error
                 })?,
                 start: token.start,
@@ -113,7 +117,8 @@ impl Parser {
         } else {
             Err(ParseError {
                 message: err_message,
-                position: token.start,
+                start: token.start,
+                end: token.end,
             })
         }
     }
@@ -226,7 +231,8 @@ mod tests {
         let mut parser = Parser::new("{x}");
         parser.assert_error(ParseError {
             message: "Unknown variable",
-            position: 1,
+            start: 1,
+            end: 2,
         });
     }
 
@@ -235,7 +241,8 @@ mod tests {
         let mut parser = Parser::new("{f|s2-1}");
         parser.assert_error(ParseError {
             message: "Range end cannot precede start",
-            position: 6,
+            start: 4,
+            end: 7,
         });
     }
 
@@ -249,7 +256,8 @@ mod tests {
         });
         parser.assert_error(ParseError {
             message: "Unexpected token",
-            position: 1,
+            start: 1,
+            end: 2,
         });
     }
 
@@ -258,7 +266,8 @@ mod tests {
         let mut parser = Parser::new("{");
         parser.assert_error(ParseError {
             message: "Expected variable",
-            position: 1,
+            start: 1,
+            end: 1,
         });
     }
 
@@ -267,7 +276,8 @@ mod tests {
         let mut parser = Parser::new("{f");
         parser.assert_error(ParseError {
             message: "Expected pipe or expression end",
-            position: 2,
+            start: 2,
+            end: 2,
         });
     }
 
@@ -276,7 +286,8 @@ mod tests {
         let mut parser = Parser::new("{f|");
         parser.assert_error(ParseError {
             message: "Expected transformation",
-            position: 3,
+            start: 3,
+            end: 3,
         });
     }
 

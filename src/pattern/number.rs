@@ -18,7 +18,8 @@ pub fn parse_usize(reader: &mut Reader) -> Result<usize, ParseError> {
         }
         _ => Err(ParseError {
             message: "Expected number",
-            position: 0,
+            start: reader.position(),
+            end: reader.end(),
         }),
     }
 }
@@ -34,7 +35,8 @@ mod tests {
             parse_usize(&mut reader),
             Err(ParseError {
                 message: "Expected number",
-                position: 0,
+                start: 0,
+                end: 0,
             })
         );
         assert_eq!(reader.position(), 0);
@@ -42,12 +44,13 @@ mod tests {
 
     #[test]
     fn non_digit_error() {
-        let mut reader = Reader::new("a");
+        let mut reader = Reader::new("ab");
         assert_eq!(
             parse_usize(&mut reader),
             Err(ParseError {
                 message: "Expected number",
-                position: 0,
+                start: 0,
+                end: 2,
             })
         );
         assert_eq!(reader.position(), 0);

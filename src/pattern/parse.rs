@@ -11,7 +11,8 @@ pub struct Parsed<T> {
 #[derive(Debug, PartialEq)]
 pub struct ParseError {
     pub message: &'static str,
-    pub position: usize,
+    pub start: usize,
+    pub end: usize,
 }
 
 impl Pattern {
@@ -26,7 +27,8 @@ impl Pattern {
         if items.is_empty() {
             Err(ParseError {
                 message: "Empty pattern",
-                position: 0,
+                start: 0,
+                end: 0,
             })
         } else {
             Ok(Self { items })
@@ -38,7 +40,7 @@ impl Pattern {
 mod tests {
     use super::*;
     use crate::pattern::variable::Variable;
-    use crate::pattern::{Parsed, PatternItem};
+    use crate::pattern::PatternItem;
 
     #[test]
     fn empty_error() {
@@ -46,7 +48,8 @@ mod tests {
             "",
             ParseError {
                 message: "Empty pattern",
-                position: 0,
+                start: 0,
+                end: 0,
             },
         );
     }
@@ -95,7 +98,8 @@ mod tests {
             "a{E",
             ParseError {
                 message: "Expected pipe or expression end",
-                position: 3,
+                start: 3,
+                end: 3,
             },
         );
     }

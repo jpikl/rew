@@ -6,6 +6,7 @@ use crate::pattern::variable::Variable;
 impl Variable {
     pub fn parse(string: &str) -> Result<Self, ParseError> {
         let mut reader = Reader::new(string);
+        let position = reader.position();
 
         let variable = match reader.peek() {
             Some('0'..='9') => Variable::CaptureGroup(parse_usize(&mut reader)?),
@@ -22,15 +23,17 @@ impl Variable {
                     _ => {
                         return Err(ParseError {
                             message: "Unknown variable",
-                            position: 0,
+                            start: position,
+                            end: reader.end(),
                         });
                     }
                 }
             }
             None => {
                 return Err(ParseError {
-                    message: "Empty input",
-                    position: 0,
+                    message: "Expected variable",
+                    start: position,
+                    end: reader.end(),
                 })
             }
         };
@@ -39,8 +42,9 @@ impl Variable {
             Ok(variable)
         } else {
             Err(ParseError {
-                message: "Unexpected character",
-                position: reader.position(),
+                message: "Unexpected characters after variable",
+                start: reader.position(),
+                end: reader.end(),
             })
         }
     }
@@ -102,10 +106,11 @@ mod tests {
     #[test]
     fn unknown_variable_error() {
         assert_eq!(
-            Variable::parse("_"),
+            Variable::parse("__"),
             Err(ParseError {
                 message: "Unknown variable",
-                position: 0,
+                start: 0,
+                end: 2,
             })
         );
     }
@@ -113,17 +118,19 @@ mod tests {
     #[test]
     fn unexpected_character_error() {
         assert_eq!(
-            Variable::parse("f_"),
+            Variable::parse("f__"),
             Err(ParseError {
-                message: "Unexpected character",
-                position: 1,
+                message: "Unexpected characters after variable",
+                start: 1,
+                end: 3,
             })
         );
         assert_eq!(
-            Variable::parse("123_"),
+            Variable::parse("123__"),
             Err(ParseError {
-                message: "Unexpected character",
-                position: 3,
+                message: "Unexpected characters after variable",
+                start: 3,
+                end: 5,
             })
         );
     }
@@ -133,8 +140,9 @@ mod tests {
         assert_eq!(
             Variable::parse(""),
             Err(ParseError {
-                message: "Empty input",
-                position: 0,
+                message: "Expected variable",
+                start: 0,
+                end: 0,
             })
         )
     }

@@ -15,6 +15,10 @@ impl Reader {
         self.position
     }
 
+    pub fn end(&self) -> usize {
+        self.chars.len()
+    }
+
     pub fn read(&mut self) -> Option<char> {
         self.peek().map(|ch| {
             self.position += 1;
@@ -23,7 +27,7 @@ impl Reader {
     }
 
     pub fn peek(&self) -> Option<char> {
-        if self.position < self.chars.len() {
+        if self.position < self.end() {
             Some(self.chars[self.position])
         } else {
             None
@@ -32,7 +36,7 @@ impl Reader {
 
     pub fn consume(&mut self) -> &[char] {
         let remainder = &self.chars[self.position..];
-        self.position = self.chars.len();
+        self.position = self.end();
         remainder
     }
 }

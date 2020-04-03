@@ -14,11 +14,12 @@ impl Range {
     pub fn parse(reader: &mut Reader) -> Result<Self, ParseError> {
         match reader.peek() {
             Some('0'..='9') => {
+                let position = reader.position();
                 let offset = parse_offset(reader)?;
                 if let Some(DIVIDER) = reader.peek() {
                     reader.read();
                     if let Some('0'..='9') = reader.peek() {
-                        let length = parse_length(reader, offset)?;
+                        let length = parse_length(reader, offset, position)?;
                         Ok(Self { offset, length })
                     } else {
                         Ok(Self { offset, length: 0 })
@@ -30,7 +31,7 @@ impl Range {
             Some(DIVIDER) => {
                 reader.read();
                 if let Some('0'..='9') = reader.peek() {
-                    let length = parse_length(reader, 0)?;
+                    let length = parse_length(reader, 0, 0)?;
                     Ok(Self { offset: 0, length })
                 } else {
                     Ok(Self {
@@ -41,7 +42,8 @@ impl Range {
             }
             _ => Err(ParseError {
                 message: "Expected range",
-                position: reader.position(),
+                start: reader.position(),
+                end: reader.end(),
             }),
         }
     }
@@ -54,26 +56,33 @@ fn parse_offset(reader: &mut Reader) -> Result<usize, ParseError> {
     if index < 1 {
         Err(ParseError {
             message: "Range indices starts from 1",
-            position,
+            start: position,
+            end: reader.position(),
         })
     } else {
         Ok(index - 1)
     }
 }
 
-fn parse_length(reader: &mut Reader, offset: usize) -> Result<usize, ParseError> {
+fn parse_length(
+    reader: &mut Reader,
+    offset: usize,
+    offset_position: usize,
+) -> Result<usize, ParseError> {
     let position = reader.position();
     let index = parse_usize(reader)?;
 
     if index < 1 {
         Err(ParseError {
             message: "Range indices starts from 1",
-            position,
+            start: position,
+            end: reader.position(),
         })
     } else if index <= offset {
         Err(ParseError {
             message: "Range end cannot precede start",
-            position,
+            start: offset_position,
+            end: reader.position(),
         })
     } else {
         Ok(index - offset)
@@ -91,7 +100,8 @@ mod tests {
             Range::parse(&mut reader),
             Err(ParseError {
                 message: "Expected range",
-                position: 0,
+                start: 0,
+                end: 0,
             })
         );
         assert_eq!(reader.position(), 0);
@@ -99,12 +109,13 @@ mod tests {
 
     #[test]
     fn non_range_error() {
-        let mut reader = Reader::new("a");
+        let mut reader = Reader::new("ab");
         assert_eq!(
             Range::parse(&mut reader),
             Err(ParseError {
                 message: "Expected range",
-                position: 0,
+                start: 0,
+                end: 2,
             })
         );
         assert_eq!(reader.position(), 0);
@@ -143,7 +154,8 @@ mod tests {
             Range::parse(&mut reader),
             Err(ParseError {
                 message: "Range indices starts from 1",
-                position: 0,
+                start: 0,
+                end: 1,
             })
         );
         assert_eq!(reader.position(), 1);
@@ -182,7 +194,8 @@ mod tests {
             Range::parse(&mut reader),
             Err(ParseError {
                 message: "Range indices starts from 1",
-                position: 1,
+                start: 1,
+                end: 2,
             })
         );
         assert_eq!(reader.position(), 2);
@@ -216,15 +229,16 @@ mod tests {
 
     #[test]
     fn start_greater_than_end_error() {
-        let mut reader = Reader::new("6-5");
+        let mut reader = Reader::new("10-5");
         assert_eq!(
             Range::parse(&mut reader),
             Err(ParseError {
                 message: "Range end cannot precede start",
-                position: 2,
+                start: 0,
+                end: 4,
             })
         );
-        assert_eq!(reader.position(), 3);
+        assert_eq!(reader.position(), 4);
     }
 
     #[test]

@@ -7,6 +7,7 @@ use crate::pattern::transform::Transform;
 impl Transform {
     pub fn parse(string: &str) -> Result<Self, ParseError> {
         let mut reader = Reader::new(string);
+        let position = reader.position();
 
         let transform = match reader.read() {
             Some('s') => Transform::Substring(Range::parse(&mut reader)?),
@@ -23,13 +24,15 @@ impl Transform {
             Some(_) => {
                 return Err(ParseError {
                     message: "Unknown transformation",
-                    position: 0,
+                    start: position,
+                    end: reader.end(),
                 });
             }
             None => {
                 return Err(ParseError {
-                    message: "Empty input",
-                    position: 0,
+                    message: "Expected transformation",
+                    start: position,
+                    end: reader.end(),
                 })
             }
         };
@@ -38,8 +41,9 @@ impl Transform {
             Ok(transform)
         } else {
             Err(ParseError {
-                message: "Unexpected character",
-                position: reader.position(),
+                message: "Unexpected characters after transformation",
+                start: reader.position(),
+                end: reader.end(),
             })
         }
     }
@@ -55,7 +59,8 @@ mod tests {
             Transform::parse("s"),
             Err(ParseError {
                 message: "Expected range",
-                position: 1,
+                start: 1,
+                end: 1,
             })
         );
         assert_eq!(
@@ -101,7 +106,8 @@ mod tests {
             Transform::parse("S"),
             Err(ParseError {
                 message: "Expected range",
-                position: 1,
+                start: 1,
+                end: 1,
             })
         );
         assert_eq!(
@@ -147,7 +153,8 @@ mod tests {
             Transform::parse("r"),
             Err(ParseError {
                 message: "Expected substitution",
-                position: 1,
+                start: 1,
+                end: 1,
             })
         );
         assert_eq!(
@@ -172,7 +179,8 @@ mod tests {
             Transform::parse("R"),
             Err(ParseError {
                 message: "Expected substitution",
-                position: 1,
+                start: 1,
+                end: 1,
             })
         );
         assert_eq!(
@@ -245,10 +253,11 @@ mod tests {
     #[test]
     fn unknown_transform_error() {
         assert_eq!(
-            Transform::parse("_"),
+            Transform::parse("__"),
             Err(ParseError {
                 message: "Unknown transformation",
-                position: 0,
+                start: 0,
+                end: 2,
             })
         );
     }
@@ -256,10 +265,11 @@ mod tests {
     #[test]
     fn unexpected_character_error() {
         assert_eq!(
-            Transform::parse("u_"),
+            Transform::parse("u__"),
             Err(ParseError {
-                message: "Unexpected character",
-                position: 1,
+                message: "Unexpected characters after transformation",
+                start: 1,
+                end: 3,
             })
         );
     }
@@ -269,8 +279,9 @@ mod tests {
         assert_eq!(
             Transform::parse(""),
             Err(ParseError {
-                message: "Empty input",
-                position: 0,
+                message: "Expected transformation",
+                start: 0,
+                end: 0,
             })
         )
     }
