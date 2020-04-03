@@ -132,7 +132,6 @@ mod tests {
     use super::*;
     use crate::pattern::range::Range;
     use crate::pattern::substitution::Substitution;
-    use crate::pattern::Pattern;
 
     #[test]
     fn empty() {
