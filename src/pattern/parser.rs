@@ -73,11 +73,18 @@ impl Parser {
                 Token::Pipe => {
                     transforms.push(self.parse_transform()?);
                 }
+                Token::ExprStart => {
+                    return Err(ParseError {
+                        typ: ErrorType::UnexpectedExprStart,
+                        start: self.start,
+                        end: self.end,
+                    })
+                }
                 Token::ExprEnd => {
                     expression_closed = true;
                     break;
                 }
-                _ => {
+                Token::Raw(_) => {
                     break;
                 }
             }
@@ -252,7 +259,17 @@ mod tests {
     }
 
     #[test]
-    fn unexpected_token_error() {
+    fn unexpected_expr_start_error() {
+        let mut parser = Parser::new("{f{");
+        parser.assert_error(ParseError {
+            typ: ErrorType::UnexpectedExprStart,
+            start: 2,
+            end: 3,
+        });
+    }
+
+    #[test]
+    fn unexpected_expr_end_error() {
         let mut parser = Parser::new("a}b");
         parser.assert_item(Parsed {
             value: PatternItem::Constant("a".to_string()),
