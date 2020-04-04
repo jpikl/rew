@@ -62,6 +62,7 @@ fn os_str_to_string(str: &OsStr) -> String {
 mod tests {
     use super::*;
     use regex::Regex;
+    use std::path::Path;
 
     #[test]
     fn filename() {
