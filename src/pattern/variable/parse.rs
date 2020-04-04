@@ -25,7 +25,7 @@ impl Variable {
                         return Err(ParseError {
                             typ: ErrorType::UnknownVariable,
                             start: position,
-                            end: reader.end(),
+                            end: reader.position(),
                         });
                     }
                 }
@@ -111,7 +111,7 @@ mod tests {
             Err(ParseError {
                 typ: ErrorType::UnknownVariable,
                 start: 0,
-                end: 2,
+                end: 1,
             })
         );
     }

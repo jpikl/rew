@@ -2,7 +2,6 @@ use crate::pattern::error::ErrorType;
 use crate::pattern::eval::EvalContext;
 use crate::pattern::variable::Variable;
 use std::ffi::OsStr;
-use std::path::Path;
 use uuid::Uuid;
 
 impl Variable {

@@ -26,7 +26,7 @@ impl Transform {
                 return Err(ParseError {
                     typ: ErrorType::UnknownTransform,
                     start: position,
-                    end: reader.end(),
+                    end: reader.position(),
                 });
             }
             None => {
@@ -258,7 +258,7 @@ mod tests {
             Err(ParseError {
                 typ: ErrorType::UnknownTransform,
                 start: 0,
-                end: 2,
+                end: 1,
             })
         );
     }
