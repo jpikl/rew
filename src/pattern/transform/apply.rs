@@ -50,15 +50,15 @@ impl Transform {
                 string.retain(|ch| ch.is_ascii());
                 string
             }
-            Transform::LeftPad(pad_chars) => {
-                for pad_char in pad_chars.iter().rev().skip(string.len()) {
-                    string.insert(0, *pad_char);
+            Transform::LeftPad(padding) => {
+                for char in padding.chars().rev().skip(string.len()) {
+                    string.insert(0, char);
                 }
                 string
             }
-            Transform::RightPad(pad_chars) => {
-                for pad_char in pad_chars.iter().skip(string.len()) {
-                    string.push(*pad_char);
+            Transform::RightPad(padding) => {
+                for char in padding.chars().skip(string.len()) {
+                    string.push(char);
                 }
                 string
             }
@@ -358,42 +358,42 @@ mod tests {
     #[test]
     fn left_pad_all() {
         let mut string = "".to_string();
-        string = Transform::LeftPad(vec!['0', '1', '2', '3']).apply(string);
+        string = Transform::LeftPad("0123".to_string()).apply(string);
         assert_eq!(string, "0123");
     }
 
     #[test]
     fn left_pad_some() {
         let mut string = "ab".to_string();
-        string = Transform::LeftPad(vec!['0', '1', '2', '3']).apply(string);
+        string = Transform::LeftPad("0123".to_string()).apply(string);
         assert_eq!(string, "01ab");
     }
 
     #[test]
     fn left_pad_none() {
         let mut string = "abcd".to_string();
-        string = Transform::LeftPad(vec!['0', '1', '2', '3']).apply(string);
+        string = Transform::LeftPad("0123".to_string()).apply(string);
         assert_eq!(string, "abcd");
     }
 
     #[test]
     fn right_pad_all() {
         let mut string = "".to_string();
-        string = Transform::RightPad(vec!['0', '1', '2', '3']).apply(string);
+        string = Transform::RightPad("0123".to_string()).apply(string);
         assert_eq!(string, "0123");
     }
 
     #[test]
     fn right_pad_some() {
         let mut string = "ab".to_string();
-        string = Transform::RightPad(vec!['0', '1', '2', '3']).apply(string);
+        string = Transform::RightPad("0123".to_string()).apply(string);
         assert_eq!(string, "ab23");
     }
 
     #[test]
     fn right_pad_none() {
         let mut string = "abcd".to_string();
-        string = Transform::RightPad(vec!['0', '1', '2', '3']).apply(string);
+        string = Transform::RightPad("0123".to_string()).apply(string);
         assert_eq!(string, "abcd");
     }
 }

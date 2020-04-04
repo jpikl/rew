@@ -2,6 +2,7 @@ use crate::pattern::parse::Parsed;
 use crate::pattern::transform::Transform;
 use crate::pattern::variable::Variable;
 
+mod char;
 mod error;
 mod eval;
 mod lexer;

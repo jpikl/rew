@@ -1,22 +1,27 @@
+use crate::pattern::char::Char;
+
 pub struct Reader {
-    chars: Vec<char>,
+    chars: Vec<Char>,
     position: usize,
 }
 
+impl From<&str> for Reader {
+    fn from(string: &str) -> Self {
+        Self::new(Char::raw_vec(string))
+    }
+}
+
 impl Reader {
-    pub fn new(string: &str) -> Self {
-        Self {
-            chars: string.chars().collect(),
-            position: 0,
-        }
+    pub fn new(chars: Vec<Char>) -> Self {
+        Self { chars, position: 0 }
     }
 
     pub fn position(&self) -> usize {
-        self.position
+        Char::sum_len(&self.chars[..self.position])
     }
 
     pub fn end(&self) -> usize {
-        self.chars.len()
+        Char::sum_len(&self.chars)
     }
 
     pub fn read(&mut self) -> Option<char> {
@@ -28,16 +33,16 @@ impl Reader {
 
     pub fn peek(&self) -> Option<char> {
         if self.position < self.end() {
-            Some(self.chars[self.position])
+            Some(self.chars[self.position].value())
         } else {
             None
         }
     }
 
-    pub fn consume(&mut self) -> &[char] {
+    pub fn consume(&mut self) -> String {
         let remainder = &self.chars[self.position..];
         self.position = self.end();
-        remainder
+        Char::join(remainder)
     }
 }
 
@@ -47,12 +52,12 @@ mod tests {
 
     #[test]
     fn read_returns_none_for_empty() {
-        assert_eq!(Reader::new("").read(), None);
+        assert_eq!(Reader::from("").read(), None);
     }
 
     #[test]
     fn readt_consumes_chars() {
-        let mut reader = Reader::new("abc");
+        let mut reader = Reader::from("abc");
         assert_eq!(reader.read(), Some('a'));
         assert_eq!(reader.read(), Some('b'));
         assert_eq!(reader.read(), Some('c'));
@@ -61,12 +66,12 @@ mod tests {
 
     #[test]
     fn peek_returns_none_for_empty() {
-        assert_eq!(Reader::new("").peek(), None);
+        assert_eq!(Reader::from("").peek(), None);
     }
 
     #[test]
     fn peek_returns_chars_at_positions() {
-        let mut reader = Reader::new("abc");
+        let mut reader = Reader::from("abc");
         assert_eq!(reader.peek(), Some('a'));
         reader.read();
         assert_eq!(reader.peek(), Some('b'));
@@ -78,28 +83,28 @@ mod tests {
 
     #[test]
     fn consume_returns_remaining_chars() {
-        let mut reader = Reader::new("abc");
+        let mut reader = Reader::from("abc");
         reader.read();
-        assert_eq!(reader.consume(), &['b', 'c']);
-        assert_eq!(reader.consume(), &[] as &[char]);
+        assert_eq!(reader.consume(), "bc");
+        assert_eq!(reader.consume(), "");
     }
 
     #[test]
     fn position_starts_at_zero() {
-        assert_eq!(Reader::new("").position(), 0);
-        assert_eq!(Reader::new("abc").position(), 0);
+        assert_eq!(Reader::from("").position(), 0);
+        assert_eq!(Reader::from("abc").position(), 0);
     }
 
     #[test]
     fn position_is_unchanged_by_peek() {
-        let reader = Reader::new("abc");
+        let reader = Reader::from("abc");
         reader.peek();
         assert_eq!(reader.position(), 0);
     }
 
     #[test]
     fn position_is_incremented_by_read() {
-        let mut reader = Reader::new("abc");
+        let mut reader = Reader::from("abc");
         assert_eq!(reader.position(), 0);
         reader.read();
         assert_eq!(reader.position(), 1);
@@ -111,7 +116,7 @@ mod tests {
 
     #[test]
     fn position_is_moved_to_the_end_by_consume() {
-        let mut reader = Reader::new("abc");
+        let mut reader = Reader::from("abc");
         assert_eq!(reader.position(), 0);
         reader.consume();
         assert_eq!(reader.position(), 3);

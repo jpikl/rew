@@ -15,6 +15,6 @@ pub enum Transform {
     Uppercase,
     ToAscii,
     RemoveNonAscii,
-    LeftPad(Vec<char>),
-    RightPad(Vec<char>),
+    LeftPad(String),
+    RightPad(String),
 }

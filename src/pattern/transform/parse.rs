@@ -1,3 +1,4 @@
+use crate::pattern::char::Char;
 use crate::pattern::error::ErrorType;
 use crate::pattern::parse::ParseError;
 use crate::pattern::range::Range;
@@ -6,8 +7,8 @@ use crate::pattern::substitution::Substitution;
 use crate::pattern::transform::Transform;
 
 impl Transform {
-    pub fn parse(string: &str) -> Result<Self, ParseError> {
-        let mut reader = Reader::new(string);
+    pub fn parse(chars: Vec<Char>) -> Result<Self, ParseError> {
+        let mut reader = Reader::new(chars);
         let position = reader.position();
 
         let transform = match reader.read() {
@@ -20,8 +21,8 @@ impl Transform {
             Some('U') => Transform::Uppercase,
             Some('a') => Transform::ToAscii,
             Some('A') => Transform::RemoveNonAscii,
-            Some('>') => Transform::LeftPad(reader.consume().to_vec()),
-            Some('<') => Transform::RightPad(reader.consume().to_vec()),
+            Some('>') => Transform::LeftPad(reader.consume()),
+            Some('<') => Transform::RightPad(reader.consume()),
             Some(_) => {
                 return Err(ParseError {
                     typ: ErrorType::UnknownTransform,
@@ -56,234 +57,236 @@ mod tests {
 
     #[test]
     fn substring() {
-        assert_eq!(
-            Transform::parse("s"),
-            Err(ParseError {
+        assert_err(
+            "s",
+            ParseError {
                 typ: ErrorType::ExpectedRange,
                 start: 1,
                 end: 1,
-            })
+            },
         );
-        assert_eq!(
-            Transform::parse("s5"),
-            Ok(Transform::Substring(Range {
+        assert_ok(
+            "s5",
+            Transform::Substring(Range {
                 offset: 4,
-                length: 1
-            }))
+                length: 1,
+            }),
         );
-        assert_eq!(
-            Transform::parse("s2-10"),
-            Ok(Transform::Substring(Range {
+        assert_ok(
+            "s2-10",
+            Transform::Substring(Range {
                 offset: 1,
-                length: 9
-            }))
+                length: 9,
+            }),
         );
-        assert_eq!(
-            Transform::parse("s2-"),
-            Ok(Transform::Substring(Range {
+        assert_ok(
+            "s2-",
+            Transform::Substring(Range {
                 offset: 1,
-                length: 0
-            }))
+                length: 0,
+            }),
         );
-        assert_eq!(
-            Transform::parse("s-10"),
-            Ok(Transform::Substring(Range {
+        assert_ok(
+            "s-10",
+            Transform::Substring(Range {
                 offset: 0,
-                length: 10
-            }))
+                length: 10,
+            }),
         );
-        assert_eq!(
-            Transform::parse("s-"),
-            Ok(Transform::Substring(Range {
+        assert_ok(
+            "s-",
+            Transform::Substring(Range {
                 offset: 0,
-                length: 0
-            }))
+                length: 0,
+            }),
         );
     }
 
     #[test]
     fn substring_from_end() {
-        assert_eq!(
-            Transform::parse("S"),
-            Err(ParseError {
+        assert_err(
+            "S",
+            ParseError {
                 typ: ErrorType::ExpectedRange,
                 start: 1,
                 end: 1,
-            })
+            },
         );
-        assert_eq!(
-            Transform::parse("S5"),
-            Ok(Transform::SubstringFromEnd(Range {
+        assert_ok(
+            "S5",
+            Transform::SubstringFromEnd(Range {
                 offset: 4,
-                length: 1
-            }))
+                length: 1,
+            }),
         );
-        assert_eq!(
-            Transform::parse("S2-10"),
-            Ok(Transform::SubstringFromEnd(Range {
+        assert_ok(
+            "S2-10",
+            Transform::SubstringFromEnd(Range {
                 offset: 1,
-                length: 9
-            }))
+                length: 9,
+            }),
         );
-        assert_eq!(
-            Transform::parse("S2-"),
-            Ok(Transform::SubstringFromEnd(Range {
+        assert_ok(
+            "S2-",
+            Transform::SubstringFromEnd(Range {
                 offset: 1,
-                length: 0
-            }))
+                length: 0,
+            }),
         );
-        assert_eq!(
-            Transform::parse("S-10"),
-            Ok(Transform::SubstringFromEnd(Range {
+        assert_ok(
+            "S-10",
+            Transform::SubstringFromEnd(Range {
                 offset: 0,
-                length: 10
-            }))
+                length: 10,
+            }),
         );
-        assert_eq!(
-            Transform::parse("S-"),
-            Ok(Transform::SubstringFromEnd(Range {
+        assert_ok(
+            "S-",
+            Transform::SubstringFromEnd(Range {
                 offset: 0,
-                length: 0
-            }))
+                length: 0,
+            }),
         );
     }
 
     #[test]
     fn replace_first() {
-        assert_eq!(
-            Transform::parse("r"),
-            Err(ParseError {
+        assert_err(
+            "r",
+            ParseError {
                 typ: ErrorType::ExpectedSubstitution,
                 start: 1,
                 end: 1,
-            })
+            },
         );
-        assert_eq!(
-            Transform::parse("r'ab"),
-            Ok(Transform::ReplaceFirst(Substitution {
+        assert_ok(
+            "r'ab",
+            Transform::ReplaceFirst(Substitution {
                 value: "ab".to_string(),
-                replacement: "".to_string()
-            }))
+                replacement: "".to_string(),
+            }),
         );
-        assert_eq!(
-            Transform::parse("r'ab'cd"),
-            Ok(Transform::ReplaceFirst(Substitution {
+        assert_ok(
+            "r'ab'cd",
+            Transform::ReplaceFirst(Substitution {
                 value: "ab".to_string(),
-                replacement: "cd".to_string()
-            }))
+                replacement: "cd".to_string(),
+            }),
         );
     }
 
     #[test]
     fn replace_all() {
-        assert_eq!(
-            Transform::parse("R"),
-            Err(ParseError {
+        assert_err(
+            "R",
+            ParseError {
                 typ: ErrorType::ExpectedSubstitution,
                 start: 1,
                 end: 1,
-            })
+            },
         );
-        assert_eq!(
-            Transform::parse("R'ab"),
-            Ok(Transform::ReplaceAll(Substitution {
+        assert_ok(
+            "R'ab",
+            Transform::ReplaceAll(Substitution {
                 value: "ab".to_string(),
-                replacement: "".to_string()
-            }))
+                replacement: "".to_string(),
+            }),
         );
-        assert_eq!(
-            Transform::parse("R'ab'cd"),
-            Ok(Transform::ReplaceAll(Substitution {
+        assert_ok(
+            "R'ab'cd",
+            Transform::ReplaceAll(Substitution {
                 value: "ab".to_string(),
-                replacement: "cd".to_string()
-            }))
+                replacement: "cd".to_string(),
+            }),
         );
     }
 
     #[test]
     fn trim() {
-        assert_eq!(Transform::parse("t"), Ok(Transform::Trim));
+        assert_ok("t", Transform::Trim);
     }
 
     #[test]
     fn lower_case() {
-        assert_eq!(Transform::parse("u"), Ok(Transform::Lowercase));
+        assert_ok("u", Transform::Lowercase);
     }
 
     #[test]
     fn upper_case() {
-        assert_eq!(Transform::parse("U"), Ok(Transform::Uppercase));
+        assert_ok("U", Transform::Uppercase);
     }
 
     #[test]
     fn to_ascii() {
-        assert_eq!(Transform::parse("a"), Ok(Transform::ToAscii));
+        assert_ok("a", Transform::ToAscii);
     }
 
     #[test]
     fn remove_non_ascii() {
-        assert_eq!(Transform::parse("A"), Ok(Transform::RemoveNonAscii));
+        assert_ok("A", Transform::RemoveNonAscii);
     }
 
     #[test]
     fn left_pad() {
-        assert_eq!(
-            Transform::parse(">abc"),
-            Ok(Transform::LeftPad(vec!['a', 'b', 'c']))
-        );
+        assert_ok(">abc", Transform::LeftPad("abc".to_string()));
     }
 
     #[test]
     fn left_pad_empty() {
-        assert_eq!(Transform::parse(">"), Ok(Transform::LeftPad(Vec::new())));
+        assert_ok(">", Transform::LeftPad(String::new()));
     }
 
     #[test]
     fn right_pad() {
-        assert_eq!(
-            Transform::parse("<abc"),
-            Ok(Transform::RightPad(vec!['a', 'b', 'c']))
-        );
+        assert_ok("<abc", Transform::RightPad("abc".to_string()));
     }
 
     #[test]
     fn right_pad_empty() {
-        assert_eq!(Transform::parse("<"), Ok(Transform::RightPad(Vec::new())));
+        assert_ok("<", Transform::RightPad(String::new()));
     }
 
     #[test]
     fn unknown_transform_error() {
-        assert_eq!(
-            Transform::parse("__"),
-            Err(ParseError {
+        assert_err(
+            "__",
+            ParseError {
                 typ: ErrorType::UnknownTransform,
                 start: 0,
                 end: 1,
-            })
+            },
         );
     }
 
     #[test]
-    fn unexpected_character_error() {
-        assert_eq!(
-            Transform::parse("u__"),
-            Err(ParseError {
+    fn unexpected_chars_error() {
+        assert_err(
+            "u__",
+            ParseError {
                 typ: ErrorType::UnexpectedCharacters,
                 start: 1,
                 end: 3,
-            })
+            },
         );
     }
 
     #[test]
     fn empty_error() {
-        assert_eq!(
-            Transform::parse(""),
-            Err(ParseError {
+        assert_err(
+            "",
+            ParseError {
                 typ: ErrorType::ExpectedTransform,
                 start: 0,
                 end: 0,
-            })
+            },
         )
+    }
+
+    fn assert_ok(string: &str, transform: Transform) {
+        assert_eq!(Transform::parse(Char::raw_vec(string)), Ok(transform));
+    }
+
+    fn assert_err(string: &str, error: ParseError) {
+        assert_eq!(Transform::parse(Char::raw_vec(string)), Err(error));
     }
 }

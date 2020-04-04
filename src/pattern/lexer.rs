@@ -1,3 +1,4 @@
+use crate::pattern::char::Char;
 use crate::pattern::parse::Parsed;
 use crate::pattern::reader::Reader;
 
@@ -7,7 +8,7 @@ const PIPE: char = '|';
 
 #[derive(Debug, PartialEq)]
 pub enum Token {
-    Raw(String),
+    Raw(Vec<Char>),
     ExprStart,
     ExprEnd,
     Pipe,
@@ -35,7 +36,7 @@ impl Iterator for Lexer {
 impl Lexer {
     pub fn new(string: &str) -> Self {
         let mut lexer = Self {
-            reader: Reader::new(string),
+            reader: Reader::from(string),
             position: 0,
             character: None,
             in_expression: false,
@@ -45,7 +46,7 @@ impl Lexer {
     }
 
     fn next_outside_expression(&mut self) -> Option<Parsed<Token>> {
-        let mut raw = String::new();
+        let mut raw = Vec::new();
 
         loop {
             match self.character {
@@ -55,13 +56,13 @@ impl Lexer {
                     if self.reader.peek() == self.character {
                         self.fetch_character();
                         self.fetch_character();
-                        raw.push(ch);
+                        raw.push(Char::Escaped(ch, ch));
                     } else {
                         break;
                     }
                 }
                 Some(ch) => {
-                    raw.push(ch);
+                    raw.push(Char::Raw(ch));
                     self.fetch_character();
                 }
                 None => {
@@ -93,7 +94,7 @@ impl Lexer {
     }
 
     fn next_in_expresion(&mut self) -> Option<Parsed<Token>> {
-        let mut raw = String::new();
+        let mut raw = Vec::new();
 
         loop {
             match self.character {
@@ -106,7 +107,7 @@ impl Lexer {
                     {
                         self.fetch_character();
                         self.fetch_character();
-                        raw.push(ch);
+                        raw.push(Char::Escaped(PIPE, ch));
                     } else {
                         break;
                     }
@@ -114,7 +115,7 @@ impl Lexer {
                 Some(EXPR_START) | Some(EXPR_END) | None => break,
                 Some(ch) => {
                     self.fetch_character();
-                    raw.push(ch);
+                    raw.push(Char::Raw(ch));
                 }
             }
         }
@@ -150,8 +151,8 @@ impl Lexer {
         self.character
     }
 
-    fn make_raw(&mut self, raw: String) -> Option<Parsed<Token>> {
-        self.make_token(Token::Raw(raw))
+    fn make_raw(&mut self, chars: Vec<Char>) -> Option<Parsed<Token>> {
+        self.make_token(Token::Raw(chars))
     }
 
     fn make_expr_start(&mut self) -> Option<Parsed<Token>> {
@@ -219,14 +220,14 @@ mod tests {
     #[test]
     fn escaped_expression_start() {
         let mut lexer = Lexer::new("{{");
-        lexer.assert_raw("{", 0, 2);
+        lexer.assert_raw_vec(vec![Char::Escaped('{', '{')], 0, 2);
         lexer.assert_none();
     }
 
     #[test]
     fn escaped_expression_end() {
         let mut lexer = Lexer::new("}}");
-        lexer.assert_raw("}", 0, 2);
+        lexer.assert_raw_vec(vec![Char::Escaped('}', '}')], 0, 2);
         lexer.assert_none();
     }
 
@@ -249,7 +250,7 @@ mod tests {
     fn escaped_pipe_inside_expression() {
         let mut lexer = Lexer::new("{||");
         lexer.assert_expr_start(0, 1);
-        lexer.assert_raw("|", 1, 3);
+        lexer.assert_raw_vec(vec![Char::Escaped('|', '|')], 1, 3);
         lexer.assert_none();
     }
 
@@ -282,7 +283,7 @@ mod tests {
     fn escaped_expression_start_inside_expression() {
         let mut lexer = Lexer::new("{|{");
         lexer.assert_expr_start(0, 1);
-        lexer.assert_raw("{", 1, 3);
+        lexer.assert_raw_vec(vec![Char::Escaped('|', '{')], 1, 3);
         lexer.assert_none();
     }
 
@@ -298,7 +299,7 @@ mod tests {
     fn escaped_expression_end_inside_expression() {
         let mut lexer = Lexer::new("{|}");
         lexer.assert_expr_start(0, 1);
-        lexer.assert_raw("}", 1, 3);
+        lexer.assert_raw_vec(vec![Char::Escaped('|', '}')], 1, 3);
         lexer.assert_none();
     }
 
@@ -336,9 +337,23 @@ mod tests {
         lexer.assert_expr_start(0, 1);
         lexer.assert_raw("a", 1, 2);
         lexer.assert_pipe(2, 3);
-        lexer.assert_raw("bc|", 3, 7);
+        lexer.assert_raw_vec(
+            vec![Char::Raw('b'), Char::Raw('c'), Char::Escaped('|', '|')],
+            3,
+            7,
+        );
         lexer.assert_pipe(7, 8);
-        lexer.assert_raw("def{}", 8, 15);
+        lexer.assert_raw_vec(
+            vec![
+                Char::Raw('d'),
+                Char::Raw('e'),
+                Char::Raw('f'),
+                Char::Escaped('|', '{'),
+                Char::Escaped('|', '}'),
+            ],
+            8,
+            15,
+        );
         lexer.assert_expr_end(15, 16);
         lexer.assert_none();
     }
@@ -346,7 +361,38 @@ mod tests {
     #[test]
     fn complex_escaped_raw() {
         let mut lexer = Lexer::new("{{}}{{{{}}}}a{{b}}c{{{{d}}}}e{{f{{g}}h}}i}}");
-        lexer.assert_raw("{}{{}}a{b}c{{d}}e{f{g}h}i}", 0, 43);
+        lexer.assert_raw_vec(
+            vec![
+                Char::Escaped('{', '{'),
+                Char::Escaped('}', '}'),
+                Char::Escaped('{', '{'),
+                Char::Escaped('{', '{'),
+                Char::Escaped('}', '}'),
+                Char::Escaped('}', '}'),
+                Char::Raw('a'),
+                Char::Escaped('{', '{'),
+                Char::Raw('b'),
+                Char::Escaped('}', '}'),
+                Char::Raw('c'),
+                Char::Escaped('{', '{'),
+                Char::Escaped('{', '{'),
+                Char::Raw('d'),
+                Char::Escaped('}', '}'),
+                Char::Escaped('}', '}'),
+                Char::Raw('e'),
+                Char::Escaped('{', '{'),
+                Char::Raw('f'),
+                Char::Escaped('{', '{'),
+                Char::Raw('g'),
+                Char::Escaped('}', '}'),
+                Char::Raw('h'),
+                Char::Escaped('}', '}'),
+                Char::Raw('i'),
+                Char::Escaped('}', '}'),
+            ],
+            0,
+            43,
+        );
         lexer.assert_none();
     }
 
@@ -381,21 +427,40 @@ mod tests {
     #[test]
     fn multiple_escaped_raws_and_expressions() {
         let mut lexer = Lexer::new("{{}}{{{}}}");
-        lexer.assert_raw("{}{", 0, 6);
+        lexer.assert_raw_vec(
+            vec![
+                Char::Escaped('{', '{'),
+                Char::Escaped('}', '}'),
+                Char::Escaped('{', '{'),
+            ],
+            0,
+            6,
+        );
         lexer.assert_expr_start(6, 7);
         lexer.assert_expr_end(7, 8);
-        lexer.assert_raw("}", 8, 10);
+        lexer.assert_raw_vec(vec![Char::Escaped('}', '}')], 8, 10);
         lexer.assert_none();
     }
 
     #[test]
     fn complex_input() {
         let mut lexer = Lexer::new("name_{{{c}}}.{e|s1-3}");
-        lexer.assert_raw("name_{", 0, 7);
+        lexer.assert_raw_vec(
+            vec![
+                Char::Raw('n'),
+                Char::Raw('a'),
+                Char::Raw('m'),
+                Char::Raw('e'),
+                Char::Raw('_'),
+                Char::Escaped('{', '{'),
+            ],
+            0,
+            7,
+        );
         lexer.assert_expr_start(7, 8);
         lexer.assert_raw("c", 8, 9);
         lexer.assert_expr_end(9, 10);
-        lexer.assert_raw("}.", 10, 13);
+        lexer.assert_raw_vec(vec![Char::Escaped('}', '}'), Char::Raw('.')], 10, 13);
         lexer.assert_expr_start(13, 14);
         lexer.assert_raw("e", 14, 15);
         lexer.assert_pipe(15, 16);
@@ -410,7 +475,11 @@ mod tests {
         }
 
         fn assert_raw(&mut self, raw: &str, start: usize, end: usize) {
-            self.assert_token(Token::Raw(raw.to_string()), start, end);
+            self.assert_token(Token::Raw(Char::raw_vec(raw)), start, end);
+        }
+
+        fn assert_raw_vec(&mut self, chars: Vec<Char>, start: usize, end: usize) {
+            self.assert_token(Token::Raw(chars), start, end);
         }
 
         fn assert_expr_start(&mut self, start: usize, end: usize) {

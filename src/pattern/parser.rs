@@ -1,3 +1,4 @@
+use crate::pattern::char::Char;
 use crate::pattern::error::ErrorType;
 use crate::pattern::lexer::{Lexer, Token};
 use crate::pattern::parse::{ParseError, Parsed};
@@ -24,7 +25,7 @@ impl Parser {
         if let Some(token) = self.fetch_token() {
             match token.value {
                 Token::Raw(raw) => Ok(Some(Parsed {
-                    value: PatternItem::Constant(raw),
+                    value: PatternItem::Constant(Char::join(raw.as_slice())),
                     start: token.start,
                     end: token.end,
                 })),
@@ -97,7 +98,7 @@ impl Parser {
         self.parse_expression_member(Transform::parse, ErrorType::ExpectedTransform)
     }
 
-    fn parse_expression_member<T, F: FnOnce(&str) -> Result<T, ParseError>>(
+    fn parse_expression_member<T, F: FnOnce(Vec<Char>) -> Result<T, ParseError>>(
         &mut self,
         parse: F,
         error_type: ErrorType,
@@ -110,7 +111,7 @@ impl Parser {
         })?;
         if let Token::Raw(raw) = token.value {
             Ok(Parsed {
-                value: parse(&raw).map_err(|mut error| {
+                value: parse(raw).map_err(|mut error| {
                     error.start += position;
                     error.end += position;
                     error
@@ -311,7 +312,7 @@ mod tests {
                     end: 8,
                 },
                 transforms: vec![Parsed {
-                    value: Transform::LeftPad(vec!['0', '0', '0']),
+                    value: Transform::LeftPad("000".to_string()),
                     start: 9,
                     end: 13,
                 }],

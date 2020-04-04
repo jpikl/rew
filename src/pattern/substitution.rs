@@ -30,8 +30,10 @@ impl Substitution {
                 });
             }
 
-            let replacement = reader.consume().into_iter().collect();
-            Ok(Self { value, replacement })
+            Ok(Self {
+                value,
+                replacement: reader.consume(),
+            })
         } else {
             Err(ParseError {
                 typ: ErrorType::ExpectedSubstitution,
@@ -48,7 +50,7 @@ mod tests {
 
     #[test]
     fn empty_error() {
-        let mut reader = Reader::new("");
+        let mut reader = Reader::from("");
         assert_eq!(
             Substitution::parse(&mut reader),
             Err(ParseError {
@@ -62,7 +64,7 @@ mod tests {
 
     #[test]
     fn no_value_error() {
-        let mut reader = Reader::new("/");
+        let mut reader = Reader::from("/");
         assert_eq!(
             Substitution::parse(&mut reader),
             Err(ParseError {
@@ -76,7 +78,7 @@ mod tests {
 
     #[test]
     fn empty_value_error() {
-        let mut reader = Reader::new("//");
+        let mut reader = Reader::from("//");
         assert_eq!(
             Substitution::parse(&mut reader),
             Err(ParseError {
@@ -90,7 +92,7 @@ mod tests {
 
     #[test]
     fn value_no_replacement() {
-        let mut reader = Reader::new("/a");
+        let mut reader = Reader::from("/a");
         assert_eq!(
             Substitution::parse(&mut reader),
             Ok(Substitution {
@@ -103,7 +105,7 @@ mod tests {
 
     #[test]
     fn long_value_no_replacement() {
-        let mut reader = Reader::new("/abc");
+        let mut reader = Reader::from("/abc");
         assert_eq!(
             Substitution::parse(&mut reader),
             Ok(Substitution {
@@ -116,7 +118,7 @@ mod tests {
 
     #[test]
     fn value_empty_replacement() {
-        let mut reader = Reader::new("/a/");
+        let mut reader = Reader::from("/a/");
         assert_eq!(
             Substitution::parse(&mut reader),
             Ok(Substitution {
@@ -129,7 +131,7 @@ mod tests {
 
     #[test]
     fn long_value_empty_replacement() {
-        let mut reader = Reader::new("/abc/");
+        let mut reader = Reader::from("/abc/");
         assert_eq!(
             Substitution::parse(&mut reader),
             Ok(Substitution {
@@ -142,7 +144,7 @@ mod tests {
 
     #[test]
     fn value_replacement() {
-        let mut reader = Reader::new("/a/d");
+        let mut reader = Reader::from("/a/d");
         assert_eq!(
             Substitution::parse(&mut reader),
             Ok(Substitution {
@@ -155,7 +157,7 @@ mod tests {
 
     #[test]
     fn long_value_replacement() {
-        let mut reader = Reader::new("/abc/def");
+        let mut reader = Reader::from("/abc/def");
         assert_eq!(
             Substitution::parse(&mut reader),
             Ok(Substitution {
@@ -168,7 +170,7 @@ mod tests {
 
     #[test]
     fn value_replacement_with_redundant_separators() {
-        let mut reader = Reader::new("/abc/d//e/");
+        let mut reader = Reader::from("/abc/d//e/");
         assert_eq!(
             Substitution::parse(&mut reader),
             Ok(Substitution {
