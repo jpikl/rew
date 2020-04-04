@@ -1,3 +1,4 @@
+use crate::pattern::error::ErrorType;
 use crate::pattern::lexer::{Lexer, Token};
 use crate::pattern::parse::{ParseError, Parsed};
 use crate::pattern::transform::Transform;
@@ -28,11 +29,14 @@ impl Parser {
                     end: token.end,
                 })),
                 Token::ExprStart => self.parse_expression(),
-                _ => Err(ParseError {
-                    message: "Unexpected token",
+                Token::ExprEnd => Err(ParseError {
+                    typ: ErrorType::UnexpectedExprEnd,
                     start: token.start,
                     end: token.end,
                 }),
+                _ => {
+                    panic!("Unexpected token {:?}", token); // Pipe or anything else should never appear here!
+                }
             }
         } else {
             Ok(None)
@@ -56,7 +60,7 @@ impl Parser {
     }
 
     fn parse_variable(&mut self) -> Result<Parsed<Variable>, ParseError> {
-        self.parse_expression_member(Variable::parse, "Expected variable")
+        self.parse_expression_member(Variable::parse, ErrorType::ExpectedVariable)
     }
 
     fn parse_transforms(&mut self) -> Result<Vec<Parsed<Transform>>, ParseError> {
@@ -82,7 +86,7 @@ impl Parser {
             Ok(transforms)
         } else {
             Err(ParseError {
-                message: "Expected pipe or expression end",
+                typ: ErrorType::ExpectedPipeOrExprEnd,
                 start: self.end,
                 end: self.end,
             })
@@ -90,17 +94,17 @@ impl Parser {
     }
 
     fn parse_transform(&mut self) -> Result<Parsed<Transform>, ParseError> {
-        self.parse_expression_member(Transform::parse, "Expected transformation")
+        self.parse_expression_member(Transform::parse, ErrorType::ExpectedTransform)
     }
 
     fn parse_expression_member<T, F: FnOnce(&str) -> Result<T, ParseError>>(
         &mut self,
         parse: F,
-        err_message: &'static str,
+        error_type: ErrorType,
     ) -> Result<Parsed<T>, ParseError> {
         let position = self.end;
         let token = self.fetch_token().ok_or_else(|| ParseError {
-            message: err_message,
+            typ: error_type.clone(),
             start: position,
             end: position,
         })?;
@@ -116,7 +120,7 @@ impl Parser {
             })
         } else {
             Err(ParseError {
-                message: err_message,
+                typ: error_type,
                 start: token.start,
                 end: token.end,
             })
@@ -230,7 +234,7 @@ mod tests {
     fn invalid_variable_error() {
         let mut parser = Parser::new("{x}");
         parser.assert_error(ParseError {
-            message: "Unknown variable",
+            typ: ErrorType::UnknownVariable,
             start: 1,
             end: 2,
         });
@@ -240,7 +244,7 @@ mod tests {
     fn variable_invalid_transform_error() {
         let mut parser = Parser::new("{f|s2-1}");
         parser.assert_error(ParseError {
-            message: "Range end cannot precede start",
+            typ: ErrorType::RangeEndBeforeStart,
             start: 4,
             end: 7,
         });
@@ -255,7 +259,7 @@ mod tests {
             end: 1,
         });
         parser.assert_error(ParseError {
-            message: "Unexpected token",
+            typ: ErrorType::UnexpectedExprEnd,
             start: 1,
             end: 2,
         });
@@ -265,7 +269,7 @@ mod tests {
     fn expected_variable_error() {
         let mut parser = Parser::new("{");
         parser.assert_error(ParseError {
-            message: "Expected variable",
+            typ: ErrorType::ExpectedVariable,
             start: 1,
             end: 1,
         });
@@ -275,7 +279,7 @@ mod tests {
     fn expected_pipe_or_expr_end_error() {
         let mut parser = Parser::new("{f");
         parser.assert_error(ParseError {
-            message: "Expected pipe or expression end",
+            typ: ErrorType::ExpectedPipeOrExprEnd,
             start: 2,
             end: 2,
         });
@@ -285,7 +289,7 @@ mod tests {
     fn expected_transform_error() {
         let mut parser = Parser::new("{f|");
         parser.assert_error(ParseError {
-            message: "Expected transformation",
+            typ: ErrorType::ExpectedTransform,
             start: 3,
             end: 3,
         });

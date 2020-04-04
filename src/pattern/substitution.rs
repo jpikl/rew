@@ -1,3 +1,4 @@
+use crate::pattern::error::ErrorType;
 use crate::pattern::parse::ParseError;
 use crate::pattern::reader::Reader;
 
@@ -23,7 +24,7 @@ impl Substitution {
 
             if value.is_empty() {
                 return Err(ParseError {
-                    message: "No value to substitute",
+                    typ: ErrorType::SubstituteNoValue,
                     start: value_position,
                     end: value_position,
                 });
@@ -33,7 +34,7 @@ impl Substitution {
             Ok(Self { value, replacement })
         } else {
             Err(ParseError {
-                message: "Expected substitution",
+                typ: ErrorType::ExpectedSubstitution,
                 start: reader.position(),
                 end: reader.end(),
             })
@@ -51,7 +52,7 @@ mod tests {
         assert_eq!(
             Substitution::parse(&mut reader),
             Err(ParseError {
-                message: "Expected substitution",
+                typ: ErrorType::ExpectedSubstitution,
                 start: 0,
                 end: 0,
             })
@@ -65,7 +66,7 @@ mod tests {
         assert_eq!(
             Substitution::parse(&mut reader),
             Err(ParseError {
-                message: "No value to substitute",
+                typ: ErrorType::SubstituteNoValue,
                 start: 1,
                 end: 1,
             })
@@ -79,7 +80,7 @@ mod tests {
         assert_eq!(
             Substitution::parse(&mut reader),
             Err(ParseError {
-                message: "No value to substitute",
+                typ: ErrorType::SubstituteNoValue,
                 start: 1,
                 end: 1,
             })

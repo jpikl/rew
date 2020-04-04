@@ -1,3 +1,4 @@
+use crate::pattern::error::ErrorType;
 use crate::pattern::parse::ParseError;
 use crate::pattern::range::Range;
 use crate::pattern::reader::Reader;
@@ -23,14 +24,14 @@ impl Transform {
             Some('<') => Transform::RightPad(reader.consume().to_vec()),
             Some(_) => {
                 return Err(ParseError {
-                    message: "Unknown transformation",
+                    typ: ErrorType::UnknownTransform,
                     start: position,
                     end: reader.end(),
                 });
             }
             None => {
                 return Err(ParseError {
-                    message: "Expected transformation",
+                    typ: ErrorType::ExpectedTransform,
                     start: position,
                     end: reader.end(),
                 })
@@ -41,7 +42,7 @@ impl Transform {
             Ok(transform)
         } else {
             Err(ParseError {
-                message: "Unexpected characters after transformation",
+                typ: ErrorType::UnexpectedCharacters,
                 start: reader.position(),
                 end: reader.end(),
             })
@@ -58,7 +59,7 @@ mod tests {
         assert_eq!(
             Transform::parse("s"),
             Err(ParseError {
-                message: "Expected range",
+                typ: ErrorType::ExpectedRange,
                 start: 1,
                 end: 1,
             })
@@ -105,7 +106,7 @@ mod tests {
         assert_eq!(
             Transform::parse("S"),
             Err(ParseError {
-                message: "Expected range",
+                typ: ErrorType::ExpectedRange,
                 start: 1,
                 end: 1,
             })
@@ -152,7 +153,7 @@ mod tests {
         assert_eq!(
             Transform::parse("r"),
             Err(ParseError {
-                message: "Expected substitution",
+                typ: ErrorType::ExpectedSubstitution,
                 start: 1,
                 end: 1,
             })
@@ -178,7 +179,7 @@ mod tests {
         assert_eq!(
             Transform::parse("R"),
             Err(ParseError {
-                message: "Expected substitution",
+                typ: ErrorType::ExpectedSubstitution,
                 start: 1,
                 end: 1,
             })
@@ -255,7 +256,7 @@ mod tests {
         assert_eq!(
             Transform::parse("__"),
             Err(ParseError {
-                message: "Unknown transformation",
+                typ: ErrorType::UnknownTransform,
                 start: 0,
                 end: 2,
             })
@@ -267,7 +268,7 @@ mod tests {
         assert_eq!(
             Transform::parse("u__"),
             Err(ParseError {
-                message: "Unexpected characters after transformation",
+                typ: ErrorType::UnexpectedCharacters,
                 start: 1,
                 end: 3,
             })
@@ -279,7 +280,7 @@ mod tests {
         assert_eq!(
             Transform::parse(""),
             Err(ParseError {
-                message: "Expected transformation",
+                typ: ErrorType::ExpectedTransform,
                 start: 0,
                 end: 0,
             })

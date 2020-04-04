@@ -1,3 +1,4 @@
+use crate::pattern::error::ErrorType;
 use crate::pattern::number::parse_usize;
 use crate::pattern::parse::ParseError;
 use crate::pattern::reader::Reader;
@@ -22,7 +23,7 @@ impl Variable {
                     'u' => Variable::Uuid,
                     _ => {
                         return Err(ParseError {
-                            message: "Unknown variable",
+                            typ: ErrorType::UnknownVariable,
                             start: position,
                             end: reader.end(),
                         });
@@ -31,7 +32,7 @@ impl Variable {
             }
             None => {
                 return Err(ParseError {
-                    message: "Expected variable",
+                    typ: ErrorType::ExpectedVariable,
                     start: position,
                     end: reader.end(),
                 })
@@ -42,7 +43,7 @@ impl Variable {
             Ok(variable)
         } else {
             Err(ParseError {
-                message: "Unexpected characters after variable",
+                typ: ErrorType::UnexpectedCharacters,
                 start: reader.position(),
                 end: reader.end(),
             })
@@ -108,7 +109,7 @@ mod tests {
         assert_eq!(
             Variable::parse("__"),
             Err(ParseError {
-                message: "Unknown variable",
+                typ: ErrorType::UnknownVariable,
                 start: 0,
                 end: 2,
             })
@@ -120,7 +121,7 @@ mod tests {
         assert_eq!(
             Variable::parse("f__"),
             Err(ParseError {
-                message: "Unexpected characters after variable",
+                typ: ErrorType::UnexpectedCharacters,
                 start: 1,
                 end: 3,
             })
@@ -128,7 +129,7 @@ mod tests {
         assert_eq!(
             Variable::parse("123__"),
             Err(ParseError {
-                message: "Unexpected characters after variable",
+                typ: ErrorType::UnexpectedCharacters,
                 start: 3,
                 end: 5,
             })
@@ -140,7 +141,7 @@ mod tests {
         assert_eq!(
             Variable::parse(""),
             Err(ParseError {
-                message: "Expected variable",
+                typ: ErrorType::ExpectedVariable,
                 start: 0,
                 end: 0,
             })

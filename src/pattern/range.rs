@@ -1,3 +1,4 @@
+use crate::pattern::error::ErrorType;
 use crate::pattern::number::parse_usize;
 use crate::pattern::parse::ParseError;
 use crate::pattern::reader::Reader;
@@ -41,7 +42,7 @@ impl Range {
                 }
             }
             _ => Err(ParseError {
-                message: "Expected range",
+                typ: ErrorType::ExpectedRange,
                 start: reader.position(),
                 end: reader.end(),
             }),
@@ -55,7 +56,7 @@ fn parse_offset(reader: &mut Reader) -> Result<usize, ParseError> {
 
     if index < 1 {
         Err(ParseError {
-            message: "Range indices starts from 1",
+            typ: ErrorType::RangeZeroIndex,
             start: position,
             end: reader.position(),
         })
@@ -74,13 +75,13 @@ fn parse_length(
 
     if index < 1 {
         Err(ParseError {
-            message: "Range indices starts from 1",
+            typ: ErrorType::RangeZeroIndex,
             start: position,
             end: reader.position(),
         })
     } else if index <= offset {
         Err(ParseError {
-            message: "Range end cannot precede start",
+            typ: ErrorType::RangeEndBeforeStart,
             start: offset_position,
             end: reader.position(),
         })
@@ -99,7 +100,7 @@ mod tests {
         assert_eq!(
             Range::parse(&mut reader),
             Err(ParseError {
-                message: "Expected range",
+                typ: ErrorType::ExpectedRange,
                 start: 0,
                 end: 0,
             })
@@ -113,7 +114,7 @@ mod tests {
         assert_eq!(
             Range::parse(&mut reader),
             Err(ParseError {
-                message: "Expected range",
+                typ: ErrorType::ExpectedRange,
                 start: 0,
                 end: 2,
             })
@@ -153,7 +154,7 @@ mod tests {
         assert_eq!(
             Range::parse(&mut reader),
             Err(ParseError {
-                message: "Range indices starts from 1",
+                typ: ErrorType::RangeZeroIndex,
                 start: 0,
                 end: 1,
             })
@@ -193,7 +194,7 @@ mod tests {
         assert_eq!(
             Range::parse(&mut reader),
             Err(ParseError {
-                message: "Range indices starts from 1",
+                typ: ErrorType::RangeZeroIndex,
                 start: 1,
                 end: 2,
             })
@@ -233,7 +234,7 @@ mod tests {
         assert_eq!(
             Range::parse(&mut reader),
             Err(ParseError {
-                message: "Range end cannot precede start",
+                typ: ErrorType::RangeEndBeforeStart,
                 start: 0,
                 end: 4,
             })

@@ -1,3 +1,4 @@
+use crate::pattern::error::ErrorType;
 use crate::pattern::parse::Parsed;
 use crate::pattern::variable::Variable;
 use crate::pattern::{Pattern, PatternItem};
@@ -13,7 +14,7 @@ pub struct EvalContext<'a> {
 
 #[derive(Debug, PartialEq)]
 pub struct EvalError<'a> {
-    pub message: &'static str,
+    pub typ: ErrorType,
     pub variable: &'a Parsed<Variable>,
 }
 
@@ -35,8 +36,8 @@ impl Pattern {
                             }
                             output.push_str(&string)
                         }
-                        Err(message) => {
-                            return Err(EvalError { message, variable });
+                        Err(typ) => {
+                            return Err(EvalError { typ, variable });
                         }
                     };
                 }
@@ -99,7 +100,7 @@ mod tests {
         pattern.assert_eval_error(
             &mut context,
             EvalError {
-                message: "Value exceeded number of regex capture groups",
+                typ: ErrorType::RegexCaptureGroupOverflow,
                 variable: &Parsed {
                     value: Variable::CaptureGroup(2),
                     start: 7,

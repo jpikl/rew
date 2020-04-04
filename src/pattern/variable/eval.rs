@@ -1,3 +1,4 @@
+use crate::pattern::error::ErrorType;
 use crate::pattern::eval::EvalContext;
 use crate::pattern::variable::Variable;
 use std::ffi::OsStr;
@@ -5,7 +6,7 @@ use std::path::Path;
 use uuid::Uuid;
 
 impl Variable {
-    pub fn eval(&self, context: &mut EvalContext) -> Result<String, &'static str> {
+    pub fn eval(&self, context: &mut EvalContext) -> Result<String, ErrorType> {
         match self {
             Variable::Filename => Ok(context
                 .path
@@ -38,9 +39,9 @@ impl Variable {
             }
             Variable::CaptureGroup(number) => {
                 if *number == 0 {
-                    Err("Regex capture groups are numbered from 1")
+                    Err(ErrorType::RegexCaptureGroupZero)
                 } else if *number > context.capture_groups.len() {
-                    Err("Value exceeded number of regex capture groups")
+                    Err(ErrorType::RegexCaptureGroupOverflow)
                 } else {
                     Ok(context.capture_groups[*number - 1].clone())
                 }
@@ -158,7 +159,7 @@ mod tests {
         let final_context = context.clone();
         assert_eq!(
             Variable::CaptureGroup(0).eval(&mut context),
-            Err("Regex capture groups are numbered from 1")
+            Err(ErrorType::RegexCaptureGroupZero)
         );
         assert_eq!(context, final_context);
     }
@@ -169,7 +170,7 @@ mod tests {
         let final_context = context.clone();
         assert_eq!(
             Variable::CaptureGroup(2).eval(&mut context),
-            Err("Value exceeded number of regex capture groups")
+            Err(ErrorType::RegexCaptureGroupOverflow)
         );
         assert_eq!(context, final_context);
     }

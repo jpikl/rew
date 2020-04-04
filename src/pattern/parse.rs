@@ -1,3 +1,4 @@
+use crate::pattern::error::ErrorType;
 use crate::pattern::parser::Parser;
 use crate::pattern::Pattern;
 
@@ -10,7 +11,7 @@ pub struct Parsed<T> {
 
 #[derive(Debug, PartialEq)]
 pub struct ParseError {
-    pub message: &'static str,
+    pub typ: ErrorType,
     pub start: usize,
     pub end: usize,
 }
@@ -26,7 +27,7 @@ impl Pattern {
 
         if items.is_empty() {
             Err(ParseError {
-                message: "Empty pattern",
+                typ: ErrorType::ExpectedPattern,
                 start: 0,
                 end: 0,
             })
@@ -47,7 +48,7 @@ mod tests {
         assert_parse_error(
             "",
             ParseError {
-                message: "Empty pattern",
+                typ: ErrorType::ExpectedPattern,
                 start: 0,
                 end: 0,
             },
@@ -97,7 +98,7 @@ mod tests {
         assert_parse_error(
             "a{E",
             ParseError {
-                message: "Expected pipe or expression end",
+                typ: ErrorType::ExpectedPipeOrExprEnd,
                 start: 3,
                 end: 3,
             },
