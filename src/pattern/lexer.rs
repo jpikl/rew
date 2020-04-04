@@ -461,7 +461,6 @@ mod tests {
         lexer.assert_raw("c", 8, 9);
         lexer.assert_expr_end(9, 10);
         lexer.assert_raw_vec(vec![Char::Escaped('}', '}'), Char::Raw('.')], 10, 13);
-        lexer.assert_raw_vec(vec![Char::Escaped('}', '}'), Char::Raw('.')], 10, 13);
         lexer.assert_expr_start(13, 14);
         lexer.assert_raw("e", 14, 15);
         lexer.assert_pipe(15, 16);

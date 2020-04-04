@@ -32,7 +32,7 @@ impl Reader {
     }
 
     pub fn peek(&self) -> Option<char> {
-        if self.position < self.end() {
+        if self.position < self.chars.len() {
             Some(self.chars[self.position].value())
         } else {
             None
@@ -41,7 +41,7 @@ impl Reader {
 
     pub fn consume(&mut self) -> String {
         let remainder = &self.chars[self.position..];
-        self.position = self.end();
+        self.position = self.chars.len();
         Char::join(remainder)
     }
 }
@@ -56,8 +56,8 @@ mod tests {
     }
 
     #[test]
-    fn readt_consumes_chars() {
-        let mut reader = Reader::from("abc");
+    fn read_consumes_chars() {
+        let mut reader = make_reader();
         assert_eq!(reader.read(), Some('a'));
         assert_eq!(reader.read(), Some('b'));
         assert_eq!(reader.read(), Some('c'));
@@ -71,7 +71,7 @@ mod tests {
 
     #[test]
     fn peek_returns_chars_at_positions() {
-        let mut reader = Reader::from("abc");
+        let mut reader = make_reader();
         assert_eq!(reader.peek(), Some('a'));
         reader.read();
         assert_eq!(reader.peek(), Some('b'));
@@ -83,7 +83,7 @@ mod tests {
 
     #[test]
     fn consume_returns_remaining_chars() {
-        let mut reader = Reader::from("abc");
+        let mut reader = make_reader();
         reader.read();
         assert_eq!(reader.consume(), "bc");
         assert_eq!(reader.consume(), "");
@@ -92,33 +92,41 @@ mod tests {
     #[test]
     fn position_starts_at_zero() {
         assert_eq!(Reader::from("").position(), 0);
-        assert_eq!(Reader::from("abc").position(), 0);
+        assert_eq!(make_reader().position(), 0);
     }
 
     #[test]
     fn position_is_unchanged_by_peek() {
-        let reader = Reader::from("abc");
+        let reader = make_reader();
         reader.peek();
         assert_eq!(reader.position(), 0);
     }
 
     #[test]
     fn position_is_incremented_by_read() {
-        let mut reader = Reader::from("abc");
+        let mut reader = make_reader();
         assert_eq!(reader.position(), 0);
         reader.read();
         assert_eq!(reader.position(), 1);
         reader.read();
-        assert_eq!(reader.position(), 2);
-        reader.read();
         assert_eq!(reader.position(), 3);
+        reader.read();
+        assert_eq!(reader.position(), 4);
     }
 
     #[test]
     fn position_is_moved_to_the_end_by_consume() {
-        let mut reader = Reader::from("abc");
+        let mut reader = make_reader();
         assert_eq!(reader.position(), 0);
         reader.consume();
-        assert_eq!(reader.position(), 3);
+        assert_eq!(reader.position(), 4);
+    }
+
+    fn make_reader() -> Reader {
+        Reader::new(vec![
+            Char::Raw('a'),
+            Char::Escaped('\\', 'b'),
+            Char::Raw('c'),
+        ])
     }
 }
