@@ -8,7 +8,7 @@ fn main() {
         match Pattern::parse(&raw_pattern) {
             Ok(pattern) => println!("{:#?}", pattern),
             Err(error) => {
-                eprintln!("{}", error.typ,);
+                eprintln!("{}.", error.typ);
                 if !raw_pattern.is_empty() {
                     println!(
                         "\n{}\n{}{}",

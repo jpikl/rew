@@ -100,7 +100,7 @@ mod tests {
         pattern.assert_eval_error(
             &mut context,
             EvalError {
-                typ: ErrorType::RegexCaptureGroupOverflow,
+                typ: ErrorType::RegexCaptureGroupOverLimit(2, 1),
                 variable: &Parsed {
                     value: Variable::CaptureGroup(2),
                     start: 7,

@@ -6,46 +6,30 @@ use crate::pattern::reader::Reader;
 use crate::pattern::variable::Variable;
 
 impl Variable {
-    pub fn parse(chars: Vec<Char>) -> Result<Self, ParseError> {
-        let mut reader = Reader::new(chars);
+    pub fn parse(reader: &mut Reader) -> Result<Self, ParseError> {
         let position = reader.position();
 
-        let variable = match reader.peek() {
-            Some('0'..='9') => Variable::CaptureGroup(parse_usize(&mut reader)?),
-            Some(ch) => {
-                reader.read();
-                match ch {
-                    'f' => Variable::Filename,
-                    'b' => Variable::Basename,
-                    'e' => Variable::Extension,
-                    'E' => Variable::ExtensionWithDot,
-                    'c' => Variable::LocalCounter,
-                    'C' => Variable::GlobalCounter,
-                    'u' => Variable::Uuid,
-                    _ => {
-                        return Err(ParseError {
-                            typ: ErrorType::UnknownVariable,
-                            start: position,
-                            end: reader.position(),
-                        });
-                    }
-                }
-            }
-            None => {
-                return Err(ParseError {
-                    typ: ErrorType::ExpectedVariable,
+        if let Some('0'..='9') = reader.peek_value() {
+            Ok(Variable::CaptureGroup(parse_usize(reader)?))
+        } else if let Some(char) = reader.read() {
+            match char.value() {
+                'f' => Ok(Variable::Filename),
+                'b' => Ok(Variable::Basename),
+                'e' => Ok(Variable::Extension),
+                'E' => Ok(Variable::ExtensionWithDot),
+                'c' => Ok(Variable::LocalCounter),
+                'C' => Ok(Variable::GlobalCounter),
+                'u' => Ok(Variable::Uuid),
+                _ => Err(ParseError {
+                    typ: ErrorType::UnknownVariable(char.clone()),
                     start: position,
-                    end: reader.end(),
-                })
+                    end: reader.position(),
+                }),
             }
-        };
-
-        if reader.peek().is_none() {
-            Ok(variable)
         } else {
             Err(ParseError {
-                typ: ErrorType::UnexpectedCharacters,
-                start: reader.position(),
+                typ: ErrorType::ExpectedVariable,
+                start: position,
                 end: reader.end(),
             })
         }
@@ -106,35 +90,17 @@ mod tests {
     }
 
     #[test]
-    fn unknown_variable_error() {
-        assert_err(
-            "__",
-            ParseError {
-                typ: ErrorType::UnknownVariable,
-                start: 0,
-                end: 1,
-            },
-        );
+    fn ignore_remaning_chars_after_variable() {
+        let mut reader = Reader::from("f_");
+        Variable::parse(&mut reader);
+        assert_eq!(reader.position(), 1);
     }
 
     #[test]
-    fn unexpected_chars_error() {
-        assert_err(
-            "f__",
-            ParseError {
-                typ: ErrorType::UnexpectedCharacters,
-                start: 1,
-                end: 3,
-            },
-        );
-        assert_err(
-            "123__",
-            ParseError {
-                typ: ErrorType::UnexpectedCharacters,
-                start: 3,
-                end: 5,
-            },
-        );
+    fn ignore_remaning_chars_capture_group_variable() {
+        let mut reader = Reader::from("123_");
+        Variable::parse(&mut reader);
+        assert_eq!(reader.position(), 3);
     }
 
     #[test]
@@ -149,11 +115,23 @@ mod tests {
         )
     }
 
+    #[test]
+    fn unknown_variable_error() {
+        assert_err(
+            "-_",
+            ParseError {
+                typ: ErrorType::UnknownVariable(Char::Raw('-')),
+                start: 0,
+                end: 1,
+            },
+        );
+    }
+
     fn assert_ok(string: &str, variable: Variable) {
-        assert_eq!(Variable::parse(Char::raw_vec(string)), Ok(variable));
+        assert_eq!(Variable::parse(&mut Reader::from(string)), Ok(variable));
     }
 
     fn assert_err(string: &str, error: ParseError) {
-        assert_eq!(Variable::parse(Char::raw_vec(string)), Err(error));
+        assert_eq!(Variable::parse(&mut Reader::from(string)), Err(error));
     }
 }

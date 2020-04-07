@@ -1,48 +1,80 @@
+use crate::pattern::char::Char;
 use std::fmt;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum ErrorType {
     ExpectedNumber,
     ExpectedPattern,
-    ExpectedPipeOrExprEnd,
+    ExpectedPipeOrExprEnd(Char),
     ExpectedRange,
     ExpectedSubstitution,
     ExpectedTransform,
     ExpectedVariable,
-    RangeEndBeforeStart,
+    ExprStartInsideExpr,
+    RangeEndBeforeStart(usize, usize),
+    RangeInvalid(String),
+    RangeUnexpectedChars(String),
     RangeZeroIndex,
-    RegexCaptureGroupOverflow,
+    RegexCaptureGroupOverLimit(usize, usize),
     RegexCaptureGroupZero,
-    SubstituteNoValue,
-    UnexpectedCharacters,
-    UnexpectedExprStart,
-    UnexpectedExprEnd,
-    UnknownTransform,
-    UnknownVariable,
+    SubstituteWithoutValue(Char),
+    UnknownTransform(Char),
+    UnknownVariable(Char),
+    UnmatchedExprEnd,
+    UnterminatedExprStart,
 }
 
 impl fmt::Display for ErrorType {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         use ErrorType::*;
-        let description = match self {
-            ExpectedNumber => "Expected number",
-            ExpectedPattern => "Expected pattern",
-            ExpectedPipeOrExprEnd => "Expected pipe or end of expression",
-            ExpectedRange => "Expected range",
-            ExpectedSubstitution => "Expected substitution",
-            ExpectedTransform => "Expected transformation",
-            ExpectedVariable => "Expected variable",
-            RangeEndBeforeStart => "Range end cannot precede start",
-            RangeZeroIndex => "Range indices starts from 1",
-            RegexCaptureGroupZero => "Regex capture groups starts from 1",
-            RegexCaptureGroupOverflow => "Value exceeded number of regex capture groups",
-            SubstituteNoValue => "No value to substitute",
-            UnexpectedCharacters => "Unexpected characters",
-            UnexpectedExprStart => "Unexpected start of expression",
-            UnexpectedExprEnd => "Unexpected end of expression",
-            UnknownTransform => "Unknown transformation",
-            UnknownVariable => "Unknown variable",
-        };
-        write!(formatter, "{}", description)
+        match self {
+            ExpectedNumber => write!(formatter, "Expected number"),
+            ExpectedPattern => write!(formatter, "Expected pattern but gor empty string"),
+            ExpectedPipeOrExprEnd(char) => {
+                write!(formatter, "Expected '|' or closing '}}' but got {}", char)
+            }
+            ExpectedRange => write!(formatter, "Transformation requires range as a parameter"),
+            ExpectedSubstitution => write!(
+                formatter,
+                "Transformation requires substitution as a parameter"
+            ),
+            ExpectedTransform => write!(formatter, "Expected transformation after '|'"),
+            ExpectedVariable => write!(formatter, "Expected variable after '{{'"),
+            ExprStartInsideExpr => writeln!(formatter, "Unescaped '{{' inside expression"),
+            RangeEndBeforeStart(end, start) => write!(
+                formatter,
+                "Range end ({}) cannot precede its start ({})",
+                end, start
+            ),
+            RangeInvalid(value) => write!(formatter, "Invalid range '{}'", value),
+            RangeUnexpectedChars(value) => write!(
+                formatter,
+                "Unexpected characters '{}' in range parameter",
+                value
+            ),
+            RangeZeroIndex => write!(formatter, "Range indices start from 1, not 0"),
+            RegexCaptureGroupZero => write!(formatter, "Regex capture groups starts from 1, not 0"),
+            RegexCaptureGroupOverLimit(value, max) => write!(
+                formatter,
+                "Value {} exceeded number of regex capture groups ({})",
+                value, max
+            ),
+            SubstituteWithoutValue(separator) => write!(
+                formatter,
+                "Substitution ({} is separator) has no value",
+                separator
+            ),
+            UnknownTransform(Char::Raw(char)) => {
+                write!(formatter, "Unknown transformation '{}'", char)
+            }
+            UnknownTransform(char) => write!(formatter, "Expected transformation but got {}", char),
+            UnknownVariable(Char::Raw(char)) => write!(formatter, "Unknown variable '{}'", char),
+            UnknownVariable(char) => write!(formatter, "Expected variable but got {}", char),
+            UnmatchedExprEnd => write!(
+                formatter,
+                "End of expression'}}' does not have matching '{{'"
+            ),
+            UnterminatedExprStart => write!(formatter, "Unterminated start of expression '{{'"),
+        }
     }
 }

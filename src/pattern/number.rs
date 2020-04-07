@@ -3,17 +3,17 @@ use crate::pattern::parse::ParseError;
 use crate::pattern::reader::Reader;
 
 pub fn parse_usize(reader: &mut Reader) -> Result<usize, ParseError> {
-    match reader.peek() {
+    match reader.peek_value() {
         Some('0') => {
-            reader.read();
+            reader.read_value();
             Ok(0)
         }
         Some(ch @ '1'..='9') => {
             let mut number = ch.to_digit(10).unwrap() as usize;
-            reader.read();
-            while let Some(ch @ '0'..='9') = reader.peek() {
+            reader.read_value();
+            while let Some(ch @ '0'..='9') = reader.peek_value() {
                 number = 10 * number + ch.to_digit(10).unwrap() as usize;
-                reader.read();
+                reader.read_value();
             }
             Ok(number)
         }

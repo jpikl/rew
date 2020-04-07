@@ -1,3 +1,4 @@
+use crate::pattern::char::Char;
 use crate::pattern::error::ErrorType;
 use crate::pattern::parse::ParseError;
 use crate::pattern::reader::Reader;
@@ -10,12 +11,12 @@ pub struct Substitution {
 
 impl Substitution {
     pub fn parse(reader: &mut Reader) -> Result<Self, ParseError> {
-        if let Some(separator) = reader.read() {
+        if let Some(separator) = reader.read().cloned() {
             let mut value = String::new();
             let value_position = reader.position();
 
-            while let Some(ch) = reader.read() {
-                if ch == separator {
+            while let Some(ch) = reader.read_value() {
+                if ch == separator.value() {
                     break;
                 } else {
                     value.push(ch);
@@ -24,7 +25,7 @@ impl Substitution {
 
             if value.is_empty() {
                 return Err(ParseError {
-                    typ: ErrorType::SubstituteNoValue,
+                    typ: ErrorType::SubstituteWithoutValue(separator),
                     start: value_position,
                     end: value_position,
                 });
@@ -32,7 +33,7 @@ impl Substitution {
 
             Ok(Self {
                 value,
-                replacement: reader.consume(),
+                replacement: Char::join(reader.read_to_end()),
             })
         } else {
             Err(ParseError {
@@ -68,7 +69,7 @@ mod tests {
         assert_eq!(
             Substitution::parse(&mut reader),
             Err(ParseError {
-                typ: ErrorType::SubstituteNoValue,
+                typ: ErrorType::SubstituteWithoutValue(Char::Raw('/')),
                 start: 1,
                 end: 1,
             })
@@ -82,7 +83,7 @@ mod tests {
         assert_eq!(
             Substitution::parse(&mut reader),
             Err(ParseError {
-                typ: ErrorType::SubstituteNoValue,
+                typ: ErrorType::SubstituteWithoutValue(Char::Raw('/')),
                 start: 1,
                 end: 1,
             })

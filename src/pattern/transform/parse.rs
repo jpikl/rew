@@ -7,44 +7,32 @@ use crate::pattern::substitution::Substitution;
 use crate::pattern::transform::Transform;
 
 impl Transform {
-    pub fn parse(chars: Vec<Char>) -> Result<Self, ParseError> {
-        let mut reader = Reader::new(chars);
+    pub fn parse(reader: &mut Reader) -> Result<Self, ParseError> {
         let position = reader.position();
 
-        let transform = match reader.read() {
-            Some('s') => Transform::Substring(Range::parse(&mut reader)?),
-            Some('S') => Transform::SubstringFromEnd(Range::parse(&mut reader)?),
-            Some('r') => Transform::ReplaceFirst(Substitution::parse(&mut reader)?),
-            Some('R') => Transform::ReplaceAll(Substitution::parse(&mut reader)?),
-            Some('t') => Transform::Trim,
-            Some('u') => Transform::Lowercase,
-            Some('U') => Transform::Uppercase,
-            Some('a') => Transform::ToAscii,
-            Some('A') => Transform::RemoveNonAscii,
-            Some('>') => Transform::LeftPad(reader.consume()),
-            Some('<') => Transform::RightPad(reader.consume()),
-            Some(_) => {
-                return Err(ParseError {
-                    typ: ErrorType::UnknownTransform,
+        if let Some(char) = reader.read() {
+            match char.value() {
+                's' => Ok(Transform::Substring(Range::parse(reader)?)),
+                'S' => Ok(Transform::SubstringFromEnd(Range::parse(reader)?)),
+                'r' => Ok(Transform::ReplaceFirst(Substitution::parse(reader)?)),
+                'R' => Ok(Transform::ReplaceAll(Substitution::parse(reader)?)),
+                't' => Ok(Transform::Trim),
+                'u' => Ok(Transform::Lowercase),
+                'U' => Ok(Transform::Uppercase),
+                'a' => Ok(Transform::ToAscii),
+                'A' => Ok(Transform::RemoveNonAscii),
+                '>' => Ok(Transform::LeftPad(Char::join(reader.read_to_end()))),
+                '<' => Ok(Transform::RightPad(Char::join(reader.read_to_end()))),
+                name => Err(ParseError {
+                    typ: ErrorType::UnknownTransform(char.clone()),
                     start: position,
                     end: reader.position(),
-                });
+                }),
             }
-            None => {
-                return Err(ParseError {
-                    typ: ErrorType::ExpectedTransform,
-                    start: position,
-                    end: reader.end(),
-                })
-            }
-        };
-
-        if reader.peek().is_none() {
-            Ok(transform)
         } else {
             Err(ParseError {
-                typ: ErrorType::UnexpectedCharacters,
-                start: reader.position(),
+                typ: ErrorType::ExpectedTransform,
+                start: position,
                 end: reader.end(),
             })
         }
@@ -247,27 +235,10 @@ mod tests {
     }
 
     #[test]
-    fn unknown_transform_error() {
-        assert_err(
-            "__",
-            ParseError {
-                typ: ErrorType::UnknownTransform,
-                start: 0,
-                end: 1,
-            },
-        );
-    }
-
-    #[test]
-    fn unexpected_chars_error() {
-        assert_err(
-            "u__",
-            ParseError {
-                typ: ErrorType::UnexpectedCharacters,
-                start: 1,
-                end: 3,
-            },
-        );
+    fn ignore_chars_after_transform() {
+        let mut reader = Reader::from("a_");
+        Transform::parse(&mut reader);
+        assert_eq!(reader.position(), 1);
     }
 
     #[test]
@@ -282,11 +253,23 @@ mod tests {
         )
     }
 
+    #[test]
+    fn unknown_transform_error() {
+        assert_err(
+            "-_",
+            ParseError {
+                typ: ErrorType::UnknownTransform(Char::Raw('-')),
+                start: 0,
+                end: 1,
+            },
+        );
+    }
+
     fn assert_ok(string: &str, transform: Transform) {
-        assert_eq!(Transform::parse(Char::raw_vec(string)), Ok(transform));
+        assert_eq!(Transform::parse(&mut Reader::from(string)), Ok(transform));
     }
 
     fn assert_err(string: &str, error: ParseError) {
-        assert_eq!(Transform::parse(Char::raw_vec(string)), Err(error));
+        assert_eq!(Transform::parse(&mut Reader::from(string)), Err(error));
     }
 }

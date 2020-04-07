@@ -1,4 +1,6 @@
-#[derive(Debug, PartialEq)]
+use std::fmt;
+
+#[derive(Debug, PartialEq, Clone)]
 pub enum Char {
     Raw(char),
     Escaped(char, char),
@@ -39,6 +41,15 @@ impl Char {
     }
 }
 
+impl fmt::Display for Char {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Char::Raw(ch) => write!(formatter, "'{}'", ch),
+            Char::Escaped(esc, ch) => write!(formatter, "escape sequence '{0}{1}'", esc, ch),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -59,6 +70,11 @@ mod tests {
     }
 
     #[test]
+    fn raw_fmt() {
+        assert_eq!(format!("{}", Char::Raw('a')), "'a'");
+    }
+
+    #[test]
     fn escaped_value() {
         assert_eq!(Char::Escaped('|', '}').value(), '}');
     }
@@ -71,6 +87,14 @@ mod tests {
     #[test]
     fn escaped_len() {
         assert_eq!(Char::Escaped('|', '}').len(), 2);
+    }
+
+    #[test]
+    fn escaped_fmt() {
+        assert_eq!(
+            format!("{}", Char::Escaped('|', '}')),
+            "escape sequence '|}'"
+        );
     }
 
     #[test]

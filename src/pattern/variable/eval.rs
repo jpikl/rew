@@ -40,7 +40,10 @@ impl Variable {
                 if *number == 0 {
                     Err(ErrorType::RegexCaptureGroupZero)
                 } else if *number > context.capture_groups.len() {
-                    Err(ErrorType::RegexCaptureGroupOverflow)
+                    Err(ErrorType::RegexCaptureGroupOverLimit(
+                        *number,
+                        context.capture_groups.len(),
+                    ))
                 } else {
                     Ok(context.capture_groups[*number - 1].clone())
                 }
@@ -170,7 +173,7 @@ mod tests {
         let final_context = context.clone();
         assert_eq!(
             Variable::CaptureGroup(2).eval(&mut context),
-            Err(ErrorType::RegexCaptureGroupOverflow)
+            Err(ErrorType::RegexCaptureGroupOverLimit(2, 1))
         );
         assert_eq!(context, final_context);
     }

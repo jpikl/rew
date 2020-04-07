@@ -98,9 +98,9 @@ mod tests {
         assert_parse_error(
             "a{E",
             ParseError {
-                typ: ErrorType::ExpectedPipeOrExprEnd,
-                start: 3,
-                end: 3,
+                typ: ErrorType::UnterminatedExprStart,
+                start: 1,
+                end: 2,
             },
         );
     }

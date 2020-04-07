@@ -53,7 +53,7 @@ impl Lexer {
                 // '{{' is escaped '{'.
                 // '}}' is escaped '}'.
                 Some(ch @ EXPR_START) | Some(ch @ EXPR_END) => {
-                    if self.reader.peek() == self.character {
+                    if self.reader.peek_value() == self.character {
                         self.fetch_character();
                         self.fetch_character();
                         raw.push(Char::Escaped(ch, ch));
@@ -103,7 +103,7 @@ impl Lexer {
                 // '|}' is escaped '}'.
                 Some(PIPE) => {
                     if let Some(ch @ EXPR_START) | Some(ch @ EXPR_END) | Some(ch @ PIPE) =
-                        self.reader.peek()
+                        self.reader.peek_value()
                     {
                         self.fetch_character();
                         self.fetch_character();
@@ -147,7 +147,7 @@ impl Lexer {
     }
 
     fn fetch_character(&mut self) -> Option<char> {
-        self.character = self.reader.read();
+        self.character = self.reader.read_value();
         self.character
     }
 

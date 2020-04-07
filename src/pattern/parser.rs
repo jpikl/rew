@@ -2,36 +2,49 @@ use crate::pattern::char::Char;
 use crate::pattern::error::ErrorType;
 use crate::pattern::lexer::{Lexer, Token};
 use crate::pattern::parse::{ParseError, Parsed};
+use crate::pattern::reader::Reader;
 use crate::pattern::transform::Transform;
 use crate::pattern::variable::Variable;
 use crate::pattern::PatternItem;
 
 pub struct Parser {
     lexer: Lexer,
-    start: usize,
-    end: usize,
+    token: Option<Parsed<Token>>,
 }
 
 impl Parser {
     pub fn new(string: &str) -> Self {
         Self {
             lexer: Lexer::new(string),
-            start: 0,
-            end: 0,
+            token: None,
         }
     }
 
     pub fn parse_item(&mut self) -> Result<Option<Parsed<PatternItem>>, ParseError> {
         if let Some(token) = self.fetch_token() {
-            match token.value {
+            match &token.value {
                 Token::Raw(raw) => Ok(Some(Parsed {
-                    value: PatternItem::Constant(Char::join(raw.as_slice())),
+                    value: PatternItem::Constant(Char::join(raw)),
                     start: token.start,
                     end: token.end,
                 })),
-                Token::ExprStart => self.parse_expression(),
+                Token::ExprStart => {
+                    let start = token.start;
+                    let end = token.end;
+                    let expression = self.parse_expression()?;
+
+                    if let Some(Token::ExprEnd) = self.token_value() {
+                        Ok(expression)
+                    } else {
+                        Err(ParseError {
+                            typ: ErrorType::UnterminatedExprStart,
+                            start,
+                            end,
+                        })
+                    }
+                }
                 Token::ExprEnd => Err(ParseError {
-                    typ: ErrorType::UnexpectedExprEnd,
+                    typ: ErrorType::UnmatchedExprEnd,
                     start: token.start,
                     end: token.end,
                 }),
@@ -45,10 +58,10 @@ impl Parser {
     }
 
     fn parse_expression(&mut self) -> Result<Option<Parsed<PatternItem>>, ParseError> {
-        let start = self.start;
+        let start = self.token_start();
         let variable = self.parse_variable()?;
         let transforms = self.parse_transforms()?;
-        let end = self.end;
+        let end = self.token_end();
 
         Ok(Some(Parsed {
             value: PatternItem::Expression {
@@ -66,7 +79,6 @@ impl Parser {
 
     fn parse_transforms(&mut self) -> Result<Vec<Parsed<Transform>>, ParseError> {
         let mut transforms: Vec<Parsed<Transform>> = Vec::new();
-        let mut expression_closed = false;
 
         while let Some(token) = self.fetch_token() {
             match token.value {
@@ -75,57 +87,59 @@ impl Parser {
                 }
                 Token::ExprStart => {
                     return Err(ParseError {
-                        typ: ErrorType::UnexpectedExprStart,
-                        start: self.start,
-                        end: self.end,
+                        typ: ErrorType::ExprStartInsideExpr,
+                        start: token.start,
+                        end: token.end,
                     })
                 }
                 Token::ExprEnd => {
-                    expression_closed = true;
                     break;
                 }
-                Token::Raw(_) => {
-                    break;
+                _ => {
+                    panic!("Unexpected token {:?}", token); // Raw or anything else should never appear here!
                 }
             }
         }
 
-        if expression_closed {
-            Ok(transforms)
-        } else {
-            Err(ParseError {
-                typ: ErrorType::ExpectedPipeOrExprEnd,
-                start: self.end,
-                end: self.end,
-            })
-        }
+        Ok(transforms)
     }
 
     fn parse_transform(&mut self) -> Result<Parsed<Transform>, ParseError> {
         self.parse_expression_member(Transform::parse, ErrorType::ExpectedTransform)
     }
 
-    fn parse_expression_member<T, F: FnOnce(Vec<Char>) -> Result<T, ParseError>>(
+    fn parse_expression_member<T, F: FnOnce(&mut Reader) -> Result<T, ParseError>>(
         &mut self,
         parse: F,
         error_type: ErrorType,
     ) -> Result<Parsed<T>, ParseError> {
-        let position = self.end;
+        let position = self.token_end();
         let token = self.fetch_token().ok_or_else(|| ParseError {
             typ: error_type.clone(),
             start: position,
             end: position,
         })?;
-        if let Token::Raw(raw) = token.value {
-            Ok(Parsed {
-                value: parse(raw).map_err(|mut error| {
-                    error.start += position;
-                    error.end += position;
-                    error
-                })?,
-                start: token.start,
-                end: token.end,
-            })
+        if let Token::Raw(raw) = &token.value {
+            let mut reader = Reader::new(raw.clone());
+            let value = parse(&mut reader).map_err(|mut error| {
+                error.start += position;
+                error.end += position;
+                error
+            })?;
+            if let Some(char) = reader.peek() {
+                // There should be no remaining characters
+                Err(ParseError {
+                    typ: ErrorType::ExpectedPipeOrExprEnd(char.clone()),
+                    start: position + reader.position(),
+                    end: position + reader.position() + char.len(),
+                })
+            } else {
+                Ok(Parsed {
+                    value,
+                    start: token.start,
+                    end: token.end,
+                })
+            }
         } else {
             Err(ParseError {
                 typ: error_type,
@@ -135,12 +149,21 @@ impl Parser {
         }
     }
 
-    fn fetch_token(&mut self) -> Option<Parsed<Token>> {
-        self.lexer.next().map(|token| {
-            self.start = token.start;
-            self.end = token.end;
-            token
-        })
+    fn fetch_token(&mut self) -> Option<&Parsed<Token>> {
+        self.token = self.lexer.next();
+        self.token.as_ref()
+    }
+
+    fn token_value(&self) -> Option<&Token> {
+        self.token.as_ref().map(|token| &token.value)
+    }
+
+    fn token_start(&self) -> usize {
+        self.token.as_ref().map_or(0, |token| token.start)
+    }
+
+    fn token_end(&self) -> usize {
+        self.token.as_ref().map_or(0, |token| token.end)
     }
 }
 
@@ -242,7 +265,7 @@ mod tests {
     fn invalid_variable_error() {
         let mut parser = Parser::new("{x}");
         parser.assert_error(ParseError {
-            typ: ErrorType::UnknownVariable,
+            typ: ErrorType::UnknownVariable(Char::Raw('x')),
             start: 1,
             end: 2,
         });
@@ -252,7 +275,7 @@ mod tests {
     fn variable_invalid_transform_error() {
         let mut parser = Parser::new("{f|s2-1}");
         parser.assert_error(ParseError {
-            typ: ErrorType::RangeEndBeforeStart,
+            typ: ErrorType::RangeEndBeforeStart(1, 2),
             start: 4,
             end: 7,
         });
@@ -262,14 +285,14 @@ mod tests {
     fn unexpected_expr_start_error() {
         let mut parser = Parser::new("{f{");
         parser.assert_error(ParseError {
-            typ: ErrorType::UnexpectedExprStart,
+            typ: ErrorType::ExprStartInsideExpr,
             start: 2,
             end: 3,
         });
     }
 
     #[test]
-    fn unexpected_expr_end_error() {
+    fn unmatched_expr_end_error() {
         let mut parser = Parser::new("a}b");
         parser.assert_item(Parsed {
             value: PatternItem::Constant("a".to_string()),
@@ -277,7 +300,7 @@ mod tests {
             end: 1,
         });
         parser.assert_error(ParseError {
-            typ: ErrorType::UnexpectedExprEnd,
+            typ: ErrorType::UnmatchedExprEnd,
             start: 1,
             end: 2,
         });
@@ -294,12 +317,32 @@ mod tests {
     }
 
     #[test]
-    fn expected_pipe_or_expr_end_error() {
+    fn unterminated_expr_start_error() {
         let mut parser = Parser::new("{f");
         parser.assert_error(ParseError {
-            typ: ErrorType::ExpectedPipeOrExprEnd,
+            typ: ErrorType::UnterminatedExprStart,
+            start: 0,
+            end: 1,
+        });
+    }
+
+    #[test]
+    fn expected_pipe_or_expr_end_after_variable_error() {
+        let mut parser = Parser::new("{fg");
+        parser.assert_error(ParseError {
+            typ: ErrorType::ExpectedPipeOrExprEnd(Char::Raw('g')),
             start: 2,
-            end: 2,
+            end: 3,
+        });
+    }
+
+    #[test]
+    fn expected_pipe_or_expr_end_after_transform_error() {
+        let mut parser = Parser::new("{f|a|}");
+        parser.assert_error(ParseError {
+            typ: ErrorType::ExpectedPipeOrExprEnd(Char::Escaped('|', '}')),
+            start: 4,
+            end: 6,
         });
     }
 
