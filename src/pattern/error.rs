@@ -29,7 +29,7 @@ impl fmt::Display for ErrorType {
         use ErrorType::*;
         match self {
             ExpectedNumber => write!(formatter, "Expected number"),
-            ExpectedPattern => write!(formatter, "Expected pattern but gor empty string"),
+            ExpectedPattern => write!(formatter, "Expected pattern but got empty string"),
             ExpectedPipeOrExprEnd(char) => {
                 write!(formatter, "Expected '|' or closing '}}' but got {}", char)
             }

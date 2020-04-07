@@ -14,13 +14,6 @@ impl Char {
         }
     }
 
-    pub fn escape(&self) -> Option<char> {
-        match self {
-            Char::Raw(_) => None,
-            Char::Escaped(esc, _) => Some(*esc),
-        }
-    }
-
     pub fn len(&self) -> usize {
         match self {
             Char::Raw(_) => 1,
@@ -45,7 +38,7 @@ impl fmt::Display for Char {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Char::Raw(ch) => write!(formatter, "'{}'", ch),
-            Char::Escaped(esc, ch) => write!(formatter, "escape sequence '{0}{1}'", esc, ch),
+            Char::Escaped(esc, ch) => write!(formatter, "escape sequence '{}{}'", esc, ch),
         }
     }
 }
@@ -57,11 +50,6 @@ mod tests {
     #[test]
     fn raw_value() {
         assert_eq!(Char::Raw('a').value(), 'a');
-    }
-
-    #[test]
-    fn raw_escape() {
-        assert_eq!(Char::Raw('a').escape(), None);
     }
 
     #[test]
@@ -77,11 +65,6 @@ mod tests {
     #[test]
     fn escaped_value() {
         assert_eq!(Char::Escaped('|', '}').value(), '}');
-    }
-
-    #[test]
-    fn escaped_escape() {
-        assert_eq!(Char::Escaped('|', '}').escape(), Some('|'));
     }
 
     #[test]
