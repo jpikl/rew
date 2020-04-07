@@ -23,7 +23,7 @@ impl Transform {
                 'A' => Ok(Transform::RemoveNonAscii),
                 '>' => Ok(Transform::LeftPad(Char::join(reader.read_to_end()))),
                 '<' => Ok(Transform::RightPad(Char::join(reader.read_to_end()))),
-                name => Err(ParseError {
+                _ => Err(ParseError {
                     typ: ErrorType::UnknownTransform(char.clone()),
                     start: position,
                     end: reader.position(),
@@ -237,7 +237,7 @@ mod tests {
     #[test]
     fn ignore_chars_after_transform() {
         let mut reader = Reader::from("a_");
-        Transform::parse(&mut reader);
+        Transform::parse(&mut reader).unwrap();
         assert_eq!(reader.position(), 1);
     }
 

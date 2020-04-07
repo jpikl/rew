@@ -92,14 +92,14 @@ mod tests {
     #[test]
     fn ignore_remaning_chars_after_variable() {
         let mut reader = Reader::from("f_");
-        Variable::parse(&mut reader);
+        Variable::parse(&mut reader).unwrap();
         assert_eq!(reader.position(), 1);
     }
 
     #[test]
     fn ignore_remaning_chars_capture_group_variable() {
         let mut reader = Reader::from("123_");
-        Variable::parse(&mut reader);
+        Variable::parse(&mut reader).unwrap();
         assert_eq!(reader.position(), 3);
     }
 

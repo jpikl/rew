@@ -160,10 +160,12 @@ mod tests {
         );
     }
 
+    #[test]
     fn is_consumed_returns_true_for_empty() {
         assert_eq!(make_empty_reader().is_consumed(), true);
     }
 
+    #[test]
     fn is_consumed_returns_true_when_consumed() {
         let mut reader = make_reader();
         assert_eq!(reader.is_consumed(), false);
