@@ -12,17 +12,17 @@ impl Transform {
 
         if let Some(char) = reader.read() {
             match char.value() {
-                's' => Ok(Transform::Substring(Range::parse(reader)?)),
-                'S' => Ok(Transform::SubstringFromEnd(Range::parse(reader)?)),
+                'n' => Ok(Transform::Substring(Range::parse(reader)?)),
+                'N' => Ok(Transform::SubstringFromEnd(Range::parse(reader)?)),
                 'r' => Ok(Transform::ReplaceFirst(Substitution::parse(reader)?)),
                 'R' => Ok(Transform::ReplaceAll(Substitution::parse(reader)?)),
                 't' => Ok(Transform::Trim),
-                'u' => Ok(Transform::Lowercase),
-                'U' => Ok(Transform::Uppercase),
+                'l' => Ok(Transform::Lowercase),
+                'u' => Ok(Transform::Uppercase),
                 'a' => Ok(Transform::ToAscii),
                 'A' => Ok(Transform::RemoveNonAscii),
-                '>' => Ok(Transform::LeftPad(Char::join(reader.read_to_end()))),
-                '<' => Ok(Transform::RightPad(Char::join(reader.read_to_end()))),
+                '<' => Ok(Transform::LeftPad(Char::join(reader.read_to_end()))),
+                '>' => Ok(Transform::RightPad(Char::join(reader.read_to_end()))),
                 _ => Err(ParseError {
                     typ: ErrorType::UnknownTransform(char.clone()),
                     start: position,
@@ -46,7 +46,7 @@ mod tests {
     #[test]
     fn substring() {
         assert_err(
-            "s",
+            "n",
             ParseError {
                 typ: ErrorType::ExpectedRange,
                 start: 1,
@@ -54,35 +54,35 @@ mod tests {
             },
         );
         assert_ok(
-            "s5",
+            "n5",
             Transform::Substring(Range {
                 offset: 4,
                 length: 1,
             }),
         );
         assert_ok(
-            "s2-10",
+            "n2-10",
             Transform::Substring(Range {
                 offset: 1,
                 length: 9,
             }),
         );
         assert_ok(
-            "s2-",
+            "n2-",
             Transform::Substring(Range {
                 offset: 1,
                 length: 0,
             }),
         );
         assert_ok(
-            "s-10",
+            "n-10",
             Transform::Substring(Range {
                 offset: 0,
                 length: 10,
             }),
         );
         assert_ok(
-            "s-",
+            "n-",
             Transform::Substring(Range {
                 offset: 0,
                 length: 0,
@@ -93,7 +93,7 @@ mod tests {
     #[test]
     fn substring_from_end() {
         assert_err(
-            "S",
+            "N",
             ParseError {
                 typ: ErrorType::ExpectedRange,
                 start: 1,
@@ -101,35 +101,35 @@ mod tests {
             },
         );
         assert_ok(
-            "S5",
+            "N5",
             Transform::SubstringFromEnd(Range {
                 offset: 4,
                 length: 1,
             }),
         );
         assert_ok(
-            "S2-10",
+            "N2-10",
             Transform::SubstringFromEnd(Range {
                 offset: 1,
                 length: 9,
             }),
         );
         assert_ok(
-            "S2-",
+            "N2-",
             Transform::SubstringFromEnd(Range {
                 offset: 1,
                 length: 0,
             }),
         );
         assert_ok(
-            "S-10",
+            "N-10",
             Transform::SubstringFromEnd(Range {
                 offset: 0,
                 length: 10,
             }),
         );
         assert_ok(
-            "S-",
+            "N-",
             Transform::SubstringFromEnd(Range {
                 offset: 0,
                 length: 0,
@@ -196,12 +196,12 @@ mod tests {
 
     #[test]
     fn lower_case() {
-        assert_ok("u", Transform::Lowercase);
+        assert_ok("l", Transform::Lowercase);
     }
 
     #[test]
     fn upper_case() {
-        assert_ok("U", Transform::Uppercase);
+        assert_ok("u", Transform::Uppercase);
     }
 
     #[test]
@@ -216,22 +216,22 @@ mod tests {
 
     #[test]
     fn left_pad() {
-        assert_ok(">abc", Transform::LeftPad("abc".to_string()));
+        assert_ok("<abc", Transform::LeftPad("abc".to_string()));
     }
 
     #[test]
     fn left_pad_empty() {
-        assert_ok(">", Transform::LeftPad(String::new()));
+        assert_ok("<", Transform::LeftPad(String::new()));
     }
 
     #[test]
     fn right_pad() {
-        assert_ok("<abc", Transform::RightPad("abc".to_string()));
+        assert_ok(">abc", Transform::RightPad("abc".to_string()));
     }
 
     #[test]
     fn right_pad_empty() {
-        assert_ok("<", Transform::RightPad(String::new()));
+        assert_ok(">", Transform::RightPad(String::new()));
     }
 
     #[test]

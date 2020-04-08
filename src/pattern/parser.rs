@@ -217,7 +217,7 @@ mod tests {
 
     #[test]
     fn variable_single_transform() {
-        let mut parser = Parser::new("{b|u}");
+        let mut parser = Parser::new("{b|l}");
         parser.assert_item(Parsed {
             value: PatternItem::Expression {
                 variable: Parsed {
@@ -239,7 +239,7 @@ mod tests {
 
     #[test]
     fn variable_multiple_transforms() {
-        let mut parser = Parser::new("{e|t|s1-3}");
+        let mut parser = Parser::new("{e|t|n1-3}");
         parser.assert_item(Parsed {
             value: PatternItem::Expression {
                 variable: Parsed {
@@ -280,8 +280,8 @@ mod tests {
     }
 
     #[test]
-    fn variable_invalid_transform_error() {
-        let mut parser = Parser::new("{f|s2-1}");
+    fn invalid_transform_error() {
+        let mut parser = Parser::new("{f|n2-1}");
         parser.assert_error(ParseError {
             typ: ErrorType::RangeEndBeforeStart(1, 2),
             start: 4,
@@ -366,7 +366,7 @@ mod tests {
 
     #[test]
     fn complex_input() {
-        let mut parser = Parser::new("image_{c|>000}.{e|u|r'e}");
+        let mut parser = Parser::new("image_{c|<000}.{e|l|r'e}");
         parser.assert_item(Parsed {
             value: PatternItem::Constant("image_".to_string()),
             start: 0,

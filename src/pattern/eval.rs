@@ -71,14 +71,14 @@ mod tests {
     #[test]
     fn complex_input() {
         let mut context = make_context();
-        let pattern = Pattern::parse("prefix_{b|a}.{e|u|r'e}").unwrap();
+        let pattern = Pattern::parse("prefix_{b|a}.{e|l|r'e}").unwrap();
         pattern.assert_eval(&mut context, "prefix_abcd.jpg");
     }
 
     #[test]
     fn multiple_times() {
         let mut context = make_context();
-        let pattern = Pattern::parse("image_{1}_{C|>00}_{c}{E}").unwrap();
+        let pattern = Pattern::parse("image_{1}_{C|<00}_{c}{E}").unwrap();
         pattern.assert_eval(&mut context, "image_abc_02_1.JPEG");
         pattern.assert_eval(&mut context, "image_abc_03_2.JPEG");
         pattern.assert_eval(&mut context, "image_abc_04_3.JPEG");
