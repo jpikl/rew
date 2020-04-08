@@ -1,6 +1,5 @@
 use crate::pattern::parse::Parsed;
-use crate::pattern::transform::Transform;
-use crate::pattern::variable::Variable;
+use crate::pattern::parser::PatternItem;
 
 mod char;
 mod error;
@@ -11,6 +10,7 @@ mod parse;
 mod parser;
 mod range;
 mod reader;
+mod render;
 mod substitution;
 mod transform;
 mod variable;
@@ -18,13 +18,4 @@ mod variable;
 #[derive(Debug, PartialEq)]
 pub struct Pattern {
     items: Vec<Parsed<PatternItem>>,
-}
-
-#[derive(Debug, PartialEq)]
-pub enum PatternItem {
-    Constant(String),
-    Expression {
-        variable: Parsed<Variable>,
-        transforms: Vec<Parsed<Transform>>,
-    },
 }

@@ -1,4 +1,3 @@
-use crate::pattern::char::Char;
 use crate::pattern::error::ErrorType;
 use crate::pattern::number::parse_usize;
 use crate::pattern::parse::ParseError;
@@ -39,6 +38,7 @@ impl Variable {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::pattern::char::Char;
 
     #[test]
     fn filename() {

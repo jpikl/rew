@@ -5,6 +5,8 @@ authors = ["Jan Pikl <pikl.jan@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+atty = "0.2.14"
 regex = "1"
+termcolor = "1.1.0"
 unidecode = "0.3.0"
 uuid = { version = "0.8", features = ["v4"] }

@@ -5,7 +5,15 @@ use crate::pattern::parse::{ParseError, Parsed};
 use crate::pattern::reader::Reader;
 use crate::pattern::transform::Transform;
 use crate::pattern::variable::Variable;
-use crate::pattern::PatternItem;
+
+#[derive(Debug, PartialEq)]
+pub enum PatternItem {
+    Constant(String),
+    Expression {
+        variable: Parsed<Variable>,
+        transforms: Vec<Parsed<Transform>>,
+    },
+}
 
 pub struct Parser {
     lexer: Lexer,

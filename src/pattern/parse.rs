@@ -40,8 +40,8 @@ impl Pattern {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::pattern::parser::PatternItem;
     use crate::pattern::variable::Variable;
-    use crate::pattern::PatternItem;
 
     #[test]
     fn empty_error() {
