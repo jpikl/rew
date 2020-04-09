@@ -1,5 +1,7 @@
-# mmvv
+# mw
 
-![Build status](https://travis-ci.com/jpikl/mmvv.svg?branch=master)
+A command-line batch rename tool.
+
+![Build status](https://travis-ci.com/jpikl/mw.svg?branch=master)
 
 Work in progress...
