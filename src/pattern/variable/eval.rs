@@ -2,6 +2,7 @@ use crate::pattern::error::ErrorType;
 use crate::pattern::eval::EvalContext;
 use crate::pattern::variable::Variable;
 use std::ffi::OsStr;
+use std::path::Path;
 use uuid::Uuid;
 
 impl Variable {
@@ -26,6 +27,17 @@ impl Variable {
                     string
                 }))
             }
+            Variable::FullDirname => Ok(context
+                .path
+                .parent()
+                .map(Path::as_os_str)
+                .map_or_else(String::new, os_str_to_string)),
+            Variable::ParentDirname => Ok(context
+                .path
+                .parent()
+                .and_then(Path::file_name)
+                .map_or_else(String::new, os_str_to_string)),
+            Variable::FullPath => Ok(os_str_to_string(context.path.as_os_str())),
             Variable::LocalCounter => {
                 let counter = context.local_counter;
                 context.local_counter += 1;
@@ -128,6 +140,60 @@ mod tests {
         assert_eq!(
             Variable::ExtensionWithDot.eval(&mut context),
             Ok("".to_string())
+        );
+        assert_eq!(context, final_context);
+    }
+
+    #[test]
+    fn full_dirname() {
+        let mut context = make_context();
+        let final_context = context.clone();
+        assert_eq!(
+            Variable::FullDirname.eval(&mut context),
+            Ok("root/parent".to_string())
+        );
+        assert_eq!(context, final_context);
+    }
+
+    #[test]
+    fn full_dirname_no_parent() {
+        let mut context = make_context();
+        context.path = Path::new("image.png");
+        let final_context = context.clone();
+        assert_eq!(Variable::FullDirname.eval(&mut context), Ok(String::new()));
+        assert_eq!(context, final_context);
+    }
+
+    #[test]
+    fn parent_dirname() {
+        let mut context = make_context();
+        let final_context = context.clone();
+        assert_eq!(
+            Variable::ParentDirname.eval(&mut context),
+            Ok("parent".to_string())
+        );
+        assert_eq!(context, final_context);
+    }
+
+    #[test]
+    fn parent_dirname_no_parent() {
+        let mut context = make_context();
+        context.path = Path::new("image.png");
+        let final_context = context.clone();
+        assert_eq!(
+            Variable::ParentDirname.eval(&mut context),
+            Ok(String::new())
+        );
+        assert_eq!(context, final_context);
+    }
+
+    #[test]
+    fn full_path() {
+        let mut context = make_context();
+        let final_context = context.clone();
+        assert_eq!(
+            Variable::FullPath.eval(&mut context),
+            Ok("root/parent/image.png".to_string())
         );
         assert_eq!(context, final_context);
     }

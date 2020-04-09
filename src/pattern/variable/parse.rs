@@ -16,6 +16,9 @@ impl Variable {
                 'b' => Ok(Variable::Basename),
                 'e' => Ok(Variable::Extension),
                 'E' => Ok(Variable::ExtensionWithDot),
+                'd' => Ok(Variable::FullDirname),
+                'D' => Ok(Variable::ParentDirname),
+                'p' => Ok(Variable::FullPath),
                 'c' => Ok(Variable::LocalCounter),
                 'C' => Ok(Variable::GlobalCounter),
                 'u' => Ok(Variable::Uuid),
@@ -58,6 +61,21 @@ mod tests {
     #[test]
     fn extension_with_dot() {
         assert_ok("E", Variable::ExtensionWithDot);
+    }
+
+    #[test]
+    fn full_dirname() {
+        assert_ok("d", Variable::FullDirname);
+    }
+
+    #[test]
+    fn parent_dirname() {
+        assert_ok("D", Variable::ParentDirname);
+    }
+
+    #[test]
+    fn full_path() {
+        assert_ok("p", Variable::FullPath);
     }
 
     #[test]
