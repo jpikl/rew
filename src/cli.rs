@@ -8,6 +8,7 @@ const COLOR_AUTO: &str = "auto";
 const COLOR_NEVER: &str = "never";
 const FILES: &str = "files";
 const PATTERN: &str = "pattern";
+const ZERO_TERMINATED: &str = "zero-terminated";
 
 pub struct Cli<'a> {
     matches: ArgMatches<'a>,
@@ -43,7 +44,14 @@ impl<'a> Cli<'a> {
                     .long("color")
                     .takes_value(true)
                     .value_name("WHEN")
-                    .possible_values(&[COLOR_AUTO, COLOR_ALWAYS, COLOR_NEVER, COLOR_ANSI]),
+                    .possible_values(&[COLOR_AUTO, COLOR_ALWAYS, COLOR_NEVER, COLOR_ANSI])
+                    .help("Color usage."),
+            )
+            .arg(
+                Arg::with_name(ZERO_TERMINATED)
+                    .short("z")
+                    .long("zero-terminated")
+                    .help("Filenames from stdin are separated by NUL instead of LF."),
             )
             .get_matches()
     }
@@ -59,6 +67,10 @@ impl<'a> Cli<'a> {
             Some(COLOR_NEVER) => ColorChoice::Never,
             _ => ColorChoice::Auto,
         }
+    }
+
+    pub fn zero_terminated(&self) -> bool {
+        self.matches.is_present(ZERO_TERMINATED)
     }
 
     pub fn files(&self) -> Option<OsValues> {

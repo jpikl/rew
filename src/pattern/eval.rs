@@ -1,7 +1,8 @@
 use crate::pattern::error::ErrorType;
 use crate::pattern::parse::Parsed;
+use crate::pattern::parser::PatternItem;
 use crate::pattern::variable::Variable;
-use crate::pattern::{Pattern, PatternItem};
+use crate::pattern::Pattern;
 use std::path::Path;
 
 #[derive(Debug, PartialEq, Clone)]

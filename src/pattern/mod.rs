@@ -1,3 +1,4 @@
+pub use crate::pattern::eval::EvalContext;
 use crate::pattern::parse::Parsed;
 use crate::pattern::parser::PatternItem;
 
