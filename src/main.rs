@@ -1,6 +1,7 @@
 use crate::cli::Cli;
 use crate::input::{ArgsInput, Input, StdinInput};
-use crate::pattern::{EvalContext, Pattern};
+use crate::pattern::Pattern;
+use crate::state::State;
 use std::io::{self, Write};
 use std::{cmp, process};
 use termcolor::{Color, ColorSpec, StandardStream, WriteColor};
@@ -8,6 +9,7 @@ use termcolor::{Color, ColorSpec, StandardStream, WriteColor};
 mod cli;
 mod input;
 mod pattern;
+mod state;
 
 fn main() -> Result<(), io::Error> {
     let cli = Cli::new();
@@ -26,24 +28,24 @@ fn main() -> Result<(), io::Error> {
             } else {
                 Box::new(StdinInput::new(&mut stdin, cli.zero_terminated()))
             };
+
+            let mut state = State::new();
+
             while let Some(src_path) = input.next()? {
-                let dst_path = pattern
-                    .eval(&mut EvalContext {
-                        path: src_path,
-                        global_counter: 0,
-                        local_counter: 0,
-                        capture_groups: Vec::new(),
-                    })
-                    .unwrap();
+                // TODO handle error
+                let dst_path = pattern.eval(&mut state.get_eval_context(src_path)).unwrap();
                 writeln!(&mut stdout, "{}", dst_path)?;
             }
+
             Ok(())
         }
         Err(error) => {
             writeln!(&mut stderr, "{}", error.typ)?;
+
             if !raw_pattern.is_empty() {
                 writeln!(&mut stderr, "\n")?;
                 Pattern::render(&mut stderr, raw_pattern)?;
+
                 write!(&mut stderr, "\n{}", " ".repeat(error.start))?;
                 stderr.set_color(ColorSpec::new().set_fg(Some(Color::Red)).set_bold(true))?;
                 write!(
@@ -51,9 +53,11 @@ fn main() -> Result<(), io::Error> {
                     "{}",
                     "^".repeat(cmp::max(1, error.end - error.start))
                 )?;
+
                 stderr.reset()?;
                 writeln!(&mut stderr)?;
             }
+
             process::exit(2);
         }
     }

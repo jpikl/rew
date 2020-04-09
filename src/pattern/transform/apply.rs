@@ -21,6 +21,7 @@ impl Transform {
                 }
                 string
             }
+
             Transform::SubstringFromEnd(Range { offset, length }) => {
                 if *offset > 0 {
                     if let Some((start, _)) = string.char_indices().rev().nth(*offset - 1) {
@@ -36,32 +37,39 @@ impl Transform {
                 }
                 string
             }
+
             Transform::ReplaceFirst(Substitution { value, replacement }) => {
                 string.replacen(value, replacement, 1)
             }
+
             Transform::ReplaceAll(Substitution { value, replacement }) => {
                 string.replace(value, replacement)
             }
+
             Transform::Trim => string.trim().to_string(),
             Transform::Lowercase => string.to_lowercase(),
             Transform::Uppercase => string.to_uppercase(),
             Transform::ToAscii => unidecode(&string),
+
             Transform::RemoveNonAscii => {
                 string.retain(|ch| ch.is_ascii());
                 string
             }
+
             Transform::LeftPad(padding) => {
                 for char in padding.chars().rev().skip(string.len()) {
                     string.insert(0, char);
                 }
                 string
             }
+
             Transform::RightPad(padding) => {
                 for char in padding.chars().skip(string.len()) {
                     string.push(char);
                 }
                 string
             }
+
             Transform::Default(default) => {
                 if string.is_empty() {
                     string.push_str(default);

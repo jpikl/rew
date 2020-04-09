@@ -15,8 +15,7 @@ pub enum ErrorType {
     RangeInvalid(String),
     RangeUnexpectedChars(String),
     RangeZeroIndex,
-    RegexCaptureGroupOverLimit(usize, usize),
-    RegexCaptureGroupZero,
+    RegexZeroCaptureGroup,
     SubstituteWithoutValue(Char),
     UnknownTransform(Char),
     UnknownVariable(Char),
@@ -53,12 +52,7 @@ impl fmt::Display for ErrorType {
                 value
             ),
             RangeZeroIndex => write!(formatter, "Range indices start from 1, not 0"),
-            RegexCaptureGroupZero => write!(formatter, "Regex capture groups starts from 1, not 0"),
-            RegexCaptureGroupOverLimit(value, max) => write!(
-                formatter,
-                "Value {} exceeded number of regex capture groups ({})",
-                value, max
-            ),
+            RegexZeroCaptureGroup => write!(formatter, "Regex capture groups starts from 1, not 0"),
             SubstituteWithoutValue(separator) => write!(
                 formatter,
                 "Substitution ({} is separator) has no value",

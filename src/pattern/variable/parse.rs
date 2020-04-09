@@ -9,7 +9,16 @@ impl Variable {
         let position = reader.position();
 
         if let Some('0'..='9') = reader.peek_value() {
-            Ok(Variable::CaptureGroup(parse_usize(reader)?))
+            let number = parse_usize(reader)?;
+            if number > 0 {
+                Ok(Variable::CaptureGroup(number - 1))
+            } else {
+                Err(ParseError {
+                    typ: ErrorType::RegexZeroCaptureGroup,
+                    start: position,
+                    end: reader.position(),
+                })
+            }
         } else if let Some(char) = reader.read() {
             match char.value() {
                 'f' => Ok(Variable::Filename),
@@ -89,17 +98,17 @@ mod tests {
     }
 
     #[test]
-    fn regex_group() {
-        assert_ok("1", Variable::CaptureGroup(1));
-        assert_ok("2", Variable::CaptureGroup(2));
-        assert_ok("3", Variable::CaptureGroup(3));
-        assert_ok("4", Variable::CaptureGroup(4));
-        assert_ok("5", Variable::CaptureGroup(5));
-        assert_ok("6", Variable::CaptureGroup(6));
-        assert_ok("7", Variable::CaptureGroup(7));
-        assert_ok("8", Variable::CaptureGroup(8));
-        assert_ok("9", Variable::CaptureGroup(9));
-        assert_ok("10", Variable::CaptureGroup(10));
+    fn capture_group() {
+        assert_ok("1", Variable::CaptureGroup(0));
+        assert_ok("2", Variable::CaptureGroup(1));
+        assert_ok("3", Variable::CaptureGroup(2));
+        assert_ok("4", Variable::CaptureGroup(3));
+        assert_ok("5", Variable::CaptureGroup(4));
+        assert_ok("6", Variable::CaptureGroup(5));
+        assert_ok("7", Variable::CaptureGroup(6));
+        assert_ok("8", Variable::CaptureGroup(7));
+        assert_ok("9", Variable::CaptureGroup(8));
+        assert_ok("10", Variable::CaptureGroup(9));
     }
 
     #[test]
