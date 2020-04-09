@@ -17,4 +17,5 @@ pub enum Transform {
     RemoveNonAscii,
     LeftPad(String),
     RightPad(String),
+    Default(String),
 }

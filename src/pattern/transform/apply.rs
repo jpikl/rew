@@ -62,6 +62,12 @@ impl Transform {
                 }
                 string
             }
+            Transform::Default(default) => {
+                if string.is_empty() {
+                    string.push_str(default);
+                }
+                string
+            }
         }
     }
 }
@@ -394,6 +400,20 @@ mod tests {
     fn right_pad_none() {
         let mut string = "abcd".to_string();
         string = Transform::RightPad("0123".to_string()).apply(string);
+        assert_eq!(string, "abcd");
+    }
+
+    #[test]
+    fn default_used() {
+        let mut string = "".to_string();
+        string = Transform::Default("xyz".to_string()).apply(string);
+        assert_eq!(string, "xyz");
+    }
+
+    #[test]
+    fn default_unused() {
+        let mut string = "abcd".to_string();
+        string = Transform::Default("xyz".to_string()).apply(string);
         assert_eq!(string, "abcd");
     }
 }

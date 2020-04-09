@@ -23,6 +23,7 @@ impl Transform {
                 'A' => Ok(Transform::RemoveNonAscii),
                 '<' => Ok(Transform::LeftPad(Char::join(reader.read_to_end()))),
                 '>' => Ok(Transform::RightPad(Char::join(reader.read_to_end()))),
+                'd' => Ok(Transform::Default(Char::join(reader.read_to_end()))),
                 _ => Err(ParseError {
                     typ: ErrorType::UnknownTransform(char.clone()),
                     start: position,
@@ -232,6 +233,16 @@ mod tests {
     #[test]
     fn right_pad_empty() {
         assert_ok(">", Transform::RightPad(String::new()));
+    }
+
+    #[test]
+    fn default() {
+        assert_ok("dabc", Transform::Default("abc".to_string()));
+    }
+
+    #[test]
+    fn default_empty() {
+        assert_ok("d", Transform::Default(String::new()));
     }
 
     #[test]
