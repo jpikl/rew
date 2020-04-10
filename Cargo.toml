@@ -1,7 +1,7 @@
 [package]
 name = "mw"
 version = "0.1.0"
-description = "A command-line batch rename tool."
+description = "A path processing tool with move/copy capabilities."
 authors = ["Jan Pikl <pikl.jan@gmail.com>"]
 edition = "2018"
 
