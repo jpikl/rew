@@ -6,9 +6,9 @@ const COLOR_ALWAYS: &str = "always";
 const COLOR_ANSI: &str = "ansi";
 const COLOR_AUTO: &str = "auto";
 const COLOR_NEVER: &str = "never";
-const FILES: &str = "files";
+const PATHS: &str = "paths";
 const PATTERN: &str = "pattern";
-const ZERO_TERMINATED: &str = "zero-terminated";
+const ZERO_TERMINATED_STDIN: &str = "zero-terminated-stdin";
 
 pub struct Cli<'a> {
     matches: ArgMatches<'a>,
@@ -30,14 +30,14 @@ impl<'a> Cli<'a> {
                     .index(1)
                     .required(true)
                     .value_name("PATTERN")
-                    .help("Rename pattern."),
+                    .help("Output pattern."),
             )
             .arg(
-                Arg::with_name(FILES)
+                Arg::with_name(PATHS)
                     .index(2)
                     .multiple(true)
-                    .value_name("FILE")
-                    .help("Files to rename. Omit to read filenames as lines from standard input."),
+                    .value_name("PATH")
+                    .help("Paths to process. If none provided, read paths from stdin."),
             )
             .arg(
                 Arg::with_name(COLOR)
@@ -45,13 +45,13 @@ impl<'a> Cli<'a> {
                     .takes_value(true)
                     .value_name("WHEN")
                     .possible_values(&[COLOR_AUTO, COLOR_ALWAYS, COLOR_NEVER, COLOR_ANSI])
-                    .help("Color usage."),
+                    .help("Output color configuration."),
             )
             .arg(
-                Arg::with_name(ZERO_TERMINATED)
+                Arg::with_name(ZERO_TERMINATED_STDIN)
                     .short("z")
-                    .long("zero-terminated")
-                    .help("Filenames from stdin are separated by NUL instead of LF."),
+                    .long("--read0")
+                    .help("Paths from stdin are delimited by NUL byte instead of newline."),
             )
             .get_matches()
     }
@@ -69,11 +69,11 @@ impl<'a> Cli<'a> {
         }
     }
 
-    pub fn zero_terminated(&self) -> bool {
-        self.matches.is_present(ZERO_TERMINATED)
+    pub fn zero_terminated_stdin(&self) -> bool {
+        self.matches.is_present(ZERO_TERMINATED_STDIN)
     }
 
-    pub fn files(&self) -> Option<OsValues> {
-        self.matches.values_of_os(FILES)
+    pub fn paths(&self) -> Option<OsValues> {
+        self.matches.values_of_os(PATHS)
     }
 }

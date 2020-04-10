@@ -23,10 +23,10 @@ fn main() -> Result<(), io::Error> {
 
     match Pattern::parse(raw_pattern) {
         Ok(pattern) => {
-            let mut input: Box<dyn Input> = if let Some(files) = cli.files() {
+            let mut input: Box<dyn Input> = if let Some(files) = cli.paths() {
                 Box::new(ArgsInput::new(files))
             } else {
-                Box::new(StdinInput::new(&mut stdin, cli.zero_terminated()))
+                Box::new(StdinInput::new(&mut stdin, cli.zero_terminated_stdin()))
             };
 
             let mut state = State::new();
