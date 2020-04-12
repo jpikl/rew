@@ -9,6 +9,7 @@ mod lexer;
 mod number;
 mod parse;
 mod parser;
+mod query;
 mod range;
 mod reader;
 mod render;

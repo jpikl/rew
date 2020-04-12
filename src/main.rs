@@ -30,10 +30,13 @@ fn main() -> Result<(), io::Error> {
             };
 
             let mut state = State::new();
+            state.set_local_counter_enabled(pattern.uses_local_counter());
+            state.set_global_counter_enabled(pattern.uses_global_counter());
 
             while let Some(src_path) = input.next()? {
                 // TODO handle error
-                let dst_path = pattern.eval(&mut state.get_eval_context(src_path)).unwrap();
+                let eval_context = state.get_eval_context(src_path);
+                let dst_path = pattern.eval(&eval_context).unwrap();
                 writeln!(&mut stdout, "{}", dst_path)?;
             }
 

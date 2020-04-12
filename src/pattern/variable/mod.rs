@@ -12,6 +12,6 @@ pub enum Variable {
     FullPath,
     LocalCounter,
     GlobalCounter,
-    CaptureGroup(usize),
+    RegexCapture(usize),
     Uuid,
 }
