@@ -1,3 +1,4 @@
+use crate::state::RegexTarget;
 use clap::{App, Arg, ArgMatches, OsValues};
 use termcolor::ColorChoice;
 
@@ -8,6 +9,10 @@ const COLOR_AUTO: &str = "auto";
 const COLOR_NEVER: &str = "never";
 const PATHS: &str = "paths";
 const PATTERN: &str = "pattern";
+const REGEX: &str = "regex";
+const REGEX_TARGET: &str = "regex-target";
+const REGEX_TARGET_FILENAME: &str = "filename";
+const REGEX_TARGET_PATH: &str = "path";
 const ZERO_TERMINATED_STDIN: &str = "zero-terminated-stdin";
 
 pub struct Cli<'a> {
@@ -45,12 +50,30 @@ impl<'a> Cli<'a> {
                     .takes_value(true)
                     .value_name("WHEN")
                     .possible_values(&[COLOR_AUTO, COLOR_ALWAYS, COLOR_NEVER, COLOR_ANSI])
+                    .default_value(COLOR_AUTO)
                     .help("Output color configuration."),
+            )
+            .arg(
+                Arg::with_name(REGEX)
+                    .short("e")
+                    .long("regex")
+                    .takes_value(true)
+                    .value_name("EXPR")
+                    .help("Regular expression to match against input."),
+            )
+            .arg(
+                Arg::with_name(REGEX_TARGET)
+                    .long("regex-target")
+                    .takes_value(true)
+                    .value_name("TARGET")
+                    .possible_values(&[REGEX_TARGET_PATH, REGEX_TARGET_FILENAME])
+                    .default_value(REGEX_TARGET_FILENAME)
+                    .help("Part of input that is matched against regular expression."),
             )
             .arg(
                 Arg::with_name(ZERO_TERMINATED_STDIN)
                     .short("z")
-                    .long("--read0")
+                    .long("read0")
                     .help("Paths from stdin are delimited by NUL byte instead of newline."),
             )
             .get_matches()
@@ -58,6 +81,10 @@ impl<'a> Cli<'a> {
 
     pub fn pattern(&self) -> &str {
         self.matches.value_of(PATTERN).unwrap()
+    }
+
+    pub fn paths(&self) -> Option<OsValues> {
+        self.matches.values_of_os(PATHS)
     }
 
     pub fn color(&self) -> ColorChoice {
@@ -69,11 +96,18 @@ impl<'a> Cli<'a> {
         }
     }
 
-    pub fn zero_terminated_stdin(&self) -> bool {
-        self.matches.is_present(ZERO_TERMINATED_STDIN)
+    pub fn regex(&self) -> Option<&str> {
+        self.matches.value_of(REGEX)
     }
 
-    pub fn paths(&self) -> Option<OsValues> {
-        self.matches.values_of_os(PATHS)
+    pub fn regex_target(&self) -> RegexTarget {
+        match self.matches.value_of(REGEX_TARGET) {
+            Some(REGEX_TARGET_PATH) => RegexTarget::Path,
+            _ => RegexTarget::Filename,
+        }
+    }
+
+    pub fn zero_terminated_stdin(&self) -> bool {
+        self.matches.is_present(ZERO_TERMINATED_STDIN)
     }
 }

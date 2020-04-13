@@ -2,6 +2,7 @@ use crate::cli::Cli;
 use crate::input::{ArgsInput, Input, StdinInput};
 use crate::pattern::Pattern;
 use crate::state::State;
+use regex::Regex;
 use std::io::{self, Write};
 use std::{cmp, process};
 use termcolor::{Color, ColorSpec, StandardStream, WriteColor};
@@ -32,6 +33,13 @@ fn main() -> Result<(), io::Error> {
             let mut state = State::new();
             state.set_local_counter_enabled(pattern.uses_local_counter());
             state.set_global_counter_enabled(pattern.uses_global_counter());
+
+            if pattern.uses_regex_captures() {
+                if let Some(regex) = cli.regex() {
+                    state.set_regex(Some(Regex::new(regex).unwrap())); // TODO handle error
+                    state.set_regex_target(cli.regex_target());
+                }
+            }
 
             while let Some(src_path) = input.next()? {
                 // TODO handle error
