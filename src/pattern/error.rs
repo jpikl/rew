@@ -1,5 +1,21 @@
-use crate::pattern::char::Char;
+use crate::pattern::char::{Char, EscapeSequence};
 use std::fmt;
+
+#[derive(Debug, PartialEq)]
+pub enum ConfigError {
+    ForbiddenEscapeChar(char),
+}
+
+impl fmt::Display for ConfigError {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        use ConfigError::*;
+        match self {
+            ForbiddenEscapeChar(char) => {
+                writeln!(formatter, "'{}' cannot be used as a escape character", char)
+            }
+        }
+    }
+}
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum ErrorType {
@@ -17,10 +33,12 @@ pub enum ErrorType {
     RangeZeroIndex,
     RegexZeroRegexCapture,
     SubstituteWithoutValue(Char),
+    UnknownEscapeSequence(EscapeSequence),
     UnknownTransform(Char),
     UnknownVariable(Char),
     UnmatchedExprEnd,
     UnterminatedExprStart,
+    UnterminatedEscapeSequence(char),
 }
 
 impl fmt::Display for ErrorType {
@@ -58,6 +76,11 @@ impl fmt::Display for ErrorType {
                 "Substitution ({} is separator) has no value",
                 separator
             ),
+            UnknownEscapeSequence(sequence) => write!(
+                formatter,
+                "Unknown escape sequance '{}{}'",
+                sequence[0], sequence[1]
+            ),
             UnknownTransform(Char::Raw(char)) => {
                 write!(formatter, "Unknown transformation '{}'", char)
             }
@@ -69,6 +92,9 @@ impl fmt::Display for ErrorType {
                 "End of expression'}}' does not have matching '{{'"
             ),
             UnterminatedExprStart => write!(formatter, "Unterminated start of expression '{{'"),
+            UnterminatedEscapeSequence(escape) => {
+                write!(formatter, "Unterminated escape sequence '{}'", escape)
+            }
         }
     }
 }

@@ -16,6 +16,8 @@ pub struct ParseError {
     pub end: usize,
 }
 
+pub type ParseResult<T> = Result<T, ParseError>;
+
 impl Pattern {
     pub fn parse(string: &str) -> Result<Self, ParseError> {
         let mut parser = Parser::new(string);

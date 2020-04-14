@@ -1,7 +1,7 @@
 use crate::pattern::char::Char;
 use crate::pattern::error::ErrorType;
 use crate::pattern::lexer::{Lexer, Token};
-use crate::pattern::parse::{ParseError, Parsed};
+use crate::pattern::parse::{ParseError, ParseResult, Parsed};
 use crate::pattern::reader::Reader;
 use crate::pattern::transform::Transform;
 use crate::pattern::variable::Variable;
@@ -29,7 +29,7 @@ impl Parser {
     }
 
     pub fn parse_item(&mut self) -> Result<Option<Parsed<PatternItem>>, ParseError> {
-        if let Some(token) = self.fetch_token() {
+        if let Some(token) = self.fetch_token()? {
             match &token.value {
                 Token::Raw(raw) => Ok(Some(Parsed {
                     value: PatternItem::Constant(Char::join(raw)),
@@ -88,7 +88,7 @@ impl Parser {
     fn parse_transforms(&mut self) -> Result<Vec<Parsed<Transform>>, ParseError> {
         let mut transforms: Vec<Parsed<Transform>> = Vec::new();
 
-        while let Some(token) = self.fetch_token() {
+        while let Some(token) = self.fetch_token()? {
             match token.value {
                 Token::Pipe => {
                     transforms.push(self.parse_transform()?);
@@ -122,7 +122,7 @@ impl Parser {
         error_type: ErrorType,
     ) -> Result<Parsed<T>, ParseError> {
         let position = self.token_end();
-        let token = self.fetch_token().ok_or_else(|| ParseError {
+        let token = self.fetch_token()?.ok_or_else(|| ParseError {
             typ: error_type.clone(),
             start: position,
             end: position,
@@ -157,9 +157,9 @@ impl Parser {
         }
     }
 
-    fn fetch_token(&mut self) -> Option<&Parsed<Token>> {
-        self.token = self.lexer.next();
-        self.token.as_ref()
+    fn fetch_token(&mut self) -> ParseResult<Option<&Parsed<Token>>> {
+        self.token = self.lexer.next().transpose()?;
+        Ok(self.token.as_ref())
     }
 
     fn token_value(&self) -> Option<&Token> {
@@ -341,16 +341,6 @@ mod tests {
             typ: ErrorType::ExpectedPipeOrExprEnd(Char::Raw('g')),
             start: 2,
             end: 3,
-        });
-    }
-
-    #[test]
-    fn expected_pipe_or_expr_end_after_transform_error() {
-        let mut parser = Parser::new("{f|a|}");
-        parser.assert_error(ParseError {
-            typ: ErrorType::ExpectedPipeOrExprEnd(Char::Escaped('|', '}')),
-            start: 4,
-            end: 6,
         });
     }
 
