@@ -1,6 +1,5 @@
 use crate::pattern::char::Char;
-use crate::pattern::error::ErrorType;
-use crate::pattern::parse::ParseError;
+use crate::pattern::error::{ParseError, ParseErrorKind};
 use crate::pattern::range::Range;
 use crate::pattern::reader::Reader;
 use crate::pattern::substitution::Substitution;
@@ -25,14 +24,14 @@ impl Transform {
                 '>' => Ok(Transform::RightPad(Char::join(reader.read_to_end()))),
                 'd' => Ok(Transform::Default(Char::join(reader.read_to_end()))),
                 _ => Err(ParseError {
-                    typ: ErrorType::UnknownTransform(char.clone()),
+                    kind: ParseErrorKind::UnknownTransform(char.clone()),
                     start: position,
                     end: reader.position(),
                 }),
             }
         } else {
             Err(ParseError {
-                typ: ErrorType::ExpectedTransform,
+                kind: ParseErrorKind::ExpectedTransform,
                 start: position,
                 end: reader.end(),
             })
@@ -49,7 +48,7 @@ mod tests {
         assert_err(
             "n",
             ParseError {
-                typ: ErrorType::ExpectedRange,
+                kind: ParseErrorKind::ExpectedRange,
                 start: 1,
                 end: 1,
             },
@@ -96,7 +95,7 @@ mod tests {
         assert_err(
             "N",
             ParseError {
-                typ: ErrorType::ExpectedRange,
+                kind: ParseErrorKind::ExpectedRange,
                 start: 1,
                 end: 1,
             },
@@ -143,7 +142,7 @@ mod tests {
         assert_err(
             "r",
             ParseError {
-                typ: ErrorType::ExpectedSubstitution,
+                kind: ParseErrorKind::ExpectedSubstitution,
                 start: 1,
                 end: 1,
             },
@@ -169,7 +168,7 @@ mod tests {
         assert_err(
             "R",
             ParseError {
-                typ: ErrorType::ExpectedSubstitution,
+                kind: ParseErrorKind::ExpectedSubstitution,
                 start: 1,
                 end: 1,
             },
@@ -257,7 +256,7 @@ mod tests {
         assert_err(
             "",
             ParseError {
-                typ: ErrorType::ExpectedTransform,
+                kind: ParseErrorKind::ExpectedTransform,
                 start: 0,
                 end: 0,
             },
@@ -269,7 +268,7 @@ mod tests {
         assert_err(
             "-_",
             ParseError {
-                typ: ErrorType::UnknownTransform(Char::Raw('-')),
+                kind: ParseErrorKind::UnknownTransform(Char::Raw('-')),
                 start: 0,
                 end: 1,
             },

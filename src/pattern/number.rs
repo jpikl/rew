@@ -1,5 +1,4 @@
-use crate::pattern::error::ErrorType;
-use crate::pattern::parse::ParseError;
+use crate::pattern::error::{ParseError, ParseErrorKind};
 use crate::pattern::reader::Reader;
 
 pub fn parse_usize(reader: &mut Reader) -> Result<usize, ParseError> {
@@ -18,7 +17,7 @@ pub fn parse_usize(reader: &mut Reader) -> Result<usize, ParseError> {
             Ok(number)
         }
         _ => Err(ParseError {
-            typ: ErrorType::ExpectedNumber,
+            kind: ParseErrorKind::ExpectedNumber,
             start: reader.position(),
             end: reader.end(),
         }),
@@ -35,7 +34,7 @@ mod tests {
         assert_eq!(
             parse_usize(&mut reader),
             Err(ParseError {
-                typ: ErrorType::ExpectedNumber,
+                kind: ParseErrorKind::ExpectedNumber,
                 start: 0,
                 end: 0,
             })
@@ -49,7 +48,7 @@ mod tests {
         assert_eq!(
             parse_usize(&mut reader),
             Err(ParseError {
-                typ: ErrorType::ExpectedNumber,
+                kind: ParseErrorKind::ExpectedNumber,
                 start: 0,
                 end: 2,
             })

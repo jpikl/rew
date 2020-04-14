@@ -51,7 +51,7 @@ fn main() -> Result<(), io::Error> {
             Ok(())
         }
         Err(error) => {
-            writeln!(&mut stderr, "{}", error.typ)?;
+            writeln!(&mut stderr, "{}", error.kind)?;
 
             if !raw_pattern.is_empty() {
                 writeln!(&mut stderr, "\n")?;

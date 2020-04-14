@@ -1,6 +1,5 @@
-use crate::pattern::error::ErrorType;
+use crate::pattern::error::{ParseError, ParseErrorKind};
 use crate::pattern::number::parse_usize;
-use crate::pattern::parse::ParseError;
 use crate::pattern::reader::Reader;
 use crate::pattern::variable::Variable;
 
@@ -14,7 +13,7 @@ impl Variable {
                 Ok(Variable::RegexCapture(number))
             } else {
                 Err(ParseError {
-                    typ: ErrorType::RegexZeroRegexCapture,
+                    kind: ParseErrorKind::RegexZeroRegexCapture,
                     start: position,
                     end: reader.position(),
                 })
@@ -32,14 +31,14 @@ impl Variable {
                 'C' => Ok(Variable::GlobalCounter),
                 'u' => Ok(Variable::Uuid),
                 _ => Err(ParseError {
-                    typ: ErrorType::UnknownVariable(char.clone()),
+                    kind: ParseErrorKind::UnknownVariable(char.clone()),
                     start: position,
                     end: reader.position(),
                 }),
             }
         } else {
             Err(ParseError {
-                typ: ErrorType::ExpectedVariable,
+                kind: ParseErrorKind::ExpectedVariable,
                 start: position,
                 end: reader.end(),
             })
@@ -135,7 +134,7 @@ mod tests {
         assert_err(
             "",
             ParseError {
-                typ: ErrorType::ExpectedVariable,
+                kind: ParseErrorKind::ExpectedVariable,
                 start: 0,
                 end: 0,
             },
@@ -147,7 +146,7 @@ mod tests {
         assert_err(
             "-_",
             ParseError {
-                typ: ErrorType::UnknownVariable(Char::Raw('-')),
+                kind: ParseErrorKind::UnknownVariable(Char::Raw('-')),
                 start: 0,
                 end: 1,
             },

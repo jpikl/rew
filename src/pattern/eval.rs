@@ -1,7 +1,5 @@
-use crate::pattern::error::ErrorType;
-use crate::pattern::parse::Parsed;
+use crate::pattern::error::EvalError;
 use crate::pattern::parser::PatternItem;
-use crate::pattern::variable::Variable;
 use crate::pattern::Pattern;
 use std::path::Path;
 
@@ -10,12 +8,6 @@ pub struct EvalContext<'a> {
     pub local_counter: u32,
     pub global_counter: u32,
     pub regex_captures: Option<regex::Captures<'a>>,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct EvalError<'a> {
-    pub typ: ErrorType,
-    pub variable: &'a Parsed<Variable>,
 }
 
 impl Pattern {
@@ -36,8 +28,8 @@ impl Pattern {
                             }
                             output.push_str(&string)
                         }
-                        Err(typ) => {
-                            return Err(EvalError { typ, variable });
+                        Err(kind) => {
+                            return Err(EvalError { kind, item });
                         }
                     };
                 }

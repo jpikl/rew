@@ -1,4 +1,4 @@
-use crate::pattern::error::ErrorType;
+use crate::pattern::error::EvalErrorKind;
 use crate::pattern::eval::EvalContext;
 use crate::pattern::variable::Variable;
 use std::ffi::OsStr;
@@ -6,7 +6,7 @@ use std::path::Path;
 use uuid::Uuid;
 
 impl Variable {
-    pub fn eval(&self, context: &EvalContext) -> Result<String, ErrorType> {
+    pub fn eval(&self, context: &EvalContext) -> Result<String, EvalErrorKind> {
         match self {
             Variable::Filename => Ok(context
                 .path

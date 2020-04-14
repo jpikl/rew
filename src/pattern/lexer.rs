@@ -1,6 +1,6 @@
 use crate::pattern::char::Char;
-use crate::pattern::error::{ConfigError, ErrorType};
-use crate::pattern::parse::{ParseError, ParseResult, Parsed};
+use crate::pattern::error::{ConfigError, ParseError, ParseErrorKind};
+use crate::pattern::parse::{ParseResult, Parsed};
 use crate::pattern::reader::Reader;
 
 pub const DEFAULT_ESCAPE: char = '#';
@@ -88,9 +88,9 @@ impl Lexer {
                 let start = self.start;
                 match self.read_escape() {
                     Ok(char) => chars.push(char),
-                    Err(typ) => {
+                    Err(kind) => {
                         let end = self.end;
-                        return Err(ParseError { typ, start, end });
+                        return Err(ParseError { kind, start, end });
                     }
                 }
             } else {
@@ -102,7 +102,7 @@ impl Lexer {
         Ok(chars)
     }
 
-    fn read_escape(&mut self) -> Result<Char, ErrorType> {
+    fn read_escape(&mut self) -> Result<Char, ParseErrorKind> {
         if let Some(value) = self.fetch_value() {
             let escape_sequence = [self.escape, value];
             let escaped_value = match value {
@@ -117,13 +117,13 @@ impl Lexer {
                     if value == self.escape {
                         value
                     } else {
-                        return Err(ErrorType::UnknownEscapeSequence(escape_sequence));
+                        return Err(ParseErrorKind::UnknownEscapeSequence(escape_sequence));
                     }
                 }
             };
             Ok(Char::Escaped(escaped_value, escape_sequence))
         } else {
-            Err(ErrorType::UnterminatedEscapeSequence(self.escape))
+            Err(ParseErrorKind::UnterminatedEscapeSequence(self.escape))
         }
     }
 
@@ -251,12 +251,12 @@ mod tests {
 
     #[test]
     fn unterminated_escape_error() {
-        Lexer::new("#").assert_err(ErrorType::UnterminatedEscapeSequence('#'), 0, 1);
+        Lexer::new("#").assert_err(ParseErrorKind::UnterminatedEscapeSequence('#'), 0, 1);
     }
 
     #[test]
     fn unknown_escape_error() {
-        Lexer::new("#x").assert_err(ErrorType::UnknownEscapeSequence(['#', 'x']), 0, 2);
+        Lexer::new("#x").assert_err(ParseErrorKind::UnknownEscapeSequence(['#', 'x']), 0, 2);
     }
 
     #[test]
@@ -379,8 +379,8 @@ mod tests {
             assert_eq!(self.next(), Some(Ok(Parsed { value, start, end })));
         }
 
-        fn assert_err(&mut self, typ: ErrorType, start: usize, end: usize) {
-            assert_eq!(self.next(), Some(Err(ParseError { typ, start, end })));
+        fn assert_err(&mut self, kind: ParseErrorKind, start: usize, end: usize) {
+            assert_eq!(self.next(), Some(Err(ParseError { kind, start, end })));
         }
 
         fn assert_set_escape(&mut self, escape: char) {

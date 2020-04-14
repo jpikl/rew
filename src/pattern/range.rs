@@ -1,7 +1,6 @@
 use crate::pattern::char::Char;
-use crate::pattern::error::ErrorType;
+use crate::pattern::error::{ParseError, ParseErrorKind};
 use crate::pattern::number::parse_usize;
-use crate::pattern::parse::ParseError;
 use crate::pattern::reader::Reader;
 
 #[derive(Debug, PartialEq)]
@@ -43,12 +42,12 @@ impl Range {
                 }
             }
             Some(_) => Err(ParseError {
-                typ: ErrorType::RangeInvalid(Char::join(reader.peek_to_end())),
+                kind: ParseErrorKind::RangeInvalid(Char::join(reader.peek_to_end())),
                 start: reader.position(),
                 end: reader.end(),
             }),
             None => Err(ParseError {
-                typ: ErrorType::ExpectedRange,
+                kind: ParseErrorKind::ExpectedRange,
                 start: reader.position(),
                 end: reader.end(),
             }),
@@ -58,7 +57,7 @@ impl Range {
             Ok(range)
         } else {
             Err(ParseError {
-                typ: ErrorType::RangeUnexpectedChars(Char::join(reader.peek_to_end())),
+                kind: ParseErrorKind::RangeUnexpectedChars(Char::join(reader.peek_to_end())),
                 start: reader.position(),
                 end: reader.end(),
             })
@@ -72,7 +71,7 @@ fn parse_offset(reader: &mut Reader) -> Result<usize, ParseError> {
 
     if index < 1 {
         Err(ParseError {
-            typ: ErrorType::RangeZeroIndex,
+            kind: ParseErrorKind::RangeZeroIndex,
             start: position,
             end: reader.position(),
         })
@@ -91,13 +90,13 @@ fn parse_length(
 
     if index < 1 {
         Err(ParseError {
-            typ: ErrorType::RangeZeroIndex,
+            kind: ParseErrorKind::RangeZeroIndex,
             start: position,
             end: reader.position(),
         })
     } else if index <= offset {
         Err(ParseError {
-            typ: ErrorType::RangeEndBeforeStart(index, offset + 1),
+            kind: ParseErrorKind::RangeEndBeforeStart(index, offset + 1),
             start: offset_position,
             end: reader.position(),
         })
@@ -116,7 +115,7 @@ mod tests {
         assert_eq!(
             Range::parse(&mut reader),
             Err(ParseError {
-                typ: ErrorType::ExpectedRange,
+                kind: ParseErrorKind::ExpectedRange,
                 start: 0,
                 end: 0,
             })
@@ -130,7 +129,7 @@ mod tests {
         assert_eq!(
             Range::parse(&mut reader),
             Err(ParseError {
-                typ: ErrorType::RangeInvalid("ab".to_string()),
+                kind: ParseErrorKind::RangeInvalid("ab".to_string()),
                 start: 0,
                 end: 2,
             })
@@ -157,7 +156,7 @@ mod tests {
         assert_eq!(
             Range::parse(&mut reader),
             Err(ParseError {
-                typ: ErrorType::RangeZeroIndex,
+                kind: ParseErrorKind::RangeZeroIndex,
                 start: 0,
                 end: 1,
             })
@@ -184,7 +183,7 @@ mod tests {
         assert_eq!(
             Range::parse(&mut reader),
             Err(ParseError {
-                typ: ErrorType::RangeZeroIndex,
+                kind: ParseErrorKind::RangeZeroIndex,
                 start: 1,
                 end: 2,
             })
@@ -211,7 +210,7 @@ mod tests {
         assert_eq!(
             Range::parse(&mut reader),
             Err(ParseError {
-                typ: ErrorType::RangeEndBeforeStart(5, 10),
+                kind: ParseErrorKind::RangeEndBeforeStart(5, 10),
                 start: 0,
                 end: 4,
             })
@@ -264,7 +263,7 @@ mod tests {
         assert_eq!(
             Range::parse(&mut reader),
             Err(ParseError {
-                typ: ErrorType::RangeUnexpectedChars("ab".to_string()),
+                kind: ParseErrorKind::RangeUnexpectedChars("ab".to_string()),
                 start: 1,
                 end: 3,
             })

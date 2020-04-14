@@ -1,6 +1,5 @@
 use crate::pattern::char::Char;
-use crate::pattern::error::ErrorType;
-use crate::pattern::parse::ParseError;
+use crate::pattern::error::{ParseError, ParseErrorKind};
 use crate::pattern::reader::Reader;
 
 #[derive(Debug, PartialEq)]
@@ -25,7 +24,7 @@ impl Substitution {
 
             if value.is_empty() {
                 return Err(ParseError {
-                    typ: ErrorType::SubstituteWithoutValue(separator),
+                    kind: ParseErrorKind::SubstituteWithoutValue(separator),
                     start: value_position,
                     end: value_position,
                 });
@@ -37,7 +36,7 @@ impl Substitution {
             })
         } else {
             Err(ParseError {
-                typ: ErrorType::ExpectedSubstitution,
+                kind: ParseErrorKind::ExpectedSubstitution,
                 start: reader.position(),
                 end: reader.end(),
             })
@@ -55,7 +54,7 @@ mod tests {
         assert_eq!(
             Substitution::parse(&mut reader),
             Err(ParseError {
-                typ: ErrorType::ExpectedSubstitution,
+                kind: ParseErrorKind::ExpectedSubstitution,
                 start: 0,
                 end: 0,
             })
@@ -69,7 +68,7 @@ mod tests {
         assert_eq!(
             Substitution::parse(&mut reader),
             Err(ParseError {
-                typ: ErrorType::SubstituteWithoutValue(Char::Raw('/')),
+                kind: ParseErrorKind::SubstituteWithoutValue(Char::Raw('/')),
                 start: 1,
                 end: 1,
             })
@@ -83,7 +82,7 @@ mod tests {
         assert_eq!(
             Substitution::parse(&mut reader),
             Err(ParseError {
-                typ: ErrorType::SubstituteWithoutValue(Char::Raw('/')),
+                kind: ParseErrorKind::SubstituteWithoutValue(Char::Raw('/')),
                 start: 1,
                 end: 1,
             })

@@ -1,4 +1,6 @@
 use crate::pattern::char::{Char, EscapeSequence};
+use crate::pattern::parse::Parsed;
+use crate::pattern::parser::PatternItem;
 use std::fmt;
 
 #[derive(Debug, PartialEq)]
@@ -17,8 +19,15 @@ impl fmt::Display for ConfigError {
     }
 }
 
+#[derive(Debug, PartialEq)]
+pub struct ParseError {
+    pub kind: ParseErrorKind,
+    pub start: usize,
+    pub end: usize,
+}
+
 #[derive(Debug, PartialEq, Clone)]
-pub enum ErrorType {
+pub enum ParseErrorKind {
     ExpectedNumber,
     ExpectedPattern,
     ExpectedPipeOrExprEnd(Char),
@@ -41,9 +50,9 @@ pub enum ErrorType {
     UnterminatedEscapeSequence(char),
 }
 
-impl fmt::Display for ErrorType {
+impl fmt::Display for ParseErrorKind {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        use ErrorType::*;
+        use ParseErrorKind::*;
         match self {
             ExpectedNumber => write!(formatter, "Expected number"),
             ExpectedPattern => write!(formatter, "Expected pattern but got empty string"),
@@ -97,4 +106,15 @@ impl fmt::Display for ErrorType {
             }
         }
     }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct EvalError<'a> {
+    pub kind: EvalErrorKind,
+    pub item: &'a Parsed<PatternItem>,
+}
+
+#[derive(Debug, PartialEq)]
+pub enum EvalErrorKind {
+    // TODO UTF conversion error
 }
