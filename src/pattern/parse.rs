@@ -1,6 +1,6 @@
 use crate::pattern::error::{ParseError, ParseErrorKind};
 use crate::pattern::parser::Parser;
-use crate::pattern::Pattern;
+use crate::pattern::{Pattern, DEFAULT_ESCAPE};
 
 #[derive(Debug, PartialEq)]
 pub struct Parsed<T> {
@@ -13,8 +13,13 @@ pub type ParseResult<T> = Result<T, ParseError>;
 
 impl Pattern {
     pub fn parse(string: &str) -> Result<Self, ParseError> {
-        let mut parser = Parser::new(string);
+        Self::parse_with_escape(string, DEFAULT_ESCAPE)
+    }
+
+    pub fn parse_with_escape(string: &str, escape: char) -> Result<Self, ParseError> {
         let mut items = Vec::new();
+        let mut parser = Parser::new(string);
+        parser.set_escape(escape).unwrap(); // TODO handle error
 
         while let Some(item) = parser.parse_item()? {
             items.push(item);

@@ -1,6 +1,6 @@
 use crate::cli::Cli;
 use crate::input::{ArgsInput, Input, StdinInput};
-use crate::pattern::Pattern;
+use crate::pattern::{Pattern, DEFAULT_ESCAPE};
 use crate::state::State;
 use regex::Regex;
 use std::io::{self, Write};
@@ -17,12 +17,13 @@ fn main() -> Result<(), io::Error> {
 
     let raw_pattern = cli.pattern();
     let color_choice = cli.color();
+    let escape = cli.escape().unwrap_or(DEFAULT_ESCAPE);
 
     let mut stdin = io::stdin();
     let mut stdout = StandardStream::stdout(color_choice);
     let mut stderr = StandardStream::stderr(color_choice);
 
-    match Pattern::parse(raw_pattern) {
+    match Pattern::parse_with_escape(raw_pattern, escape) {
         Ok(pattern) => {
             let mut input: Box<dyn Input> = if let Some(files) = cli.paths() {
                 Box::new(ArgsInput::new(files))

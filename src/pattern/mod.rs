@@ -1,4 +1,5 @@
 pub use crate::pattern::eval::EvalContext;
+pub use crate::pattern::lexer::DEFAULT_ESCAPE;
 use crate::pattern::parse::Parsed;
 use crate::pattern::parser::PatternItem;
 

@@ -7,6 +7,7 @@ const COLOR_ALWAYS: &str = "always";
 const COLOR_ANSI: &str = "ansi";
 const COLOR_AUTO: &str = "auto";
 const COLOR_NEVER: &str = "never";
+const ESCAPE: &str = "escape";
 const PATHS: &str = "paths";
 const PATTERN: &str = "pattern";
 const REGEX: &str = "regex";
@@ -54,6 +55,21 @@ impl<'a> Cli<'a> {
                     .help("Output color configuration."),
             )
             .arg(
+                Arg::with_name(ESCAPE)
+                    .long("escape")
+                    .takes_value(true)
+                    .value_name("CHAR")
+                    .validator(|value| {
+                        if value.chars().count() == 1 {
+                            // TODO validate character - code in Lexer.rs
+                            Ok(())
+                        } else {
+                            Err("Value must be a single character".to_string())
+                        }
+                    })
+                    .help("Custom escape character."),
+            )
+            .arg(
                 Arg::with_name(REGEX)
                     .short("e")
                     .long("regex")
@@ -94,6 +110,12 @@ impl<'a> Cli<'a> {
             Some(COLOR_NEVER) => ColorChoice::Never,
             _ => ColorChoice::Auto,
         }
+    }
+
+    pub fn escape(&self) -> Option<char> {
+        self.matches
+            .value_of(ESCAPE)
+            .map(|value| value.chars().next().expect("Cli arg validation failed"))
     }
 
     pub fn regex(&self) -> Option<&str> {
