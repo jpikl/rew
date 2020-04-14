@@ -1,13 +1,15 @@
 use crate::pattern::char::Char;
-use crate::pattern::error::{ConfigError, ParseError, ParseErrorKind};
+use crate::pattern::error::{ParseError, ParseErrorKind};
 use crate::pattern::parse::{ParseResult, Parsed};
 use crate::pattern::reader::Reader;
 
 pub const DEFAULT_ESCAPE: char = '#';
+pub const META_CHARS: [char; 3] = [EXPR_START, PIPE, EXPR_END];
 
 const EXPR_START: char = '{';
 const EXPR_END: char = '}';
 const PIPE: char = '|';
+
 const LF: char = 'n';
 const CR: char = 'r';
 const TAB: char = 't';
@@ -42,16 +44,8 @@ impl Lexer {
         lexer
     }
 
-    pub fn set_escape(&mut self, escape: char) -> Result<(), ConfigError> {
-        match escape {
-            EXPR_START | EXPR_END | PIPE | LF | CR | TAB | NUL => {
-                Err(ConfigError::ForbiddenEscapeChar(escape))
-            }
-            _ => {
-                self.escape = escape;
-                Ok(())
-            }
-        }
+    pub fn set_escape(&mut self, escape: char) {
+        self.escape = escape;
     }
 
     fn read_token(&mut self) -> Option<ParseResult<Parsed<Token>>> {
@@ -86,7 +80,7 @@ impl Lexer {
                 break;
             } else if value == self.escape {
                 let start = self.start;
-                match self.read_escape() {
+                match self.read_escaped_char() {
                     Ok(char) => chars.push(char),
                     Err(kind) => {
                         let end = self.end;
@@ -102,7 +96,7 @@ impl Lexer {
         Ok(chars)
     }
 
-    fn read_escape(&mut self) -> Result<Char, ParseErrorKind> {
+    fn read_escaped_char(&mut self) -> Result<Char, ParseErrorKind> {
         if let Some(value) = self.fetch_value() {
             let escape_sequence = [self.escape, value];
             let escaped_value = match value {
@@ -245,7 +239,7 @@ mod tests {
     #[test]
     fn custom_escape() {
         let mut lexer = Lexer::new(r"\|");
-        lexer.assert_set_escape('\\');
+        lexer.set_escape('\\');
         lexer.assert_raw_vec(vec![Char::Escaped('|', ['\\', '|'])], 0, 2);
     }
 
@@ -257,18 +251,6 @@ mod tests {
     #[test]
     fn unknown_escape_error() {
         Lexer::new("#x").assert_err(ParseErrorKind::UnknownEscapeSequence(['#', 'x']), 0, 2);
-    }
-
-    #[test]
-    fn forbidden_custom_escape_error() {
-        let mut lexer = Lexer::new("");
-        lexer.assert_set_escape_err('{', ConfigError::ForbiddenEscapeChar('{'));
-        lexer.assert_set_escape_err('|', ConfigError::ForbiddenEscapeChar('|'));
-        lexer.assert_set_escape_err('}', ConfigError::ForbiddenEscapeChar('}'));
-        lexer.assert_set_escape_err('n', ConfigError::ForbiddenEscapeChar('n'));
-        lexer.assert_set_escape_err('r', ConfigError::ForbiddenEscapeChar('r'));
-        lexer.assert_set_escape_err('t', ConfigError::ForbiddenEscapeChar('t'));
-        lexer.assert_set_escape_err('0', ConfigError::ForbiddenEscapeChar('0'));
     }
 
     #[test]
@@ -321,7 +303,7 @@ mod tests {
     #[test]
     fn various_tokens_and_custom_escapes() {
         let mut lexer = Lexer::new(r"a{|}bc\{de\|fg\}hi\n\r\t\0\\");
-        lexer.assert_set_escape('\\');
+        lexer.set_escape('\\');
         lexer.assert_raw("a", 0, 1);
         lexer.assert_expr_start(1, 2);
         lexer.assert_pipe(2, 3);
@@ -381,14 +363,6 @@ mod tests {
 
         fn assert_err(&mut self, kind: ParseErrorKind, start: usize, end: usize) {
             assert_eq!(self.next(), Some(Err(ParseError { kind, start, end })));
-        }
-
-        fn assert_set_escape(&mut self, escape: char) {
-            assert_eq!(self.set_escape(escape), Ok(()));
-        }
-
-        fn assert_set_escape_err(&mut self, escape: char, error: ConfigError) {
-            assert_eq!(self.set_escape(escape), Err(error));
         }
     }
 }

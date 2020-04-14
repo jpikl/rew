@@ -19,7 +19,7 @@ impl Pattern {
     pub fn parse_with_escape(string: &str, escape: char) -> Result<Self, ParseError> {
         let mut items = Vec::new();
         let mut parser = Parser::new(string);
-        parser.set_escape(escape).unwrap(); // TODO handle error
+        parser.set_escape(escape);
 
         while let Some(item) = parser.parse_item()? {
             items.push(item);

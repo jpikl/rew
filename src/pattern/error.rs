@@ -4,22 +4,6 @@ use crate::pattern::parser::PatternItem;
 use std::fmt;
 
 #[derive(Debug, PartialEq)]
-pub enum ConfigError {
-    ForbiddenEscapeChar(char),
-}
-
-impl fmt::Display for ConfigError {
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        use ConfigError::*;
-        match self {
-            ForbiddenEscapeChar(char) => {
-                writeln!(formatter, "'{}' cannot be used as a escape character", char)
-            }
-        }
-    }
-}
-
-#[derive(Debug, PartialEq)]
 pub struct ParseError {
     pub kind: ParseErrorKind,
     pub start: usize,
@@ -78,18 +62,16 @@ impl fmt::Display for ParseErrorKind {
                 "Unexpected characters '{}' in range parameter",
                 value
             ),
-            RangeZeroIndex => write!(formatter, "Range indices start from 1, not 0"),
+            RangeZeroIndex => write!(formatter, "Range indice s start from 1, not 0"),
             RegexZeroRegexCapture => write!(formatter, "Regex capture groups starts from 1, not 0"),
             SubstituteWithoutValue(separator) => write!(
                 formatter,
                 "Substitution ({} is separator) has no value",
                 separator
             ),
-            UnknownEscapeSequence(sequence) => write!(
-                formatter,
-                "Unknown escape sequance '{}{}'",
-                sequence[0], sequence[1]
-            ),
+            UnknownEscapeSequence(seq) => {
+                write!(formatter, "Unknown escape sequance '{}{}'", seq[0], seq[1])
+            }
             UnknownTransform(Char::Raw(char)) => {
                 write!(formatter, "Unknown transformation '{}'", char)
             }

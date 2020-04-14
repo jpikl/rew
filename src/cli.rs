@@ -1,3 +1,4 @@
+use crate::pattern::META_CHARS;
 use crate::state::RegexTarget;
 use clap::{App, Arg, ArgMatches, OsValues};
 use termcolor::ColorChoice;
@@ -60,11 +61,20 @@ impl<'a> Cli<'a> {
                     .takes_value(true)
                     .value_name("CHAR")
                     .validator(|value| {
-                        if value.chars().count() == 1 {
-                            // TODO validate character - code in Lexer.rs
-                            Ok(())
-                        } else {
+                        let chars: Vec<char> = value.chars().collect();
+                        if chars.len() != 1 {
                             Err("Value must be a single character".to_string())
+                        } else if META_CHARS.contains(&chars[0]) {
+                            Err(format!(
+                                "Cannot use one of meta characters {}",
+                                META_CHARS
+                                    .iter()
+                                    .map(|char| format!("'{}'", char))
+                                    .collect::<Vec<String>>()
+                                    .join(", ")
+                            ))
+                        } else {
+                            Ok(())
                         }
                     })
                     .help("Custom escape character."),
@@ -115,7 +125,7 @@ impl<'a> Cli<'a> {
     pub fn escape(&self) -> Option<char> {
         self.matches
             .value_of(ESCAPE)
-            .map(|value| value.chars().next().expect("Cli arg validation failed"))
+            .and_then(|value| value.chars().next())
     }
 
     pub fn regex(&self) -> Option<&str> {

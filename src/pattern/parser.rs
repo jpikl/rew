@@ -1,5 +1,5 @@
 use crate::pattern::char::Char;
-use crate::pattern::error::{ConfigError, ParseError, ParseErrorKind};
+use crate::pattern::error::{ParseError, ParseErrorKind};
 use crate::pattern::lexer::{Lexer, Token};
 use crate::pattern::parse::{ParseResult, Parsed};
 use crate::pattern::reader::Reader;
@@ -28,8 +28,8 @@ impl Parser {
         }
     }
 
-    pub fn set_escape(&mut self, escape: char) -> Result<(), ConfigError> {
-        self.lexer.set_escape(escape)
+    pub fn set_escape(&mut self, escape: char) {
+        self.lexer.set_escape(escape);
     }
 
     pub fn parse_item(&mut self) -> Result<Option<Parsed<PatternItem>>, ParseError> {

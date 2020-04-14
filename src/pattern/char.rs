@@ -40,11 +40,7 @@ impl fmt::Display for Char {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Char::Raw(value) => write!(formatter, "'{}'", value),
-            Char::Escaped(_, sequence) => write!(
-                formatter,
-                "escape sequence '{}{}'",
-                sequence[0], sequence[1]
-            ),
+            Char::Escaped(_, seq) => write!(formatter, "escape sequence '{}{}'", seq[0], seq[1]),
         }
     }
 }
