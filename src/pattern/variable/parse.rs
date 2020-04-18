@@ -1,10 +1,11 @@
 use crate::pattern::error::{ParseError, ParseErrorKind};
 use crate::pattern::number::parse_usize;
+use crate::pattern::parse::ParseResult;
 use crate::pattern::reader::Reader;
 use crate::pattern::variable::Variable;
 
 impl Variable {
-    pub fn parse(reader: &mut Reader) -> Result<Self, ParseError> {
+    pub fn parse(reader: &mut Reader) -> ParseResult<Self> {
         let position = reader.position();
 
         if let Some('0'..='9') = reader.peek_value() {

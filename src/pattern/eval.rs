@@ -10,8 +10,10 @@ pub struct EvalContext<'a> {
     pub regex_captures: Option<regex::Captures<'a>>,
 }
 
+type EvalResult<'a, T> = Result<T, EvalError<'a>>;
+
 impl Pattern {
-    pub fn eval(&self, context: &EvalContext) -> Result<String, EvalError> {
+    pub fn eval(&self, context: &EvalContext) -> EvalResult<String> {
         let mut output = String::new();
 
         for item in self.items.iter() {

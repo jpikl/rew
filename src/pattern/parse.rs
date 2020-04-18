@@ -12,11 +12,11 @@ pub struct Parsed<T> {
 pub type ParseResult<T> = Result<T, ParseError>;
 
 impl Pattern {
-    pub fn parse(string: &str) -> Result<Self, ParseError> {
+    pub fn parse(string: &str) -> ParseResult<Self> {
         Self::parse_with_escape(string, DEFAULT_ESCAPE)
     }
 
-    pub fn parse_with_escape(string: &str, escape: char) -> Result<Self, ParseError> {
+    pub fn parse_with_escape(string: &str, escape: char) -> ParseResult<Self> {
         let mut items = Vec::new();
         let mut parser = Parser::new(string);
         parser.set_escape(escape);

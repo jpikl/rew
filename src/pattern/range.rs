@@ -1,6 +1,7 @@
 use crate::pattern::char::Char;
 use crate::pattern::error::{ParseError, ParseErrorKind};
 use crate::pattern::number::parse_usize;
+use crate::pattern::parse::ParseResult;
 use crate::pattern::reader::Reader;
 
 #[derive(Debug, PartialEq)]
@@ -12,7 +13,7 @@ pub struct Range {
 const DIVIDER: char = '-';
 
 impl Range {
-    pub fn parse(reader: &mut Reader) -> Result<Self, ParseError> {
+    pub fn parse(reader: &mut Reader) -> ParseResult<Self> {
         let range = match reader.peek_value() {
             Some('0'..='9') => {
                 let position = reader.position();
@@ -65,7 +66,7 @@ impl Range {
     }
 }
 
-fn parse_offset(reader: &mut Reader) -> Result<usize, ParseError> {
+fn parse_offset(reader: &mut Reader) -> ParseResult<usize> {
     let position = reader.position();
     let index = parse_usize(reader)?;
 
@@ -80,11 +81,7 @@ fn parse_offset(reader: &mut Reader) -> Result<usize, ParseError> {
     }
 }
 
-fn parse_length(
-    reader: &mut Reader,
-    offset: usize,
-    offset_position: usize,
-) -> Result<usize, ParseError> {
+fn parse_length(reader: &mut Reader, offset: usize, offset_position: usize) -> ParseResult<usize> {
     let position = reader.position();
     let index = parse_usize(reader)?;
 

@@ -32,7 +32,7 @@ impl Parser {
         self.lexer.set_escape(escape);
     }
 
-    pub fn parse_item(&mut self) -> Result<Option<Parsed<PatternItem>>, ParseError> {
+    pub fn parse_item(&mut self) -> ParseResult<Option<Parsed<PatternItem>>> {
         if let Some(token) = self.fetch_token()? {
             match &token.value {
                 Token::Raw(raw) => Ok(Some(Parsed {
@@ -69,7 +69,7 @@ impl Parser {
         }
     }
 
-    fn parse_expression(&mut self) -> Result<Option<Parsed<PatternItem>>, ParseError> {
+    fn parse_expression(&mut self) -> ParseResult<Option<Parsed<PatternItem>>> {
         let start = self.token_start();
         let variable = self.parse_variable()?;
         let transforms = self.parse_transforms()?;
@@ -85,11 +85,11 @@ impl Parser {
         }))
     }
 
-    fn parse_variable(&mut self) -> Result<Parsed<Variable>, ParseError> {
+    fn parse_variable(&mut self) -> ParseResult<Parsed<Variable>> {
         self.parse_expression_member(Variable::parse, ParseErrorKind::ExpectedVariable)
     }
 
-    fn parse_transforms(&mut self) -> Result<Vec<Parsed<Transform>>, ParseError> {
+    fn parse_transforms(&mut self) -> ParseResult<Vec<Parsed<Transform>>> {
         let mut transforms: Vec<Parsed<Transform>> = Vec::new();
 
         while let Some(token) = self.fetch_token()? {
@@ -116,15 +116,15 @@ impl Parser {
         Ok(transforms)
     }
 
-    fn parse_transform(&mut self) -> Result<Parsed<Transform>, ParseError> {
+    fn parse_transform(&mut self) -> ParseResult<Parsed<Transform>> {
         self.parse_expression_member(Transform::parse, ParseErrorKind::ExpectedTransform)
     }
 
-    fn parse_expression_member<T, F: FnOnce(&mut Reader) -> Result<T, ParseError>>(
+    fn parse_expression_member<T, F: FnOnce(&mut Reader) -> ParseResult<T>>(
         &mut self,
         parse: F,
         error_type: ParseErrorKind,
-    ) -> Result<Parsed<T>, ParseError> {
+    ) -> ParseResult<Parsed<T>> {
         let position = self.token_end();
         let token = self.fetch_token()?.ok_or_else(|| ParseError {
             kind: error_type.clone(),

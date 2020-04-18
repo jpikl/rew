@@ -1,5 +1,6 @@
 use crate::pattern::char::Char;
 use crate::pattern::error::{ParseError, ParseErrorKind};
+use crate::pattern::parse::ParseResult;
 use crate::pattern::reader::Reader;
 
 #[derive(Debug, PartialEq)]
@@ -9,7 +10,7 @@ pub struct Substitution {
 }
 
 impl Substitution {
-    pub fn parse(reader: &mut Reader) -> Result<Self, ParseError> {
+    pub fn parse(reader: &mut Reader) -> ParseResult<Self> {
         if let Some(separator) = reader.read().cloned() {
             let mut value = String::new();
             let value_position = reader.position();

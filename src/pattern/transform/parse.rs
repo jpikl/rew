@@ -1,12 +1,13 @@
 use crate::pattern::char::Char;
 use crate::pattern::error::{ParseError, ParseErrorKind};
+use crate::pattern::parse::ParseResult;
 use crate::pattern::range::Range;
 use crate::pattern::reader::Reader;
 use crate::pattern::substitution::Substitution;
 use crate::pattern::transform::Transform;
 
 impl Transform {
-    pub fn parse(reader: &mut Reader) -> Result<Self, ParseError> {
+    pub fn parse(reader: &mut Reader) -> ParseResult<Self> {
         let position = reader.position();
 
         if let Some(char) = reader.read() {

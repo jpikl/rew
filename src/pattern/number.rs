@@ -1,7 +1,8 @@
 use crate::pattern::error::{ParseError, ParseErrorKind};
+use crate::pattern::parse::ParseResult;
 use crate::pattern::reader::Reader;
 
-pub fn parse_usize(reader: &mut Reader) -> Result<usize, ParseError> {
+pub fn parse_usize(reader: &mut Reader) -> ParseResult<usize> {
     match reader.peek_value() {
         Some('0') => {
             reader.read_value();

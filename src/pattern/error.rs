@@ -50,7 +50,7 @@ impl fmt::Display for ParseErrorKind {
             ),
             ExpectedTransform => write!(formatter, "Expected transformation after '|'"),
             ExpectedVariable => write!(formatter, "Expected variable after '{{'"),
-            ExprStartInsideExpr => writeln!(formatter, "Unescaped '{{' inside expression"),
+            ExprStartInsideExpr => write!(formatter, "Unescaped '{{' inside expression"),
             RangeEndBeforeStart(end, start) => write!(
                 formatter,
                 "Range end ({}) cannot precede its start ({})",
