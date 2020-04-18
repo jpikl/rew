@@ -162,7 +162,7 @@ impl Parser {
     }
 
     fn fetch_token(&mut self) -> ParseResult<Option<&Parsed<Token>>> {
-        self.token = self.lexer.next().transpose()?;
+        self.token = self.lexer.read_token()?;
         Ok(self.token.as_ref())
     }
 

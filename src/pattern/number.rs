@@ -94,14 +94,14 @@ mod tests {
     #[test]
     fn positive_number_multiple_digits() {
         let mut reader = Reader::from("1234567890");
-        assert_eq!(parse_usize(&mut reader), Ok(1234567890));
+        assert_eq!(parse_usize(&mut reader), Ok(1_234_567_890));
         assert_eq!(reader.position(), 10);
     }
 
     #[test]
     fn positive_number_multiple_digits_ignore_rest() {
         let mut reader = Reader::from("1234567890a");
-        assert_eq!(parse_usize(&mut reader), Ok(1234567890));
+        assert_eq!(parse_usize(&mut reader), Ok(1_234_567_890));
         assert_eq!(reader.position(), 10);
     }
 }

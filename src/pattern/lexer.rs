@@ -26,78 +26,74 @@ pub enum Token {
 pub struct Lexer {
     reader: Reader,
     escape: char,
-    value: Option<char>,
-    start: usize,
-    end: usize,
 }
 
 impl Lexer {
     pub fn new(string: &str) -> Self {
-        let mut lexer = Self {
+        Self {
             reader: Reader::from(string),
             escape: DEFAULT_ESCAPE,
-            value: None,
-            start: 0,
-            end: 0,
-        };
-        lexer.fetch_value();
-        lexer
+        }
     }
 
     pub fn set_escape(&mut self, escape: char) {
         self.escape = escape;
     }
 
-    fn read_token(&mut self) -> Option<ParseResult<Parsed<Token>>> {
-        let start = self.start;
-        let value = match self.value? {
-            EXPR_START => {
-                self.fetch_value();
+    pub fn read_token(&mut self) -> ParseResult<Option<Parsed<Token>>> {
+        let start = self.reader.position();
+        let value = match self.reader.peek_value() {
+            Some(EXPR_START) => {
+                self.reader.seek();
                 Token::ExprStart
             }
-            EXPR_END => {
-                self.fetch_value();
+            Some(EXPR_END) => {
+                self.reader.seek();
                 Token::ExprEnd
             }
-            PIPE => {
-                self.fetch_value();
+            Some(PIPE) => {
+                self.reader.seek();
                 Token::Pipe
             }
-            _ => match self.read_chars() {
+            Some(_) => match self.read_chars() {
                 Ok(chars) => Token::Raw(chars),
-                Err(error) => return Some(Err(error)),
+                Err(error) => return Err(error),
             },
+            None => return Ok(None),
         };
-        let end = self.start;
-        Some(Ok(Parsed { value, start, end }))
+        let end = self.reader.position();
+        Ok(Some(Parsed { value, start, end }))
     }
 
     fn read_chars(&mut self) -> ParseResult<Vec<Char>> {
         let mut chars = Vec::new();
 
-        while let Some(value) = self.value {
-            if value == EXPR_START || value == EXPR_END || value == PIPE {
-                break;
-            } else if value == self.escape {
-                let start = self.start;
-                match self.read_escaped_char() {
-                    Ok(char) => chars.push(char),
-                    Err(kind) => {
-                        let end = self.end;
-                        return Err(ParseError { kind, start, end });
+        loop {
+            match self.reader.peek_value() {
+                Some(EXPR_START) | Some(EXPR_END) | Some(PIPE) | None => break,
+                Some(value) if value == self.escape => {
+                    let start = self.reader.position();
+                    self.reader.seek();
+                    match self.read_escaped_char() {
+                        Ok(char) => chars.push(char),
+                        Err(kind) => {
+                            let end = self.reader.position();
+                            return Err(ParseError { kind, start, end });
+                        }
                     }
                 }
-            } else {
-                chars.push(Char::Raw(value));
+                Some(value) => {
+                    chars.push(Char::Raw(value));
+                    self.reader.seek();
+                }
             }
-            self.fetch_value();
         }
 
         Ok(chars)
     }
 
     fn read_escaped_char(&mut self) -> Result<Char, ParseErrorKind> {
-        if let Some(value) = self.fetch_value() {
+        if let Some(value) = self.reader.read_value() {
             let escape_sequence = [self.escape, value];
             let escaped_value = match value {
                 EXPR_START => EXPR_START,
@@ -107,33 +103,13 @@ impl Lexer {
                 CR => '\r',
                 TAB => '\t',
                 NUL => '\0',
-                _ => {
-                    if value == self.escape {
-                        value
-                    } else {
-                        return Err(ParseErrorKind::UnknownEscapeSequence(escape_sequence));
-                    }
-                }
+                _ if value == self.escape => value,
+                _ => return Err(ParseErrorKind::UnknownEscapeSequence(escape_sequence)),
             };
             Ok(Char::Escaped(escaped_value, escape_sequence))
         } else {
             Err(ParseErrorKind::UnterminatedEscapeSequence(self.escape))
         }
-    }
-
-    fn fetch_value(&mut self) -> Option<char> {
-        self.start = self.reader.position();
-        self.value = self.reader.read_value();
-        self.end = self.reader.position();
-        self.value
-    }
-}
-
-impl Iterator for Lexer {
-    type Item = ParseResult<Parsed<Token>>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.read_token()
     }
 }
 
@@ -143,160 +119,386 @@ mod tests {
 
     #[test]
     fn empty_input() {
-        Lexer::new("").assert_none();
+        let mut lexer = Lexer::new("");
+        assert_eq!(lexer.read_token(), Ok(None));
     }
 
     #[test]
     fn raw_char() {
         let mut lexer = Lexer::new("a");
-        lexer.assert_raw("a", 0, 1);
-        lexer.assert_none();
+        assert_eq!(
+            lexer.read_token(),
+            Ok(Some(Parsed {
+                value: Token::Raw(Char::raw_vec("a")),
+                start: 0,
+                end: 1,
+            }))
+        );
+        assert_eq!(lexer.read_token(), Ok(None));
     }
 
     #[test]
     fn raw_chars() {
         let mut lexer = Lexer::new("abc");
-        lexer.assert_raw("abc", 0, 3);
-        lexer.assert_none();
+        assert_eq!(
+            lexer.read_token(),
+            Ok(Some(Parsed {
+                value: Token::Raw(Char::raw_vec("abc")),
+                start: 0,
+                end: 3,
+            }))
+        );
+        assert_eq!(lexer.read_token(), Ok(None));
     }
 
     #[test]
-    fn expression_start() {
+    fn expr_start() {
         let mut lexer = Lexer::new("{");
-        lexer.assert_expr_start(0, 1);
-        lexer.assert_none();
+        assert_eq!(
+            lexer.read_token(),
+            Ok(Some(Parsed {
+                value: Token::ExprStart,
+                start: 0,
+                end: 1,
+            }))
+        );
+        assert_eq!(lexer.read_token(), Ok(None));
     }
 
     #[test]
-    fn expression_end() {
+    fn expr_end() {
         let mut lexer = Lexer::new("}");
-        lexer.assert_expr_end(0, 1);
-        lexer.assert_none();
+        assert_eq!(
+            lexer.read_token(),
+            Ok(Some(Parsed {
+                value: Token::ExprEnd,
+                start: 0,
+                end: 1,
+            }))
+        );
+        assert_eq!(lexer.read_token(), Ok(None));
     }
 
     #[test]
     fn pipe() {
         let mut lexer = Lexer::new("|");
-        lexer.assert_pipe(0, 1);
-        lexer.assert_none();
+        assert_eq!(
+            lexer.read_token(),
+            Ok(Some(Parsed {
+                value: Token::Pipe,
+                start: 0,
+                end: 1,
+            }))
+        );
+        assert_eq!(lexer.read_token(), Ok(None));
     }
 
     #[test]
-    fn escaped_expression_start() {
+    fn escaped_expr_start() {
         let mut lexer = Lexer::new("#{");
-        lexer.assert_raw_vec(vec![Char::Escaped('{', ['#', '{'])], 0, 2);
-        lexer.assert_none();
+        assert_eq!(
+            lexer.read_token(),
+            Ok(Some(Parsed {
+                value: Token::Raw(vec![Char::Escaped('{', ['#', '{'])]),
+                start: 0,
+                end: 2,
+            }))
+        );
+        assert_eq!(lexer.read_token(), Ok(None));
     }
 
     #[test]
-    fn escaped_expression_end() {
+    fn escaped_expr_end() {
         let mut lexer = Lexer::new("#}");
-        lexer.assert_raw_vec(vec![Char::Escaped('}', ['#', '}'])], 0, 2);
-        lexer.assert_none();
+        assert_eq!(
+            lexer.read_token(),
+            Ok(Some(Parsed {
+                value: Token::Raw(vec![Char::Escaped('}', ['#', '}'])]),
+                start: 0,
+                end: 2,
+            }))
+        );
+        assert_eq!(lexer.read_token(), Ok(None));
     }
 
     #[test]
     fn escaped_pipe() {
         let mut lexer = Lexer::new("#|");
-        lexer.assert_raw_vec(vec![Char::Escaped('|', ['#', '|'])], 0, 2);
-        lexer.assert_none();
+        assert_eq!(
+            lexer.read_token(),
+            Ok(Some(Parsed {
+                value: Token::Raw(vec![Char::Escaped('|', ['#', '|'])]),
+                start: 0,
+                end: 2,
+            }))
+        );
+        assert_eq!(lexer.read_token(), Ok(None));
     }
 
     #[test]
     fn escaped_lf() {
         let mut lexer = Lexer::new("#n");
-        lexer.assert_raw_vec(vec![Char::Escaped('\n', ['#', 'n'])], 0, 2);
-        lexer.assert_none();
+        assert_eq!(
+            lexer.read_token(),
+            Ok(Some(Parsed {
+                value: Token::Raw(vec![Char::Escaped('\n', ['#', 'n'])]),
+                start: 0,
+                end: 2,
+            }))
+        );
+        assert_eq!(lexer.read_token(), Ok(None));
     }
 
     #[test]
     fn escaped_cr() {
         let mut lexer = Lexer::new("#r");
-        lexer.assert_raw_vec(vec![Char::Escaped('\r', ['#', 'r'])], 0, 2);
-        lexer.assert_none();
+        assert_eq!(
+            lexer.read_token(),
+            Ok(Some(Parsed {
+                value: Token::Raw(vec![Char::Escaped('\r', ['#', 'r'])]),
+                start: 0,
+                end: 2,
+            }))
+        );
+        assert_eq!(lexer.read_token(), Ok(None));
     }
 
     #[test]
     fn escaped_tab() {
         let mut lexer = Lexer::new("#t");
-        lexer.assert_raw_vec(vec![Char::Escaped('\t', ['#', 't'])], 0, 2);
-        lexer.assert_none();
+        assert_eq!(
+            lexer.read_token(),
+            Ok(Some(Parsed {
+                value: Token::Raw(vec![Char::Escaped('\t', ['#', 't'])]),
+                start: 0,
+                end: 2,
+            }))
+        );
+        assert_eq!(lexer.read_token(), Ok(None));
     }
 
     #[test]
     fn escaped_nul() {
         let mut lexer = Lexer::new("#0");
-        lexer.assert_raw_vec(vec![Char::Escaped('\0', ['#', '0'])], 0, 2);
-        lexer.assert_none();
+        assert_eq!(
+            lexer.read_token(),
+            Ok(Some(Parsed {
+                value: Token::Raw(vec![Char::Escaped('\0', ['#', '0'])]),
+                start: 0,
+                end: 2,
+            }))
+        );
+        assert_eq!(lexer.read_token(), Ok(None));
     }
 
     #[test]
     fn escaped_escape() {
         let mut lexer = Lexer::new("##");
-        lexer.assert_raw_vec(vec![Char::Escaped('#', ['#', '#'])], 0, 2);
+        assert_eq!(
+            lexer.read_token(),
+            Ok(Some(Parsed {
+                value: Token::Raw(vec![Char::Escaped('#', ['#', '#'])]),
+                start: 0,
+                end: 2,
+            }))
+        );
+        assert_eq!(lexer.read_token(), Ok(None));
     }
 
     #[test]
     fn custom_escape() {
         let mut lexer = Lexer::new(r"\|");
         lexer.set_escape('\\');
-        lexer.assert_raw_vec(vec![Char::Escaped('|', ['\\', '|'])], 0, 2);
+        assert_eq!(
+            lexer.read_token(),
+            Ok(Some(Parsed {
+                value: Token::Raw(vec![Char::Escaped('|', ['\\', '|'])]),
+                start: 0,
+                end: 2,
+            }))
+        );
+        assert_eq!(lexer.read_token(), Ok(None));
     }
 
     #[test]
     fn unterminated_escape_error() {
-        Lexer::new("#").assert_err(ParseErrorKind::UnterminatedEscapeSequence('#'), 0, 1);
+        let mut lexer = Lexer::new("#");
+        assert_eq!(
+            lexer.read_token(),
+            Err(ParseError {
+                kind: ParseErrorKind::UnterminatedEscapeSequence('#'),
+                start: 0,
+                end: 1,
+            })
+        );
     }
 
     #[test]
     fn unknown_escape_error() {
-        Lexer::new("#x").assert_err(ParseErrorKind::UnknownEscapeSequence(['#', 'x']), 0, 2);
+        let mut lexer = Lexer::new("#x");
+        assert_eq!(
+            lexer.read_token(),
+            Err(ParseError {
+                kind: ParseErrorKind::UnknownEscapeSequence(['#', 'x']),
+                start: 0,
+                end: 2,
+            })
+        );
     }
 
     #[test]
     fn various_tokens() {
         let mut lexer = Lexer::new("a{|}bc{de|fg}hi");
-        lexer.assert_raw("a", 0, 1);
-        lexer.assert_expr_start(1, 2);
-        lexer.assert_pipe(2, 3);
-        lexer.assert_expr_end(3, 4);
-        lexer.assert_raw("bc", 4, 6);
-        lexer.assert_expr_start(6, 7);
-        lexer.assert_raw("de", 7, 9);
-        lexer.assert_pipe(9, 10);
-        lexer.assert_raw("fg", 10, 12);
-        lexer.assert_expr_end(12, 13);
-        lexer.assert_raw("hi", 13, 15);
+        assert_eq!(
+            lexer.read_token(),
+            Ok(Some(Parsed {
+                value: Token::Raw(Char::raw_vec("a")),
+                start: 0,
+                end: 1,
+            }))
+        );
+        assert_eq!(
+            lexer.read_token(),
+            Ok(Some(Parsed {
+                value: Token::ExprStart,
+                start: 1,
+                end: 2,
+            }))
+        );
+        assert_eq!(
+            lexer.read_token(),
+            Ok(Some(Parsed {
+                value: Token::Pipe,
+                start: 2,
+                end: 3,
+            }))
+        );
+        assert_eq!(
+            lexer.read_token(),
+            Ok(Some(Parsed {
+                value: Token::ExprEnd,
+                start: 3,
+                end: 4,
+            }))
+        );
+        assert_eq!(
+            lexer.read_token(),
+            Ok(Some(Parsed {
+                value: Token::Raw(Char::raw_vec("bc")),
+                start: 4,
+                end: 6,
+            }))
+        );
+        assert_eq!(
+            lexer.read_token(),
+            Ok(Some(Parsed {
+                value: Token::ExprStart,
+                start: 6,
+                end: 7,
+            }))
+        );
+        assert_eq!(
+            lexer.read_token(),
+            Ok(Some(Parsed {
+                value: Token::Raw(Char::raw_vec("de")),
+                start: 7,
+                end: 9,
+            }))
+        );
+        assert_eq!(
+            lexer.read_token(),
+            Ok(Some(Parsed {
+                value: Token::Pipe,
+                start: 9,
+                end: 10,
+            }))
+        );
+        assert_eq!(
+            lexer.read_token(),
+            Ok(Some(Parsed {
+                value: Token::Raw(Char::raw_vec("fg")),
+                start: 10,
+                end: 12,
+            }))
+        );
+        assert_eq!(
+            lexer.read_token(),
+            Ok(Some(Parsed {
+                value: Token::ExprEnd,
+                start: 12,
+                end: 13,
+            }))
+        );
+        assert_eq!(
+            lexer.read_token(),
+            Ok(Some(Parsed {
+                value: Token::Raw(Char::raw_vec("hi")),
+                start: 13,
+                end: 15,
+            }))
+        );
+        assert_eq!(lexer.read_token(), Ok(None));
     }
 
     #[test]
     fn various_tokens_and_escapes() {
         let mut lexer = Lexer::new("a{|}bc#{de#|fg#}hi#n#r#t#0##");
-        lexer.assert_raw("a", 0, 1);
-        lexer.assert_expr_start(1, 2);
-        lexer.assert_pipe(2, 3);
-        lexer.assert_expr_end(3, 4);
-        lexer.assert_raw_vec(
-            vec![
-                Char::Raw('b'),
-                Char::Raw('c'),
-                Char::Escaped('{', ['#', '{']),
-                Char::Raw('d'),
-                Char::Raw('e'),
-                Char::Escaped('|', ['#', '|']),
-                Char::Raw('f'),
-                Char::Raw('g'),
-                Char::Escaped('}', ['#', '}']),
-                Char::Raw('h'),
-                Char::Raw('i'),
-                Char::Escaped('\n', ['#', 'n']),
-                Char::Escaped('\r', ['#', 'r']),
-                Char::Escaped('\t', ['#', 't']),
-                Char::Escaped('\0', ['#', '0']),
-                Char::Escaped('#', ['#', '#']),
-            ],
-            4,
-            28,
+        assert_eq!(
+            lexer.read_token(),
+            Ok(Some(Parsed {
+                value: Token::Raw(Char::raw_vec("a")),
+                start: 0,
+                end: 1,
+            }))
+        );
+        assert_eq!(
+            lexer.read_token(),
+            Ok(Some(Parsed {
+                value: Token::ExprStart,
+                start: 1,
+                end: 2,
+            }))
+        );
+        assert_eq!(
+            lexer.read_token(),
+            Ok(Some(Parsed {
+                value: Token::Pipe,
+                start: 2,
+                end: 3,
+            }))
+        );
+        assert_eq!(
+            lexer.read_token(),
+            Ok(Some(Parsed {
+                value: Token::ExprEnd,
+                start: 3,
+                end: 4,
+            }))
+        );
+        assert_eq!(
+            lexer.read_token(),
+            Ok(Some(Parsed {
+                value: Token::Raw(vec![
+                    Char::Raw('b'),
+                    Char::Raw('c'),
+                    Char::Escaped('{', ['#', '{']),
+                    Char::Raw('d'),
+                    Char::Raw('e'),
+                    Char::Escaped('|', ['#', '|']),
+                    Char::Raw('f'),
+                    Char::Raw('g'),
+                    Char::Escaped('}', ['#', '}']),
+                    Char::Raw('h'),
+                    Char::Raw('i'),
+                    Char::Escaped('\n', ['#', 'n']),
+                    Char::Escaped('\r', ['#', 'r']),
+                    Char::Escaped('\t', ['#', 't']),
+                    Char::Escaped('\0', ['#', '0']),
+                    Char::Escaped('#', ['#', '#']),
+                ]),
+                start: 4,
+                end: 28,
+            }))
         );
     }
 
@@ -304,65 +506,62 @@ mod tests {
     fn various_tokens_and_custom_escapes() {
         let mut lexer = Lexer::new(r"a{|}bc\{de\|fg\}hi\n\r\t\0\\");
         lexer.set_escape('\\');
-        lexer.assert_raw("a", 0, 1);
-        lexer.assert_expr_start(1, 2);
-        lexer.assert_pipe(2, 3);
-        lexer.assert_expr_end(3, 4);
-        lexer.assert_raw_vec(
-            vec![
-                Char::Raw('b'),
-                Char::Raw('c'),
-                Char::Escaped('{', ['\\', '{']),
-                Char::Raw('d'),
-                Char::Raw('e'),
-                Char::Escaped('|', ['\\', '|']),
-                Char::Raw('f'),
-                Char::Raw('g'),
-                Char::Escaped('}', ['\\', '}']),
-                Char::Raw('h'),
-                Char::Raw('i'),
-                Char::Escaped('\n', ['\\', 'n']),
-                Char::Escaped('\r', ['\\', 'r']),
-                Char::Escaped('\t', ['\\', 't']),
-                Char::Escaped('\0', ['\\', '0']),
-                Char::Escaped('\\', ['\\', '\\']),
-            ],
-            4,
-            28,
+        assert_eq!(
+            lexer.read_token(),
+            Ok(Some(Parsed {
+                value: Token::Raw(Char::raw_vec("a")),
+                start: 0,
+                end: 1,
+            }))
         );
-    }
-
-    impl Lexer {
-        fn assert_none(&mut self) {
-            assert_eq!(self.next(), None);
-        }
-
-        fn assert_raw(&mut self, raw: &str, start: usize, end: usize) {
-            self.assert_token(Token::Raw(Char::raw_vec(raw)), start, end);
-        }
-
-        fn assert_raw_vec(&mut self, chars: Vec<Char>, start: usize, end: usize) {
-            self.assert_token(Token::Raw(chars), start, end);
-        }
-
-        fn assert_expr_start(&mut self, start: usize, end: usize) {
-            self.assert_token(Token::ExprStart, start, end);
-        }
-
-        fn assert_expr_end(&mut self, start: usize, end: usize) {
-            self.assert_token(Token::ExprEnd, start, end);
-        }
-
-        fn assert_pipe(&mut self, start: usize, end: usize) {
-            self.assert_token(Token::Pipe, start, end);
-        }
-
-        fn assert_token(&mut self, value: Token, start: usize, end: usize) {
-            assert_eq!(self.next(), Some(Ok(Parsed { value, start, end })));
-        }
-
-        fn assert_err(&mut self, kind: ParseErrorKind, start: usize, end: usize) {
-            assert_eq!(self.next(), Some(Err(ParseError { kind, start, end })));
-        }
+        assert_eq!(
+            lexer.read_token(),
+            Ok(Some(Parsed {
+                value: Token::ExprStart,
+                start: 1,
+                end: 2,
+            }))
+        );
+        assert_eq!(
+            lexer.read_token(),
+            Ok(Some(Parsed {
+                value: Token::Pipe,
+                start: 2,
+                end: 3,
+            }))
+        );
+        assert_eq!(
+            lexer.read_token(),
+            Ok(Some(Parsed {
+                value: Token::ExprEnd,
+                start: 3,
+                end: 4,
+            }))
+        );
+        assert_eq!(
+            lexer.read_token(),
+            Ok(Some(Parsed {
+                value: Token::Raw(vec![
+                    Char::Raw('b'),
+                    Char::Raw('c'),
+                    Char::Escaped('{', ['\\', '{']),
+                    Char::Raw('d'),
+                    Char::Raw('e'),
+                    Char::Escaped('|', ['\\', '|']),
+                    Char::Raw('f'),
+                    Char::Raw('g'),
+                    Char::Escaped('}', ['\\', '}']),
+                    Char::Raw('h'),
+                    Char::Raw('i'),
+                    Char::Escaped('\n', ['\\', 'n']),
+                    Char::Escaped('\r', ['\\', 'r']),
+                    Char::Escaped('\t', ['\\', 't']),
+                    Char::Escaped('\0', ['\\', '0']),
+                    Char::Escaped('\\', ['\\', '\\']),
+                ]),
+                start: 4,
+                end: 28,
+            }))
+        );
     }
 }

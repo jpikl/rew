@@ -53,7 +53,7 @@ impl Range {
             }),
         }?;
 
-        if reader.is_consumed() {
+        if reader.is_end() {
             Ok(range)
         } else {
             Err(ParseError {
