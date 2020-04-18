@@ -44,7 +44,7 @@ impl<'a> Cli<'a> {
             .index(1)
             .required(true)
             .value_name("PATTERN")
-            .help("Output pattern.")
+            .help("Output pattern")
     }
 
     pub fn pattern(&self) -> &str {
@@ -56,7 +56,7 @@ impl<'a> Cli<'a> {
             .index(2)
             .multiple(true)
             .value_name("PATH")
-            .help("Paths to process. If none provided, read paths from stdin.")
+            .help("Paths to process. Optional, paths are read from stdin by default")
     }
 
     pub fn paths(&self) -> Option<OsValues> {
@@ -69,7 +69,7 @@ impl<'a> Cli<'a> {
             .takes_value(true)
             .value_name("WHEN")
             .possible_values(&[COLOR_AUTO, COLOR_ALWAYS, COLOR_NEVER, COLOR_ANSI])
-            .help("Output colors.")
+            .help("Output colors")
     }
 
     pub fn color(&self) -> Option<ColorChoice> {
@@ -88,7 +88,7 @@ impl<'a> Cli<'a> {
             .takes_value(true)
             .value_name("CHAR")
             .validator(Self::validate_escape)
-            .help("Custom escape character.")
+            .help("Custom escape character for pattern")
     }
 
     fn validate_escape(value: String) -> Result<(), String> {
@@ -122,7 +122,7 @@ impl<'a> Cli<'a> {
             .takes_value(true)
             .value_name("EXPR")
             .validator(Self::validate_regex)
-            .help("Regular expression to match against input.")
+            .help("Regular expression matched against each path")
     }
 
     fn validate_regex(value: String) -> Result<(), String> {
@@ -145,7 +145,7 @@ impl<'a> Cli<'a> {
             .takes_value(true)
             .value_name("TARGET")
             .possible_values(&[REGEX_TARGET_PATH, REGEX_TARGET_FILENAME])
-            .help("Part of input that is matched against regular expression.")
+            .help("Which part of input is matched by -e, --regex")
     }
 
     pub fn regex_target(&self) -> Option<RegexTarget> {
@@ -162,7 +162,7 @@ impl<'a> Cli<'a> {
         Arg::with_name(ZERO_TERMINATED_STDIN)
             .short("z")
             .long("read0")
-            .help("Paths from stdin are delimited by NUL byte instead of newline.")
+            .help("Read paths delimited by NUL, not newline")
     }
 
     pub fn zero_terminated_stdin(&self) -> bool {
