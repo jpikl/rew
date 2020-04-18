@@ -9,7 +9,7 @@ const SYMBOL_COLOR: Color = Color::Magenta;
 
 impl Pattern {
     pub fn render<S: io::Write + WriteColor>(stream: &mut S, string: &str) -> io::Result<()> {
-        let mut lexer = Lexer::new(&string);
+        let mut lexer = Lexer::from(string);
         let mut in_expression = false;
         let mut position = 0;
 

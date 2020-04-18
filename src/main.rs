@@ -1,6 +1,6 @@
 use crate::cli::Cli;
 use crate::input::{ArgsInput, Input, StdinInput};
-use crate::pattern::{Pattern, DEFAULT_ESCAPE};
+use crate::pattern::{Lexer, Pattern};
 use crate::state::State;
 use std::io::{self, Write};
 use std::{cmp, process};
@@ -25,14 +25,18 @@ fn main() -> Result<(), io::Error> {
         Some(other) => other,
     };
 
-    let raw_pattern = cli.pattern();
-    let escape = cli.escape().unwrap_or(DEFAULT_ESCAPE);
-
     let mut stdin = io::stdin();
     let mut stdout = StandardStream::stdout(color_choice);
     let mut stderr = StandardStream::stderr(color_choice);
 
-    match Pattern::parse_with_escape(raw_pattern, escape) {
+    let raw_pattern = cli.pattern();
+    let mut lexer = Lexer::from(raw_pattern);
+
+    if let Some(escape) = cli.escape() {
+        lexer.set_escape(escape);
+    }
+
+    match Pattern::parse_tokens(lexer) {
         Ok(pattern) => {
             let mut state = State::new();
             state.set_local_counter_enabled(pattern.uses_local_counter());

@@ -20,16 +20,15 @@ pub struct Parser {
     token: Option<Parsed<Token>>,
 }
 
-impl Parser {
-    pub fn new(string: &str) -> Self {
-        Self {
-            lexer: Lexer::new(string),
-            token: None,
-        }
+impl From<&str> for Parser {
+    fn from(string: &str) -> Self {
+        Self::new(Lexer::from(string))
     }
+}
 
-    pub fn set_escape(&mut self, escape: char) {
-        self.lexer.set_escape(escape);
+impl Parser {
+    pub fn new(lexer: Lexer) -> Self {
+        Self { lexer, token: None }
     }
 
     pub fn parse_item(&mut self) -> ParseResult<Option<Parsed<PatternItem>>> {
@@ -187,12 +186,12 @@ mod tests {
 
     #[test]
     fn empty() {
-        Parser::new("").assert_none();
+        Parser::from("").assert_none();
     }
 
     #[test]
     fn constant() {
-        let mut parser = Parser::new("abc");
+        let mut parser = Parser::from("abc");
         parser.assert_item(Parsed {
             value: PatternItem::Constant("abc".to_string()),
             start: 0,
@@ -203,7 +202,7 @@ mod tests {
 
     #[test]
     fn variable() {
-        let mut parser = Parser::new("{f}");
+        let mut parser = Parser::from("{f}");
         parser.assert_item(Parsed {
             value: PatternItem::Expression {
                 variable: Parsed {
@@ -221,7 +220,7 @@ mod tests {
 
     #[test]
     fn variable_single_transform() {
-        let mut parser = Parser::new("{b|l}");
+        let mut parser = Parser::from("{b|l}");
         parser.assert_item(Parsed {
             value: PatternItem::Expression {
                 variable: Parsed {
@@ -243,7 +242,7 @@ mod tests {
 
     #[test]
     fn variable_multiple_transforms() {
-        let mut parser = Parser::new("{e|t|n1-3}");
+        let mut parser = Parser::from("{e|t|n1-3}");
         parser.assert_item(Parsed {
             value: PatternItem::Expression {
                 variable: Parsed {
@@ -275,7 +274,7 @@ mod tests {
 
     #[test]
     fn invalid_variable_error() {
-        let mut parser = Parser::new("{x}");
+        let mut parser = Parser::from("{x}");
         parser.assert_error(ParseError {
             kind: ParseErrorKind::UnknownVariable(Char::Raw('x')),
             start: 1,
@@ -285,7 +284,7 @@ mod tests {
 
     #[test]
     fn invalid_transform_error() {
-        let mut parser = Parser::new("{f|n2-1}");
+        let mut parser = Parser::from("{f|n2-1}");
         parser.assert_error(ParseError {
             kind: ParseErrorKind::RangeEndBeforeStart(1, 2),
             start: 4,
@@ -295,7 +294,7 @@ mod tests {
 
     #[test]
     fn unexpected_expr_start_error() {
-        let mut parser = Parser::new("{f{");
+        let mut parser = Parser::from("{f{");
         parser.assert_error(ParseError {
             kind: ParseErrorKind::ExprStartInsideExpr,
             start: 2,
@@ -305,7 +304,7 @@ mod tests {
 
     #[test]
     fn unmatched_expr_end_error() {
-        let mut parser = Parser::new("a}b");
+        let mut parser = Parser::from("a}b");
         parser.assert_item(Parsed {
             value: PatternItem::Constant("a".to_string()),
             start: 0,
@@ -320,7 +319,7 @@ mod tests {
 
     #[test]
     fn expected_variable_error() {
-        let mut parser = Parser::new("{");
+        let mut parser = Parser::from("{");
         parser.assert_error(ParseError {
             kind: ParseErrorKind::ExpectedVariable,
             start: 1,
@@ -330,7 +329,7 @@ mod tests {
 
     #[test]
     fn unterminated_expr_start_error() {
-        let mut parser = Parser::new("{f");
+        let mut parser = Parser::from("{f");
         parser.assert_error(ParseError {
             kind: ParseErrorKind::UnterminatedExprStart,
             start: 0,
@@ -340,7 +339,7 @@ mod tests {
 
     #[test]
     fn expected_pipe_or_expr_end_after_variable_error() {
-        let mut parser = Parser::new("{fg");
+        let mut parser = Parser::from("{fg");
         parser.assert_error(ParseError {
             kind: ParseErrorKind::ExpectedPipeOrExprEnd(Char::Raw('g')),
             start: 2,
@@ -350,7 +349,7 @@ mod tests {
 
     #[test]
     fn expected_transform_error() {
-        let mut parser = Parser::new("{f|");
+        let mut parser = Parser::from("{f|");
         parser.assert_error(ParseError {
             kind: ParseErrorKind::ExpectedTransform,
             start: 3,
@@ -360,7 +359,7 @@ mod tests {
 
     #[test]
     fn complex_input() {
-        let mut parser = Parser::new("image_{c|<000}.{e|l|r'e}");
+        let mut parser = Parser::from("image_{c|<000}.{e|l|r'e}");
         parser.assert_item(Parsed {
             value: PatternItem::Constant("image_".to_string()),
             start: 0,

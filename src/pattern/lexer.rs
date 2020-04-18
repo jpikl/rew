@@ -28,10 +28,16 @@ pub struct Lexer {
     escape: char,
 }
 
+impl From<&str> for Lexer {
+    fn from(string: &str) -> Self {
+        Self::new(Reader::from(string))
+    }
+}
+
 impl Lexer {
-    pub fn new(string: &str) -> Self {
+    pub fn new(reader: Reader) -> Self {
         Self {
-            reader: Reader::from(string),
+            reader,
             escape: DEFAULT_ESCAPE,
         }
     }
@@ -119,13 +125,13 @@ mod tests {
 
     #[test]
     fn empty_input() {
-        let mut lexer = Lexer::new("");
+        let mut lexer = Lexer::from("");
         assert_eq!(lexer.read_token(), Ok(None));
     }
 
     #[test]
     fn raw_char() {
-        let mut lexer = Lexer::new("a");
+        let mut lexer = Lexer::from("a");
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
@@ -139,7 +145,7 @@ mod tests {
 
     #[test]
     fn raw_chars() {
-        let mut lexer = Lexer::new("abc");
+        let mut lexer = Lexer::from("abc");
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
@@ -153,7 +159,7 @@ mod tests {
 
     #[test]
     fn expr_start() {
-        let mut lexer = Lexer::new("{");
+        let mut lexer = Lexer::from("{");
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
@@ -167,7 +173,7 @@ mod tests {
 
     #[test]
     fn expr_end() {
-        let mut lexer = Lexer::new("}");
+        let mut lexer = Lexer::from("}");
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
@@ -181,7 +187,7 @@ mod tests {
 
     #[test]
     fn pipe() {
-        let mut lexer = Lexer::new("|");
+        let mut lexer = Lexer::from("|");
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
@@ -195,7 +201,7 @@ mod tests {
 
     #[test]
     fn escaped_expr_start() {
-        let mut lexer = Lexer::new("#{");
+        let mut lexer = Lexer::from("#{");
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
@@ -209,7 +215,7 @@ mod tests {
 
     #[test]
     fn escaped_expr_end() {
-        let mut lexer = Lexer::new("#}");
+        let mut lexer = Lexer::from("#}");
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
@@ -223,7 +229,7 @@ mod tests {
 
     #[test]
     fn escaped_pipe() {
-        let mut lexer = Lexer::new("#|");
+        let mut lexer = Lexer::from("#|");
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
@@ -237,7 +243,7 @@ mod tests {
 
     #[test]
     fn escaped_lf() {
-        let mut lexer = Lexer::new("#n");
+        let mut lexer = Lexer::from("#n");
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
@@ -251,7 +257,7 @@ mod tests {
 
     #[test]
     fn escaped_cr() {
-        let mut lexer = Lexer::new("#r");
+        let mut lexer = Lexer::from("#r");
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
@@ -265,7 +271,7 @@ mod tests {
 
     #[test]
     fn escaped_tab() {
-        let mut lexer = Lexer::new("#t");
+        let mut lexer = Lexer::from("#t");
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
@@ -279,7 +285,7 @@ mod tests {
 
     #[test]
     fn escaped_nul() {
-        let mut lexer = Lexer::new("#0");
+        let mut lexer = Lexer::from("#0");
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
@@ -293,7 +299,7 @@ mod tests {
 
     #[test]
     fn escaped_escape() {
-        let mut lexer = Lexer::new("##");
+        let mut lexer = Lexer::from("##");
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
@@ -307,7 +313,7 @@ mod tests {
 
     #[test]
     fn custom_escape() {
-        let mut lexer = Lexer::new(r"\|");
+        let mut lexer = Lexer::from(r"\|");
         lexer.set_escape('\\');
         assert_eq!(
             lexer.read_token(),
@@ -322,7 +328,7 @@ mod tests {
 
     #[test]
     fn unterminated_escape_error() {
-        let mut lexer = Lexer::new("#");
+        let mut lexer = Lexer::from("#");
         assert_eq!(
             lexer.read_token(),
             Err(ParseError {
@@ -335,7 +341,7 @@ mod tests {
 
     #[test]
     fn unknown_escape_error() {
-        let mut lexer = Lexer::new("#x");
+        let mut lexer = Lexer::from("#x");
         assert_eq!(
             lexer.read_token(),
             Err(ParseError {
@@ -348,7 +354,7 @@ mod tests {
 
     #[test]
     fn various_tokens() {
-        let mut lexer = Lexer::new("a{|}bc{de|fg}hi");
+        let mut lexer = Lexer::from("a{|}bc{de|fg}hi");
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
@@ -442,7 +448,7 @@ mod tests {
 
     #[test]
     fn various_tokens_and_escapes() {
-        let mut lexer = Lexer::new("a{|}bc#{de#|fg#}hi#n#r#t#0##");
+        let mut lexer = Lexer::from("a{|}bc#{de#|fg#}hi#n#r#t#0##");
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
@@ -504,7 +510,7 @@ mod tests {
 
     #[test]
     fn various_tokens_and_custom_escapes() {
-        let mut lexer = Lexer::new(r"a{|}bc\{de\|fg\}hi\n\r\t\0\\");
+        let mut lexer = Lexer::from(r"a{|}bc\{de\|fg\}hi\n\r\t\0\\");
         lexer.set_escape('\\');
         assert_eq!(
             lexer.read_token(),
