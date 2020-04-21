@@ -13,7 +13,7 @@ const DIVIDER: char = '-';
 
 impl Range {
     pub fn parse(reader: &mut Reader) -> ParseResult<Self> {
-        let range = match reader.peek_value() {
+        match reader.peek_value() {
             Some('0'..='9') => {
                 let position = reader.position();
                 let offset = parse_offset(reader)?;
@@ -51,16 +51,6 @@ impl Range {
                 start: reader.position(),
                 end: reader.end(),
             }),
-        }?;
-
-        if reader.is_end() {
-            Ok(range)
-        } else {
-            Err(ParseError {
-                kind: ParseErrorKind::RangeUnexpectedChars(Char::join(reader.peek_to_end())),
-                start: reader.position(),
-                end: reader.end(),
-            })
         }
     }
 }
@@ -92,7 +82,7 @@ fn parse_length(reader: &mut Reader, offset: usize, offset_position: usize) -> P
         })
     } else if index <= offset {
         Err(ParseError {
-            kind: ParseErrorKind::RangeEndBeforeStart(index, offset + 1),
+            kind: ParseErrorKind::RangeStartOverEnd(offset + 1, index),
             start: offset_position,
             end: reader.position(),
         })
@@ -206,7 +196,7 @@ mod tests {
         assert_eq!(
             Range::parse(&mut reader),
             Err(ParseError {
-                kind: ParseErrorKind::RangeEndBeforeStart(5, 10),
+                kind: ParseErrorKind::RangeStartOverEnd(10, 5),
                 start: 0,
                 end: 4,
             })
@@ -254,14 +244,13 @@ mod tests {
     }
 
     #[test]
-    fn unexpected_chars_error() {
+    fn ignore_remaining_chars() {
         let mut reader = Reader::from("1ab");
         assert_eq!(
             Range::parse(&mut reader),
-            Err(ParseError {
-                kind: ParseErrorKind::RangeUnexpectedChars("ab".to_string()),
-                start: 1,
-                end: 3,
+            Ok(Range {
+                offset: 0,
+                length: 1
             })
         );
         assert_eq!(reader.position(), 1);

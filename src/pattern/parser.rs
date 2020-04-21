@@ -57,7 +57,7 @@ impl Parser {
                         Ok(expression)
                     } else {
                         Err(ParseError {
-                            kind: ParseErrorKind::UnterminatedExprStart,
+                            kind: ParseErrorKind::UnmatchedExprStart,
                             start,
                             end,
                         })
@@ -277,7 +277,7 @@ mod tests {
         assert_eq!(
             Parser::from("{f").parse_items(),
             Err(ParseError {
-                kind: ParseErrorKind::UnterminatedExprStart,
+                kind: ParseErrorKind::UnmatchedExprStart,
                 start: 0,
                 end: 1,
             })
@@ -380,7 +380,7 @@ mod tests {
         assert_eq!(
             Parser::from("{f|l").parse_items(),
             Err(ParseError {
-                kind: ParseErrorKind::UnterminatedExprStart,
+                kind: ParseErrorKind::UnmatchedExprStart,
                 start: 0,
                 end: 1,
             })
@@ -460,7 +460,7 @@ mod tests {
         assert_eq!(
             Parser::from("{f|n2-1}").parse_items(),
             Err(ParseError {
-                kind: ParseErrorKind::RangeEndBeforeStart(1, 2),
+                kind: ParseErrorKind::RangeStartOverEnd(2, 1),
                 start: 4,
                 end: 7,
             })

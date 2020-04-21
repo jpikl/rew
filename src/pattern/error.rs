@@ -22,17 +22,16 @@ pub enum ParseErrorKind {
     ExpectedVariable,
     ExprStartInsideExpr,
     PipeOutsideExpr,
-    RangeEndBeforeStart(usize, usize),
     RangeIndexZero,
     RangeInvalid(String),
-    RangeUnexpectedChars(String),
+    RangeStartOverEnd(usize, usize),
     RegexCaptureZero,
     SubstituteWithoutValue(Char),
     UnknownEscapeSequence(EscapeSequence),
     UnknownTransform(Char),
     UnknownVariable(Char),
     UnmatchedExprEnd,
-    UnterminatedExprStart,
+    UnmatchedExprStart,
     UnterminatedEscapeSequence(char),
 }
 
@@ -55,27 +54,22 @@ impl fmt::Display for ParseErrorKind {
                 write!(formatter, "Unescaped '{}' inside expression", EXPR_START)
             }
             PipeOutsideExpr => write!(formatter, "Unescaped '{}' outside expression", PIPE),
-            RangeEndBeforeStart(end, start) => write!(
-                formatter,
-                "Range end ({}) cannot precede its start ({})",
-                end, start
-            ),
-            RangeIndexZero => write!(formatter, "Range indice s start from 1, not 0"),
+            RangeIndexZero => write!(formatter, "Range indices start from 1, not 0"),
             RangeInvalid(value) => write!(formatter, "Invalid range '{}'", value),
-            RangeUnexpectedChars(value) => write!(
+            RangeStartOverEnd(start, end) => write!(
                 formatter,
-                "Unexpected characters '{}' in range parameter",
-                value
+                "Range start ({}) is bigger than end ({})",
+                start, end
             ),
             RegexCaptureZero => write!(formatter, "Regex capture groups starts from 1, not 0"),
             SubstituteWithoutValue(Char::Raw(value)) => write!(
                 formatter,
-                "Substitution (where '{}' is separator) has no value",
+                "Substitution is missing value after separator '{}'",
                 value
             ),
             SubstituteWithoutValue(Char::Escaped(_, sequence)) => write!(
                 formatter,
-                "Substitution (where escape sequence '{}{}' is separator) has no value",
+                "Substitution is missing value after separator '{}{}' (escape sequence)",
                 sequence[0], sequence[1]
             ),
             UnknownEscapeSequence(sequence) => write!(
@@ -99,13 +93,13 @@ impl fmt::Display for ParseErrorKind {
             ),
             UnmatchedExprEnd => write!(
                 formatter,
-                "End of expression'{}' does not have matching '{}'",
-                EXPR_END, EXPR_START
-            ),
-            UnterminatedExprStart => write!(
-                formatter,
-                "Unterminated start of expression '{}'",
+                "No matching '{}' before expression end",
                 EXPR_START
+            ),
+            UnmatchedExprStart => write!(
+                formatter,
+                "No matching '{}' after expression start",
+                EXPR_END
             ),
             UnterminatedEscapeSequence(escape) => {
                 write!(formatter, "Unterminated escape sequence '{}'", escape)

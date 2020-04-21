@@ -24,14 +24,6 @@ impl Reader {
         Char::sum_len(&self.chars)
     }
 
-    pub fn is_end(&self) -> bool {
-        self.is_end_at(self.index)
-    }
-
-    fn is_end_at(&self, index: usize) -> bool {
-        index >= self.chars.len()
-    }
-
     pub fn seek(&mut self) {
         self.seek_to(self.index + 1)
     }
@@ -49,7 +41,7 @@ impl Reader {
     }
 
     fn peek_at(&self, index: usize) -> Option<&Char> {
-        if self.is_end_at(index) {
+        if index >= self.chars.len() {
             None
         } else {
             Some(&self.chars[index])
@@ -112,19 +104,6 @@ mod tests {
     fn end_returns_last_position() {
         assert_eq!(make_empty_reader().end(), 0);
         assert_eq!(make_reader().end(), 4);
-    }
-
-    #[test]
-    fn is_end_returns_true_at_end() {
-        let mut reader = make_reader();
-        reader.seek_to(0);
-        assert_eq!(reader.is_end(), false);
-        reader.seek_to(1);
-        assert_eq!(reader.is_end(), false);
-        reader.seek_to(2);
-        assert_eq!(reader.is_end(), false);
-        reader.seek_to(3);
-        assert_eq!(reader.is_end(), true);
     }
 
     #[test]
