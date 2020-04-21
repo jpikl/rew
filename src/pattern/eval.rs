@@ -1,4 +1,4 @@
-use crate::pattern::error::EvalError;
+use crate::pattern::error::{EvalError, EvalResult};
 use crate::pattern::parser::PatternItem;
 use crate::pattern::Pattern;
 use std::path::Path;
@@ -9,8 +9,6 @@ pub struct EvalContext<'a> {
     pub global_counter: u32,
     pub regex_captures: Option<regex::Captures<'a>>,
 }
-
-type EvalResult<'a, T> = Result<T, EvalError<'a>>;
 
 impl Pattern {
     pub fn eval(&self, context: &EvalContext) -> EvalResult<String> {
@@ -45,34 +43,114 @@ impl Pattern {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::pattern::lexer::Parsed;
+    use crate::pattern::range::Range;
+    use crate::pattern::substitution::Substitution;
+    use crate::pattern::transform::Transform;
+    use crate::pattern::variable::Variable;
     use regex::Regex;
 
     #[test]
     fn constant() {
-        assert_eval("abc", "abc");
+        let items = vec![Parsed::dummy(PatternItem::Constant("abc".to_string()))];
+        assert_eq!(
+            Pattern::new(items).eval(&make_context()),
+            Ok("abc".to_string())
+        );
     }
 
     #[test]
     fn expression() {
-        assert_eval("{f}", "file.ext");
-    }
-
-    #[test]
-    fn complex_input() {
-        assert_eval(
-            "prefix_{b|n1-3}_{1}_{c}_{C}.{e|u|r'X}",
-            "prefix_fil_abc_1_2.ET",
+        let items = vec![Parsed::dummy(PatternItem::Expression {
+            variable: Parsed::dummy(Variable::Filename),
+            transforms: Vec::new(),
+        })];
+        assert_eq!(
+            Pattern::new(items).eval(&make_context()),
+            Ok("file.ext".to_string())
         );
     }
 
-    fn assert_eval(pattern: &str, result: &str) {
-        let pattern = Pattern::parse(pattern).unwrap();
-        let context = EvalContext {
+    #[test]
+    fn expression_single_transform() {
+        let items = vec![Parsed::dummy(PatternItem::Expression {
+            variable: Parsed::dummy(Variable::Filename),
+            transforms: vec![Parsed::dummy(Transform::Uppercase)],
+        })];
+        assert_eq!(
+            Pattern::new(items).eval(&make_context()),
+            Ok("FILE.EXT".to_string())
+        );
+    }
+
+    #[test]
+    fn expression_multiple_transforms() {
+        let items = vec![Parsed::dummy(PatternItem::Expression {
+            variable: Parsed::dummy(Variable::Filename),
+            transforms: vec![
+                Parsed::dummy(Transform::Uppercase),
+                Parsed::dummy(Transform::Substring(Range {
+                    offset: 0,
+                    length: 4,
+                })),
+            ],
+        })];
+        assert_eq!(
+            Pattern::new(items).eval(&make_context()),
+            Ok("FILE".to_string())
+        );
+    }
+
+    #[test]
+    fn multiple_constants_and_expressions() {
+        let items = vec![
+            Parsed::dummy(PatternItem::Constant("prefix_".to_string())),
+            Parsed::dummy(PatternItem::Expression {
+                variable: Parsed::dummy(Variable::Basename),
+                transforms: vec![Parsed::dummy(Transform::Substring(Range {
+                    offset: 0,
+                    length: 3,
+                }))],
+            }),
+            Parsed::dummy(PatternItem::Constant("_".to_string())),
+            Parsed::dummy(PatternItem::Expression {
+                variable: Parsed::dummy(Variable::RegexCapture(1)),
+                transforms: Vec::new(),
+            }),
+            Parsed::dummy(PatternItem::Constant("_".to_string())),
+            Parsed::dummy(PatternItem::Expression {
+                variable: Parsed::dummy(Variable::LocalCounter),
+                transforms: Vec::new(),
+            }),
+            Parsed::dummy(PatternItem::Constant("_".to_string())),
+            Parsed::dummy(PatternItem::Expression {
+                variable: Parsed::dummy(Variable::GlobalCounter),
+                transforms: Vec::new(),
+            }),
+            Parsed::dummy(PatternItem::Constant(".".to_string())),
+            Parsed::dummy(PatternItem::Expression {
+                variable: Parsed::dummy(Variable::Extension),
+                transforms: vec![
+                    Parsed::dummy(Transform::Uppercase),
+                    Parsed::dummy(Transform::ReplaceAll(Substitution {
+                        value: "X".to_string(),
+                        replacement: "".to_string(),
+                    })),
+                ],
+            }),
+        ];
+        assert_eq!(
+            Pattern::new(items).eval(&make_context()),
+            Ok("prefix_fil_abc_1_2.ET".to_string())
+        );
+    }
+
+    fn make_context<'a>() -> EvalContext<'a> {
+        EvalContext {
             path: Path::new("root/parent/file.ext"),
             local_counter: 1,
             global_counter: 2,
             regex_captures: Regex::new("(.*)").unwrap().captures("abc"),
-        };
-        assert_eq!(pattern.eval(&context), Ok(String::from(result)));
+        }
     }
 }

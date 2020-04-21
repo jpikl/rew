@@ -1,7 +1,6 @@
 use crate::pattern::char::Char;
-use crate::pattern::error::{ParseError, ParseErrorKind};
+use crate::pattern::error::{ParseError, ParseErrorKind, ParseResult};
 use crate::pattern::number::parse_usize;
-use crate::pattern::parse::ParseResult;
 use crate::pattern::reader::Reader;
 
 #[derive(Debug, PartialEq)]
@@ -72,7 +71,7 @@ fn parse_offset(reader: &mut Reader) -> ParseResult<usize> {
 
     if index < 1 {
         Err(ParseError {
-            kind: ParseErrorKind::RangeZeroIndex,
+            kind: ParseErrorKind::RangeIndexZero,
             start: position,
             end: reader.position(),
         })
@@ -87,7 +86,7 @@ fn parse_length(reader: &mut Reader, offset: usize, offset_position: usize) -> P
 
     if index < 1 {
         Err(ParseError {
-            kind: ParseErrorKind::RangeZeroIndex,
+            kind: ParseErrorKind::RangeIndexZero,
             start: position,
             end: reader.position(),
         })
@@ -153,7 +152,7 @@ mod tests {
         assert_eq!(
             Range::parse(&mut reader),
             Err(ParseError {
-                kind: ParseErrorKind::RangeZeroIndex,
+                kind: ParseErrorKind::RangeIndexZero,
                 start: 0,
                 end: 1,
             })
@@ -180,7 +179,7 @@ mod tests {
         assert_eq!(
             Range::parse(&mut reader),
             Err(ParseError {
-                kind: ParseErrorKind::RangeZeroIndex,
+                kind: ParseErrorKind::RangeIndexZero,
                 start: 1,
                 end: 2,
             })

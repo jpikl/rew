@@ -1,19 +1,36 @@
 use crate::pattern::char::Char;
-use crate::pattern::error::{ParseError, ParseErrorKind};
-use crate::pattern::parse::{ParseResult, Parsed};
+use crate::pattern::error::{ParseError, ParseErrorKind, ParseResult};
 use crate::pattern::reader::Reader;
 
 pub const DEFAULT_ESCAPE: char = '#';
 pub const META_CHARS: [char; 3] = [EXPR_START, PIPE, EXPR_END];
 
-const EXPR_START: char = '{';
-const EXPR_END: char = '}';
-const PIPE: char = '|';
+pub const EXPR_START: char = '{';
+pub const EXPR_END: char = '}';
+pub const PIPE: char = '|';
 
 const LF: char = 'n';
 const CR: char = 'r';
 const TAB: char = 't';
 const NUL: char = '0';
+
+#[derive(Debug, PartialEq)]
+pub struct Parsed<T> {
+    pub value: T,
+    pub start: usize,
+    pub end: usize,
+}
+
+#[cfg(test)]
+impl<T> Parsed<T> {
+    pub fn dummy(value: T) -> Self {
+        Self {
+            value,
+            start: 0,
+            end: 0,
+        }
+    }
+}
 
 #[derive(Debug, PartialEq)]
 pub enum Token {

@@ -29,22 +29,44 @@ impl Pattern {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::pattern::lexer::Parsed;
+
+    #[test]
+    fn uses_none() {
+        let items = vec![Parsed::dummy(PatternItem::Expression {
+            variable: Parsed::dummy(Variable::Filename),
+            transforms: Vec::new(),
+        })];
+        let pattern = Pattern::new(items);
+        assert_eq!(pattern.uses_local_counter(), false);
+        assert_eq!(pattern.uses_global_counter(), false);
+        assert_eq!(pattern.uses_regex_captures(), false);
+    }
 
     #[test]
     fn uses_local_counter() {
-        assert_eq!(Pattern::parse("{f}").unwrap().uses_local_counter(), false);
-        assert_eq!(Pattern::parse("{c}").unwrap().uses_local_counter(), true);
+        let items = vec![Parsed::dummy(PatternItem::Expression {
+            variable: Parsed::dummy(Variable::LocalCounter),
+            transforms: Vec::new(),
+        })];
+        assert_eq!(Pattern::new(items).uses_local_counter(), true);
     }
 
     #[test]
     fn uses_global_counter() {
-        assert_eq!(Pattern::parse("{f}").unwrap().uses_global_counter(), false);
-        assert_eq!(Pattern::parse("{C}").unwrap().uses_global_counter(), true);
+        let items = vec![Parsed::dummy(PatternItem::Expression {
+            variable: Parsed::dummy(Variable::GlobalCounter),
+            transforms: Vec::new(),
+        })];
+        assert_eq!(Pattern::new(items).uses_global_counter(), true);
     }
 
     #[test]
-    fn uses_regex_captures() {
-        assert_eq!(Pattern::parse("{f}").unwrap().uses_regex_captures(), false);
-        assert_eq!(Pattern::parse("{1}").unwrap().uses_regex_captures(), true);
+    fn uses_global_regex_captures() {
+        let items = vec![Parsed::dummy(PatternItem::Expression {
+            variable: Parsed::dummy(Variable::RegexCapture(1)),
+            transforms: Vec::new(),
+        })];
+        assert_eq!(Pattern::new(items).uses_regex_captures(), true);
     }
 }

@@ -1,7 +1,9 @@
 use crate::pattern::char::{Char, EscapeSequence};
-use crate::pattern::parse::Parsed;
+use crate::pattern::lexer::{Parsed, EXPR_END, EXPR_START, PIPE};
 use crate::pattern::parser::PatternItem;
 use std::fmt;
+
+pub type ParseResult<T> = Result<T, ParseError>;
 
 #[derive(Debug, PartialEq)]
 pub struct ParseError {
@@ -13,18 +15,18 @@ pub struct ParseError {
 #[derive(Debug, PartialEq, Clone)]
 pub enum ParseErrorKind {
     ExpectedNumber,
-    ExpectedPattern,
-    ExpectedPipeOrExprEnd(Char),
+    ExpectedPipeOrExprEnd,
     ExpectedRange,
     ExpectedSubstitution,
     ExpectedTransform,
     ExpectedVariable,
     ExprStartInsideExpr,
+    PipeOutsideExpr,
     RangeEndBeforeStart(usize, usize),
+    RangeIndexZero,
     RangeInvalid(String),
     RangeUnexpectedChars(String),
-    RangeZeroIndex,
-    RegexZeroRegexCapture,
+    RegexCaptureZero,
     SubstituteWithoutValue(Char),
     UnknownEscapeSequence(EscapeSequence),
     UnknownTransform(Char),
@@ -39,56 +41,80 @@ impl fmt::Display for ParseErrorKind {
         use ParseErrorKind::*;
         match self {
             ExpectedNumber => write!(formatter, "Expected number"),
-            ExpectedPattern => write!(formatter, "Expected pattern but got empty string"),
-            ExpectedPipeOrExprEnd(char) => {
-                write!(formatter, "Expected '|' or closing '}}' but got {}", char)
+            ExpectedPipeOrExprEnd => {
+                write!(formatter, "Expected '{}' or closing '{}'", PIPE, EXPR_END)
             }
             ExpectedRange => write!(formatter, "Transformation requires range as a parameter"),
             ExpectedSubstitution => write!(
                 formatter,
                 "Transformation requires substitution as a parameter"
             ),
-            ExpectedTransform => write!(formatter, "Expected transformation after '|'"),
-            ExpectedVariable => write!(formatter, "Expected variable after '{{'"),
-            ExprStartInsideExpr => write!(formatter, "Unescaped '{{' inside expression"),
+            ExpectedTransform => write!(formatter, "Expected transformation after '{}'", PIPE),
+            ExpectedVariable => write!(formatter, "Expected variable after '{}'", EXPR_START),
+            ExprStartInsideExpr => {
+                write!(formatter, "Unescaped '{}' inside expression", EXPR_START)
+            }
+            PipeOutsideExpr => write!(formatter, "Unescaped '{}' outside expression", PIPE),
             RangeEndBeforeStart(end, start) => write!(
                 formatter,
                 "Range end ({}) cannot precede its start ({})",
                 end, start
             ),
+            RangeIndexZero => write!(formatter, "Range indice s start from 1, not 0"),
             RangeInvalid(value) => write!(formatter, "Invalid range '{}'", value),
             RangeUnexpectedChars(value) => write!(
                 formatter,
                 "Unexpected characters '{}' in range parameter",
                 value
             ),
-            RangeZeroIndex => write!(formatter, "Range indice s start from 1, not 0"),
-            RegexZeroRegexCapture => write!(formatter, "Regex capture groups starts from 1, not 0"),
-            SubstituteWithoutValue(separator) => write!(
+            RegexCaptureZero => write!(formatter, "Regex capture groups starts from 1, not 0"),
+            SubstituteWithoutValue(Char::Raw(value)) => write!(
                 formatter,
-                "Substitution ({} is separator) has no value",
-                separator
+                "Substitution (where '{}' is separator) has no value",
+                value
             ),
-            UnknownEscapeSequence(seq) => {
-                write!(formatter, "Unknown escape sequance '{}{}'", seq[0], seq[1])
+            SubstituteWithoutValue(Char::Escaped(_, sequence)) => write!(
+                formatter,
+                "Substitution (where escape sequence '{}{}' is separator) has no value",
+                sequence[0], sequence[1]
+            ),
+            UnknownEscapeSequence(sequence) => write!(
+                formatter,
+                "Unknown escape sequance '{}{}'",
+                sequence[0], sequence[1]
+            ),
+            UnknownTransform(Char::Raw(value)) => {
+                write!(formatter, "Unknown transformation '{}'", value)
             }
-            UnknownTransform(Char::Raw(char)) => {
-                write!(formatter, "Unknown transformation '{}'", char)
-            }
-            UnknownTransform(char) => write!(formatter, "Expected transformation but got {}", char),
+            UnknownTransform(Char::Escaped(value, sequence)) => write!(
+                formatter,
+                "Unknown transformation '{}' written as escape sequence '{}{}'",
+                value, sequence[0], sequence[1]
+            ),
             UnknownVariable(Char::Raw(char)) => write!(formatter, "Unknown variable '{}'", char),
-            UnknownVariable(char) => write!(formatter, "Expected variable but got {}", char),
+            UnknownVariable(Char::Escaped(value, sequence)) => write!(
+                formatter,
+                "Unknown variable '{}' written as escape sequence '{}{}'",
+                value, sequence[0], sequence[1],
+            ),
             UnmatchedExprEnd => write!(
                 formatter,
-                "End of expression'}}' does not have matching '{{'"
+                "End of expression'{}' does not have matching '{}'",
+                EXPR_END, EXPR_START
             ),
-            UnterminatedExprStart => write!(formatter, "Unterminated start of expression '{{'"),
+            UnterminatedExprStart => write!(
+                formatter,
+                "Unterminated start of expression '{}'",
+                EXPR_START
+            ),
             UnterminatedEscapeSequence(escape) => {
                 write!(formatter, "Unterminated escape sequence '{}'", escape)
             }
         }
     }
 }
+
+pub type EvalResult<'a, T> = Result<T, EvalError<'a>>;
 
 #[derive(Debug, PartialEq)]
 pub struct EvalError<'a> {

@@ -1,6 +1,6 @@
 use crate::cli::Cli;
 use crate::input::{ArgsInput, Input, StdinInput};
-use crate::pattern::{Lexer, Pattern};
+use crate::pattern::{Lexer, Parser, Pattern};
 use crate::state::State;
 use std::io::{self, Write};
 use std::{cmp, process};
@@ -36,35 +36,9 @@ fn main() -> Result<(), io::Error> {
         lexer.set_escape(escape);
     }
 
-    match Pattern::parse_tokens(lexer) {
-        Ok(pattern) => {
-            let mut state = State::new();
-            state.set_local_counter_enabled(pattern.uses_local_counter());
-            state.set_global_counter_enabled(pattern.uses_global_counter());
-
-            if pattern.uses_regex_captures() {
-                state.set_regex(cli.regex());
-
-                if let Some(regex_target) = cli.regex_target() {
-                    state.set_regex_target(regex_target);
-                }
-            }
-
-            let mut input: Box<dyn Input> = if let Some(files) = cli.paths() {
-                Box::new(ArgsInput::new(files))
-            } else {
-                Box::new(StdinInput::new(&mut stdin, cli.zero_terminated_stdin()))
-            };
-
-            while let Some(src_path) = input.next()? {
-                // TODO handle error
-                let eval_context = state.get_eval_context(src_path);
-                let dst_path = pattern.eval(&eval_context).unwrap();
-                writeln!(&mut stdout, "{}", dst_path)?;
-            }
-
-            Ok(())
-        }
+    let mut parser = Parser::new(lexer);
+    let pattern = match parser.parse_items() {
+        Ok(items) => Pattern::new(items),
         Err(error) => {
             writeln!(&mut stderr, "error: {}", error.kind)?;
 
@@ -86,5 +60,32 @@ fn main() -> Result<(), io::Error> {
 
             process::exit(2);
         }
+    };
+
+    let mut state = State::new();
+    state.set_local_counter_enabled(pattern.uses_local_counter());
+    state.set_global_counter_enabled(pattern.uses_global_counter());
+
+    if pattern.uses_regex_captures() {
+        state.set_regex(cli.regex());
+
+        if let Some(regex_target) = cli.regex_target() {
+            state.set_regex_target(regex_target);
+        }
     }
+
+    let mut input: Box<dyn Input> = if let Some(files) = cli.paths() {
+        Box::new(ArgsInput::new(files))
+    } else {
+        Box::new(StdinInput::new(&mut stdin, cli.zero_terminated_stdin()))
+    };
+
+    while let Some(src_path) = input.next()? {
+        // TODO handle error
+        let eval_context = state.get_eval_context(src_path);
+        let dst_path = pattern.eval(&eval_context).unwrap();
+        writeln!(&mut stdout, "{}", dst_path)?;
+    }
+
+    Ok(())
 }

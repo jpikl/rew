@@ -43,12 +43,21 @@ impl<'a> Cli<'a> {
         Arg::with_name(PATTERN)
             .index(1)
             .required(true)
+            .validator(Self::validate_pattern)
             .value_name("PATTERN")
             .help("Output pattern")
     }
 
     pub fn pattern(&self) -> &str {
         self.matches.value_of(PATTERN).unwrap()
+    }
+
+    fn validate_pattern(value: String) -> Result<(), String> {
+        if value.is_empty() {
+            Err("Empty string".to_string())
+        } else {
+            Ok(())
+        }
     }
 
     fn paths_arg<'b>() -> Arg<'a, 'b> {

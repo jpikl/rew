@@ -1,5 +1,3 @@
-use std::fmt;
-
 pub type EscapeSequence = [char; 2];
 
 #[derive(Debug, PartialEq, Clone)]
@@ -36,15 +34,6 @@ impl Char {
     }
 }
 
-impl fmt::Display for Char {
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Char::Raw(value) => write!(formatter, "'{}'", value),
-            Char::Escaped(_, seq) => write!(formatter, "escape sequence '{}{}'", seq[0], seq[1]),
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -60,11 +49,6 @@ mod tests {
     }
 
     #[test]
-    fn raw_fmt() {
-        assert_eq!(format!("{}", Char::Raw('a')), "'a'");
-    }
-
-    #[test]
     fn escaped_value() {
         assert_eq!(Char::Escaped('a', ['b', 'c']).value(), 'a');
     }
@@ -72,14 +56,6 @@ mod tests {
     #[test]
     fn escaped_len() {
         assert_eq!(Char::Escaped('a', ['b', 'c']).len(), 2);
-    }
-
-    #[test]
-    fn escaped_fmt() {
-        assert_eq!(
-            format!("{}", Char::Escaped('a', ['b', 'c'])),
-            "escape sequence 'bc'"
-        );
     }
 
     #[test]

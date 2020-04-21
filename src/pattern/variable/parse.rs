@@ -1,6 +1,5 @@
-use crate::pattern::error::{ParseError, ParseErrorKind};
+use crate::pattern::error::{ParseError, ParseErrorKind, ParseResult};
 use crate::pattern::number::parse_usize;
-use crate::pattern::parse::ParseResult;
 use crate::pattern::reader::Reader;
 use crate::pattern::variable::Variable;
 
@@ -14,7 +13,7 @@ impl Variable {
                 Ok(Variable::RegexCapture(number))
             } else {
                 Err(ParseError {
-                    kind: ParseErrorKind::RegexZeroRegexCapture,
+                    kind: ParseErrorKind::RegexCaptureZero,
                     start: position,
                     end: reader.position(),
                 })
