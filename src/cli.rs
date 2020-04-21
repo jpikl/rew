@@ -1,5 +1,4 @@
 use crate::pattern::META_CHARS;
-use crate::state::RegexTarget;
 use clap::{App, Arg, ArgMatches, OsValues};
 use regex::Regex;
 use termcolor::ColorChoice;
@@ -12,10 +11,8 @@ const COLOR_NEVER: &str = "never";
 const ESCAPE: &str = "escape";
 const PATHS: &str = "paths";
 const PATTERN: &str = "pattern";
-const REGEX: &str = "regex";
-const REGEX_TARGET: &str = "regex-target";
-const REGEX_TARGET_FILENAME: &str = "filename";
-const REGEX_TARGET_PATH: &str = "path";
+const REGEX_FILENAME: &str = "regex-filename";
+const REGEX_PATH: &str = "regex-path";
 const ZERO_TERMINATED_STDIN: &str = "zero-terminated-stdin";
 
 pub struct Cli<'a> {
@@ -32,8 +29,8 @@ impl<'a> Cli<'a> {
                 .arg(Self::paths_arg())
                 .arg(Self::color_arg())
                 .arg(Self::escape_arg())
-                .arg(Self::regex_arg())
-                .arg(Self::regex_target_arg())
+                .arg(Self::regex_filename_arg())
+                .arg(Self::regex_path_arg())
                 .arg(Self::zero_terminated_stdin_arg())
                 .get_matches(),
         }
@@ -97,7 +94,7 @@ impl<'a> Cli<'a> {
             .takes_value(true)
             .value_name("CHAR")
             .validator(Self::validate_escape)
-            .help("Custom escape character for pattern")
+            .help("Custom escape character used in pattern")
     }
 
     fn validate_escape(value: String) -> Result<(), String> {
@@ -124,14 +121,38 @@ impl<'a> Cli<'a> {
             .map(|value| value.chars().next().expect("Validation failed"))
     }
 
-    fn regex_arg<'b>() -> Arg<'a, 'b> {
-        Arg::with_name(REGEX)
+    fn regex_filename_arg<'b>() -> Arg<'a, 'b> {
+        Arg::with_name(REGEX_FILENAME)
             .short("e")
             .long("regex")
             .takes_value(true)
             .value_name("EXPR")
             .validator(Self::validate_regex)
-            .help("Regular expression matched against each path")
+            .conflicts_with(REGEX_PATH)
+            .help("Regular expression matched against filename")
+    }
+
+    pub fn regex_filename(&self) -> Option<Regex> {
+        self.matches
+            .value_of(REGEX_FILENAME)
+            .map(|value| Regex::new(value).expect("Validation failed"))
+    }
+
+    fn regex_path_arg<'b>() -> Arg<'a, 'b> {
+        Arg::with_name(REGEX_PATH)
+            .short("E")
+            .long("regex-full")
+            .takes_value(true)
+            .value_name("EXPR")
+            .validator(Self::validate_regex)
+            .conflicts_with(REGEX_FILENAME)
+            .help("Regular expression matched against full path")
+    }
+
+    pub fn regex_path(&self) -> Option<Regex> {
+        self.matches
+            .value_of(REGEX_PATH)
+            .map(|value| Regex::new(value).expect("Validation failed"))
     }
 
     fn validate_regex(value: String) -> Result<(), String> {
@@ -140,31 +161,6 @@ impl<'a> Cli<'a> {
         } else {
             Ok(())
         }
-    }
-
-    pub fn regex(&self) -> Option<Regex> {
-        self.matches
-            .value_of(REGEX)
-            .map(|value| Regex::new(value).expect("Validation failed"))
-    }
-
-    fn regex_target_arg<'b>() -> Arg<'a, 'b> {
-        Arg::with_name(REGEX_TARGET)
-            .long("regex-target")
-            .takes_value(true)
-            .value_name("TARGET")
-            .possible_values(&[REGEX_TARGET_PATH, REGEX_TARGET_FILENAME])
-            .help("Which part of input is matched by -e, --regex")
-    }
-
-    pub fn regex_target(&self) -> Option<RegexTarget> {
-        self.matches
-            .value_of(REGEX_TARGET)
-            .map(|value| match value {
-                REGEX_TARGET_PATH => RegexTarget::Path,
-                REGEX_TARGET_FILENAME => RegexTarget::Filename,
-                _ => panic!("Unexpected {} value {}", REGEX_TARGET, value),
-            })
     }
 
     fn zero_terminated_stdin_arg<'b>() -> Arg<'a, 'b> {

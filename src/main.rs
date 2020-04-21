@@ -1,7 +1,7 @@
 use crate::cli::Cli;
 use crate::input::{ArgsInput, Input, StdinInput};
 use crate::pattern::{Lexer, Parser, Pattern};
-use crate::state::State;
+use crate::state::{RegexTarget, State};
 use std::io::{self, Write};
 use std::{cmp, process};
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
@@ -67,10 +67,12 @@ fn main() -> Result<(), io::Error> {
     state.set_global_counter_enabled(pattern.uses_global_counter());
 
     if pattern.uses_regex_captures() {
-        state.set_regex(cli.regex());
-
-        if let Some(regex_target) = cli.regex_target() {
-            state.set_regex_target(regex_target);
+        if let Some(regex) = cli.regex_filename() {
+            state.set_regex(Some(regex));
+            state.set_regex_target(RegexTarget::Filename);
+        } else if let Some(regex) = cli.regex_path() {
+            state.set_regex(Some(regex));
+            state.set_regex_target(RegexTarget::Path);
         }
     }
 
