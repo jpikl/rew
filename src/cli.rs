@@ -11,9 +11,11 @@ const COLOR_NEVER: &str = "never";
 const ESCAPE: &str = "escape";
 const PATHS: &str = "paths";
 const PATTERN: &str = "pattern";
+const PRINT_NUL: &str = "print-nul";
+const PRINT_RAW: &str = "print-raw";
+const READ_NUL: &str = "read-nul";
 const REGEX_FILENAME: &str = "regex-filename";
 const REGEX_PATH: &str = "regex-path";
-const ZERO_TERMINATED_STDIN: &str = "zero-terminated-stdin";
 
 pub struct Cli<'a> {
     matches: ArgMatches<'a>,
@@ -29,9 +31,11 @@ impl<'a> Cli<'a> {
                 .arg(Self::paths_arg())
                 .arg(Self::color_arg())
                 .arg(Self::escape_arg())
+                .arg(Self::print_nul_arg())
+                .arg(Self::print_raw_arg())
+                .arg(Self::read_nul_arg())
                 .arg(Self::regex_filename_arg())
                 .arg(Self::regex_path_arg())
-                .arg(Self::zero_terminated_stdin_arg())
                 .get_matches(),
         }
     }
@@ -94,7 +98,7 @@ impl<'a> Cli<'a> {
             .takes_value(true)
             .value_name("CHAR")
             .validator(Self::validate_escape)
-            .help("Custom escape character used in pattern")
+            .help("Custom escape character to use in pattern")
     }
 
     fn validate_escape(value: String) -> Result<(), String> {
@@ -119,6 +123,41 @@ impl<'a> Cli<'a> {
         self.matches
             .value_of(ESCAPE)
             .map(|value| value.chars().next().expect("Validation failed"))
+    }
+
+    fn print_nul_arg<'b>() -> Arg<'a, 'b> {
+        Arg::with_name(PRINT_NUL)
+            .short("Z")
+            .long("print-0")
+            .conflicts_with(PRINT_RAW)
+            .help("Print paths delimited by NUL, not newline")
+    }
+
+    pub fn print_nul(&self) -> bool {
+        self.matches.is_present(PRINT_NUL)
+    }
+
+    fn print_raw_arg<'b>() -> Arg<'a, 'b> {
+        Arg::with_name(PRINT_RAW)
+            .short("R")
+            .long("print-raw")
+            .conflicts_with(PRINT_NUL)
+            .help("Print paths without any delimiter")
+    }
+
+    pub fn print_raw(&self) -> bool {
+        self.matches.is_present(PRINT_RAW)
+    }
+
+    fn read_nul_arg<'b>() -> Arg<'a, 'b> {
+        Arg::with_name(READ_NUL)
+            .short("z")
+            .long("read-0")
+            .help("Read paths delimited by NUL, not newline")
+    }
+
+    pub fn read_nul(&self) -> bool {
+        self.matches.is_present(READ_NUL)
     }
 
     fn regex_filename_arg<'b>() -> Arg<'a, 'b> {
@@ -161,16 +200,5 @@ impl<'a> Cli<'a> {
         } else {
             Ok(())
         }
-    }
-
-    fn zero_terminated_stdin_arg<'b>() -> Arg<'a, 'b> {
-        Arg::with_name(ZERO_TERMINATED_STDIN)
-            .short("z")
-            .long("read0")
-            .help("Read paths delimited by NUL, not newline")
-    }
-
-    pub fn zero_terminated_stdin(&self) -> bool {
-        self.matches.is_present(ZERO_TERMINATED_STDIN)
     }
 }

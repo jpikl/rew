@@ -79,14 +79,27 @@ fn main() -> Result<(), io::Error> {
     let mut input: Box<dyn Input> = if let Some(files) = cli.paths() {
         Box::new(ArgsInput::new(files))
     } else {
-        Box::new(StdinInput::new(&mut stdin, cli.zero_terminated_stdin()))
+        Box::new(StdinInput::new(&mut stdin, cli.read_nul()))
+    };
+
+    let delimiter = if cli.print_raw() {
+        None
+    } else if cli.print_nul() {
+        Some('\0')
+    } else {
+        Some('\n')
     };
 
     while let Some(src_path) = input.next()? {
         // TODO handle error
         let eval_context = state.get_eval_context(src_path);
         let dst_path = pattern.eval(&eval_context).unwrap();
-        writeln!(&mut stdout, "{}", dst_path)?;
+
+        if let Some(delimiter_value) = delimiter {
+            write!(&mut stdout, "{}{}", dst_path, delimiter_value)?;
+        } else {
+            write!(&mut stdout, "{}", dst_path)?;
+        }
     }
 
     Ok(())
