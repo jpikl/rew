@@ -12,7 +12,7 @@ impl Transform {
         if let Some(char) = reader.read() {
             match char.value() {
                 'n' => Ok(Transform::Substring(Range::parse(reader)?)),
-                'N' => Ok(Transform::SubstringFromEnd(Range::parse(reader)?)),
+                'N' => Ok(Transform::SubstringReverse(Range::parse(reader)?)),
                 'r' => Ok(Transform::ReplaceFirst(Substitution::parse(reader)?)),
                 'R' => Ok(Transform::ReplaceAll(Substitution::parse(reader)?)),
                 't' => Ok(Transform::Trim),
@@ -53,41 +53,11 @@ mod tests {
                 end: 1,
             },
         );
-        assert_ok(
-            "n5",
-            Transform::Substring(Range {
-                offset: 4,
-                length: 1,
-            }),
-        );
-        assert_ok(
-            "n2-10",
-            Transform::Substring(Range {
-                offset: 1,
-                length: 9,
-            }),
-        );
-        assert_ok(
-            "n2-",
-            Transform::Substring(Range {
-                offset: 1,
-                length: 0,
-            }),
-        );
-        assert_ok(
-            "n-10",
-            Transform::Substring(Range {
-                offset: 0,
-                length: 10,
-            }),
-        );
-        assert_ok(
-            "n-",
-            Transform::Substring(Range {
-                offset: 0,
-                length: 0,
-            }),
-        );
+        assert_ok("n5", Transform::Substring(Range::FromTo(4, 5)));
+        assert_ok("n2-10", Transform::Substring(Range::FromTo(1, 10)));
+        assert_ok("n2-", Transform::Substring(Range::From(1)));
+        assert_ok("n-10", Transform::Substring(Range::To(10)));
+        assert_ok("n-", Transform::Substring(Range::Full));
     }
 
     #[test]
@@ -100,41 +70,11 @@ mod tests {
                 end: 1,
             },
         );
-        assert_ok(
-            "N5",
-            Transform::SubstringFromEnd(Range {
-                offset: 4,
-                length: 1,
-            }),
-        );
-        assert_ok(
-            "N2-10",
-            Transform::SubstringFromEnd(Range {
-                offset: 1,
-                length: 9,
-            }),
-        );
-        assert_ok(
-            "N2-",
-            Transform::SubstringFromEnd(Range {
-                offset: 1,
-                length: 0,
-            }),
-        );
-        assert_ok(
-            "N-10",
-            Transform::SubstringFromEnd(Range {
-                offset: 0,
-                length: 10,
-            }),
-        );
-        assert_ok(
-            "N-",
-            Transform::SubstringFromEnd(Range {
-                offset: 0,
-                length: 0,
-            }),
-        );
+        assert_ok("N5", Transform::SubstringReverse(Range::FromTo(4, 5)));
+        assert_ok("N2-10", Transform::SubstringReverse(Range::FromTo(1, 10)));
+        assert_ok("N2-", Transform::SubstringReverse(Range::From(1)));
+        assert_ok("N-10", Transform::SubstringReverse(Range::To(10)));
+        assert_ok("N-", Transform::SubstringReverse(Range::Full));
     }
 
     #[test]

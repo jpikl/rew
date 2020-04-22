@@ -440,10 +440,7 @@ mod tests {
                             end: 4,
                         },
                         Parsed {
-                            value: Transform::Substring(Range {
-                                offset: 0,
-                                length: 3,
-                            }),
+                            value: Transform::Substring(Range::FromTo(0, 3)),
                             start: 5,
                             end: 9,
                         },

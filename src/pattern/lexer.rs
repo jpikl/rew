@@ -17,7 +17,7 @@ const NUL: char = '0';
 #[derive(Debug, PartialEq)]
 pub struct Parsed<T> {
     pub value: T,
-    pub start: usize,
+    pub start: usize, // TODO span: Range<usize>
     pub end: usize,
 }
 

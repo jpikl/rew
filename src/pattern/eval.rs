@@ -89,10 +89,7 @@ mod tests {
             variable: Parsed::dummy(Variable::Filename),
             transforms: vec![
                 Parsed::dummy(Transform::Uppercase),
-                Parsed::dummy(Transform::Substring(Range {
-                    offset: 0,
-                    length: 4,
-                })),
+                Parsed::dummy(Transform::Substring(Range::To(4))),
             ],
         })];
         assert_eq!(
@@ -107,10 +104,7 @@ mod tests {
             Parsed::dummy(PatternItem::Constant("prefix_".to_string())),
             Parsed::dummy(PatternItem::Expression {
                 variable: Parsed::dummy(Variable::Basename),
-                transforms: vec![Parsed::dummy(Transform::Substring(Range {
-                    offset: 0,
-                    length: 3,
-                }))],
+                transforms: vec![Parsed::dummy(Transform::Substring(Range::To(3)))],
             }),
             Parsed::dummy(PatternItem::Constant("_".to_string())),
             Parsed::dummy(PatternItem::Expression {

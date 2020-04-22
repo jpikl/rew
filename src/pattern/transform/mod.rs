@@ -7,7 +7,7 @@ mod parse;
 #[derive(Debug, PartialEq)]
 pub enum Transform {
     Substring(Range),
-    SubstringFromEnd(Range),
+    SubstringReverse(Range),
     ReplaceFirst(Substitution),
     ReplaceAll(Substitution),
     Trim,

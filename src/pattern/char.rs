@@ -6,6 +6,7 @@ pub enum Char {
     Escaped(char, EscapeSequence),
 }
 
+// TODO multi-byte chars (diacritics) char.len_utf8()
 impl Char {
     pub fn value(&self) -> char {
         match self {

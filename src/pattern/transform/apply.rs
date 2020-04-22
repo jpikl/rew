@@ -1,4 +1,3 @@
-use crate::pattern::range::Range;
 use crate::pattern::substitution::Substitution;
 use crate::pattern::transform::Transform;
 use unidecode::unidecode;
@@ -6,33 +5,39 @@ use unidecode::unidecode;
 impl Transform {
     pub fn apply(&self, mut string: String) -> String {
         match self {
-            Transform::Substring(Range { offset, length }) => {
-                if *offset > 0 {
-                    if let Some((start, _)) = string.char_indices().nth(*offset) {
+            Transform::Substring(range) => {
+                if let Some(start) = range.start() {
+                    if let Some((start, _)) = string.char_indices().nth(start) {
                         string.replace_range(..start, "");
                     } else {
                         string.clear();
                     }
                 }
-                if *length > 0 {
-                    if let Some((end, _)) = string.char_indices().nth(*length) {
+                if let Some(length) = range.length() {
+                    if let Some((end, _)) = string.char_indices().nth(length) {
                         string.replace_range(end.., "");
                     }
                 }
                 string
             }
 
-            Transform::SubstringFromEnd(Range { offset, length }) => {
-                if *offset > 0 {
-                    if let Some((start, _)) = string.char_indices().rev().nth(*offset - 1) {
-                        string.replace_range(start.., "");
-                    } else {
-                        string.clear();
+            Transform::SubstringReverse(range) => {
+                if let Some(start) = range.start() {
+                    if start > 0 {
+                        if let Some((start, _)) = string.char_indices().nth_back(start - 1) {
+                            string.replace_range(start.., "");
+                        } else {
+                            string.clear();
+                        }
                     }
                 }
-                if *length > 0 {
-                    if let Some((end, _)) = string.char_indices().rev().nth(*length - 1) {
-                        string.replace_range(..end, "");
+                if let Some(length) = range.length() {
+                    if length > 0 {
+                        if let Some((end, _)) = string.char_indices().nth_back(length - 1) {
+                            string.replace_range(..end, "");
+                        }
+                    } else {
+                        string.clear();
                     }
                 }
                 string
@@ -83,204 +88,203 @@ impl Transform {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::pattern::range::Range;
     use crate::pattern::substitution::Substitution;
 
     #[test]
     fn substring_full() {
         let mut string = "ábčd".to_string();
-        string = Transform::Substring(Range {
-            offset: 0,
-            length: 0,
-        })
-        .apply(string);
+        string = Transform::Substring(Range::Full).apply(string);
         assert_eq!(string, "ábčd");
     }
 
     #[test]
-    fn substring_offset() {
+    fn substring_from_first() {
         let mut string = "ábčd".to_string();
-        string = Transform::Substring(Range {
-            offset: 3,
-            length: 0,
-        })
-        .apply(string);
+        string = Transform::Substring(Range::From(0)).apply(string);
+        assert_eq!(string, "ábčd");
+    }
+
+    #[test]
+    fn substring_from_last() {
+        let mut string = "ábčd".to_string();
+        string = Transform::Substring(Range::From(3)).apply(string);
         assert_eq!(string, "d");
     }
 
     #[test]
-    fn substring_offset_over() {
+    fn substring_from_over() {
         let mut string = "ábčd".to_string();
-        string = Transform::Substring(Range {
-            offset: 4,
-            length: 0,
-        })
-        .apply(string);
+        string = Transform::Substring(Range::From(4)).apply(string);
         assert_eq!(string, "");
     }
 
     #[test]
-    fn substring_length() {
+    fn substring_to_below() {
         let mut string = "ábčd".to_string();
-        string = Transform::Substring(Range {
-            offset: 0,
-            length: 3,
-        })
-        .apply(string);
+        string = Transform::Substring(Range::To(0)).apply(string);
+        assert_eq!(string, "");
+    }
+
+    #[test]
+    fn substring_to_last_but_one() {
+        let mut string = "ábčd".to_string();
+        string = Transform::Substring(Range::To(3)).apply(string);
         assert_eq!(string, "ábč");
     }
 
     #[test]
-    fn substring_length_max() {
+    fn substring_to_last() {
         let mut string = "ábčd".to_string();
-        string = Transform::Substring(Range {
-            offset: 0,
-            length: 4,
-        })
-        .apply(string);
+        string = Transform::Substring(Range::To(4)).apply(string);
         assert_eq!(string, "ábčd");
     }
 
     #[test]
-    fn substring_length_over() {
+    fn substring_to_over() {
         let mut string = "ábčd".to_string();
-        string = Transform::Substring(Range {
-            offset: 0,
-            length: 5,
-        })
-        .apply(string);
+        string = Transform::Substring(Range::To(5)).apply(string);
         assert_eq!(string, "ábčd");
     }
 
     #[test]
-    fn substring_offset_length() {
+    fn substring_from_first_to_below() {
         let mut string = "ábčd".to_string();
-        string = Transform::Substring(Range {
-            offset: 1,
-            length: 1,
-        })
-        .apply(string);
-        assert_eq!(string, "b");
-    }
-
-    #[test]
-    fn substring_offset_over_length() {
-        let mut string = "ábčd".to_string();
-        string = Transform::Substring(Range {
-            offset: 4,
-            length: 1,
-        })
-        .apply(string);
+        string = Transform::Substring(Range::FromTo(0, 0)).apply(string);
         assert_eq!(string, "");
     }
 
     #[test]
-    fn substring_offset_length_over() {
+    fn substring_from_first_to_last_but_one() {
         let mut string = "ábčd".to_string();
-        string = Transform::Substring(Range {
-            offset: 1,
-            length: 4,
-        })
-        .apply(string);
-        assert_eq!(string, "bčd");
+        string = Transform::Substring(Range::FromTo(0, 3)).apply(string);
+        assert_eq!(string, "ábč");
     }
 
     #[test]
-    fn substring_fe_full() {
+    fn substring_from_first_to_last() {
         let mut string = "ábčd".to_string();
-        string = Transform::SubstringFromEnd(Range {
-            offset: 0,
-            length: 0,
-        })
-        .apply(string);
+        string = Transform::Substring(Range::FromTo(0, 4)).apply(string);
         assert_eq!(string, "ábčd");
     }
 
     #[test]
-    fn substring_fe_offset() {
+    fn substring_from_last_to_last() {
         let mut string = "ábčd".to_string();
-        string = Transform::SubstringFromEnd(Range {
-            offset: 3,
-            length: 0,
-        })
-        .apply(string);
+        string = Transform::Substring(Range::FromTo(3, 4)).apply(string);
+        assert_eq!(string, "d");
+    }
+
+    #[test]
+    fn substring_from_last_to_over() {
+        let mut string = "ábčd".to_string();
+        string = Transform::Substring(Range::FromTo(3, 5)).apply(string);
+        assert_eq!(string, "d");
+    }
+
+    #[test]
+    fn substring_from_over_to_over() {
+        let mut string = "ábčd".to_string();
+        string = Transform::Substring(Range::FromTo(4, 5)).apply(string);
+        assert_eq!(string, "");
+    }
+
+    #[test]
+    fn substring_reverse_full() {
+        let mut string = "ábčd".to_string();
+        string = Transform::SubstringReverse(Range::Full).apply(string);
+        assert_eq!(string, "ábčd");
+    }
+
+    #[test]
+    fn substring_reverse_from_first() {
+        let mut string = "ábčd".to_string();
+        string = Transform::SubstringReverse(Range::From(0)).apply(string);
+        assert_eq!(string, "ábčd");
+    }
+
+    #[test]
+    fn substring_reverse_from_last() {
+        let mut string = "ábčd".to_string();
+        string = Transform::SubstringReverse(Range::From(3)).apply(string);
         assert_eq!(string, "á");
     }
 
     #[test]
-    fn substring_fe_offset_over() {
+    fn substring_reverse_from_over() {
         let mut string = "ábčd".to_string();
-        string = Transform::SubstringFromEnd(Range {
-            offset: 4,
-            length: 0,
-        })
-        .apply(string);
+        string = Transform::SubstringReverse(Range::From(4)).apply(string);
         assert_eq!(string, "");
     }
 
     #[test]
-    fn substring_fe_length() {
+    fn substring_reverse_to_below() {
         let mut string = "ábčd".to_string();
-        string = Transform::SubstringFromEnd(Range {
-            offset: 0,
-            length: 3,
-        })
-        .apply(string);
+        string = Transform::SubstringReverse(Range::To(0)).apply(string);
+        assert_eq!(string, "");
+    }
+
+    #[test]
+    fn substring_reverse_to_last_but_one() {
+        let mut string = "ábčd".to_string();
+        string = Transform::SubstringReverse(Range::To(3)).apply(string);
         assert_eq!(string, "bčd");
     }
 
     #[test]
-    fn substring_fe_length_max() {
+    fn substring_reverse_to_last() {
         let mut string = "ábčd".to_string();
-        string = Transform::SubstringFromEnd(Range {
-            offset: 0,
-            length: 4,
-        })
-        .apply(string);
+        string = Transform::SubstringReverse(Range::To(4)).apply(string);
         assert_eq!(string, "ábčd");
     }
 
     #[test]
-    fn substring_fe_length_over() {
+    fn substring_reverse_to_over() {
         let mut string = "ábčd".to_string();
-        string = Transform::SubstringFromEnd(Range {
-            offset: 0,
-            length: 5,
-        })
-        .apply(string);
+        string = Transform::SubstringReverse(Range::To(5)).apply(string);
         assert_eq!(string, "ábčd");
     }
 
     #[test]
-    fn substring_fe_offset_length() {
+    fn substring_reverse_from_first_to_below() {
         let mut string = "ábčd".to_string();
-        string = Transform::SubstringFromEnd(Range {
-            offset: 1,
-            length: 1,
-        })
-        .apply(string);
-        assert_eq!(string, "č");
-    }
-
-    #[test]
-    fn substring_fe_offset_over_length() {
-        let mut string = "ábčd".to_string();
-        string = Transform::SubstringFromEnd(Range {
-            offset: 4,
-            length: 1,
-        })
-        .apply(string);
+        string = Transform::SubstringReverse(Range::FromTo(0, 0)).apply(string);
         assert_eq!(string, "");
     }
 
     #[test]
-    fn substring_fe_offset_length_over() {
+    fn substring_reverse_from_first_to_last_but_one() {
         let mut string = "ábčd".to_string();
-        string = Transform::SubstringFromEnd(Range {
-            offset: 1,
-            length: 4,
-        })
-        .apply(string);
-        assert_eq!(string, "ábč");
+        string = Transform::SubstringReverse(Range::FromTo(0, 3)).apply(string);
+        assert_eq!(string, "bčd");
+    }
+
+    #[test]
+    fn substring_reverse_from_first_to_last() {
+        let mut string = "ábčd".to_string();
+        string = Transform::SubstringReverse(Range::FromTo(0, 4)).apply(string);
+        assert_eq!(string, "ábčd");
+    }
+
+    #[test]
+    fn substring_reverse_from_last_to_last() {
+        let mut string = "ábčd".to_string();
+        string = Transform::SubstringReverse(Range::FromTo(3, 4)).apply(string);
+        assert_eq!(string, "á");
+    }
+
+    #[test]
+    fn substring_reverse_from_last_to_over() {
+        let mut string = "ábčd".to_string();
+        string = Transform::SubstringReverse(Range::FromTo(3, 5)).apply(string);
+        assert_eq!(string, "á");
+    }
+
+    #[test]
+    fn substring_reverse_from_over_to_over() {
+        let mut string = "ábčd".to_string();
+        string = Transform::SubstringReverse(Range::FromTo(4, 5)).apply(string);
+        assert_eq!(string, "");
     }
 
     #[test]

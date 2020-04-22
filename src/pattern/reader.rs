@@ -11,6 +11,9 @@ impl From<&str> for Reader {
     }
 }
 
+// TODO char vs Char - trait template + default implementations
+// TODO use Chars for iterating string
+// TODO remove *_value methods
 impl Reader {
     pub fn new(chars: Vec<Char>) -> Self {
         Self { chars, index: 0 }
