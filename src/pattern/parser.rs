@@ -1,8 +1,8 @@
 use crate::pattern::char::Char;
+use crate::pattern::filter::Filter;
 use crate::pattern::lexer::{Lexer, Token};
 use crate::pattern::parse::{ParseError, ParseErrorKind, ParseResult, Parsed};
 use crate::pattern::reader::Reader;
-use crate::pattern::transform::Transform;
 use crate::pattern::variable::Variable;
 
 #[derive(Debug, PartialEq)]
@@ -10,7 +10,7 @@ pub enum PatternItem {
     Constant(String),
     Expression {
         variable: Parsed<Variable>,
-        transforms: Vec<Parsed<Transform>>,
+        filters: Vec<Parsed<Filter>>,
     },
 }
 
@@ -82,14 +82,11 @@ impl Parser {
     fn parse_expression(&mut self) -> ParseResult<Option<Parsed<PatternItem>>> {
         let start = self.token_start();
         let variable = self.parse_variable()?;
-        let transforms = self.parse_transforms()?;
+        let filters = self.parse_filters()?;
         let end = self.token_end();
 
         Ok(Some(Parsed {
-            value: PatternItem::Expression {
-                variable,
-                transforms,
-            },
+            value: PatternItem::Expression { variable, filters },
             start,
             end,
         }))
@@ -99,13 +96,13 @@ impl Parser {
         self.parse_expression_member(Variable::parse, ParseErrorKind::ExpectedVariable)
     }
 
-    fn parse_transforms(&mut self) -> ParseResult<Vec<Parsed<Transform>>> {
-        let mut transforms: Vec<Parsed<Transform>> = Vec::new();
+    fn parse_filters(&mut self) -> ParseResult<Vec<Parsed<Filter>>> {
+        let mut filters: Vec<Parsed<Filter>> = Vec::new();
 
         while let Some(token) = self.fetch_token()? {
             match token.value {
                 Token::Pipe => {
-                    transforms.push(self.parse_transform()?);
+                    filters.push(self.parse_filter()?);
                 }
                 Token::ExprStart => {
                     return Err(ParseError {
@@ -123,11 +120,11 @@ impl Parser {
             }
         }
 
-        Ok(transforms)
+        Ok(filters)
     }
 
-    fn parse_transform(&mut self) -> ParseResult<Parsed<Transform>> {
-        self.parse_expression_member(Transform::parse, ParseErrorKind::ExpectedTransform)
+    fn parse_filter(&mut self) -> ParseResult<Parsed<Filter>> {
+        self.parse_expression_member(Filter::parse, ParseErrorKind::ExpectedFilter)
     }
 
     fn parse_expression_member<T, F: FnOnce(&mut Reader) -> ParseResult<T>>(
@@ -295,7 +292,7 @@ mod tests {
                         start: 1,
                         end: 2,
                     },
-                    transforms: Vec::new(),
+                    filters: Vec::new(),
                 },
                 start: 0,
                 end: 3,
@@ -340,11 +337,11 @@ mod tests {
     }
 
     #[test]
-    fn expected_transform_but_end_error() {
+    fn expected_filter_but_end_error() {
         assert_eq!(
             Parser::from("{f|").parse_items(),
             Err(ParseError {
-                kind: ParseErrorKind::ExpectedTransform,
+                kind: ParseErrorKind::ExpectedFilter,
                 start: 3,
                 end: 3,
             })
@@ -352,11 +349,11 @@ mod tests {
     }
 
     #[test]
-    fn expected_transform_but_pipe_error() {
+    fn expected_filter_but_pipe_error() {
         assert_eq!(
             Parser::from("{f||").parse_items(),
             Err(ParseError {
-                kind: ParseErrorKind::ExpectedTransform,
+                kind: ParseErrorKind::ExpectedFilter,
                 start: 3,
                 end: 4,
             })
@@ -364,11 +361,11 @@ mod tests {
     }
 
     #[test]
-    fn expected_transform_but_expr_end_error() {
+    fn expected_filter_but_expr_end_error() {
         assert_eq!(
             Parser::from("{f|}").parse_items(),
             Err(ParseError {
-                kind: ParseErrorKind::ExpectedTransform,
+                kind: ParseErrorKind::ExpectedFilter,
                 start: 3,
                 end: 4,
             })
@@ -376,7 +373,7 @@ mod tests {
     }
 
     #[test]
-    fn unternimeted_expr_start_after_transform_error() {
+    fn unternimeted_expr_start_after_filter_error() {
         assert_eq!(
             Parser::from("{f|l").parse_items(),
             Err(ParseError {
@@ -388,7 +385,7 @@ mod tests {
     }
 
     #[test]
-    fn expected_pipe_or_expr_end_after_transform_error() {
+    fn expected_pipe_or_expr_end_after_filter_error() {
         assert_eq!(
             Parser::from("{f|ll").parse_items(),
             Err(ParseError {
@@ -400,7 +397,7 @@ mod tests {
     }
 
     #[test]
-    fn variable_single_transform() {
+    fn variable_single_filter() {
         assert_eq!(
             Parser::from("{b|l}").parse_items(),
             Ok(vec![Parsed {
@@ -410,8 +407,8 @@ mod tests {
                         start: 1,
                         end: 2,
                     },
-                    transforms: vec![Parsed {
-                        value: Transform::Lowercase,
+                    filters: vec![Parsed {
+                        value: Filter::Lowercase,
                         start: 3,
                         end: 4,
                     }],
@@ -423,7 +420,7 @@ mod tests {
     }
 
     #[test]
-    fn variable_multiple_transforms() {
+    fn variable_multiple_filters() {
         assert_eq!(
             Parser::from("{e|t|n1-3}").parse_items(),
             Ok(vec![Parsed {
@@ -433,14 +430,14 @@ mod tests {
                         start: 1,
                         end: 2,
                     },
-                    transforms: vec![
+                    filters: vec![
                         Parsed {
-                            value: Transform::Trim,
+                            value: Filter::Trim,
                             start: 3,
                             end: 4,
                         },
                         Parsed {
-                            value: Transform::Substring(Range::FromTo(0, 3)),
+                            value: Filter::Substring(Range::FromTo(0, 3)),
                             start: 5,
                             end: 9,
                         },
@@ -453,7 +450,7 @@ mod tests {
     }
 
     #[test]
-    fn invalid_transform_error() {
+    fn invalid_filter_error() {
         assert_eq!(
             Parser::from("{f|n2-1}").parse_items(),
             Err(ParseError {
@@ -481,8 +478,8 @@ mod tests {
                             start: 7,
                             end: 8,
                         },
-                        transforms: vec![Parsed {
-                            value: Transform::LeftPad("000".to_string()),
+                        filters: vec![Parsed {
+                            value: Filter::LeftPad("000".to_string()),
                             start: 9,
                             end: 13,
                         }],
@@ -502,14 +499,14 @@ mod tests {
                             start: 16,
                             end: 17,
                         },
-                        transforms: vec![
+                        filters: vec![
                             Parsed {
-                                value: Transform::Lowercase,
+                                value: Filter::Lowercase,
                                 start: 18,
                                 end: 19,
                             },
                             Parsed {
-                                value: Transform::ReplaceFirst(Substitution {
+                                value: Filter::ReplaceFirst(Substitution {
                                     value: 'e'.to_string(),
                                     replacement: String::new(),
                                 }),

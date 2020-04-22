@@ -20,11 +20,11 @@ pub struct ParseError {
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum ParseErrorKind {
+    ExpectedFilter,
     ExpectedNumber,
     ExpectedPipeOrExprEnd,
     ExpectedRange,
     ExpectedSubstitution,
-    ExpectedTransform,
     ExpectedVariable,
     ExprStartInsideExpr,
     PipeOutsideExpr,
@@ -34,7 +34,7 @@ pub enum ParseErrorKind {
     RegexCaptureZero,
     SubstituteWithoutValue(Char),
     UnknownEscapeSequence(EscapeSequence),
-    UnknownTransform(Char),
+    UnknownFilter(Char),
     UnknownVariable(Char),
     UnmatchedExprEnd,
     UnmatchedExprStart,
@@ -45,16 +45,15 @@ impl fmt::Display for ParseErrorKind {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         use ParseErrorKind::*;
         match self {
+            ExpectedFilter => write!(formatter, "Expected filter after '{}'", PIPE),
             ExpectedNumber => write!(formatter, "Expected number"),
             ExpectedPipeOrExprEnd => {
                 write!(formatter, "Expected '{}' or closing '{}'", PIPE, EXPR_END)
             }
-            ExpectedRange => write!(formatter, "Transformation requires range as a parameter"),
-            ExpectedSubstitution => write!(
-                formatter,
-                "Transformation requires substitution as a parameter"
-            ),
-            ExpectedTransform => write!(formatter, "Expected transformation after '{}'", PIPE),
+            ExpectedRange => write!(formatter, "Filter requires range as a parameter"),
+            ExpectedSubstitution => {
+                write!(formatter, "Filter requires substitution as a parameter")
+            }
             ExpectedVariable => write!(formatter, "Expected variable after '{}'", EXPR_START),
             ExprStartInsideExpr => {
                 write!(formatter, "Unescaped '{}' inside expression", EXPR_START)
@@ -83,12 +82,10 @@ impl fmt::Display for ParseErrorKind {
                 "Unknown escape sequance '{}{}'",
                 sequence[0], sequence[1]
             ),
-            UnknownTransform(Char::Raw(value)) => {
-                write!(formatter, "Unknown transformation '{}'", value)
-            }
-            UnknownTransform(Char::Escaped(value, sequence)) => write!(
+            UnknownFilter(Char::Raw(value)) => write!(formatter, "Unknown filter '{}'", value),
+            UnknownFilter(Char::Escaped(value, sequence)) => write!(
                 formatter,
-                "Unknown transformation '{}' written as escape sequence '{}{}'",
+                "Unknown filter '{}' written as escape sequence '{}{}'",
                 value, sequence[0], sequence[1]
             ),
             UnknownVariable(Char::Raw(char)) => write!(formatter, "Unknown variable '{}'", char),

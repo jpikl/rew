@@ -10,6 +10,7 @@ use crate::pattern::variable::Variable;
 mod char;
 mod r#const; // TODO better name
 mod eval;
+mod filter;
 mod lexer;
 mod number;
 mod parse;
@@ -18,7 +19,6 @@ mod range;
 mod reader;
 mod render;
 mod substitution;
-mod transform;
 mod variable;
 
 #[derive(Debug, PartialEq)]
@@ -59,14 +59,11 @@ impl Pattern {
         for item in self.items.iter() {
             match &item.value {
                 PatternItem::Constant(string) => output.push_str(string),
-                PatternItem::Expression {
-                    variable,
-                    transforms,
-                } => {
+                PatternItem::Expression { variable, filters } => {
                     match variable.value.eval(context) {
                         Ok(mut string) => {
-                            for transform in transforms.iter() {
-                                string = transform.value.apply(string);
+                            for filter in filters.iter() {
+                                string = filter.value.apply(string);
                             }
                             output.push_str(&string)
                         }
@@ -85,10 +82,10 @@ impl Pattern {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::pattern::filter::Filter;
     use crate::pattern::parse::Parsed;
     use crate::pattern::range::Range;
     use crate::pattern::substitution::Substitution;
-    use crate::pattern::transform::Transform;
     use regex::Regex;
     use std::path::Path;
 
@@ -96,7 +93,7 @@ mod tests {
     fn uses_none() {
         let items = vec![parsed(PatternItem::Expression {
             variable: parsed(Variable::Filename),
-            transforms: Vec::new(),
+            filters: Vec::new(),
         })];
         let pattern = Pattern::new(items);
         assert_eq!(pattern.uses_local_counter(), false);
@@ -108,7 +105,7 @@ mod tests {
     fn uses_local_counter() {
         let items = vec![parsed(PatternItem::Expression {
             variable: parsed(Variable::LocalCounter),
-            transforms: Vec::new(),
+            filters: Vec::new(),
         })];
         assert_eq!(Pattern::new(items).uses_local_counter(), true);
     }
@@ -117,7 +114,7 @@ mod tests {
     fn uses_global_counter() {
         let items = vec![parsed(PatternItem::Expression {
             variable: parsed(Variable::GlobalCounter),
-            transforms: Vec::new(),
+            filters: Vec::new(),
         })];
         assert_eq!(Pattern::new(items).uses_global_counter(), true);
     }
@@ -126,7 +123,7 @@ mod tests {
     fn uses_global_regex_captures() {
         let items = vec![parsed(PatternItem::Expression {
             variable: parsed(Variable::RegexCapture(1)),
-            transforms: Vec::new(),
+            filters: Vec::new(),
         })];
         assert_eq!(Pattern::new(items).uses_regex_captures(), true);
     }
@@ -144,7 +141,7 @@ mod tests {
     fn expression() {
         let items = vec![parsed(PatternItem::Expression {
             variable: parsed(Variable::Filename),
-            transforms: Vec::new(),
+            filters: Vec::new(),
         })];
         assert_eq!(
             Pattern::new(items).eval(&make_context()),
@@ -153,10 +150,10 @@ mod tests {
     }
 
     #[test]
-    fn expression_single_transform() {
+    fn expression_single_filter() {
         let items = vec![parsed(PatternItem::Expression {
             variable: parsed(Variable::Filename),
-            transforms: vec![parsed(Transform::Uppercase)],
+            filters: vec![parsed(Filter::Uppercase)],
         })];
         assert_eq!(
             Pattern::new(items).eval(&make_context()),
@@ -165,12 +162,12 @@ mod tests {
     }
 
     #[test]
-    fn expression_multiple_transforms() {
+    fn expression_multiple_filters() {
         let items = vec![parsed(PatternItem::Expression {
             variable: parsed(Variable::Filename),
-            transforms: vec![
-                parsed(Transform::Uppercase),
-                parsed(Transform::Substring(Range::To(4))),
+            filters: vec![
+                parsed(Filter::Uppercase),
+                parsed(Filter::Substring(Range::To(4))),
             ],
         })];
         assert_eq!(
@@ -185,29 +182,29 @@ mod tests {
             parsed(PatternItem::Constant("prefix_".to_string())),
             parsed(PatternItem::Expression {
                 variable: parsed(Variable::Basename),
-                transforms: vec![parsed(Transform::Substring(Range::To(3)))],
+                filters: vec![parsed(Filter::Substring(Range::To(3)))],
             }),
             parsed(PatternItem::Constant("_".to_string())),
             parsed(PatternItem::Expression {
                 variable: parsed(Variable::RegexCapture(1)),
-                transforms: Vec::new(),
+                filters: Vec::new(),
             }),
             parsed(PatternItem::Constant("_".to_string())),
             parsed(PatternItem::Expression {
                 variable: parsed(Variable::LocalCounter),
-                transforms: Vec::new(),
+                filters: Vec::new(),
             }),
             parsed(PatternItem::Constant("_".to_string())),
             parsed(PatternItem::Expression {
                 variable: parsed(Variable::GlobalCounter),
-                transforms: Vec::new(),
+                filters: Vec::new(),
             }),
             parsed(PatternItem::Constant(".".to_string())),
             parsed(PatternItem::Expression {
                 variable: parsed(Variable::Extension),
-                transforms: vec![
-                    parsed(Transform::Uppercase),
-                    parsed(Transform::ReplaceAll(Substitution {
+                filters: vec![
+                    parsed(Filter::Uppercase),
+                    parsed(Filter::ReplaceAll(Substitution {
                         value: "X".to_string(),
                         replacement: "".to_string(),
                     })),
