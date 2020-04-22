@@ -1,6 +1,6 @@
 use crate::pattern::char::Char;
-use crate::pattern::error::{ParseError, ParseErrorKind, ParseResult};
-use crate::pattern::lexer::{Lexer, Parsed, Token};
+use crate::pattern::lexer::{Lexer, Token};
+use crate::pattern::parse::{ParseError, ParseErrorKind, ParseResult, Parsed};
 use crate::pattern::reader::Reader;
 use crate::pattern::transform::Transform;
 use crate::pattern::variable::Variable;

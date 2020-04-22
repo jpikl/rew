@@ -1,5 +1,5 @@
 use crate::pattern::char::Char;
-use crate::pattern::error::{ParseError, ParseErrorKind, ParseResult};
+use crate::pattern::parse::{ParseError, ParseErrorKind, ParseResult};
 use crate::pattern::reader::Reader;
 
 #[derive(Debug, PartialEq)]

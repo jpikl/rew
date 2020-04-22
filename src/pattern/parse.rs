@@ -1,7 +1,13 @@
 use crate::pattern::char::{Char, EscapeSequence};
-use crate::pattern::lexer::{Parsed, EXPR_END, EXPR_START, PIPE};
-use crate::pattern::parser::PatternItem;
+use crate::pattern::r#const::{EXPR_END, EXPR_START, PIPE};
 use std::fmt;
+
+#[derive(Debug, PartialEq)]
+pub struct Parsed<T> {
+    pub value: T,
+    pub start: usize, // TODO span: Range<usize>
+    pub end: usize,
+}
 
 pub type ParseResult<T> = Result<T, ParseError>;
 
@@ -106,17 +112,4 @@ impl fmt::Display for ParseErrorKind {
             }
         }
     }
-}
-
-pub type EvalResult<'a, T> = Result<T, EvalError<'a>>;
-
-#[derive(Debug, PartialEq)]
-pub struct EvalError<'a> {
-    pub kind: EvalErrorKind,
-    pub item: &'a Parsed<PatternItem>,
-}
-
-#[derive(Debug, PartialEq)]
-pub enum EvalErrorKind {
-    // TODO UTF conversion error
 }

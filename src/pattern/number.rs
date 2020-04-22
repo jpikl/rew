@@ -1,4 +1,4 @@
-use crate::pattern::error::{ParseError, ParseErrorKind, ParseResult};
+use crate::pattern::parse::{ParseError, ParseErrorKind, ParseResult};
 use crate::pattern::reader::Reader;
 
 pub fn parse_usize(reader: &mut Reader) -> ParseResult<usize> {

@@ -7,6 +7,7 @@ const CONSTANT_COLOR: Color = Color::Green;
 const VARIABLE_COLOR: Color = Color::Blue;
 const SYMBOL_COLOR: Color = Color::Magenta;
 
+// TODO move somewher else
 impl Pattern {
     pub fn render<S: io::Write + WriteColor>(stream: &mut S, string: &str) -> io::Result<()> {
         let mut lexer = Lexer::from(string);

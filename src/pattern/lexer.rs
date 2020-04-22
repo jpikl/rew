@@ -1,36 +1,7 @@
 use crate::pattern::char::Char;
-use crate::pattern::error::{ParseError, ParseErrorKind, ParseResult};
+use crate::pattern::parse::{ParseError, ParseErrorKind, ParseResult, Parsed};
+use crate::pattern::r#const::{CR, ESCAPE, EXPR_END, EXPR_START, LF, NUL, PIPE, TAB};
 use crate::pattern::reader::Reader;
-
-pub const DEFAULT_ESCAPE: char = '#';
-pub const META_CHARS: [char; 3] = [EXPR_START, PIPE, EXPR_END];
-
-pub const EXPR_START: char = '{';
-pub const EXPR_END: char = '}';
-pub const PIPE: char = '|';
-
-const LF: char = 'n';
-const CR: char = 'r';
-const TAB: char = 't';
-const NUL: char = '0';
-
-#[derive(Debug, PartialEq)]
-pub struct Parsed<T> {
-    pub value: T,
-    pub start: usize, // TODO span: Range<usize>
-    pub end: usize,
-}
-
-#[cfg(test)]
-impl<T> Parsed<T> {
-    pub fn dummy(value: T) -> Self {
-        Self {
-            value,
-            start: 0,
-            end: 0,
-        }
-    }
-}
 
 #[derive(Debug, PartialEq)]
 pub enum Token {
@@ -55,7 +26,7 @@ impl Lexer {
     pub fn new(reader: Reader) -> Self {
         Self {
             reader,
-            escape: DEFAULT_ESCAPE,
+            escape: ESCAPE,
         }
     }
 
@@ -139,6 +110,7 @@ impl Lexer {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::pattern::parse::ParseErrorKind;
 
     #[test]
     fn empty_input() {

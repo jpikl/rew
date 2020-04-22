@@ -1,6 +1,6 @@
 use crate::pattern::char::Char;
-use crate::pattern::error::{ParseError, ParseErrorKind, ParseResult};
 use crate::pattern::number::parse_usize;
+use crate::pattern::parse::{ParseError, ParseErrorKind, ParseResult};
 use crate::pattern::reader::Reader;
 
 const DIVIDER: char = '-';
