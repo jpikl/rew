@@ -100,13 +100,13 @@ mod tests {
         reader.seek_to(2);
         assert_eq!(reader.position(), 3);
         reader.seek_to(3);
-        assert_eq!(reader.position(), 4);
+        assert_eq!(reader.position(), 5);
     }
 
     #[test]
     fn end_returns_last_position() {
         assert_eq!(make_empty_reader().end(), 0);
-        assert_eq!(make_reader().end(), 4);
+        assert_eq!(make_reader().end(), 5);
     }
 
     #[test]
@@ -118,9 +118,9 @@ mod tests {
         reader.seek();
         assert_eq!(reader.position(), 3);
         reader.seek();
-        assert_eq!(reader.position(), 4);
+        assert_eq!(reader.position(), 5);
         reader.seek();
-        assert_eq!(reader.position(), 4);
+        assert_eq!(reader.position(), 5);
     }
 
     #[test]
@@ -128,9 +128,9 @@ mod tests {
         let mut reader = make_reader();
         assert_eq!(reader.position(), 0);
         reader.seek_to_end();
-        assert_eq!(reader.position(), 4);
+        assert_eq!(reader.position(), 5);
         reader.seek_to_end();
-        assert_eq!(reader.position(), 4);
+        assert_eq!(reader.position(), 5);
     }
 
     #[test]
@@ -146,7 +146,7 @@ mod tests {
         reader.seek_to(1);
         assert_eq!(reader.peek(), Some(&Char::Escaped('b', ['x', 'y'])));
         reader.seek_to(2);
-        assert_eq!(reader.peek(), Some(&Char::Raw('c')));
+        assert_eq!(reader.peek(), Some(&Char::Raw('č')));
         reader.seek_to(3);
         assert_eq!(reader.peek(), None);
     }
@@ -172,7 +172,7 @@ mod tests {
         reader.seek_to(1);
         assert_eq!(reader.peek_value(), Some('b'));
         reader.seek_to(2);
-        assert_eq!(reader.peek_value(), Some('c'));
+        assert_eq!(reader.peek_value(), Some('č'));
         reader.seek_to(3);
         assert_eq!(reader.peek_value(), None);
     }
@@ -194,16 +194,16 @@ mod tests {
             [
                 Char::Raw('a'),
                 Char::Escaped('b', ['x', 'y']),
-                Char::Raw('c')
+                Char::Raw('č')
             ]
         );
         reader.seek_to(1);
         assert_eq!(
             reader.peek_to_end(),
-            [Char::Escaped('b', ['x', 'y']), Char::Raw('c')]
+            [Char::Escaped('b', ['x', 'y']), Char::Raw('č')]
         );
         reader.seek_to(2);
-        assert_eq!(reader.peek_to_end(), [Char::Raw('c')]);
+        assert_eq!(reader.peek_to_end(), [Char::Raw('č')]);
         reader.seek_to(3);
         assert_eq!(reader.peek_to_end(), []);
     }
@@ -226,7 +226,7 @@ mod tests {
         let mut reader = make_reader();
         assert_eq!(reader.read(), Some(&Char::Raw('a')));
         assert_eq!(reader.read(), Some(&Char::Escaped('b', ['x', 'y'])));
-        assert_eq!(reader.read(), Some(&Char::Raw('c')));
+        assert_eq!(reader.read(), Some(&Char::Raw('č')));
         assert_eq!(reader.read(), None);
     }
 
@@ -239,9 +239,9 @@ mod tests {
         reader.read();
         assert_eq!(reader.position(), 3);
         reader.read();
-        assert_eq!(reader.position(), 4);
+        assert_eq!(reader.position(), 5);
         reader.read();
-        assert_eq!(reader.position(), 4);
+        assert_eq!(reader.position(), 5);
     }
 
     #[test]
@@ -254,7 +254,7 @@ mod tests {
         let mut reader = make_reader();
         assert_eq!(reader.read_value(), Some('a'));
         assert_eq!(reader.read_value(), Some('b'));
-        assert_eq!(reader.read_value(), Some('c'));
+        assert_eq!(reader.read_value(), Some('č'));
         assert_eq!(reader.read_value(), None);
     }
 
@@ -267,9 +267,9 @@ mod tests {
         reader.read_value();
         assert_eq!(reader.position(), 3);
         reader.read_value();
-        assert_eq!(reader.position(), 4);
+        assert_eq!(reader.position(), 5);
         reader.read_value();
-        assert_eq!(reader.position(), 4);
+        assert_eq!(reader.position(), 5);
     }
 
     #[test]
@@ -281,18 +281,18 @@ mod tests {
             [
                 Char::Raw('a'),
                 Char::Escaped('b', ['x', 'y']),
-                Char::Raw('c')
+                Char::Raw('č')
             ]
         );
         assert_eq!(reader.read_to_end(), []);
         reader.seek_to(1);
         assert_eq!(
             reader.read_to_end(),
-            [Char::Escaped('b', ['x', 'y']), Char::Raw('c')]
+            [Char::Escaped('b', ['x', 'y']), Char::Raw('č')]
         );
         assert_eq!(reader.read_to_end(), []);
         reader.seek_to(2);
-        assert_eq!(reader.read_to_end(), [Char::Raw('c')]);
+        assert_eq!(reader.read_to_end(), [Char::Raw('č')]);
         assert_eq!(reader.read_to_end(), []);
         reader.seek_to(3);
         assert_eq!(reader.read_to_end(), []);
@@ -303,9 +303,9 @@ mod tests {
         let mut reader = make_reader();
         assert_eq!(reader.position(), 0);
         reader.read_to_end();
-        assert_eq!(reader.position(), 4);
+        assert_eq!(reader.position(), 5);
         reader.read_to_end();
-        assert_eq!(reader.position(), 4);
+        assert_eq!(reader.position(), 5);
     }
 
     fn make_empty_reader() -> Reader {
@@ -316,7 +316,7 @@ mod tests {
         Reader::new(vec![
             Char::Raw('a'),
             Char::Escaped('b', ['x', 'y']),
-            Char::Raw('c'),
+            Char::Raw('č'),
         ])
     }
 }

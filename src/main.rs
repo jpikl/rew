@@ -3,7 +3,7 @@ use crate::input::{ArgsInput, Input, StdinInput};
 use crate::pattern::{Lexer, Parser, Pattern};
 use crate::state::{RegexTarget, State};
 use std::io::{self, Write};
-use std::{cmp, process};
+use std::process;
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 mod cli;
@@ -46,13 +46,12 @@ fn main() -> Result<(), io::Error> {
                 writeln!(&mut stderr)?;
                 Pattern::render(&mut stderr, raw_pattern)?;
 
-                write!(&mut stderr, "\n{}", " ".repeat(error.start))?;
+                let spaces_count = raw_pattern[..error.start].chars().count();
+                let markers_count = raw_pattern[error.start..error.end].chars().count().max(1);
+
+                write!(&mut stderr, "\n{}", " ".repeat(spaces_count))?;
                 stderr.set_color(ColorSpec::new().set_fg(Some(Color::Red)).set_bold(true))?;
-                write!(
-                    &mut stderr,
-                    "{}",
-                    "^".repeat(cmp::max(1, error.end - error.start))
-                )?;
+                write!(&mut stderr, "{}", "^".repeat(markers_count))?;
 
                 stderr.reset()?;
                 writeln!(&mut stderr)?;

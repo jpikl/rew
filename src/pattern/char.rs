@@ -6,7 +6,6 @@ pub enum Char {
     Escaped(char, EscapeSequence),
 }
 
-// TODO multi-byte chars (diacritics) char.len_utf8()
 impl Char {
     pub fn value(&self) -> char {
         match self {
@@ -17,8 +16,8 @@ impl Char {
 
     pub fn len(&self) -> usize {
         match self {
-            Char::Raw(_) => 1,
-            Char::Escaped(_, _) => 2,
+            Char::Raw(value) => value.len_utf8(),
+            Char::Escaped(_, esc_seq) => esc_seq[0].len_utf8() + esc_seq[1].len_utf8(),
         }
     }
 
@@ -47,6 +46,7 @@ mod tests {
     #[test]
     fn raw_len() {
         assert_eq!(Char::Raw('a').len(), 1);
+        assert_eq!(Char::Raw('á').len(), 2);
     }
 
     #[test]
@@ -57,6 +57,7 @@ mod tests {
     #[test]
     fn escaped_len() {
         assert_eq!(Char::Escaped('a', ['b', 'c']).len(), 2);
+        assert_eq!(Char::Escaped('a', ['á', 'č']).len(), 4);
     }
 
     #[test]
