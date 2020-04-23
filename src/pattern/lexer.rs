@@ -1,7 +1,7 @@
 use crate::pattern::char::Char;
 use crate::pattern::parse::{ParseError, ParseErrorKind, ParseResult, Parsed};
-use crate::pattern::r#const::{CR, ESCAPE, EXPR_END, EXPR_START, LF, NUL, PIPE, TAB};
 use crate::pattern::reader::Reader;
+use crate::pattern::symbols::{CR, ESCAPE, EXPR_END, EXPR_START, LF, NUL, PIPE, TAB};
 
 #[derive(Debug, PartialEq)]
 pub enum Token {

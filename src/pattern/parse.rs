@@ -1,5 +1,5 @@
 use crate::pattern::char::{Char, EscapeSequence};
-use crate::pattern::r#const::{EXPR_END, EXPR_START, PIPE};
+use crate::pattern::symbols::{EXPR_END, EXPR_START, PIPE};
 use std::fmt;
 
 #[derive(Debug, PartialEq)]

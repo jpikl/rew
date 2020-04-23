@@ -2,8 +2,7 @@ use crate::pattern::char::Char;
 use crate::pattern::number::parse_usize;
 use crate::pattern::parse::{ParseError, ParseErrorKind, ParseResult};
 use crate::pattern::reader::Reader;
-
-const DIVIDER: char = '-';
+use crate::pattern::symbols::RANGE;
 
 #[derive(Debug, PartialEq)]
 pub enum Range {
@@ -43,7 +42,7 @@ impl Range {
                 let position = reader.position();
                 let start = parse_index(reader)?;
 
-                if let Some(DIVIDER) = reader.peek_value() {
+                if let Some(RANGE) = reader.peek_value() {
                     reader.seek();
 
                     if let Some('0'..='9') = reader.peek_value() {
@@ -65,7 +64,7 @@ impl Range {
                 }
             }
 
-            Some(DIVIDER) => {
+            Some(RANGE) => {
                 reader.seek();
 
                 if let Some('0'..='9') = reader.peek_value() {

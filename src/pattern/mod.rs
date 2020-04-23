@@ -4,11 +4,10 @@ pub use crate::pattern::lexer::Lexer;
 use crate::pattern::parse::Parsed;
 pub use crate::pattern::parser::Parser;
 use crate::pattern::parser::PatternItem;
-pub use crate::pattern::r#const::META_CHARS;
+pub use crate::pattern::symbols::META_CHARS;
 use crate::pattern::variable::Variable;
 
 mod char;
-mod r#const; // TODO better name
 mod eval;
 mod filter;
 mod lexer;
@@ -19,6 +18,7 @@ mod range;
 mod reader;
 mod render;
 mod substitution;
+mod symbols;
 mod variable;
 
 #[derive(Debug, PartialEq)]
