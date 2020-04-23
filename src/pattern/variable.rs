@@ -134,66 +134,66 @@ mod tests {
 
     #[test]
     fn parse_filename() {
-        assert_ok("f", Variable::Filename);
+        assert_eq!(parse("f"), Ok(Variable::Filename));
     }
 
     #[test]
     fn parse_basename() {
-        assert_ok("b", Variable::Basename);
+        assert_eq!(parse("b"), Ok(Variable::Basename));
     }
 
     #[test]
     fn parse_extension() {
-        assert_ok("e", Variable::Extension);
+        assert_eq!(parse("e"), Ok(Variable::Extension));
     }
 
     #[test]
     fn parse_extension_with_dot() {
-        assert_ok("E", Variable::ExtensionWithDot);
+        assert_eq!(parse("E"), Ok(Variable::ExtensionWithDot));
     }
 
     #[test]
     fn parse_full_dirname() {
-        assert_ok("d", Variable::FullDirname);
+        assert_eq!(parse("d"), Ok(Variable::FullDirname));
     }
 
     #[test]
     fn parse_parent_dirname() {
-        assert_ok("D", Variable::ParentDirname);
+        assert_eq!(parse("D"), Ok(Variable::ParentDirname));
     }
 
     #[test]
     fn parse_full_path() {
-        assert_ok("p", Variable::FullPath);
+        assert_eq!(parse("p"), Ok(Variable::FullPath));
     }
 
     #[test]
     fn parse_local_counter() {
-        assert_ok("c", Variable::LocalCounter);
+        assert_eq!(parse("c"), Ok(Variable::LocalCounter));
     }
 
     #[test]
     fn parse_global_counter() {
-        assert_ok("C", Variable::GlobalCounter);
+        assert_eq!(parse("C"), Ok(Variable::GlobalCounter));
     }
 
     #[test]
     fn parse_regex_capture() {
-        assert_ok("1", Variable::RegexCapture(1));
-        assert_ok("2", Variable::RegexCapture(2));
-        assert_ok("3", Variable::RegexCapture(3));
-        assert_ok("4", Variable::RegexCapture(4));
-        assert_ok("5", Variable::RegexCapture(5));
-        assert_ok("6", Variable::RegexCapture(6));
-        assert_ok("7", Variable::RegexCapture(7));
-        assert_ok("8", Variable::RegexCapture(8));
-        assert_ok("9", Variable::RegexCapture(9));
-        assert_ok("10", Variable::RegexCapture(10));
+        assert_eq!(parse("1"), Ok(Variable::RegexCapture(1)));
+        assert_eq!(parse("2"), Ok(Variable::RegexCapture(2)));
+        assert_eq!(parse("3"), Ok(Variable::RegexCapture(3)));
+        assert_eq!(parse("4"), Ok(Variable::RegexCapture(4)));
+        assert_eq!(parse("5"), Ok(Variable::RegexCapture(5)));
+        assert_eq!(parse("6"), Ok(Variable::RegexCapture(6)));
+        assert_eq!(parse("7"), Ok(Variable::RegexCapture(7)));
+        assert_eq!(parse("8"), Ok(Variable::RegexCapture(8)));
+        assert_eq!(parse("9"), Ok(Variable::RegexCapture(9)));
+        assert_eq!(parse("10"), Ok(Variable::RegexCapture(10)));
     }
 
     #[test]
     fn parse_uuid() {
-        assert_ok("u", Variable::Uuid);
+        assert_eq!(parse("u"), Ok(Variable::Uuid));
     }
 
     #[test]
@@ -212,36 +212,30 @@ mod tests {
 
     #[test]
     fn parse_empty_error() {
-        assert_err(
-            "",
-            ParseError {
+        assert_eq!(
+            parse(""),
+            Err(ParseError {
                 kind: ParseErrorKind::ExpectedVariable,
                 start: 0,
                 end: 0,
-            },
+            }),
         )
     }
 
     #[test]
     fn parse_unknown_variable_error() {
-        assert_err(
-            "-_",
-            ParseError {
+        assert_eq!(
+            parse("-_"),
+            Err(ParseError {
                 kind: ParseErrorKind::UnknownVariable(Char::Raw('-')),
                 start: 0,
                 end: 1,
-            },
+            }),
         );
     }
 
-    // TODO replace by inline assert_eq!
-    fn assert_ok(string: &str, variable: Variable) {
-        assert_eq!(Variable::parse(&mut Reader::from(string)), Ok(variable));
-    }
-
-    // TODO replace by inline assert_eq!
-    fn assert_err(string: &str, error: ParseError) {
-        assert_eq!(Variable::parse(&mut Reader::from(string)), Err(error));
+    fn parse(string: &str) -> ParseResult<Variable> {
+        Variable::parse(&mut Reader::from(string))
     }
 
     #[test]

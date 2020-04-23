@@ -144,143 +144,149 @@ mod tests {
 
     #[test]
     fn parse_substring() {
-        assert_err(
-            "n",
-            ParseError {
+        assert_eq!(
+            parse("n"),
+            Err(ParseError {
                 kind: ParseErrorKind::ExpectedRange,
                 start: 1,
                 end: 1,
-            },
+            }),
         );
-        assert_ok("n5", Filter::Substring(Range::FromTo(4, 5)));
-        assert_ok("n2-10", Filter::Substring(Range::FromTo(1, 10)));
-        assert_ok("n2-", Filter::Substring(Range::From(1)));
-        assert_ok("n-10", Filter::Substring(Range::To(10)));
-        assert_ok("n-", Filter::Substring(Range::Full));
+        assert_eq!(parse("n5"), Ok(Filter::Substring(Range::FromTo(4, 5))));
+        assert_eq!(parse("n2-10"), Ok(Filter::Substring(Range::FromTo(1, 10))));
+        assert_eq!(parse("n2-"), Ok(Filter::Substring(Range::From(1))));
+        assert_eq!(parse("n-10"), Ok(Filter::Substring(Range::To(10))));
+        assert_eq!(parse("n-"), Ok(Filter::Substring(Range::Full)));
     }
 
     #[test]
     fn parse_substring_from_end() {
-        assert_err(
-            "N",
-            ParseError {
+        assert_eq!(
+            parse("N"),
+            Err(ParseError {
                 kind: ParseErrorKind::ExpectedRange,
                 start: 1,
                 end: 1,
-            },
+            }),
         );
-        assert_ok("N5", Filter::SubstringReverse(Range::FromTo(4, 5)));
-        assert_ok("N2-10", Filter::SubstringReverse(Range::FromTo(1, 10)));
-        assert_ok("N2-", Filter::SubstringReverse(Range::From(1)));
-        assert_ok("N-10", Filter::SubstringReverse(Range::To(10)));
-        assert_ok("N-", Filter::SubstringReverse(Range::Full));
+        assert_eq!(
+            parse("N5"),
+            Ok(Filter::SubstringReverse(Range::FromTo(4, 5)))
+        );
+        assert_eq!(
+            parse("N2-10"),
+            Ok(Filter::SubstringReverse(Range::FromTo(1, 10)))
+        );
+        assert_eq!(parse("N2-"), Ok(Filter::SubstringReverse(Range::From(1))));
+        assert_eq!(parse("N-10"), Ok(Filter::SubstringReverse(Range::To(10))));
+        assert_eq!(parse("N-"), Ok(Filter::SubstringReverse(Range::Full)));
     }
 
     #[test]
     fn parse_replace_first() {
-        assert_err(
-            "r",
-            ParseError {
+        assert_eq!(
+            parse("r"),
+            Err(ParseError {
                 kind: ParseErrorKind::ExpectedSubstitution,
                 start: 1,
                 end: 1,
-            },
+            }),
         );
-        assert_ok(
-            "r'ab",
-            Filter::ReplaceFirst(Substitution {
+        assert_eq!(
+            parse("r_ab"),
+            Ok(Filter::ReplaceFirst(Substitution {
                 value: "ab".to_string(),
                 replacement: "".to_string(),
-            }),
+            })),
         );
-        assert_ok(
-            "r'ab'cd",
-            Filter::ReplaceFirst(Substitution {
+        assert_eq!(
+            parse("r_ab_cd"),
+            Ok(Filter::ReplaceFirst(Substitution {
                 value: "ab".to_string(),
                 replacement: "cd".to_string(),
-            }),
+            })),
         );
     }
 
     #[test]
     fn parse_replace_all() {
-        assert_err(
-            "R",
-            ParseError {
+        assert_eq!(
+            parse("R"),
+            Err(ParseError {
                 kind: ParseErrorKind::ExpectedSubstitution,
                 start: 1,
                 end: 1,
-            },
+            }),
         );
-        assert_ok(
-            "R'ab",
-            Filter::ReplaceAll(Substitution {
+        assert_eq!(
+            parse("R_ab"),
+            Ok(Filter::ReplaceAll(Substitution {
                 value: "ab".to_string(),
                 replacement: "".to_string(),
-            }),
+            })),
         );
-        assert_ok(
-            "R'ab'cd",
-            Filter::ReplaceAll(Substitution {
+        assert_eq!(
+            parse("R_ab_cd"),
+            Ok(Filter::ReplaceAll(Substitution {
                 value: "ab".to_string(),
                 replacement: "cd".to_string(),
-            }),
+            })),
         );
     }
 
     #[test]
     fn parse_trim() {
-        assert_ok("t", Filter::Trim);
+        assert_eq!(parse("t"), Ok(Filter::Trim));
     }
 
     #[test]
     fn parse_lower_case() {
-        assert_ok("l", Filter::Lowercase);
+        assert_eq!(parse("l"), Ok(Filter::Lowercase));
     }
 
     #[test]
     fn parse_upper_case() {
-        assert_ok("u", Filter::Uppercase);
+        assert_eq!(parse("u"), Ok(Filter::Uppercase));
     }
 
     #[test]
     fn parse_to_ascii() {
-        assert_ok("a", Filter::ToAscii);
+        assert_eq!(parse("a"), Ok(Filter::ToAscii));
     }
 
     #[test]
     fn parse_remove_non_ascii() {
-        assert_ok("A", Filter::RemoveNonAscii);
+        assert_eq!(parse("A"), Ok(Filter::RemoveNonAscii));
     }
 
     #[test]
     fn parse_left_pad() {
-        assert_ok("<abc", Filter::LeftPad("abc".to_string()));
+        assert_eq!(parse("<abc"), Ok(Filter::LeftPad("abc".to_string())));
     }
 
     #[test]
     fn parse_left_pad_empty() {
-        assert_ok("<", Filter::LeftPad(String::new()));
+        assert_eq!(parse("<"), Ok(Filter::LeftPad(String::new())));
     }
 
     #[test]
     fn parse_right_pad() {
-        assert_ok(">abc", Filter::RightPad("abc".to_string()));
+        assert_eq!(parse(">abc"), Ok(Filter::RightPad("abc".to_string())));
     }
 
     #[test]
     fn parse_right_pad_empty() {
-        assert_ok(">", Filter::RightPad(String::new()));
+        assert_eq!(parse(">"), Ok(Filter::RightPad(String::new())));
     }
 
     #[test]
     fn parse_default() {
-        assert_ok("dabc", Filter::Default("abc".to_string()));
+        assert_eq!(parse("dabc"), Ok(Filter::Default("abc".to_string())));
     }
 
     #[test]
     fn parse_default_empty() {
-        assert_ok("d", Filter::Default(String::new()));
+        assert_eq!(parse("d"), Ok(Filter::Default(String::new())));
     }
 
     #[test]
@@ -292,36 +298,30 @@ mod tests {
 
     #[test]
     fn parse_empty_error() {
-        assert_err(
-            "",
-            ParseError {
+        assert_eq!(
+            parse(""),
+            Err(ParseError {
                 kind: ParseErrorKind::ExpectedFilter,
                 start: 0,
                 end: 0,
-            },
+            }),
         )
     }
 
     #[test]
     fn parse_unknown_filter_error() {
-        assert_err(
-            "-_",
-            ParseError {
+        assert_eq!(
+            parse("-_"),
+            Err(ParseError {
                 kind: ParseErrorKind::UnknownFilter(Char::Raw('-')),
                 start: 0,
                 end: 1,
-            },
+            }),
         );
     }
 
-    // TODO replace by inline assert_eq!
-    fn assert_ok(string: &str, filter: Filter) {
-        assert_eq!(Filter::parse(&mut Reader::from(string)), Ok(filter));
-    }
-
-    // TODO replace by inline assert_eq!
-    fn assert_err(string: &str, error: ParseError) {
-        assert_eq!(Filter::parse(&mut Reader::from(string)), Err(error));
+    fn parse(string: &str) -> ParseResult<Filter> {
+        Filter::parse(&mut Reader::from(string))
     }
 
     #[test]

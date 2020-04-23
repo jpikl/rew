@@ -464,7 +464,7 @@ mod tests {
     #[test]
     fn complex_input() {
         assert_eq!(
-            Parser::from("image_{c|<000}.{e|l|r'e}2").parse_items(),
+            Parser::from("image_{c|<000}.{e|l|r_e}2").parse_items(),
             Ok(vec![
                 Parsed {
                     value: PatternItem::Constant("image_".to_string()),
