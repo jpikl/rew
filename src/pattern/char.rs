@@ -17,7 +17,7 @@ impl Char {
     pub fn len(&self) -> usize {
         match self {
             Char::Raw(value) => value.len_utf8(),
-            Char::Escaped(_, esc_seq) => esc_seq[0].len_utf8() + esc_seq[1].len_utf8(),
+            Char::Escaped(_, sequence) => sequence[0].len_utf8() + sequence[1].len_utf8(),
         }
     }
 

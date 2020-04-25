@@ -79,7 +79,7 @@ impl fmt::Display for ParseErrorKind {
             ),
             UnknownEscapeSequence(sequence) => write!(
                 formatter,
-                "Unknown escape sequance '{}{}'",
+                "Unknown escape sequence '{}{}'",
                 sequence[0], sequence[1]
             ),
             UnknownFilter(Char::Raw(value)) => write!(formatter, "Unknown filter '{}'", value),
