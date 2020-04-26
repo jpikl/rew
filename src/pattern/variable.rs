@@ -32,8 +32,7 @@ impl Variable {
             } else {
                 Err(ParseError {
                     kind: ParseErrorKind::RegexCaptureZero,
-                    start: position,
-                    end: reader.position(),
+                    range: position..reader.position(),
                 })
             }
         } else if let Some(char) = reader.read() {
@@ -50,15 +49,13 @@ impl Variable {
                 'u' => Ok(Variable::Uuid),
                 _ => Err(ParseError {
                     kind: ParseErrorKind::UnknownVariable(char.clone()),
-                    start: position,
-                    end: reader.position(),
+                    range: position..reader.position(),
                 }),
             }
         } else {
             Err(ParseError {
                 kind: ParseErrorKind::ExpectedVariable,
-                start: position,
-                end: reader.end(),
+                range: position..reader.end(),
             })
         }
     }
@@ -216,8 +213,7 @@ mod tests {
             parse(""),
             Err(ParseError {
                 kind: ParseErrorKind::ExpectedVariable,
-                start: 0,
-                end: 0,
+                range: 0..0,
             }),
         )
     }
@@ -228,8 +224,7 @@ mod tests {
             parse("-_"),
             Err(ParseError {
                 kind: ParseErrorKind::UnknownVariable(Char::Raw('-')),
-                start: 0,
-                end: 1,
+                range: 0..1,
             }),
         );
     }

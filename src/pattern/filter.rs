@@ -41,15 +41,13 @@ impl Filter {
                 'd' => Ok(Filter::Default(Char::join(reader.read_to_end()))),
                 _ => Err(ParseError {
                     kind: ParseErrorKind::UnknownFilter(char.clone()),
-                    start: position,
-                    end: reader.position(),
+                    range: position..reader.position(),
                 }),
             }
         } else {
             Err(ParseError {
                 kind: ParseErrorKind::ExpectedFilter,
-                start: position,
-                end: reader.end(),
+                range: position..reader.end(),
             })
         }
     }
@@ -148,8 +146,7 @@ mod tests {
             parse("n"),
             Err(ParseError {
                 kind: ParseErrorKind::ExpectedRange,
-                start: 1,
-                end: 1,
+                range: 1..1,
             }),
         );
         assert_eq!(parse("n5"), Ok(Filter::Substring(Range::FromTo(4, 5))));
@@ -165,8 +162,7 @@ mod tests {
             parse("N"),
             Err(ParseError {
                 kind: ParseErrorKind::ExpectedRange,
-                start: 1,
-                end: 1,
+                range: 1..1,
             }),
         );
         assert_eq!(
@@ -188,8 +184,7 @@ mod tests {
             parse("r"),
             Err(ParseError {
                 kind: ParseErrorKind::ExpectedSubstitution,
-                start: 1,
-                end: 1,
+                range: 1..1,
             }),
         );
         assert_eq!(
@@ -214,8 +209,7 @@ mod tests {
             parse("R"),
             Err(ParseError {
                 kind: ParseErrorKind::ExpectedSubstitution,
-                start: 1,
-                end: 1,
+                range: 1..1,
             }),
         );
         assert_eq!(
@@ -302,8 +296,7 @@ mod tests {
             parse(""),
             Err(ParseError {
                 kind: ParseErrorKind::ExpectedFilter,
-                start: 0,
-                end: 0,
+                range: 0..0,
             }),
         )
     }
@@ -314,8 +307,7 @@ mod tests {
             parse("-_"),
             Err(ParseError {
                 kind: ParseErrorKind::UnknownFilter(Char::Raw('-')),
-                start: 0,
-                end: 1,
+                range: 0..1,
             }),
         );
     }

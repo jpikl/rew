@@ -218,11 +218,7 @@ mod tests {
     }
 
     fn parsed<T>(value: T) -> Parsed<T> {
-        Parsed {
-            value,
-            start: 0,
-            end: 0,
-        }
+        Parsed { value, range: 0..0 }
     }
 
     fn make_context<'a>() -> EvalContext<'a> {

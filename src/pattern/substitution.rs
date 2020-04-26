@@ -12,7 +12,7 @@ impl Substitution {
     pub fn parse(reader: &mut Reader) -> ParseResult<Self> {
         if let Some(separator) = reader.read().cloned() {
             let mut value = String::new();
-            let value_position = reader.position();
+            let position = reader.position();
 
             while let Some(ch) = reader.read_value() {
                 if ch == separator.value() {
@@ -25,8 +25,7 @@ impl Substitution {
             if value.is_empty() {
                 return Err(ParseError {
                     kind: ParseErrorKind::SubstituteWithoutValue(separator),
-                    start: value_position,
-                    end: value_position,
+                    range: position..position,
                 });
             }
 
@@ -37,8 +36,7 @@ impl Substitution {
         } else {
             Err(ParseError {
                 kind: ParseErrorKind::ExpectedSubstitution,
-                start: reader.position(),
-                end: reader.end(),
+                range: reader.position()..reader.end(),
             })
         }
     }
@@ -55,8 +53,7 @@ mod tests {
             Substitution::parse(&mut reader),
             Err(ParseError {
                 kind: ParseErrorKind::ExpectedSubstitution,
-                start: 0,
-                end: 0,
+                range: 0..0,
             })
         );
         assert_eq!(reader.position(), 0);
@@ -69,8 +66,7 @@ mod tests {
             Substitution::parse(&mut reader),
             Err(ParseError {
                 kind: ParseErrorKind::SubstituteWithoutValue(Char::Raw('/')),
-                start: 1,
-                end: 1,
+                range: 1..1,
             })
         );
         assert_eq!(reader.position(), 1);
@@ -83,8 +79,7 @@ mod tests {
             Substitution::parse(&mut reader),
             Err(ParseError {
                 kind: ParseErrorKind::SubstituteWithoutValue(Char::Raw('/')),
-                start: 1,
-                end: 1,
+                range: 1..1,
             })
         );
         assert_eq!(reader.position(), 2);

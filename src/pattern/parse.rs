@@ -1,12 +1,12 @@
 use crate::pattern::char::{Char, EscapeSequence};
 use crate::pattern::symbols::{EXPR_END, EXPR_START, PIPE};
 use std::fmt;
+use std::ops::Range;
 
 #[derive(Debug, PartialEq)]
 pub struct Parsed<T> {
     pub value: T,
-    pub start: usize, // TODO span: Range<usize>
-    pub end: usize,
+    pub range: Range<usize>,
 }
 
 pub type ParseResult<T> = Result<T, ParseError>;
@@ -14,8 +14,7 @@ pub type ParseResult<T> = Result<T, ParseError>;
 #[derive(Debug, PartialEq)]
 pub struct ParseError {
     pub kind: ParseErrorKind,
-    pub start: usize,
-    pub end: usize,
+    pub range: Range<usize>,
 }
 
 #[derive(Debug, PartialEq, Clone)]

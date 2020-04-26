@@ -50,8 +50,7 @@ impl Range {
                         if start > end {
                             Err(ParseError {
                                 kind: ParseErrorKind::RangeStartOverEnd(start + 1, end + 1),
-                                start: position,
-                                end: reader.position(),
+                                range: position..reader.position(),
                             })
                         } else {
                             Ok(Range::FromTo(start, end + 1)) // Inclusive end -> exclusive end
@@ -77,14 +76,12 @@ impl Range {
 
             Some(_) => Err(ParseError {
                 kind: ParseErrorKind::RangeInvalid(Char::join(reader.peek_to_end())),
-                start: reader.position(),
-                end: reader.end(),
+                range: reader.position()..reader.end(),
             }),
 
             None => Err(ParseError {
                 kind: ParseErrorKind::ExpectedRange,
-                start: reader.position(),
-                end: reader.end(),
+                range: reader.position()..reader.end(),
             }),
         }
     }
@@ -99,8 +96,7 @@ fn parse_index(reader: &mut Reader) -> ParseResult<usize> {
     } else {
         Err(ParseError {
             kind: ParseErrorKind::RangeIndexZero,
-            start: position,
-            end: reader.position(),
+            range: position..reader.position(),
         })
     }
 }
@@ -145,8 +141,7 @@ mod tests {
             Range::parse(&mut reader),
             Err(ParseError {
                 kind: ParseErrorKind::ExpectedRange,
-                start: 0,
-                end: 0,
+                range: 0..0,
             })
         );
         assert_eq!(reader.position(), 0);
@@ -159,8 +154,7 @@ mod tests {
             Range::parse(&mut reader),
             Err(ParseError {
                 kind: ParseErrorKind::RangeInvalid("a".to_string()),
-                start: 0,
-                end: 1,
+                range: 0..1,
             })
         );
         assert_eq!(reader.position(), 0);
@@ -180,8 +174,7 @@ mod tests {
             Range::parse(&mut reader),
             Err(ParseError {
                 kind: ParseErrorKind::RangeIndexZero,
-                start: 0,
-                end: 1,
+                range: 0..1,
             })
         );
         assert_eq!(reader.position(), 1);
@@ -201,8 +194,7 @@ mod tests {
             Range::parse(&mut reader),
             Err(ParseError {
                 kind: ParseErrorKind::RangeIndexZero,
-                start: 1,
-                end: 2,
+                range: 1..2,
             })
         );
         assert_eq!(reader.position(), 2);
@@ -222,8 +214,7 @@ mod tests {
             Range::parse(&mut reader),
             Err(ParseError {
                 kind: ParseErrorKind::RangeStartOverEnd(2, 1),
-                start: 0,
-                end: 3,
+                range: 0..3,
             })
         );
         assert_eq!(reader.position(), 3);

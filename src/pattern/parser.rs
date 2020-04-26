@@ -4,6 +4,7 @@ use crate::pattern::lexer::{Lexer, Token};
 use crate::pattern::parse::{ParseError, ParseErrorKind, ParseResult, Parsed};
 use crate::pattern::reader::Reader;
 use crate::pattern::variable::Variable;
+use std::ops::Range;
 
 #[derive(Debug, PartialEq)]
 pub enum PatternItem {
@@ -45,12 +46,10 @@ impl Parser {
             match &token.value {
                 Token::Raw(raw) => Ok(Some(Parsed {
                     value: PatternItem::Constant(Char::join(raw)),
-                    start: token.start,
-                    end: token.end,
+                    range: token.range.clone(),
                 })),
                 Token::ExprStart => {
-                    let start = token.start;
-                    let end = token.end;
+                    let expr_start_range = token.range.clone();
                     let expression = self.parse_expression()?;
 
                     if let Some(Token::ExprEnd) = self.token_value() {
@@ -58,20 +57,17 @@ impl Parser {
                     } else {
                         Err(ParseError {
                             kind: ParseErrorKind::UnmatchedExprStart,
-                            start,
-                            end,
+                            range: expr_start_range,
                         })
                     }
                 }
                 Token::ExprEnd => Err(ParseError {
                     kind: ParseErrorKind::UnmatchedExprEnd,
-                    start: token.start,
-                    end: token.end,
+                    range: token.range.clone(),
                 }),
                 Token::Pipe => Err(ParseError {
                     kind: ParseErrorKind::PipeOutsideExpr,
-                    start: token.start,
-                    end: token.end,
+                    range: token.range.clone(),
                 }),
             }
         } else {
@@ -80,15 +76,14 @@ impl Parser {
     }
 
     fn parse_expression(&mut self) -> ParseResult<Option<Parsed<PatternItem>>> {
-        let start = self.token_start();
+        let start = self.token_range().start;
         let variable = self.parse_variable()?;
         let filters = self.parse_filters()?;
-        let end = self.token_end();
+        let end = self.token_range().end;
 
         Ok(Some(Parsed {
             value: PatternItem::Expression { variable, filters },
-            start,
-            end,
+            range: start..end,
         }))
     }
 
@@ -107,8 +102,7 @@ impl Parser {
                 Token::ExprStart => {
                     return Err(ParseError {
                         kind: ParseErrorKind::ExprStartInsideExpr,
-                        start: token.start,
-                        end: token.end,
+                        range: token.range.clone(),
                     })
                 }
                 Token::ExprEnd => {
@@ -132,38 +126,41 @@ impl Parser {
         parse: F,
         error_kind: ParseErrorKind,
     ) -> ParseResult<Parsed<T>> {
-        let position = self.token_end();
+        let position = self.token_range().end;
         let token = self.fetch_token()?.ok_or_else(|| ParseError {
             kind: error_kind.clone(),
-            start: position,
-            end: position,
+            range: position..position,
         })?;
         if let Token::Raw(raw) = &token.value {
             let mut reader = Reader::new(raw.clone());
+
             let value = parse(&mut reader).map_err(|mut error| {
-                error.start += position;
-                error.end += position;
+                let start = error.range.start + position;
+                let end = error.range.end + position;
+
+                error.range = start..end;
                 error
             })?;
+
             if let Some(char) = reader.peek() {
                 // There should be no remaining characters
+                let start = position + reader.position();
+                let end = position + reader.position() + char.len();
+
                 Err(ParseError {
                     kind: ParseErrorKind::ExpectedPipeOrExprEnd,
-                    start: position + reader.position(),
-                    end: position + reader.position() + char.len(),
+                    range: start..end,
                 })
             } else {
                 Ok(Parsed {
                     value,
-                    start: token.start,
-                    end: token.end,
+                    range: token.range.clone(),
                 })
             }
         } else {
             Err(ParseError {
                 kind: error_kind,
-                start: token.start,
-                end: token.end,
+                range: token.range.clone(),
             })
         }
     }
@@ -177,12 +174,8 @@ impl Parser {
         self.token.as_ref().map(|token| &token.value)
     }
 
-    fn token_start(&self) -> usize {
-        self.token.as_ref().map_or(0, |token| token.start)
-    }
-
-    fn token_end(&self) -> usize {
-        self.token.as_ref().map_or(0, |token| token.end)
+    fn token_range(&self) -> &Range<usize> {
+        self.token.as_ref().map_or(&(0..0), |token| &token.range)
     }
 }
 
@@ -203,8 +196,7 @@ mod tests {
             Parser::from("a").parse_items(),
             Ok(vec![Parsed {
                 value: PatternItem::Constant("a".to_string()),
-                start: 0,
-                end: 1,
+                range: 0..1,
             }])
         );
     }
@@ -215,8 +207,7 @@ mod tests {
             Parser::from("{").parse_items(),
             Err(ParseError {
                 kind: ParseErrorKind::ExpectedVariable,
-                start: 1,
-                end: 1,
+                range: 1..1,
             })
         );
     }
@@ -227,8 +218,7 @@ mod tests {
             Parser::from("{|").parse_items(),
             Err(ParseError {
                 kind: ParseErrorKind::ExpectedVariable,
-                start: 1,
-                end: 2,
+                range: 1..2,
             })
         );
     }
@@ -239,8 +229,7 @@ mod tests {
             Parser::from("|").parse_items(),
             Err(ParseError {
                 kind: ParseErrorKind::PipeOutsideExpr,
-                start: 0,
-                end: 1,
+                range: 0..1,
             })
         );
     }
@@ -251,8 +240,7 @@ mod tests {
             Parser::from("{}").parse_items(),
             Err(ParseError {
                 kind: ParseErrorKind::ExpectedVariable,
-                start: 1,
-                end: 2,
+                range: 1..2,
             })
         );
     }
@@ -263,8 +251,7 @@ mod tests {
             Parser::from("}").parse_items(),
             Err(ParseError {
                 kind: ParseErrorKind::UnmatchedExprEnd,
-                start: 0,
-                end: 1,
+                range: 0..1,
             })
         );
     }
@@ -275,8 +262,7 @@ mod tests {
             Parser::from("{f").parse_items(),
             Err(ParseError {
                 kind: ParseErrorKind::UnmatchedExprStart,
-                start: 0,
-                end: 1,
+                range: 0..1,
             })
         );
     }
@@ -289,13 +275,11 @@ mod tests {
                 value: PatternItem::Expression {
                     variable: Parsed {
                         value: Variable::Filename,
-                        start: 1,
-                        end: 2,
+                        range: 1..2,
                     },
                     filters: Vec::new(),
                 },
-                start: 0,
-                end: 3,
+                range: 0..3,
             }])
         );
     }
@@ -306,8 +290,7 @@ mod tests {
             Parser::from("{x}").parse_items(),
             Err(ParseError {
                 kind: ParseErrorKind::UnknownVariable(Char::Raw('x')),
-                start: 1,
-                end: 2,
+                range: 1..2,
             })
         );
     }
@@ -318,8 +301,7 @@ mod tests {
             Parser::from("{f{").parse_items(),
             Err(ParseError {
                 kind: ParseErrorKind::ExprStartInsideExpr,
-                start: 2,
-                end: 3,
+                range: 2..3,
             })
         );
     }
@@ -330,8 +312,7 @@ mod tests {
             Parser::from("{fg").parse_items(),
             Err(ParseError {
                 kind: ParseErrorKind::ExpectedPipeOrExprEnd,
-                start: 2,
-                end: 3,
+                range: 2..3,
             })
         );
     }
@@ -342,8 +323,7 @@ mod tests {
             Parser::from("{f|").parse_items(),
             Err(ParseError {
                 kind: ParseErrorKind::ExpectedFilter,
-                start: 3,
-                end: 3,
+                range: 3..3,
             })
         );
     }
@@ -354,8 +334,7 @@ mod tests {
             Parser::from("{f||").parse_items(),
             Err(ParseError {
                 kind: ParseErrorKind::ExpectedFilter,
-                start: 3,
-                end: 4,
+                range: 3..4,
             })
         );
     }
@@ -366,8 +345,7 @@ mod tests {
             Parser::from("{f|}").parse_items(),
             Err(ParseError {
                 kind: ParseErrorKind::ExpectedFilter,
-                start: 3,
-                end: 4,
+                range: 3..4,
             })
         );
     }
@@ -378,8 +356,7 @@ mod tests {
             Parser::from("{f|l").parse_items(),
             Err(ParseError {
                 kind: ParseErrorKind::UnmatchedExprStart,
-                start: 0,
-                end: 1,
+                range: 0..1,
             })
         );
     }
@@ -390,8 +367,7 @@ mod tests {
             Parser::from("{f|ll").parse_items(),
             Err(ParseError {
                 kind: ParseErrorKind::ExpectedPipeOrExprEnd,
-                start: 4,
-                end: 5,
+                range: 4..5,
             })
         );
     }
@@ -404,17 +380,14 @@ mod tests {
                 value: PatternItem::Expression {
                     variable: Parsed {
                         value: Variable::Basename,
-                        start: 1,
-                        end: 2,
+                        range: 1..2,
                     },
                     filters: vec![Parsed {
                         value: Filter::Lowercase,
-                        start: 3,
-                        end: 4,
+                        range: 3..4,
                     }],
                 },
-                start: 0,
-                end: 5,
+                range: 0..5,
             }])
         );
     }
@@ -427,24 +400,20 @@ mod tests {
                 value: PatternItem::Expression {
                     variable: Parsed {
                         value: Variable::Extension,
-                        start: 1,
-                        end: 2,
+                        range: 1..2,
                     },
                     filters: vec![
                         Parsed {
                             value: Filter::Trim,
-                            start: 3,
-                            end: 4,
+                            range: 3..4,
                         },
                         Parsed {
                             value: Filter::Substring(Range::FromTo(0, 3)),
-                            start: 5,
-                            end: 9,
+                            range: 5..9,
                         },
                     ],
                 },
-                start: 0,
-                end: 10,
+                range: 0..10,
             }])
         );
     }
@@ -455,8 +424,7 @@ mod tests {
             Parser::from("{f|n2-1}").parse_items(),
             Err(ParseError {
                 kind: ParseErrorKind::RangeStartOverEnd(2, 1),
-                start: 4,
-                end: 7,
+                range: 4..7,
             })
         );
     }
@@ -468,60 +436,50 @@ mod tests {
             Ok(vec![
                 Parsed {
                     value: PatternItem::Constant("image_".to_string()),
-                    start: 0,
-                    end: 6,
+                    range: 0..6,
                 },
                 Parsed {
                     value: PatternItem::Expression {
                         variable: Parsed {
                             value: Variable::LocalCounter,
-                            start: 7,
-                            end: 8,
+                            range: 7..8,
                         },
                         filters: vec![Parsed {
                             value: Filter::LeftPad("000".to_string()),
-                            start: 9,
-                            end: 13,
+                            range: 9..13,
                         }],
                     },
-                    start: 6,
-                    end: 14,
+                    range: 6..14,
                 },
                 Parsed {
                     value: PatternItem::Constant(".".to_string()),
-                    start: 14,
-                    end: 15,
+                    range: 14..15,
                 },
                 Parsed {
                     value: PatternItem::Expression {
                         variable: Parsed {
                             value: Variable::Extension,
-                            start: 16,
-                            end: 17,
+                            range: 16..17,
                         },
                         filters: vec![
                             Parsed {
                                 value: Filter::Lowercase,
-                                start: 18,
-                                end: 19,
+                                range: 18..19,
                             },
                             Parsed {
                                 value: Filter::ReplaceFirst(Substitution {
                                     value: 'e'.to_string(),
                                     replacement: String::new(),
                                 }),
-                                start: 20,
-                                end: 23,
+                                range: 20..23,
                             },
                         ],
                     },
-                    start: 15,
-                    end: 24,
+                    range: 15..24,
                 },
                 Parsed {
                     value: PatternItem::Constant("2".to_string()),
-                    start: 24,
-                    end: 25,
+                    range: 24..25,
                 },
             ])
         );

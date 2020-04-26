@@ -46,8 +46,8 @@ fn main() -> Result<(), io::Error> {
                 writeln!(&mut stderr)?;
                 Pattern::render(&mut stderr, raw_pattern)?;
 
-                let spaces_count = raw_pattern[..error.start].chars().count();
-                let markers_count = raw_pattern[error.start..error.end].chars().count().max(1);
+                let spaces_count = raw_pattern[..error.range.start].chars().count();
+                let markers_count = raw_pattern[error.range].chars().count().max(1);
 
                 write!(&mut stderr, "\n{}", " ".repeat(spaces_count))?;
                 stderr.set_color(ColorSpec::new().set_fg(Some(Color::Red)).set_bold(true))?;

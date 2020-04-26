@@ -18,8 +18,7 @@ pub fn parse_usize(reader: &mut Reader) -> ParseResult<usize> {
         }
         _ => Err(ParseError {
             kind: ParseErrorKind::ExpectedNumber,
-            start: reader.position(),
-            end: reader.end(),
+            range: reader.position()..reader.end(),
         }),
     }
 }
@@ -35,8 +34,7 @@ mod tests {
             parse_usize(&mut reader),
             Err(ParseError {
                 kind: ParseErrorKind::ExpectedNumber,
-                start: 0,
-                end: 0,
+                range: 0..0,
             })
         );
         assert_eq!(reader.position(), 0);
@@ -49,8 +47,7 @@ mod tests {
             parse_usize(&mut reader),
             Err(ParseError {
                 kind: ParseErrorKind::ExpectedNumber,
-                start: 0,
-                end: 2,
+                range: 0..2,
             })
         );
         assert_eq!(reader.position(), 0);

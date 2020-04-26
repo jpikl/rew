@@ -56,7 +56,10 @@ impl Lexer {
             None => return Ok(None),
         };
         let end = self.reader.position();
-        Ok(Some(Parsed { value, start, end }))
+        Ok(Some(Parsed {
+            value,
+            range: start..end,
+        }))
     }
 
     fn read_chars(&mut self) -> ParseResult<Vec<Char>> {
@@ -72,7 +75,10 @@ impl Lexer {
                         Ok(char) => chars.push(char),
                         Err(kind) => {
                             let end = self.reader.position();
-                            return Err(ParseError { kind, start, end });
+                            return Err(ParseError {
+                                kind,
+                                range: start..end,
+                            });
                         }
                     }
                 }
@@ -125,8 +131,7 @@ mod tests {
             lexer.read_token(),
             Ok(Some(Parsed {
                 value: Token::Raw(Char::raw_vec("a")),
-                start: 0,
-                end: 1,
+                range: 0..1,
             }))
         );
         assert_eq!(lexer.read_token(), Ok(None));
@@ -139,8 +144,7 @@ mod tests {
             lexer.read_token(),
             Ok(Some(Parsed {
                 value: Token::Raw(Char::raw_vec("abc")),
-                start: 0,
-                end: 3,
+                range: 0..3,
             }))
         );
         assert_eq!(lexer.read_token(), Ok(None));
@@ -153,8 +157,7 @@ mod tests {
             lexer.read_token(),
             Ok(Some(Parsed {
                 value: Token::ExprStart,
-                start: 0,
-                end: 1,
+                range: 0..1,
             }))
         );
         assert_eq!(lexer.read_token(), Ok(None));
@@ -167,8 +170,7 @@ mod tests {
             lexer.read_token(),
             Ok(Some(Parsed {
                 value: Token::ExprEnd,
-                start: 0,
-                end: 1,
+                range: 0..1,
             }))
         );
         assert_eq!(lexer.read_token(), Ok(None));
@@ -181,8 +183,7 @@ mod tests {
             lexer.read_token(),
             Ok(Some(Parsed {
                 value: Token::Pipe,
-                start: 0,
-                end: 1,
+                range: 0..1,
             }))
         );
         assert_eq!(lexer.read_token(), Ok(None));
@@ -195,8 +196,7 @@ mod tests {
             lexer.read_token(),
             Ok(Some(Parsed {
                 value: Token::Raw(vec![Char::Escaped('{', ['#', '{'])]),
-                start: 0,
-                end: 2,
+                range: 0..2,
             }))
         );
         assert_eq!(lexer.read_token(), Ok(None));
@@ -209,8 +209,7 @@ mod tests {
             lexer.read_token(),
             Ok(Some(Parsed {
                 value: Token::Raw(vec![Char::Escaped('}', ['#', '}'])]),
-                start: 0,
-                end: 2,
+                range: 0..2,
             }))
         );
         assert_eq!(lexer.read_token(), Ok(None));
@@ -223,8 +222,7 @@ mod tests {
             lexer.read_token(),
             Ok(Some(Parsed {
                 value: Token::Raw(vec![Char::Escaped('|', ['#', '|'])]),
-                start: 0,
-                end: 2,
+                range: 0..2,
             }))
         );
         assert_eq!(lexer.read_token(), Ok(None));
@@ -237,8 +235,7 @@ mod tests {
             lexer.read_token(),
             Ok(Some(Parsed {
                 value: Token::Raw(vec![Char::Escaped('\n', ['#', 'n'])]),
-                start: 0,
-                end: 2,
+                range: 0..2,
             }))
         );
         assert_eq!(lexer.read_token(), Ok(None));
@@ -251,8 +248,7 @@ mod tests {
             lexer.read_token(),
             Ok(Some(Parsed {
                 value: Token::Raw(vec![Char::Escaped('\r', ['#', 'r'])]),
-                start: 0,
-                end: 2,
+                range: 0..2,
             }))
         );
         assert_eq!(lexer.read_token(), Ok(None));
@@ -265,8 +261,7 @@ mod tests {
             lexer.read_token(),
             Ok(Some(Parsed {
                 value: Token::Raw(vec![Char::Escaped('\t', ['#', 't'])]),
-                start: 0,
-                end: 2,
+                range: 0..2,
             }))
         );
         assert_eq!(lexer.read_token(), Ok(None));
@@ -279,8 +274,7 @@ mod tests {
             lexer.read_token(),
             Ok(Some(Parsed {
                 value: Token::Raw(vec![Char::Escaped('\0', ['#', '0'])]),
-                start: 0,
-                end: 2,
+                range: 0..2,
             }))
         );
         assert_eq!(lexer.read_token(), Ok(None));
@@ -293,8 +287,7 @@ mod tests {
             lexer.read_token(),
             Ok(Some(Parsed {
                 value: Token::Raw(vec![Char::Escaped('#', ['#', '#'])]),
-                start: 0,
-                end: 2,
+                range: 0..2,
             }))
         );
         assert_eq!(lexer.read_token(), Ok(None));
@@ -308,8 +301,7 @@ mod tests {
             lexer.read_token(),
             Ok(Some(Parsed {
                 value: Token::Raw(vec![Char::Escaped('|', ['\\', '|'])]),
-                start: 0,
-                end: 2,
+                range: 0..2,
             }))
         );
         assert_eq!(lexer.read_token(), Ok(None));
@@ -322,8 +314,7 @@ mod tests {
             lexer.read_token(),
             Err(ParseError {
                 kind: ParseErrorKind::UnterminatedEscapeSequence('#'),
-                start: 0,
-                end: 1,
+                range: 0..1,
             })
         );
     }
@@ -335,8 +326,7 @@ mod tests {
             lexer.read_token(),
             Err(ParseError {
                 kind: ParseErrorKind::UnknownEscapeSequence(['#', 'x']),
-                start: 0,
-                end: 2,
+                range: 0..2,
             })
         );
     }
@@ -348,88 +338,77 @@ mod tests {
             lexer.read_token(),
             Ok(Some(Parsed {
                 value: Token::Raw(Char::raw_vec("a")),
-                start: 0,
-                end: 1,
+                range: 0..1,
             }))
         );
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
                 value: Token::ExprStart,
-                start: 1,
-                end: 2,
+                range: 1..2,
             }))
         );
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
                 value: Token::Pipe,
-                start: 2,
-                end: 3,
+                range: 2..3,
             }))
         );
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
                 value: Token::ExprEnd,
-                start: 3,
-                end: 4,
+                range: 3..4,
             }))
         );
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
                 value: Token::Raw(Char::raw_vec("bc")),
-                start: 4,
-                end: 6,
+                range: 4..6,
             }))
         );
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
                 value: Token::ExprStart,
-                start: 6,
-                end: 7,
+                range: 6..7,
             }))
         );
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
                 value: Token::Raw(Char::raw_vec("de")),
-                start: 7,
-                end: 9,
+                range: 7..9,
             }))
         );
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
                 value: Token::Pipe,
-                start: 9,
-                end: 10,
+                range: 9..10,
             }))
         );
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
                 value: Token::Raw(Char::raw_vec("fg")),
-                start: 10,
-                end: 12,
+                range: 10..12,
             }))
         );
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
                 value: Token::ExprEnd,
-                start: 12,
-                end: 13,
+                range: 12..13,
             }))
         );
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
                 value: Token::Raw(Char::raw_vec("hi")),
-                start: 13,
-                end: 15,
+                range: 13..15,
             }))
         );
         assert_eq!(lexer.read_token(), Ok(None));
@@ -442,32 +421,28 @@ mod tests {
             lexer.read_token(),
             Ok(Some(Parsed {
                 value: Token::Raw(Char::raw_vec("a")),
-                start: 0,
-                end: 1,
+                range: 0..1,
             }))
         );
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
                 value: Token::ExprStart,
-                start: 1,
-                end: 2,
+                range: 1..2,
             }))
         );
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
                 value: Token::Pipe,
-                start: 2,
-                end: 3,
+                range: 2..3,
             }))
         );
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
                 value: Token::ExprEnd,
-                start: 3,
-                end: 4,
+                range: 3..4,
             }))
         );
         assert_eq!(
@@ -491,8 +466,7 @@ mod tests {
                     Char::Escaped('\0', ['#', '0']),
                     Char::Escaped('#', ['#', '#']),
                 ]),
-                start: 4,
-                end: 28,
+                range: 4..28,
             }))
         );
     }
@@ -505,32 +479,28 @@ mod tests {
             lexer.read_token(),
             Ok(Some(Parsed {
                 value: Token::Raw(Char::raw_vec("a")),
-                start: 0,
-                end: 1,
+                range: 0..1,
             }))
         );
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
                 value: Token::ExprStart,
-                start: 1,
-                end: 2,
+                range: 1..2,
             }))
         );
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
                 value: Token::Pipe,
-                start: 2,
-                end: 3,
+                range: 2..3,
             }))
         );
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
                 value: Token::ExprEnd,
-                start: 3,
-                end: 4,
+                range: 3..4,
             }))
         );
         assert_eq!(
@@ -554,8 +524,7 @@ mod tests {
                     Char::Escaped('\0', ['\\', '0']),
                     Char::Escaped('\\', ['\\', '\\']),
                 ]),
-                start: 4,
-                end: 28,
+                range: 4..28,
             }))
         );
     }

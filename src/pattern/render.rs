@@ -35,8 +35,8 @@ impl Pattern {
             };
 
             stream.set_color(ColorSpec::new().set_fg(Some(color)).set_bold(bold))?;
-            write!(stream, "{}", &string[token.start..token.end])?;
-            position = token.end;
+            position = token.range.end;
+            write!(stream, "{}", &string[token.range])?;
         }
 
         stream.reset()?;
