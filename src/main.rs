@@ -4,6 +4,7 @@ use crate::pattern::{Lexer, Parser, Pattern};
 use crate::state::{RegexTarget, State};
 use std::io::{self, Write};
 use std::process;
+use structopt::StructOpt;
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 mod cli;
@@ -12,9 +13,9 @@ mod pattern;
 mod state;
 
 fn main() -> Result<(), io::Error> {
-    let cli = Cli::new();
+    let cli = Cli::from_args();
 
-    let color_choice = match cli.color() {
+    let color_choice = match cli.color {
         Some(ColorChoice::Auto) | None => {
             if atty::is(atty::Stream::Stdout) {
                 ColorChoice::Auto
@@ -29,10 +30,10 @@ fn main() -> Result<(), io::Error> {
     let mut stdout = StandardStream::stdout(color_choice);
     let mut stderr = StandardStream::stderr(color_choice);
 
-    let raw_pattern = cli.pattern();
-    let mut lexer = Lexer::from(raw_pattern);
+    let raw_pattern = cli.pattern;
+    let mut lexer = Lexer::from(raw_pattern.as_str());
 
-    if let Some(escape) = cli.escape() {
+    if let Some(escape) = cli.escape {
         lexer.set_escape(escape);
     }
 
@@ -44,7 +45,7 @@ fn main() -> Result<(), io::Error> {
 
             if !raw_pattern.is_empty() {
                 writeln!(&mut stderr)?;
-                Pattern::render(&mut stderr, raw_pattern)?;
+                Pattern::render(&mut stderr, raw_pattern.as_str())?;
 
                 let spaces_count = raw_pattern[..error.range.start].chars().count();
                 let markers_count = raw_pattern[error.range].chars().count().max(1);
@@ -66,24 +67,24 @@ fn main() -> Result<(), io::Error> {
     state.set_global_counter_enabled(pattern.uses_global_counter());
 
     if pattern.uses_regex_captures() {
-        if let Some(regex) = cli.regex_filename() {
+        if let Some(regex) = cli.regex {
             state.set_regex(Some(regex));
             state.set_regex_target(RegexTarget::Filename);
-        } else if let Some(regex) = cli.regex_path() {
+        } else if let Some(regex) = cli.regex_full {
             state.set_regex(Some(regex));
             state.set_regex_target(RegexTarget::Path);
         }
     }
 
-    let mut input: Box<dyn Input> = if let Some(files) = cli.paths() {
-        Box::new(ArgsInput::new(files))
+    let mut input: Box<dyn Input> = if cli.paths.is_empty() {
+        Box::new(StdinInput::new(&mut stdin, cli.read_nul))
     } else {
-        Box::new(StdinInput::new(&mut stdin, cli.read_nul()))
+        Box::new(ArgsInput::new(cli.paths.as_slice()))
     };
 
-    let delimiter = if cli.print_raw() {
+    let delimiter = if cli.print_raw {
         None
-    } else if cli.print_nul() {
+    } else if cli.print_nul {
         Some('\0')
     } else {
         Some('\n')

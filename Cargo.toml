@@ -8,11 +8,7 @@ edition = "2018"
 [dependencies]
 atty = "0.2.14"
 regex = "1"
+structopt = "0.3.14"
 termcolor = "1.1.0"
 unidecode = "0.3.0"
 uuid = { version = "0.8", features = ["v4"] }
-
-[dependencies.clap]
-version = "2.33.0"
-default-features = false
-features = ["suggestions"]
