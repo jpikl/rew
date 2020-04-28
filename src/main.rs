@@ -1,5 +1,5 @@
 use crate::cli::Cli;
-use crate::input::{ArgsInput, Input, StdinInput};
+use crate::input::Input;
 use crate::pattern::{Lexer, Parser, Pattern};
 use crate::state::{RegexTarget, State};
 use std::io::{self, Write};
@@ -30,8 +30,8 @@ fn main() -> Result<(), io::Error> {
     let mut stdout = StandardStream::stdout(color_choice);
     let mut stderr = StandardStream::stderr(color_choice);
 
-    let raw_pattern = cli.pattern;
-    let mut lexer = Lexer::from(raw_pattern.as_str());
+    let raw_pattern = cli.pattern.as_str();
+    let mut lexer = Lexer::from(raw_pattern);
 
     if let Some(escape) = cli.escape {
         lexer.set_escape(escape);
@@ -45,7 +45,7 @@ fn main() -> Result<(), io::Error> {
 
             if !raw_pattern.is_empty() {
                 writeln!(&mut stderr)?;
-                Pattern::render(&mut stderr, raw_pattern.as_str())?;
+                Pattern::render(&mut stderr, raw_pattern)?;
 
                 let spaces_count = raw_pattern[..error.range.start].chars().count();
                 let markers_count = raw_pattern[error.range].chars().count().max(1);
@@ -76,10 +76,11 @@ fn main() -> Result<(), io::Error> {
         }
     }
 
-    let mut input: Box<dyn Input> = if cli.paths.is_empty() {
-        Box::new(StdinInput::new(&mut stdin, cli.read_nul))
+    let mut input = if cli.paths.is_empty() {
+        let delimiter = if cli.read_nul { 0 } else { b'\n' };
+        Input::from_stdin(&mut stdin, delimiter)
     } else {
-        Box::new(ArgsInput::new(cli.paths.as_slice()))
+        Input::from_args(cli.paths.as_slice())
     };
 
     let delimiter = if cli.print_raw {

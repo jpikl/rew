@@ -11,7 +11,8 @@ const COLOR_NEVER: &str = "never";
 #[derive(Debug, StructOpt)]
 #[structopt(
     setting(AppSettings::ColoredHelp),
-    setting(AppSettings::DeriveDisplayOrder)
+    setting(AppSettings::DeriveDisplayOrder),
+    about = env!("CARGO_PKG_DESCRIPTION")
 )]
 pub struct Cli {
     /// Output pattern
