@@ -13,7 +13,8 @@ mod pattern;
 mod state;
 
 fn main() -> Result<(), io::Error> {
-    let cli = Cli::from_args();
+    // Explicit variable type, because IDE is unable to detect it.
+    let cli: Cli = Cli::from_args();
 
     let color_choice = match cli.color {
         Some(ColorChoice::Auto) | None => {
