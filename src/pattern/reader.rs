@@ -1,30 +1,27 @@
-use crate::pattern::char::Char;
+use crate::pattern::char::AsChar;
 
-pub struct Reader {
-    chars: Vec<Char>,
+pub struct Reader<T: AsChar> {
+    chars: Vec<T>,
     index: usize,
 }
 
-impl From<&str> for Reader {
+impl<T: AsChar> From<&str> for Reader<T> {
     fn from(string: &str) -> Self {
-        Self::new(Char::raw_vec(string))
+        Self::new(string.chars().map(T::from).collect())
     }
 }
 
-// TODO char vs Char - trait template + default implementations
-// TODO use Chars for iterating string
-// TODO remove *_value methods
-impl Reader {
-    pub fn new(chars: Vec<Char>) -> Self {
+impl<T: AsChar> Reader<T> {
+    pub fn new(chars: Vec<T>) -> Self {
         Self { chars, index: 0 }
     }
 
     pub fn position(&self) -> usize {
-        Char::sum_len(&self.chars[..self.index])
+        sum_len_utf8::<T>(&self.chars[..self.index])
     }
 
     pub fn end(&self) -> usize {
-        Char::sum_len(&self.chars)
+        sum_len_utf8(&self.chars)
     }
 
     pub fn seek(&mut self) {
@@ -39,11 +36,11 @@ impl Reader {
         self.index = self.chars.len().min(index);
     }
 
-    pub fn peek(&self) -> Option<&Char> {
+    pub fn peek(&self) -> Option<&T> {
         self.peek_at(self.index)
     }
 
-    fn peek_at(&self, index: usize) -> Option<&Char> {
+    fn peek_at(&self, index: usize) -> Option<&T> {
         if index >= self.chars.len() {
             None
         } else {
@@ -51,38 +48,43 @@ impl Reader {
         }
     }
 
-    pub fn peek_value(&self) -> Option<char> {
-        self.peek().map(Char::value)
+    pub fn peek_char(&self) -> Option<char> {
+        self.peek().map(T::as_char)
     }
 
-    pub fn peek_to_end(&self) -> &[Char] {
+    pub fn peek_to_end(&self) -> &[T] {
         self.peek_to_end_at(self.index)
     }
 
-    fn peek_to_end_at(&self, index: usize) -> &[Char] {
+    fn peek_to_end_at(&self, index: usize) -> &[T] {
         &self.chars[index..]
     }
 
-    pub fn read(&mut self) -> Option<&Char> {
+    pub fn read(&mut self) -> Option<&T> {
         let index = self.index;
         self.seek();
         self.peek_at(index)
     }
 
-    pub fn read_value(&mut self) -> Option<char> {
-        self.read().map(Char::value)
+    pub fn read_char(&mut self) -> Option<char> {
+        self.read().map(T::as_char)
     }
 
-    pub fn read_to_end(&mut self) -> &[Char] {
+    pub fn read_to_end(&mut self) -> &[T] {
         let index = self.index;
         self.seek_to_end();
         self.peek_to_end_at(index)
     }
 }
 
+fn sum_len_utf8<T: AsChar>(chars: &[T]) -> usize {
+    chars.iter().fold(0, |sum, char| sum + char.len_utf8())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::pattern::char::Char;
 
     #[test]
     fn position_starts_at_zero() {
@@ -160,28 +162,28 @@ mod tests {
     }
 
     #[test]
-    fn peek_value_returns_none_for_empty() {
-        assert_eq!(make_empty_reader().peek_value(), None);
+    fn peek_char_returns_none_for_empty() {
+        assert_eq!(make_empty_reader().peek_char(), None);
     }
 
     #[test]
-    fn peek_value_returns_char_values_at_indices() {
+    fn peek_char_returns_char_values_at_indices() {
         let mut reader = make_reader();
         reader.seek_to(0);
-        assert_eq!(reader.peek_value(), Some('a'));
+        assert_eq!(reader.peek_char(), Some('a'));
         reader.seek_to(1);
-        assert_eq!(reader.peek_value(), Some('b'));
+        assert_eq!(reader.peek_char(), Some('b'));
         reader.seek_to(2);
-        assert_eq!(reader.peek_value(), Some('č'));
+        assert_eq!(reader.peek_char(), Some('č'));
         reader.seek_to(3);
-        assert_eq!(reader.peek_value(), None);
+        assert_eq!(reader.peek_char(), None);
     }
 
     #[test]
-    fn peek_value_does_not_change_position() {
+    fn peek_char_does_not_change_position() {
         let reader = make_reader();
         assert_eq!(reader.position(), 0);
-        reader.peek_value();
+        reader.peek_char();
         assert_eq!(reader.position(), 0);
     }
 
@@ -245,30 +247,30 @@ mod tests {
     }
 
     #[test]
-    fn read_value_returns_none_for_empty() {
-        assert_eq!(make_empty_reader().read_value(), None);
+    fn read_char_returns_none_for_empty() {
+        assert_eq!(make_empty_reader().read_char(), None);
     }
 
     #[test]
-    fn read_value_consumes_char_values() {
+    fn read_char_consumes_char_values() {
         let mut reader = make_reader();
-        assert_eq!(reader.read_value(), Some('a'));
-        assert_eq!(reader.read_value(), Some('b'));
-        assert_eq!(reader.read_value(), Some('č'));
-        assert_eq!(reader.read_value(), None);
+        assert_eq!(reader.read_char(), Some('a'));
+        assert_eq!(reader.read_char(), Some('b'));
+        assert_eq!(reader.read_char(), Some('č'));
+        assert_eq!(reader.read_char(), None);
     }
 
     #[test]
-    fn read_value_increments_position() {
+    fn read_char_increments_position() {
         let mut reader = make_reader();
         assert_eq!(reader.position(), 0);
-        reader.read_value();
+        reader.read_char();
         assert_eq!(reader.position(), 1);
-        reader.read_value();
+        reader.read_char();
         assert_eq!(reader.position(), 3);
-        reader.read_value();
+        reader.read_char();
         assert_eq!(reader.position(), 5);
-        reader.read_value();
+        reader.read_char();
         assert_eq!(reader.position(), 5);
     }
 
@@ -308,11 +310,11 @@ mod tests {
         assert_eq!(reader.position(), 5);
     }
 
-    fn make_empty_reader() -> Reader {
+    fn make_empty_reader() -> Reader<Char> {
         Reader::new(Vec::new())
     }
 
-    fn make_reader() -> Reader {
+    fn make_reader() -> Reader<Char> {
         Reader::new(vec![
             Char::Raw('a'),
             Char::Escaped('b', ['x', 'y']),

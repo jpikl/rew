@@ -1,4 +1,4 @@
-use crate::pattern::char::Char;
+use crate::pattern::char::{AsChar, Char};
 use crate::pattern::filter::Filter;
 use crate::pattern::lexer::{Lexer, Token};
 use crate::pattern::parse::{ParseError, ParseErrorKind, ParseResult, Parsed};
@@ -121,7 +121,7 @@ impl Parser {
         self.parse_expression_member(Filter::parse, ParseErrorKind::ExpectedFilter)
     }
 
-    fn parse_expression_member<T, F: FnOnce(&mut Reader) -> ParseResult<T>>(
+    fn parse_expression_member<T, F: FnOnce(&mut Reader<Char>) -> ParseResult<T>>(
         &mut self,
         parse: F,
         error_kind: ParseErrorKind,
@@ -145,7 +145,7 @@ impl Parser {
             if let Some(char) = reader.peek() {
                 // There should be no remaining characters
                 let start = position + reader.position();
-                let end = position + reader.position() + char.len();
+                let end = position + reader.position() + char.len_utf8();
 
                 Err(ParseError {
                     kind: ParseErrorKind::ExpectedPipeOrExprEnd,

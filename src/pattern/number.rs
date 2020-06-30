@@ -1,18 +1,19 @@
+use crate::pattern::char::Char;
 use crate::pattern::parse::{ParseError, ParseErrorKind, ParseResult};
 use crate::pattern::reader::Reader;
 
-pub fn parse_usize(reader: &mut Reader) -> ParseResult<usize> {
-    match reader.peek_value() {
+pub fn parse_usize(reader: &mut Reader<Char>) -> ParseResult<usize> {
+    match reader.peek_char() {
         Some('0') => {
-            reader.read_value();
+            reader.seek();
             Ok(0)
         }
         Some(ch @ '1'..='9') => {
             let mut number = ch.to_digit(10).unwrap() as usize;
-            reader.read_value();
-            while let Some(ch @ '0'..='9') = reader.peek_value() {
+            reader.seek();
+            while let Some(ch @ '0'..='9') = reader.peek_char() {
                 number = 10 * number + ch.to_digit(10).unwrap() as usize;
-                reader.read_value();
+                reader.seek();
             }
             Ok(number)
         }

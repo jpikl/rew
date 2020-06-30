@@ -1,4 +1,4 @@
-use crate::pattern::char::Char;
+use crate::pattern::char::{AsChar, Char};
 use crate::pattern::parse::{ParseError, ParseErrorKind, ParseResult};
 use crate::pattern::reader::Reader;
 
@@ -9,13 +9,13 @@ pub struct Substitution {
 }
 
 impl Substitution {
-    pub fn parse(reader: &mut Reader) -> ParseResult<Self> {
+    pub fn parse(reader: &mut Reader<Char>) -> ParseResult<Self> {
         if let Some(separator) = reader.read().cloned() {
             let mut value = String::new();
             let position = reader.position();
 
-            while let Some(ch) = reader.read_value() {
-                if ch == separator.value() {
+            while let Some(ch) = reader.read_char() {
+                if ch == separator.as_char() {
                     break;
                 } else {
                     value.push(ch);

@@ -1,4 +1,4 @@
-use crate::pattern::char::Char;
+use crate::pattern::char::{AsChar, Char};
 use crate::pattern::parse::{ParseError, ParseErrorKind, ParseResult};
 use crate::pattern::range::Range;
 use crate::pattern::reader::Reader;
@@ -22,11 +22,11 @@ pub enum Filter {
 }
 
 impl Filter {
-    pub fn parse(reader: &mut Reader) -> ParseResult<Self> {
+    pub fn parse(reader: &mut Reader<Char>) -> ParseResult<Self> {
         let position = reader.position();
 
         if let Some(char) = reader.read() {
-            match char.value() {
+            match char.as_char() {
                 'n' => Ok(Filter::Substring(Range::parse(reader)?)),
                 'N' => Ok(Filter::SubstringReverse(Range::parse(reader)?)),
                 'r' => Ok(Filter::ReplaceFirst(Substitution::parse(reader)?)),

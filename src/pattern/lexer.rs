@@ -12,7 +12,7 @@ pub enum Token {
 }
 
 pub struct Lexer {
-    reader: Reader,
+    reader: Reader<char>,
     escape: char,
 }
 
@@ -23,7 +23,7 @@ impl From<&str> for Lexer {
 }
 
 impl Lexer {
-    pub fn new(reader: Reader) -> Self {
+    pub fn new(reader: Reader<char>) -> Self {
         Self {
             reader,
             escape: ESCAPE,
@@ -36,7 +36,7 @@ impl Lexer {
 
     pub fn read_token(&mut self) -> ParseResult<Option<Parsed<Token>>> {
         let start = self.reader.position();
-        let value = match self.reader.peek_value() {
+        let value = match self.reader.peek_char() {
             Some(EXPR_START) => {
                 self.reader.seek();
                 Token::ExprStart
@@ -66,7 +66,7 @@ impl Lexer {
         let mut chars = Vec::new();
 
         loop {
-            match self.reader.peek_value() {
+            match self.reader.peek_char() {
                 Some(EXPR_START) | Some(EXPR_END) | Some(PIPE) | None => break,
                 Some(value) if value == self.escape => {
                     let start = self.reader.position();
@@ -93,7 +93,7 @@ impl Lexer {
     }
 
     fn read_escaped_char(&mut self) -> Result<Char, ParseErrorKind> {
-        if let Some(value) = self.reader.read_value() {
+        if let Some(value) = self.reader.read_char() {
             let escape_sequence = [self.escape, value];
             let escaped_value = match value {
                 EXPR_START => EXPR_START,
@@ -130,7 +130,7 @@ mod tests {
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
-                value: Token::Raw(Char::raw_vec("a")),
+                value: Token::Raw(vec![Char::Raw('a')]),
                 range: 0..1,
             }))
         );
@@ -143,7 +143,7 @@ mod tests {
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
-                value: Token::Raw(Char::raw_vec("abc")),
+                value: Token::Raw(vec![Char::Raw('a'), Char::Raw('b'), Char::Raw('c')]),
                 range: 0..3,
             }))
         );
@@ -337,7 +337,7 @@ mod tests {
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
-                value: Token::Raw(Char::raw_vec("a")),
+                value: Token::Raw(vec![Char::Raw('a')]),
                 range: 0..1,
             }))
         );
@@ -365,7 +365,7 @@ mod tests {
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
-                value: Token::Raw(Char::raw_vec("bc")),
+                value: Token::Raw(vec![Char::Raw('b'), Char::Raw('c')]),
                 range: 4..6,
             }))
         );
@@ -379,7 +379,7 @@ mod tests {
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
-                value: Token::Raw(Char::raw_vec("de")),
+                value: Token::Raw(vec![Char::Raw('d'), Char::Raw('e')]),
                 range: 7..9,
             }))
         );
@@ -393,7 +393,7 @@ mod tests {
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
-                value: Token::Raw(Char::raw_vec("fg")),
+                value: Token::Raw(vec![Char::Raw('f'), Char::Raw('g')]),
                 range: 10..12,
             }))
         );
@@ -407,7 +407,7 @@ mod tests {
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
-                value: Token::Raw(Char::raw_vec("hi")),
+                value: Token::Raw(vec![Char::Raw('h'), Char::Raw('i')]),
                 range: 13..15,
             }))
         );
@@ -420,7 +420,7 @@ mod tests {
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
-                value: Token::Raw(Char::raw_vec("a")),
+                value: Token::Raw(vec![Char::Raw('a')]),
                 range: 0..1,
             }))
         );
@@ -478,7 +478,7 @@ mod tests {
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
-                value: Token::Raw(Char::raw_vec("a")),
+                value: Token::Raw(vec![Char::Raw('a')]),
                 range: 0..1,
             }))
         );

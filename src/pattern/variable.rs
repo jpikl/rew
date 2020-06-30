@@ -1,3 +1,4 @@
+use crate::pattern::char::{AsChar, Char};
 use crate::pattern::eval::{EvalContext, EvalErrorKind};
 use crate::pattern::number::parse_usize;
 use crate::pattern::parse::{ParseError, ParseErrorKind, ParseResult};
@@ -22,10 +23,10 @@ pub enum Variable {
 }
 
 impl Variable {
-    pub fn parse(reader: &mut Reader) -> ParseResult<Self> {
+    pub fn parse(reader: &mut Reader<Char>) -> ParseResult<Self> {
         let position = reader.position();
 
-        if let Some('0'..='9') = reader.peek_value() {
+        if let Some('0'..='9') = reader.peek_char() {
             let number = parse_usize(reader)?;
             if number > 0 {
                 Ok(Variable::RegexCapture(number))
@@ -36,7 +37,7 @@ impl Variable {
                 })
             }
         } else if let Some(char) = reader.read() {
-            match char.value() {
+            match char.as_char() {
                 'f' => Ok(Variable::Filename),
                 'b' => Ok(Variable::Basename),
                 'e' => Ok(Variable::Extension),

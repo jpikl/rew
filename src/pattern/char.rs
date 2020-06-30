@@ -7,30 +7,46 @@ pub enum Char {
 }
 
 impl Char {
-    pub fn value(&self) -> char {
+    pub fn join(chars: &[Char]) -> String {
+        chars.iter().map(Char::as_char).collect()
+    }
+}
+
+impl From<char> for Char {
+    fn from(value: char) -> Self {
+        Char::Raw(value)
+    }
+}
+
+pub trait AsChar: From<char> {
+    fn as_char(&self) -> char;
+
+    fn len_utf8(&self) -> usize;
+}
+
+impl AsChar for char {
+    fn as_char(&self) -> char {
+        *self
+    }
+
+    fn len_utf8(&self) -> usize {
+        char::len_utf8(*self)
+    }
+}
+
+impl AsChar for Char {
+    fn as_char(&self) -> char {
         match self {
             Char::Raw(value) => *value,
             Char::Escaped(value, _) => *value,
         }
     }
 
-    pub fn len(&self) -> usize {
+    fn len_utf8(&self) -> usize {
         match self {
             Char::Raw(value) => value.len_utf8(),
             Char::Escaped(_, sequence) => sequence[0].len_utf8() + sequence[1].len_utf8(),
         }
-    }
-
-    pub fn raw_vec(string: &str) -> Vec<Char> {
-        string.chars().map(Char::Raw).collect()
-    }
-
-    pub fn join(chars: &[Char]) -> String {
-        chars.iter().map(Char::value).collect()
-    }
-
-    pub fn sum_len(chars: &[Char]) -> usize {
-        chars.iter().fold(0, |sum, char| sum + char.len())
     }
 }
 
@@ -39,41 +55,35 @@ mod tests {
     use super::*;
 
     #[test]
-    fn raw_value() {
-        assert_eq!(Char::Raw('a').value(), 'a');
+    fn raw_from_char() {
+        assert_eq!(Char::from('a'), Char::Raw('a'));
     }
 
     #[test]
-    fn raw_len() {
-        assert_eq!(Char::Raw('a').len(), 1);
-        assert_eq!(Char::Raw('á').len(), 2);
+    fn raw_as_char() {
+        assert_eq!(Char::Raw('a').as_char(), 'a');
     }
 
     #[test]
-    fn escaped_value() {
-        assert_eq!(Char::Escaped('a', ['b', 'c']).value(), 'a');
+    fn raw_len_utf8() {
+        assert_eq!(Char::Raw('a').len_utf8(), 1);
+        assert_eq!(Char::Raw('á').len_utf8(), 2);
     }
 
     #[test]
-    fn escaped_len() {
-        assert_eq!(Char::Escaped('a', ['b', 'c']).len(), 2);
-        assert_eq!(Char::Escaped('a', ['á', 'č']).len(), 4);
+    fn escaped_as_char() {
+        assert_eq!(Char::Escaped('a', ['b', 'c']).as_char(), 'a');
     }
 
     #[test]
-    fn raw_vec() {
-        assert_eq!(Char::raw_vec("ab"), vec![Char::Raw('a'), Char::Raw('b')]);
+    fn escaped_len_utf8() {
+        assert_eq!(Char::Escaped('a', ['b', 'c']).len_utf8(), 2);
+        assert_eq!(Char::Escaped('a', ['á', 'č']).len_utf8(), 4);
     }
 
     #[test]
     fn join() {
         let chars = [Char::Raw('a'), Char::Escaped('b', ['c', 'd'])];
         assert_eq!(Char::join(&chars), "ab".to_string());
-    }
-
-    #[test]
-    fn sum_len() {
-        let chars = [Char::Raw('a'), Char::Escaped('b', ['c', 'd'])];
-        assert_eq!(Char::sum_len(&chars), 3);
     }
 }

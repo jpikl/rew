@@ -36,16 +36,16 @@ impl Range {
         }
     }
 
-    pub fn parse(reader: &mut Reader) -> ParseResult<Self> {
-        match reader.peek_value() {
+    pub fn parse(reader: &mut Reader<Char>) -> ParseResult<Self> {
+        match reader.peek_char() {
             Some('0'..='9') => {
                 let position = reader.position();
                 let start = parse_index(reader)?;
 
-                if let Some(RANGE) = reader.peek_value() {
+                if let Some(RANGE) = reader.peek_char() {
                     reader.seek();
 
-                    if let Some('0'..='9') = reader.peek_value() {
+                    if let Some('0'..='9') = reader.peek_char() {
                         let end = parse_index(reader)?;
                         if start > end {
                             Err(ParseError {
@@ -66,7 +66,7 @@ impl Range {
             Some(RANGE) => {
                 reader.seek();
 
-                if let Some('0'..='9') = reader.peek_value() {
+                if let Some('0'..='9') = reader.peek_char() {
                     let end = parse_index(reader)?;
                     Ok(Range::To(end + 1)) // Inclusive end -> exclusive end
                 } else {
@@ -87,7 +87,7 @@ impl Range {
     }
 }
 
-fn parse_index(reader: &mut Reader) -> ParseResult<usize> {
+fn parse_index(reader: &mut Reader<Char>) -> ParseResult<usize> {
     let position = reader.position();
     let index = parse_usize(reader)?;
 
