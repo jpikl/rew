@@ -195,7 +195,7 @@ mod tests {
         assert_eq!(
             Parser::from("a").parse_items(),
             Ok(vec![Parsed {
-                value: PatternItem::Constant("a".to_string()),
+                value: PatternItem::Constant(String::from("a")),
                 range: 0..1,
             }])
         );
@@ -435,7 +435,7 @@ mod tests {
             Parser::from("image_{c|<000}.{e|l|r_e}2").parse_items(),
             Ok(vec![
                 Parsed {
-                    value: PatternItem::Constant("image_".to_string()),
+                    value: PatternItem::Constant(String::from("image_")),
                     range: 0..6,
                 },
                 Parsed {
@@ -445,14 +445,14 @@ mod tests {
                             range: 7..8,
                         },
                         filters: vec![Parsed {
-                            value: Filter::LeftPad("000".to_string()),
+                            value: Filter::LeftPad(String::from("000")),
                             range: 9..13,
                         }],
                     },
                     range: 6..14,
                 },
                 Parsed {
-                    value: PatternItem::Constant(".".to_string()),
+                    value: PatternItem::Constant(String::from(".")),
                     range: 14..15,
                 },
                 Parsed {
@@ -478,7 +478,7 @@ mod tests {
                     range: 15..24,
                 },
                 Parsed {
-                    value: PatternItem::Constant("2".to_string()),
+                    value: PatternItem::Constant(String::from("2")),
                     range: 24..25,
                 },
             ])

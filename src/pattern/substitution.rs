@@ -91,8 +91,8 @@ mod tests {
         assert_eq!(
             Substitution::parse(&mut reader),
             Ok(Substitution {
-                value: "a".to_string(),
-                replacement: "".to_string()
+                value: String::from("a"),
+                replacement: String::from("")
             })
         );
         assert_eq!(reader.position(), 2);
@@ -104,8 +104,8 @@ mod tests {
         assert_eq!(
             Substitution::parse(&mut reader),
             Ok(Substitution {
-                value: "abc".to_string(),
-                replacement: "".to_string()
+                value: String::from("abc"),
+                replacement: String::from("")
             })
         );
         assert_eq!(reader.position(), 4);
@@ -117,8 +117,8 @@ mod tests {
         assert_eq!(
             Substitution::parse(&mut reader),
             Ok(Substitution {
-                value: "a".to_string(),
-                replacement: "".to_string()
+                value: String::from("a"),
+                replacement: String::from("")
             })
         );
         assert_eq!(reader.position(), 3);
@@ -130,8 +130,8 @@ mod tests {
         assert_eq!(
             Substitution::parse(&mut reader),
             Ok(Substitution {
-                value: "abc".to_string(),
-                replacement: "".to_string()
+                value: String::from("abc"),
+                replacement: String::from("")
             })
         );
         assert_eq!(reader.position(), 5);
@@ -143,8 +143,8 @@ mod tests {
         assert_eq!(
             Substitution::parse(&mut reader),
             Ok(Substitution {
-                value: "a".to_string(),
-                replacement: "d".to_string()
+                value: String::from("a"),
+                replacement: String::from("d")
             })
         );
         assert_eq!(reader.position(), 4);
@@ -156,8 +156,8 @@ mod tests {
         assert_eq!(
             Substitution::parse(&mut reader),
             Ok(Substitution {
-                value: "abc".to_string(),
-                replacement: "def".to_string()
+                value: String::from("abc"),
+                replacement: String::from("def")
             })
         );
         assert_eq!(reader.position(), 8);
@@ -169,8 +169,8 @@ mod tests {
         assert_eq!(
             Substitution::parse(&mut reader),
             Ok(Substitution {
-                value: "abc".to_string(),
-                replacement: "d//e/".to_string()
+                value: String::from("abc"),
+                replacement: String::from("d//e/")
             })
         );
         assert_eq!(reader.position(), 10);

@@ -238,7 +238,7 @@ mod tests {
     fn eval_filename() {
         assert_eq!(
             Variable::Filename.eval(&make_context()),
-            Ok("file.ext".to_string())
+            Ok(String::from("file.ext"))
         );
     }
 
@@ -246,7 +246,7 @@ mod tests {
     fn eval_basename() {
         assert_eq!(
             Variable::Basename.eval(&make_context()),
-            Ok("file".to_string())
+            Ok(String::from("file"))
         );
     }
 
@@ -254,7 +254,7 @@ mod tests {
     fn eval_extension() {
         assert_eq!(
             Variable::Extension.eval(&make_context()),
-            Ok("ext".to_string())
+            Ok(String::from("ext"))
         );
     }
 
@@ -262,14 +262,14 @@ mod tests {
     fn eval_extension_no_ext() {
         let mut context = make_context();
         context.path = Path::new("root/parent/file");
-        assert_eq!(Variable::Extension.eval(&context), Ok("".to_string()));
+        assert_eq!(Variable::Extension.eval(&context), Ok(String::from("")));
     }
 
     #[test]
     fn eval_extension_with_dot() {
         assert_eq!(
             Variable::ExtensionWithDot.eval(&make_context()),
-            Ok(".ext".to_string())
+            Ok(String::from(".ext"))
         );
     }
 
@@ -279,7 +279,7 @@ mod tests {
         context.path = Path::new("root/parent/file");
         assert_eq!(
             Variable::ExtensionWithDot.eval(&context),
-            Ok("".to_string())
+            Ok(String::from(""))
         );
     }
 
@@ -287,7 +287,7 @@ mod tests {
     fn eval_full_dirname() {
         assert_eq!(
             Variable::FullDirname.eval(&make_context()),
-            Ok("root/parent".to_string())
+            Ok(String::from("root/parent"))
         );
     }
 
@@ -302,7 +302,7 @@ mod tests {
     fn eval_parent_dirname() {
         assert_eq!(
             Variable::ParentDirname.eval(&make_context()),
-            Ok("parent".to_string())
+            Ok(String::from("parent"))
         );
     }
 
@@ -317,7 +317,7 @@ mod tests {
     fn eval_full_path() {
         assert_eq!(
             Variable::FullPath.eval(&make_context()),
-            Ok("root/parent/file.ext".to_string())
+            Ok(String::from("root/parent/file.ext"))
         );
     }
 
@@ -325,7 +325,7 @@ mod tests {
     fn eval_local_counter() {
         assert_eq!(
             Variable::LocalCounter.eval(&make_context()),
-            Ok("1".to_string())
+            Ok(String::from("1"))
         );
     }
 
@@ -333,7 +333,7 @@ mod tests {
     fn eval_global_counter() {
         assert_eq!(
             Variable::GlobalCounter.eval(&make_context()),
-            Ok("2".to_string())
+            Ok(String::from("2"))
         );
     }
 
@@ -341,7 +341,7 @@ mod tests {
     fn eval_regex_capture() {
         assert_eq!(
             Variable::RegexCapture(1).eval(&make_context()),
-            Ok("abc".to_string())
+            Ok(String::from("abc"))
         );
     }
 

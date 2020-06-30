@@ -153,7 +153,7 @@ mod tests {
         assert_eq!(
             Range::parse(&mut reader),
             Err(ParseError {
-                kind: ParseErrorKind::RangeInvalid("a".to_string()),
+                kind: ParseErrorKind::RangeInvalid(String::from("a")),
                 range: 0..1,
             })
         );

@@ -84,6 +84,6 @@ mod tests {
     #[test]
     fn join() {
         let chars = [Char::Raw('a'), Char::Escaped('b', ['c', 'd'])];
-        assert_eq!(Char::join(&chars), "ab".to_string());
+        assert_eq!(Char::join(&chars), String::from("ab"));
     }
 }

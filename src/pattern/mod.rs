@@ -129,10 +129,10 @@ mod tests {
 
     #[test]
     fn constant() {
-        let items = vec![parsed(PatternItem::Constant("abc".to_string()))];
+        let items = vec![parsed(PatternItem::Constant(String::from("abc")))];
         assert_eq!(
             Pattern::new(items).eval(&make_context()),
-            Ok("abc".to_string())
+            Ok(String::from("abc"))
         );
     }
 
@@ -144,7 +144,7 @@ mod tests {
         })];
         assert_eq!(
             Pattern::new(items).eval(&make_context()),
-            Ok("file.ext".to_string())
+            Ok(String::from("file.ext"))
         );
     }
 
@@ -156,7 +156,7 @@ mod tests {
         })];
         assert_eq!(
             Pattern::new(items).eval(&make_context()),
-            Ok("FILE.EXT".to_string())
+            Ok(String::from("FILE.EXT"))
         );
     }
 
@@ -171,48 +171,48 @@ mod tests {
         })];
         assert_eq!(
             Pattern::new(items).eval(&make_context()),
-            Ok("FILE".to_string())
+            Ok(String::from("FILE"))
         );
     }
 
     #[test]
     fn multiple_constants_and_expressions() {
         let items = vec![
-            parsed(PatternItem::Constant("prefix_".to_string())),
+            parsed(PatternItem::Constant(String::from("prefix_"))),
             parsed(PatternItem::Expression {
                 variable: parsed(Variable::Basename),
                 filters: vec![parsed(Filter::Substring(Range::To(3)))],
             }),
-            parsed(PatternItem::Constant("_".to_string())),
+            parsed(PatternItem::Constant(String::from("_"))),
             parsed(PatternItem::Expression {
                 variable: parsed(Variable::RegexCapture(1)),
                 filters: Vec::new(),
             }),
-            parsed(PatternItem::Constant("_".to_string())),
+            parsed(PatternItem::Constant(String::from("_"))),
             parsed(PatternItem::Expression {
                 variable: parsed(Variable::LocalCounter),
                 filters: Vec::new(),
             }),
-            parsed(PatternItem::Constant("_".to_string())),
+            parsed(PatternItem::Constant(String::from("_"))),
             parsed(PatternItem::Expression {
                 variable: parsed(Variable::GlobalCounter),
                 filters: Vec::new(),
             }),
-            parsed(PatternItem::Constant(".".to_string())),
+            parsed(PatternItem::Constant(String::from("."))),
             parsed(PatternItem::Expression {
                 variable: parsed(Variable::Extension),
                 filters: vec![
                     parsed(Filter::Uppercase),
                     parsed(Filter::ReplaceAll(Substitution {
-                        value: "X".to_string(),
-                        replacement: "".to_string(),
+                        value: String::from("X"),
+                        replacement: String::from(""),
                     })),
                 ],
             }),
         ];
         assert_eq!(
             Pattern::new(items).eval(&make_context()),
-            Ok("prefix_fil_abc_1_2.ET".to_string())
+            Ok(String::from("prefix_fil_abc_1_2.ET"))
         );
     }
 
