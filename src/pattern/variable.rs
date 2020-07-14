@@ -64,42 +64,45 @@ impl Variable {
 
     pub fn eval(&self, context: &EvalContext) -> Result<String, EvalErrorKind> {
         match self {
-            Variable::Filename => Ok(context
+            Variable::Filename => context
                 .path
                 .file_name()
-                .map_or_else(String::new, os_str_to_string)),
+                .map_or_else(ok_new_string, os_str_to_string),
 
-            Variable::Basename => Ok(context
+            Variable::Basename => context
                 .path
                 .file_stem()
-                .map_or_else(String::new, os_str_to_string)),
+                .map_or_else(ok_new_string, os_str_to_string),
 
-            Variable::Extension => Ok(context
+            Variable::Extension => context
                 .path
                 .extension()
-                .map_or_else(String::new, os_str_to_string)),
+                .map_or_else(ok_new_string, os_str_to_string),
 
             Variable::ExtensionWithDot => {
-                Ok(context.path.extension().map_or_else(String::new, |s| {
-                    let mut string = os_str_to_string(s);
-                    string.insert(0, '.');
-                    string
-                }))
+                context
+                    .path
+                    .extension()
+                    .map_or_else(ok_new_string, |os_str| {
+                        let mut string = os_str_to_string(os_str)?;
+                        string.insert(0, '.');
+                        Ok(string)
+                    })
             }
 
-            Variable::FullDirname => Ok(context
+            Variable::FullDirname => context
                 .path
                 .parent()
                 .map(Path::as_os_str)
-                .map_or_else(String::new, os_str_to_string)),
+                .map_or_else(ok_new_string, os_str_to_string),
 
-            Variable::ParentDirname => Ok(context
+            Variable::ParentDirname => context
                 .path
                 .parent()
                 .and_then(Path::file_name)
-                .map_or_else(String::new, os_str_to_string)),
+                .map_or_else(ok_new_string, os_str_to_string),
 
-            Variable::FullPath => Ok(os_str_to_string(context.path.as_os_str())),
+            Variable::FullPath => os_str_to_string(context.path.as_os_str()),
             Variable::LocalCounter => Ok(context.local_counter.to_string()),
             Variable::GlobalCounter => Ok(context.global_counter.to_string()),
 
@@ -107,7 +110,7 @@ impl Variable {
                 .regex_captures
                 .as_ref()
                 .and_then(|captures| captures.get(*index))
-                .map(|r#match| r#match.as_str())
+                .map(|capture| capture.as_str())
                 .map_or_else(String::new, String::from)),
 
             Variable::Uuid => {
@@ -119,9 +122,16 @@ impl Variable {
     }
 }
 
-fn os_str_to_string(str: &OsStr) -> String {
-    // TODO return error instead of lossy conversion
-    str.to_string_lossy().to_string()
+fn ok_new_string() -> Result<String, EvalErrorKind> {
+    Ok(String::new())
+}
+
+// TODO add test
+fn os_str_to_string(os_str: &OsStr) -> Result<String, EvalErrorKind> {
+    match os_str.to_str() {
+        Some(str) => Ok(str.to_string()),
+        None => Err(EvalErrorKind::NotUtf8),
+    }
 }
 
 #[cfg(test)]

@@ -1,5 +1,6 @@
 use crate::pattern::parse::Parsed;
 use crate::pattern::parser::PatternItem;
+use std::fmt;
 use std::path::Path;
 
 pub struct EvalContext<'a> {
@@ -19,5 +20,14 @@ pub struct EvalError<'a> {
 
 #[derive(Debug, PartialEq)]
 pub enum EvalErrorKind {
-    // TODO UTF conversion error
+    NotUtf8,
+}
+
+impl fmt::Display for EvalErrorKind {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        use EvalErrorKind::*;
+        match self {
+            NotUtf8 => write!(formatter, "Value does not have UTF-8 encoding"),
+        }
+    }
 }
