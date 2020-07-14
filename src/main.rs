@@ -1,7 +1,6 @@
 use crate::cli::Cli;
 use crate::input::Input;
-use crate::pattern::{Lexer, Parser, Pattern};
-use crate::state::{RegexTarget, State};
+use crate::pattern::{EvalContext, Lexer, Parser, Pattern};
 use std::io::{self, Write};
 use std::process;
 use structopt::StructOpt;
@@ -10,7 +9,6 @@ use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 mod cli;
 mod input;
 mod pattern;
-mod state;
 
 fn main() -> Result<(), io::Error> {
     // Explicit variable type, because IDE is unable to detect it.
@@ -38,8 +36,7 @@ fn main() -> Result<(), io::Error> {
         lexer.set_escape(escape);
     }
 
-    let mut parser = Parser::new(lexer);
-    let pattern = match parser.parse_items() {
+    let pattern = match Parser::new(lexer).parse_items() {
         Ok(items) => Pattern::new(items),
         Err(error) => {
             writeln!(&mut stderr, "error: {}", error.kind)?;
@@ -63,20 +60,6 @@ fn main() -> Result<(), io::Error> {
         }
     };
 
-    let mut state = State::new();
-    state.set_local_counter_enabled(pattern.uses_local_counter());
-    state.set_global_counter_enabled(pattern.uses_global_counter());
-
-    if pattern.uses_regex_captures() {
-        if let Some(regex) = cli.regex {
-            state.set_regex(Some(regex));
-            state.set_regex_target(RegexTarget::Filename);
-        } else if let Some(regex) = cli.regex_full {
-            state.set_regex(Some(regex));
-            state.set_regex_target(RegexTarget::Path);
-        }
-    }
-
     let mut input = if cli.paths.is_empty() {
         let delimiter = if cli.read_nul { 0 } else { b'\n' };
         Input::from_stdin(&mut stdin, delimiter)
@@ -92,10 +75,45 @@ fn main() -> Result<(), io::Error> {
         Some('\n')
     };
 
+    let local_counter_used = pattern.uses_local_counter();
+    let global_counter_used = pattern.uses_global_counter();
+    let regex_captures_used = pattern.uses_regex_captures();
+
+    let mut local_counter = 0u32;
+    let mut global_counter = 0u32;
+
     while let Some(src_path) = input.next()? {
-        // TODO handle error
-        let eval_context = state.get_eval_context(src_path);
-        let dst_path = pattern.eval(&eval_context).unwrap();
+        if local_counter_used {
+            local_counter += 1;
+        }
+
+        if global_counter_used {
+            global_counter += 1;
+        }
+
+        let regex_captures = if regex_captures_used {
+            if let Some(regex) = &cli.regex {
+                src_path
+                    .file_name()
+                    .map(|file_name| regex.captures(file_name.to_str().unwrap())) // TODO handle utf error
+                    .flatten()
+            } else if let Some(regex) = &cli.regex_full {
+                regex.captures(src_path.to_str().unwrap()) // TODO handle utf error
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
+        let eval_context = EvalContext {
+            path: src_path,
+            local_counter,
+            global_counter,
+            regex_captures,
+        };
+
+        let dst_path = pattern.eval(&eval_context).unwrap(); // TODO handle error
 
         if let Some(delimiter_value) = delimiter {
             write!(&mut stdout, "{}{}", dst_path, delimiter_value)?;
