@@ -42,6 +42,22 @@ pub struct Cli {
     #[structopt(short = "E", long, value_name = "regex")]
     pub regex_full: Option<Regex>,
 
+    /// Global counter initial value
+    #[structopt(long, value_name = "number")]
+    pub gc_init: Option<u32>,
+
+    /// Global counter step
+    #[structopt(long, value_name = "number")]
+    pub gc_step: Option<u32>,
+
+    /// Local counter initial value
+    #[structopt(long, value_name = "number")]
+    pub lc_init: Option<u32>,
+
+    /// Local counter step
+    #[structopt(long, value_name = "number")]
+    pub lc_step: Option<u32>,
+
     /// Custom escape character to use in pattern
     #[structopt(long, value_name = "char")]
     pub escape: Option<char>,

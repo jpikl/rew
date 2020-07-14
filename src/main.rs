@@ -80,24 +80,24 @@ fn main() -> Result<(), io::Error> {
     let local_counter_used = pattern.uses_local_counter();
     let regex_captures_used = pattern.uses_regex_captures();
 
-    let mut global_counter = 0; // TODO init value from cli option
-    let mut directory_local_counters = HashMap::new();
+    let mut global_counter = cli.gc_init.unwrap_or(1);
+    let global_counter_step = cli.gc_step.unwrap_or(1);
+
+    let mut local_counters = HashMap::new();
+    let local_counter_start = cli.lc_init.unwrap_or(1);
+    let local_counter_step = cli.lc_step.unwrap_or(1);
 
     while let Some(src_path) = input.next()? {
-        if global_counter_used {
-            global_counter += 1; // TODO increment from cli option
-        }
-
         let local_counter = if local_counter_used {
             if let Some(directory) = src_path.parent() {
                 let directory_buf = directory.to_path_buf();
-                if let Some(counter) = directory_local_counters.get_mut(&directory_buf) {
-                    *counter += 1; // TODO increment from cli option
-                    *counter
+                if let Some(local_counter) = local_counters.get_mut(&directory_buf) {
+                    *local_counter += local_counter_step; // TODO increment from cli option
+                    *local_counter
                 } else {
                     // TODO init value from cli option
-                    directory_local_counters.insert(directory_buf, 1);
-                    1
+                    local_counters.insert(directory_buf, local_counter_start);
+                    local_counter_start
                 }
             } else {
                 0
@@ -134,6 +134,10 @@ fn main() -> Result<(), io::Error> {
             write!(&mut stdout, "{}{}", dst_path, delimiter_value)?;
         } else {
             write!(&mut stdout, "{}", dst_path)?;
+        }
+
+        if global_counter_used {
+            global_counter += global_counter_step;
         }
     }
 
