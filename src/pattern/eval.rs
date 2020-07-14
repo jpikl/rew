@@ -4,8 +4,8 @@ use std::path::Path;
 
 pub struct EvalContext<'a> {
     pub path: &'a Path,
-    pub local_counter: u32,
     pub global_counter: u32,
+    pub local_counter: u32,
     pub regex_captures: Option<regex::Captures<'a>>,
 }
 

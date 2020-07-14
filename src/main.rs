@@ -1,6 +1,7 @@
 use crate::cli::Cli;
 use crate::input::Input;
 use crate::pattern::{EvalContext, Lexer, Parser, Pattern};
+use std::collections::HashMap;
 use std::io::{self, Write};
 use std::process;
 use structopt::StructOpt;
@@ -75,21 +76,35 @@ fn main() -> Result<(), io::Error> {
         Some('\n')
     };
 
-    let local_counter_used = pattern.uses_local_counter();
     let global_counter_used = pattern.uses_global_counter();
+    let local_counter_used = pattern.uses_local_counter();
     let regex_captures_used = pattern.uses_regex_captures();
 
-    let mut local_counter = 0u32;
-    let mut global_counter = 0u32;
+    let mut global_counter = 0; // TODO init value from cli option
+    let mut directory_local_counters = HashMap::new();
 
     while let Some(src_path) = input.next()? {
-        if local_counter_used {
-            local_counter += 1;
+        if global_counter_used {
+            global_counter += 1; // TODO increment from cli option
         }
 
-        if global_counter_used {
-            global_counter += 1;
-        }
+        let local_counter = if local_counter_used {
+            if let Some(directory) = src_path.parent() {
+                let directory_buf = directory.to_path_buf();
+                if let Some(counter) = directory_local_counters.get_mut(&directory_buf) {
+                    *counter += 1; // TODO increment from cli option
+                    *counter
+                } else {
+                    // TODO init value from cli option
+                    directory_local_counters.insert(directory_buf, 1);
+                    1
+                }
+            } else {
+                0
+            }
+        } else {
+            0
+        };
 
         let regex_captures = if regex_captures_used {
             if let Some(regex) = &cli.regex {
@@ -108,8 +123,8 @@ fn main() -> Result<(), io::Error> {
 
         let eval_context = EvalContext {
             path: src_path,
-            local_counter,
             global_counter,
+            local_counter,
             regex_captures,
         };
 
