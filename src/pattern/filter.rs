@@ -31,6 +31,8 @@ impl Filter {
                 'N' => Ok(Filter::SubstringReverse(Range::parse(reader)?)),
                 'r' => Ok(Filter::ReplaceFirst(Substitution::parse(reader)?)),
                 'R' => Ok(Filter::ReplaceAll(Substitution::parse(reader)?)),
+                // TODO 's' RegexReplaceFirst
+                // TODO 'S' RegexReplaceAll
                 't' => Ok(Filter::Trim),
                 'l' => Ok(Filter::Lowercase),
                 'u' => Ok(Filter::Uppercase),
@@ -39,6 +41,7 @@ impl Filter {
                 '<' => Ok(Filter::LeftPad(Char::join(reader.read_to_end()))),
                 '>' => Ok(Filter::RightPad(Char::join(reader.read_to_end()))),
                 'd' => Ok(Filter::Default(Char::join(reader.read_to_end()))),
+                // TODO 'e' ExternalCommand
                 _ => Err(ParseError {
                     kind: ParseErrorKind::UnknownFilter(char.clone()),
                     range: position..reader.position(),
