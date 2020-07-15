@@ -7,7 +7,6 @@ use std::fmt;
 
 #[derive(Debug, PartialEq)]
 pub enum Range {
-    Full,
     From(usize),
     FromTo(usize, usize),
     To(usize),
@@ -16,7 +15,6 @@ pub enum Range {
 impl Range {
     pub fn start(&self) -> Option<usize> {
         match self {
-            Range::Full => None,
             Range::From(start) => Some(*start),
             Range::FromTo(start, _) => Some(*start),
             Range::To(_) => None,
@@ -25,7 +23,6 @@ impl Range {
 
     pub fn length(&self) -> Option<usize> {
         match self {
-            Range::Full => None,
             Range::From(_) => None,
             Range::FromTo(start, end) => {
                 if start > end {
@@ -71,7 +68,10 @@ impl Range {
                     let end = parse_index(reader)?;
                     Ok(Range::To(end + 1)) // Inclusive end -> exclusive end
                 } else {
-                    Ok(Range::Full)
+                    Err(ParseError {
+                        kind: ParseErrorKind::RangeUnbounded,
+                        range: (reader.position() - 1)..reader.position(),
+                    })
                 }
             }
 
@@ -105,7 +105,6 @@ fn parse_index(reader: &mut Reader<Char>) -> ParseResult<usize> {
 impl fmt::Display for Range {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Range::Full => write!(formatter, "from start to end"),
             Range::From(start) => write!(formatter, "from {} to end", start),
             Range::FromTo(start, end) => write!(formatter, "from {} to {}", start, end),
             Range::To(end) => write!(formatter, "from start to {}", end),
@@ -119,7 +118,6 @@ mod tests {
 
     #[test]
     fn start() {
-        assert_eq!(Range::Full.start(), None);
         assert_eq!(Range::From(0).start(), Some(0));
         assert_eq!(Range::From(1).start(), Some(1));
         assert_eq!(Range::FromTo(0, 0).start(), Some(0));
@@ -131,7 +129,6 @@ mod tests {
 
     #[test]
     fn length() {
-        assert_eq!(Range::Full.start(), None);
         assert_eq!(Range::From(0).length(), None);
         assert_eq!(Range::FromTo(0, 0).length(), Some(0));
         assert_eq!(Range::FromTo(0, 1).length(), Some(1));
@@ -160,6 +157,19 @@ mod tests {
     }
 
     #[test]
+    fn parse_unbounded_erro() {
+        let mut reader = Reader::from("-");
+        assert_eq!(
+            Range::parse(&mut reader),
+            Err(ParseError {
+                kind: ParseErrorKind::RangeUnbounded,
+                range: 0..1,
+            })
+        );
+        assert_eq!(reader.position(), 1);
+    }
+
+    #[test]
     fn parse_invalid_error() {
         let mut reader = Reader::from("a");
         assert_eq!(
@@ -170,13 +180,6 @@ mod tests {
             })
         );
         assert_eq!(reader.position(), 0);
-    }
-
-    #[test]
-    fn parse_full() {
-        let mut reader = Reader::from("-");
-        assert_eq!(Range::parse(&mut reader), Ok(Range::Full));
-        assert_eq!(reader.position(), 1);
     }
 
     #[test]

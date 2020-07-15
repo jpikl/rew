@@ -29,6 +29,7 @@ pub enum ParseErrorKind {
     PipeOutsideExpr,
     RangeIndexZero,
     RangeInvalid(String),
+    RangeUnbounded,
     RangeStartOverEnd(usize, usize),
     RegexCaptureZero,
     SubstituteWithoutValue(Char),
@@ -60,6 +61,7 @@ impl fmt::Display for ParseErrorKind {
             PipeOutsideExpr => write!(formatter, "Unescaped '{}' outside expression", PIPE),
             RangeIndexZero => write!(formatter, "Range indices start from 1, not 0"),
             RangeInvalid(value) => write!(formatter, "Invalid range '{}'", value),
+            RangeUnbounded => write!(formatter, "Unbounded range"),
             RangeStartOverEnd(start, end) => write!(
                 formatter,
                 "Range start ({}) is bigger than end ({})",

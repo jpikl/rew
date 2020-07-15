@@ -180,7 +180,6 @@ mod tests {
         assert_eq!(parse("n2-10"), Ok(Filter::Substring(Range::FromTo(1, 10))));
         assert_eq!(parse("n2-"), Ok(Filter::Substring(Range::From(1))));
         assert_eq!(parse("n-10"), Ok(Filter::Substring(Range::To(10))));
-        assert_eq!(parse("n-"), Ok(Filter::Substring(Range::Full)));
     }
 
     #[test]
@@ -202,7 +201,6 @@ mod tests {
         );
         assert_eq!(parse("N2-"), Ok(Filter::SubstringReverse(Range::From(1))));
         assert_eq!(parse("N-10"), Ok(Filter::SubstringReverse(Range::To(10))));
-        assert_eq!(parse("N-"), Ok(Filter::SubstringReverse(Range::Full)));
     }
 
     #[test]
@@ -344,13 +342,6 @@ mod tests {
     }
 
     #[test]
-    fn apply_substring_full() {
-        let mut string = String::from("ábčd");
-        string = Filter::Substring(Range::Full).apply(string);
-        assert_eq!(string, "ábčd");
-    }
-
-    #[test]
     fn apply_substring_from_first() {
         let mut string = String::from("ábčd");
         string = Filter::Substring(Range::From(0)).apply(string);
@@ -439,13 +430,6 @@ mod tests {
         let mut string = String::from("ábčd");
         string = Filter::Substring(Range::FromTo(4, 5)).apply(string);
         assert_eq!(string, "");
-    }
-
-    #[test]
-    fn apply_substring_reverse_full() {
-        let mut string = String::from("ábčd");
-        string = Filter::SubstringReverse(Range::Full).apply(string);
-        assert_eq!(string, "ábčd");
     }
 
     #[test]
