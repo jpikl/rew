@@ -1,21 +1,26 @@
 use crate::cli::Cli;
 use crate::input::Input;
+use crate::output::Output;
 use crate::pattern::{eval, Lexer, Parser, Pattern};
 use std::collections::HashMap;
-use std::io::{self, Write};
+use std::io;
 use std::process;
 use structopt::StructOpt;
-use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
+use termcolor::ColorChoice;
 
 mod cli;
 mod input;
+mod output;
 mod pattern;
+
+const EXIT_PARSE_ERROR: i32 = 2;
+const EXIT_EVAL_ERROR: i32 = 3;
 
 fn main() -> Result<(), io::Error> {
     // Explicit variable type, because IDE is unable to detect it.
     let cli: Cli = Cli::from_args();
 
-    let color_choice = match cli.color {
+    let output_colors = match cli.color {
         Some(ColorChoice::Auto) | None => {
             if atty::is(atty::Stream::Stdout) {
                 ColorChoice::Auto
@@ -26,9 +31,15 @@ fn main() -> Result<(), io::Error> {
         Some(other) => other,
     };
 
-    let mut stdin = io::stdin();
-    let mut stdout = StandardStream::stdout(color_choice);
-    let mut stderr = StandardStream::stderr(color_choice);
+    let output_delimiter = if cli.print_raw {
+        None
+    } else if cli.print_nul {
+        Some('\0')
+    } else {
+        Some('\n')
+    };
+
+    let mut output = Output::new(output_colors, output_delimiter);
 
     let raw_pattern = cli.pattern.as_str();
     let mut lexer = Lexer::from(raw_pattern);
@@ -40,40 +51,16 @@ fn main() -> Result<(), io::Error> {
     let pattern = match Parser::new(lexer).parse_items() {
         Ok(items) => Pattern::new(items),
         Err(error) => {
-            writeln!(&mut stderr, "error: {}", error.kind)?;
-
-            if !raw_pattern.is_empty() {
-                writeln!(&mut stderr)?;
-                Pattern::render(&mut stderr, raw_pattern)?;
-
-                let spaces_count = raw_pattern[..error.range.start].chars().count();
-                let markers_count = raw_pattern[error.range].chars().count().max(1);
-
-                write!(&mut stderr, "\n{}", " ".repeat(spaces_count))?;
-                stderr.set_color(ColorSpec::new().set_fg(Some(Color::Red)).set_bold(true))?;
-                write!(&mut stderr, "{}", "^".repeat(markers_count))?;
-
-                stderr.reset()?;
-                writeln!(&mut stderr)?;
-            }
-
-            process::exit(2);
+            output.write_parse_error(raw_pattern, &error)?;
+            process::exit(EXIT_PARSE_ERROR);
         }
     };
 
     let mut input = if cli.paths.is_empty() {
-        let delimiter = if cli.read_nul { 0 } else { b'\n' };
-        Input::from_stdin(&mut stdin, delimiter)
+        let input_delimiter = if cli.read_nul { 0 } else { b'\n' };
+        Input::from_stdin(input_delimiter)
     } else {
         Input::from_args(cli.paths.as_slice())
-    };
-
-    let delimiter = if cli.print_raw {
-        None
-    } else if cli.print_nul {
-        Some('\0')
-    } else {
-        Some('\n')
     };
 
     let global_counter_used = pattern.uses_global_counter();
@@ -127,13 +114,15 @@ fn main() -> Result<(), io::Error> {
             regex_captures,
         };
 
-        let dst_path = pattern.eval(&context).unwrap(); // TODO handle error
+        let dst_path = match pattern.eval(&context) {
+            Ok(path) => path,
+            Err(error) => {
+                output.write_eval_error(raw_pattern, &error)?;
+                process::exit(EXIT_EVAL_ERROR);
+            }
+        };
 
-        if let Some(delimiter_value) = delimiter {
-            write!(&mut stdout, "{}{}", dst_path, delimiter_value)?;
-        } else {
-            write!(&mut stdout, "{}", dst_path)?;
-        }
+        output.write_path(&dst_path)?;
 
         if global_counter_used {
             global_counter += global_counter_step;

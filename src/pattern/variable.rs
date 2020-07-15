@@ -131,7 +131,7 @@ fn ok_new_string() -> Result<String, eval::ErrorKind> {
 fn os_str_to_string(os_str: &OsStr) -> Result<String, eval::ErrorKind> {
     match os_str.to_str() {
         Some(str) => Ok(str.to_string()),
-        None => Err(eval::ErrorKind::ValueNotUtf8),
+        None => Err(eval::ErrorKind::InputNotUtf8),
     }
 }
 

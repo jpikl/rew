@@ -42,6 +42,12 @@ pub enum ErrorKind {
     UnterminatedEscapeSequence(char),
 }
 
+impl fmt::Display for Error {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        write!(formatter, "Invalid pattern: {}", self.kind)
+    }
+}
+
 impl fmt::Display for ErrorKind {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match self {

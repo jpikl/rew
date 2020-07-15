@@ -143,9 +143,7 @@ impl fmt::Display for Filter {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Filter::Substring(range) => write!(formatter, "Substring {}", range),
-            Filter::SubstringReverse(range) => {
-                write!(formatter, "Substring (reverse indexing) {}", range)
-            }
+            Filter::SubstringReverse(range) => write!(formatter, "Substring (reverse) {}", range),
             Filter::ReplaceFirst(substitution) => {
                 write!(formatter, "Replace first {}", substitution)
             }

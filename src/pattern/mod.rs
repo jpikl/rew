@@ -1,5 +1,5 @@
 use crate::pattern::eval::{Context, Error, ErrorCause, Result};
-pub use crate::pattern::lexer::Lexer;
+pub use crate::pattern::lexer::{Lexer, Token};
 use crate::pattern::parse::Output;
 use crate::pattern::parser::Item;
 pub use crate::pattern::parser::Parser;
@@ -14,7 +14,6 @@ pub mod parse;
 mod parser;
 mod range;
 mod reader;
-mod render;
 mod substitution;
 mod symbols;
 mod variable;
