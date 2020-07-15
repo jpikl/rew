@@ -3,6 +3,7 @@ use crate::pattern::parse::{ParseError, ParseErrorKind, ParseResult};
 use crate::pattern::range::Range;
 use crate::pattern::reader::Reader;
 use crate::pattern::substitution::Substitution;
+use std::fmt;
 use unidecode::unidecode;
 
 #[derive(Debug, PartialEq)]
@@ -12,8 +13,8 @@ pub enum Filter {
     ReplaceFirst(Substitution),
     ReplaceAll(Substitution),
     Trim,
-    Lowercase,
-    Uppercase,
+    ToLowercase,
+    ToUppercase,
     ToAscii,
     RemoveNonAscii,
     LeftPad(String),
@@ -34,8 +35,8 @@ impl Filter {
                 // TODO 's' RegexReplaceFirst
                 // TODO 'S' RegexReplaceAll
                 't' => Ok(Filter::Trim),
-                'l' => Ok(Filter::Lowercase),
-                'u' => Ok(Filter::Uppercase),
+                'l' => Ok(Filter::ToLowercase),
+                'u' => Ok(Filter::ToUppercase),
                 'a' => Ok(Filter::ToAscii),
                 'A' => Ok(Filter::RemoveNonAscii),
                 '<' => Ok(Filter::LeftPad(Char::join(reader.read_to_end()))),
@@ -104,8 +105,8 @@ impl Filter {
             }
 
             Filter::Trim => string.trim().to_string(),
-            Filter::Lowercase => string.to_lowercase(),
-            Filter::Uppercase => string.to_uppercase(),
+            Filter::ToLowercase => string.to_lowercase(),
+            Filter::ToUppercase => string.to_uppercase(),
             Filter::ToAscii => unidecode(&string),
 
             Filter::RemoveNonAscii => {
@@ -133,6 +134,29 @@ impl Filter {
                 }
                 string
             }
+        }
+    }
+}
+
+impl fmt::Display for Filter {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Filter::Substring(range) => write!(formatter, "Substring {}", range),
+            Filter::SubstringReverse(range) => {
+                write!(formatter, "Substring (reverse indexing) {}", range)
+            }
+            Filter::ReplaceFirst(substitution) => {
+                write!(formatter, "Replace first {}", substitution)
+            }
+            Filter::ReplaceAll(substitution) => write!(formatter, "Replace all {}", substitution),
+            Filter::Default(replacement) => write!(formatter, "Replace empty by '{}'", replacement),
+            Filter::Trim => write!(formatter, "Trim"),
+            Filter::ToLowercase => write!(formatter, "To lowercase"),
+            Filter::ToUppercase => write!(formatter, "To uppercase"),
+            Filter::ToAscii => write!(formatter, "To ASCII"),
+            Filter::RemoveNonAscii => write!(formatter, "Remove non-ASCII"),
+            Filter::LeftPad(padding) => write!(formatter, "Left pad with '{}'", padding),
+            Filter::RightPad(padding) => write!(formatter, "Right pad with '{}'", padding),
         }
     }
 }
@@ -237,13 +261,13 @@ mod tests {
     }
 
     #[test]
-    fn parse_lower_case() {
-        assert_eq!(parse("l"), Ok(Filter::Lowercase));
+    fn parse_to_lower_case() {
+        assert_eq!(parse("l"), Ok(Filter::ToLowercase));
     }
 
     #[test]
-    fn parse_upper_case() {
-        assert_eq!(parse("u"), Ok(Filter::Uppercase));
+    fn parse_to_upper_case() {
+        assert_eq!(parse("u"), Ok(Filter::ToUppercase));
     }
 
     #[test]
@@ -574,16 +598,16 @@ mod tests {
     }
 
     #[test]
-    fn apply_lowercase() {
+    fn apply_to_lowercase() {
         let mut string = String::from("ábčdÁBČD");
-        string = Filter::Lowercase.apply(string);
+        string = Filter::ToLowercase.apply(string);
         assert_eq!(string, "ábčdábčd");
     }
 
     #[test]
-    fn apply_uppercase() {
+    fn apply_to_uppercase() {
         let mut string = String::from("ábčdÁBČD");
-        string = Filter::Uppercase.apply(string);
+        string = Filter::ToUppercase.apply(string);
         assert_eq!(string, "ÁBČDÁBČD");
     }
 

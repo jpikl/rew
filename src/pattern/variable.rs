@@ -4,6 +4,7 @@ use crate::pattern::number::parse_usize;
 use crate::pattern::parse::{ParseError, ParseErrorKind, ParseResult};
 use crate::pattern::reader::Reader;
 use std::ffi::OsStr;
+use std::fmt;
 use std::path::Path;
 use uuid::Uuid;
 
@@ -131,6 +132,24 @@ fn os_str_to_string(os_str: &OsStr) -> Result<String, EvalErrorKind> {
     match os_str.to_str() {
         Some(str) => Ok(str.to_string()),
         None => Err(EvalErrorKind::NotUtf8),
+    }
+}
+
+impl fmt::Display for Variable {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Variable::Filename => write!(formatter, "Filename"),
+            Variable::Basename => write!(formatter, "Basename"),
+            Variable::Extension => write!(formatter, "Extension"),
+            Variable::ExtensionWithDot => write!(formatter, "Extension with dot"),
+            Variable::FullDirname => write!(formatter, "Full dirname"),
+            Variable::ParentDirname => write!(formatter, "Parent dirname"),
+            Variable::FullPath => write!(formatter, "Full path"),
+            Variable::LocalCounter => write!(formatter, "Local counter"),
+            Variable::GlobalCounter => write!(formatter, "Global counter"),
+            Variable::RegexCapture(index) => write!(formatter, "Regex capture ({})", index),
+            Variable::Uuid => write!(formatter, "UUID"),
+        }
     }
 }
 

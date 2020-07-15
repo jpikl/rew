@@ -1,6 +1,7 @@
 use crate::pattern::char::{AsChar, Char};
 use crate::pattern::parse::{ParseError, ParseErrorKind, ParseResult};
 use crate::pattern::reader::Reader;
+use std::fmt;
 
 #[derive(Debug, PartialEq)]
 pub struct Substitution {
@@ -39,6 +40,12 @@ impl Substitution {
                 range: reader.position()..reader.end(),
             })
         }
+    }
+}
+
+impl fmt::Display for Substitution {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        write!(formatter, "'{}' by '{}'", self.value, self.replacement)
     }
 }
 

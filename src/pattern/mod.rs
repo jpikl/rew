@@ -152,7 +152,7 @@ mod tests {
     fn expression_single_filter() {
         let items = vec![parsed(PatternItem::Expression {
             variable: parsed(Variable::Filename),
-            filters: vec![parsed(Filter::Uppercase)],
+            filters: vec![parsed(Filter::ToUppercase)],
         })];
         assert_eq!(
             Pattern::new(items).eval(&make_context()),
@@ -165,7 +165,7 @@ mod tests {
         let items = vec![parsed(PatternItem::Expression {
             variable: parsed(Variable::Filename),
             filters: vec![
-                parsed(Filter::Uppercase),
+                parsed(Filter::ToUppercase),
                 parsed(Filter::Substring(Range::To(4))),
             ],
         })];
@@ -202,7 +202,7 @@ mod tests {
             parsed(PatternItem::Expression {
                 variable: parsed(Variable::Extension),
                 filters: vec![
-                    parsed(Filter::Uppercase),
+                    parsed(Filter::ToUppercase),
                     parsed(Filter::ReplaceAll(Substitution {
                         value: String::from("X"),
                         replacement: String::from(""),

@@ -383,7 +383,7 @@ mod tests {
                         range: 1..2,
                     },
                     filters: vec![Parsed {
-                        value: Filter::Lowercase,
+                        value: Filter::ToLowercase,
                         range: 3..4,
                     }],
                 },
@@ -463,7 +463,7 @@ mod tests {
                         },
                         filters: vec![
                             Parsed {
-                                value: Filter::Lowercase,
+                                value: Filter::ToLowercase,
                                 range: 18..19,
                             },
                             Parsed {
