@@ -92,10 +92,9 @@ fn main() -> Result<(), io::Error> {
             if let Some(directory) = src_path.parent() {
                 let directory_buf = directory.to_path_buf();
                 if let Some(local_counter) = local_counters.get_mut(&directory_buf) {
-                    *local_counter += local_counter_step; // TODO increment from cli option
+                    *local_counter += local_counter_step;
                     *local_counter
                 } else {
-                    // TODO init value from cli option
                     local_counters.insert(directory_buf, local_counter_start);
                     local_counter_start
                 }
