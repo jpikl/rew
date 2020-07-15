@@ -41,7 +41,7 @@ impl Filter {
                 'A' => Ok(Filter::RemoveNonAscii),
                 '<' => Ok(Filter::LeftPad(Char::join(reader.read_to_end()))),
                 '>' => Ok(Filter::RightPad(Char::join(reader.read_to_end()))),
-                'd' => Ok(Filter::Default(Char::join(reader.read_to_end()))),
+                '?' => Ok(Filter::Default(Char::join(reader.read_to_end()))),
                 // TODO 'e' ExternalCommand
                 _ => Err(ParseError {
                     kind: ParseErrorKind::UnknownFilter(char.clone()),
@@ -149,7 +149,6 @@ impl fmt::Display for Filter {
                 write!(formatter, "Replace first {}", substitution)
             }
             Filter::ReplaceAll(substitution) => write!(formatter, "Replace all {}", substitution),
-            Filter::Default(replacement) => write!(formatter, "Replace empty by '{}'", replacement),
             Filter::Trim => write!(formatter, "Trim"),
             Filter::ToLowercase => write!(formatter, "To lowercase"),
             Filter::ToUppercase => write!(formatter, "To uppercase"),
@@ -157,6 +156,7 @@ impl fmt::Display for Filter {
             Filter::RemoveNonAscii => write!(formatter, "Remove non-ASCII"),
             Filter::LeftPad(padding) => write!(formatter, "Left pad with '{}'", padding),
             Filter::RightPad(padding) => write!(formatter, "Right pad with '{}'", padding),
+            Filter::Default(default) => write!(formatter, "Use '{}' as default", default),
         }
     }
 }
@@ -302,12 +302,12 @@ mod tests {
 
     #[test]
     fn parse_default() {
-        assert_eq!(parse("dabc"), Ok(Filter::Default(String::from("abc"))));
+        assert_eq!(parse("?abc"), Ok(Filter::Default(String::from("abc"))));
     }
 
     #[test]
     fn parse_default_empty() {
-        assert_eq!(parse("d"), Ok(Filter::Default(String::new())));
+        assert_eq!(parse("?"), Ok(Filter::Default(String::new())));
     }
 
     #[test]
