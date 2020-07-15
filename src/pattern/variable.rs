@@ -1,7 +1,7 @@
 use crate::pattern::char::{AsChar, Char};
-use crate::pattern::eval::{EvalContext, EvalErrorKind};
+use crate::pattern::eval;
 use crate::pattern::number::parse_usize;
-use crate::pattern::parse::{ParseError, ParseErrorKind, ParseResult};
+use crate::pattern::parse;
 use crate::pattern::reader::Reader;
 use std::ffi::OsStr;
 use std::fmt;
@@ -24,7 +24,7 @@ pub enum Variable {
 }
 
 impl Variable {
-    pub fn parse(reader: &mut Reader<Char>) -> ParseResult<Self> {
+    pub fn parse(reader: &mut Reader<Char>) -> parse::Result<Self> {
         let position = reader.position();
 
         if let Some('0'..='9') = reader.peek_char() {
@@ -32,8 +32,8 @@ impl Variable {
             if number > 0 {
                 Ok(Variable::RegexCapture(number))
             } else {
-                Err(ParseError {
-                    kind: ParseErrorKind::RegexCaptureZero,
+                Err(parse::Error {
+                    kind: parse::ErrorKind::RegexCaptureZero,
                     range: position..reader.position(),
                 })
             }
@@ -50,20 +50,20 @@ impl Variable {
                 'C' => Ok(Variable::GlobalCounter),
                 'u' => Ok(Variable::Uuid),
                 // TODO 'e' ExternalCommand
-                _ => Err(ParseError {
-                    kind: ParseErrorKind::UnknownVariable(char.clone()),
+                _ => Err(parse::Error {
+                    kind: parse::ErrorKind::UnknownVariable(char.clone()),
                     range: position..reader.position(),
                 }),
             }
         } else {
-            Err(ParseError {
-                kind: ParseErrorKind::ExpectedVariable,
+            Err(parse::Error {
+                kind: parse::ErrorKind::ExpectedVariable,
                 range: position..reader.end(),
             })
         }
     }
 
-    pub fn eval(&self, context: &EvalContext) -> Result<String, EvalErrorKind> {
+    pub fn eval(&self, context: &eval::Context) -> Result<String, eval::ErrorKind> {
         match self {
             Variable::Filename => context
                 .path
@@ -123,15 +123,15 @@ impl Variable {
     }
 }
 
-fn ok_new_string() -> Result<String, EvalErrorKind> {
+fn ok_new_string() -> Result<String, eval::ErrorKind> {
     Ok(String::new())
 }
 
 // TODO add test
-fn os_str_to_string(os_str: &OsStr) -> Result<String, EvalErrorKind> {
+fn os_str_to_string(os_str: &OsStr) -> Result<String, eval::ErrorKind> {
     match os_str.to_str() {
         Some(str) => Ok(str.to_string()),
-        None => Err(EvalErrorKind::NotUtf8),
+        None => Err(eval::ErrorKind::ValueNotUtf8),
     }
 }
 
@@ -242,8 +242,8 @@ mod tests {
     fn parse_empty_error() {
         assert_eq!(
             parse(""),
-            Err(ParseError {
-                kind: ParseErrorKind::ExpectedVariable,
+            Err(parse::Error {
+                kind: parse::ErrorKind::ExpectedVariable,
                 range: 0..0,
             }),
         )
@@ -253,14 +253,14 @@ mod tests {
     fn parse_unknown_variable_error() {
         assert_eq!(
             parse("-_"),
-            Err(ParseError {
-                kind: ParseErrorKind::UnknownVariable(Char::Raw('-')),
+            Err(parse::Error {
+                kind: parse::ErrorKind::UnknownVariable(Char::Raw('-')),
                 range: 0..1,
             }),
         );
     }
 
-    fn parse(string: &str) -> ParseResult<Variable> {
+    fn parse(string: &str) -> parse::Result<Variable> {
         Variable::parse(&mut Reader::from(string))
     }
 
@@ -392,8 +392,8 @@ mod tests {
         assert!(uuid_regex.is_match(&uuid), format!("{} is UUID v4", uuid));
     }
 
-    fn make_context<'a>() -> EvalContext<'a> {
-        EvalContext {
+    fn make_context<'a>() -> eval::Context<'a> {
+        eval::Context {
             path: Path::new("root/parent/file.ext"),
             local_counter: 1,
             global_counter: 2,

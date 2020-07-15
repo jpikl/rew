@@ -1,6 +1,6 @@
 use crate::pattern::char::Char;
 use crate::pattern::number::parse_usize;
-use crate::pattern::parse::{ParseError, ParseErrorKind, ParseResult};
+use crate::pattern::parse::{Error, ErrorKind, Result};
 use crate::pattern::reader::Reader;
 use crate::pattern::symbols::RANGE;
 use std::fmt;
@@ -34,7 +34,7 @@ impl Range {
         }
     }
 
-    pub fn parse(reader: &mut Reader<Char>) -> ParseResult<Self> {
+    pub fn parse(reader: &mut Reader<Char>) -> Result<Self> {
         match reader.peek_char() {
             Some('0'..='9') => {
                 let position = reader.position();
@@ -46,8 +46,8 @@ impl Range {
                     if let Some('0'..='9') = reader.peek_char() {
                         let end = parse_index(reader)?;
                         if start > end {
-                            Err(ParseError {
-                                kind: ParseErrorKind::RangeStartOverEnd(start + 1, end + 1),
+                            Err(Error {
+                                kind: ErrorKind::RangeStartOverEnd(start + 1, end + 1),
                                 range: position..reader.position(),
                             })
                         } else {
@@ -68,35 +68,35 @@ impl Range {
                     let end = parse_index(reader)?;
                     Ok(Range::To(end + 1)) // Inclusive end -> exclusive end
                 } else {
-                    Err(ParseError {
-                        kind: ParseErrorKind::RangeUnbounded,
+                    Err(Error {
+                        kind: ErrorKind::RangeUnbounded,
                         range: (reader.position() - 1)..reader.position(),
                     })
                 }
             }
 
-            Some(_) => Err(ParseError {
-                kind: ParseErrorKind::RangeInvalid(Char::join(reader.peek_to_end())),
+            Some(_) => Err(Error {
+                kind: ErrorKind::RangeInvalid(Char::join(reader.peek_to_end())),
                 range: reader.position()..reader.end(),
             }),
 
-            None => Err(ParseError {
-                kind: ParseErrorKind::ExpectedRange,
+            None => Err(Error {
+                kind: ErrorKind::ExpectedRange,
                 range: reader.position()..reader.end(),
             }),
         }
     }
 }
 
-fn parse_index(reader: &mut Reader<Char>) -> ParseResult<usize> {
+fn parse_index(reader: &mut Reader<Char>) -> Result<usize> {
     let position = reader.position();
     let index = parse_usize(reader)?;
 
     if index >= 1 {
         Ok(index - 1)
     } else {
-        Err(ParseError {
-            kind: ParseErrorKind::RangeIndexZero,
+        Err(Error {
+            kind: ErrorKind::RangeIndexZero,
             range: position..reader.position(),
         })
     }
@@ -148,8 +148,8 @@ mod tests {
         let mut reader = Reader::from("");
         assert_eq!(
             Range::parse(&mut reader),
-            Err(ParseError {
-                kind: ParseErrorKind::ExpectedRange,
+            Err(Error {
+                kind: ErrorKind::ExpectedRange,
                 range: 0..0,
             })
         );
@@ -161,8 +161,8 @@ mod tests {
         let mut reader = Reader::from("-");
         assert_eq!(
             Range::parse(&mut reader),
-            Err(ParseError {
-                kind: ParseErrorKind::RangeUnbounded,
+            Err(Error {
+                kind: ErrorKind::RangeUnbounded,
                 range: 0..1,
             })
         );
@@ -174,8 +174,8 @@ mod tests {
         let mut reader = Reader::from("a");
         assert_eq!(
             Range::parse(&mut reader),
-            Err(ParseError {
-                kind: ParseErrorKind::RangeInvalid(String::from("a")),
+            Err(Error {
+                kind: ErrorKind::RangeInvalid(String::from("a")),
                 range: 0..1,
             })
         );
@@ -187,8 +187,8 @@ mod tests {
         let mut reader = Reader::from("0-");
         assert_eq!(
             Range::parse(&mut reader),
-            Err(ParseError {
-                kind: ParseErrorKind::RangeIndexZero,
+            Err(Error {
+                kind: ErrorKind::RangeIndexZero,
                 range: 0..1,
             })
         );
@@ -207,8 +207,8 @@ mod tests {
         let mut reader = Reader::from("-0");
         assert_eq!(
             Range::parse(&mut reader),
-            Err(ParseError {
-                kind: ParseErrorKind::RangeIndexZero,
+            Err(Error {
+                kind: ErrorKind::RangeIndexZero,
                 range: 1..2,
             })
         );
@@ -227,8 +227,8 @@ mod tests {
         let mut reader = Reader::from("2-1");
         assert_eq!(
             Range::parse(&mut reader),
-            Err(ParseError {
-                kind: ParseErrorKind::RangeStartOverEnd(2, 1),
+            Err(Error {
+                kind: ErrorKind::RangeStartOverEnd(2, 1),
                 range: 0..3,
             })
         );

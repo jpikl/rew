@@ -1,5 +1,6 @@
 use crate::pattern::char::{AsChar, Char};
-use crate::pattern::parse::{ParseError, ParseErrorKind, ParseResult};
+use crate::pattern::eval;
+use crate::pattern::parse;
 use crate::pattern::range::Range;
 use crate::pattern::reader::Reader;
 use crate::pattern::substitution::Substitution;
@@ -23,7 +24,7 @@ pub enum Filter {
 }
 
 impl Filter {
-    pub fn parse(reader: &mut Reader<Char>) -> ParseResult<Self> {
+    pub fn parse(reader: &mut Reader<Char>) -> parse::Result<Self> {
         let position = reader.position();
 
         if let Some(char) = reader.read() {
@@ -43,20 +44,20 @@ impl Filter {
                 '>' => Ok(Filter::RightPad(Char::join(reader.read_to_end()))),
                 '?' => Ok(Filter::Default(Char::join(reader.read_to_end()))),
                 // TODO 'e' ExternalCommand
-                _ => Err(ParseError {
-                    kind: ParseErrorKind::UnknownFilter(char.clone()),
+                _ => Err(parse::Error {
+                    kind: parse::ErrorKind::UnknownFilter(char.clone()),
                     range: position..reader.position(),
                 }),
             }
         } else {
-            Err(ParseError {
-                kind: ParseErrorKind::ExpectedFilter,
+            Err(parse::Error {
+                kind: parse::ErrorKind::ExpectedFilter,
                 range: position..reader.end(),
             })
         }
     }
 
-    pub fn apply(&self, mut string: String) -> String {
+    pub fn eval(&self, mut string: String) -> Result<String, eval::ErrorKind> {
         match self {
             Filter::Substring(range) => {
                 if let Some(start) = range.start() {
@@ -71,7 +72,7 @@ impl Filter {
                         string.replace_range(end.., "");
                     }
                 }
-                string
+                Ok(string)
             }
 
             Filter::SubstringReverse(range) => {
@@ -93,46 +94,46 @@ impl Filter {
                         string.clear();
                     }
                 }
-                string
+                Ok(string)
             }
 
             Filter::ReplaceFirst(Substitution { value, replacement }) => {
-                string.replacen(value, replacement, 1)
+                Ok(string.replacen(value, replacement, 1))
             }
 
             Filter::ReplaceAll(Substitution { value, replacement }) => {
-                string.replace(value, replacement)
+                Ok(string.replace(value, replacement))
             }
 
-            Filter::Trim => string.trim().to_string(),
-            Filter::ToLowercase => string.to_lowercase(),
-            Filter::ToUppercase => string.to_uppercase(),
-            Filter::ToAscii => unidecode(&string),
+            Filter::Trim => Ok(string.trim().to_string()),
+            Filter::ToLowercase => Ok(string.to_lowercase()),
+            Filter::ToUppercase => Ok(string.to_uppercase()),
+            Filter::ToAscii => Ok(unidecode(&string)),
 
             Filter::RemoveNonAscii => {
                 string.retain(|ch| ch.is_ascii());
-                string
+                Ok(string)
             }
 
             Filter::LeftPad(padding) => {
                 for char in padding.chars().rev().skip(string.len()) {
                     string.insert(0, char);
                 }
-                string
+                Ok(string)
             }
 
             Filter::RightPad(padding) => {
                 for char in padding.chars().skip(string.len()) {
                     string.push(char);
                 }
-                string
+                Ok(string)
             }
 
             Filter::Default(default) => {
                 if string.is_empty() {
                     string.push_str(default);
                 }
-                string
+                Ok(string)
             }
         }
     }
@@ -171,8 +172,8 @@ mod tests {
     fn parse_substring() {
         assert_eq!(
             parse("n"),
-            Err(ParseError {
-                kind: ParseErrorKind::ExpectedRange,
+            Err(parse::Error {
+                kind: parse::ErrorKind::ExpectedRange,
                 range: 1..1,
             }),
         );
@@ -186,8 +187,8 @@ mod tests {
     fn parse_substring_from_end() {
         assert_eq!(
             parse("N"),
-            Err(ParseError {
-                kind: ParseErrorKind::ExpectedRange,
+            Err(parse::Error {
+                kind: parse::ErrorKind::ExpectedRange,
                 range: 1..1,
             }),
         );
@@ -207,8 +208,8 @@ mod tests {
     fn parse_replace_first() {
         assert_eq!(
             parse("r"),
-            Err(ParseError {
-                kind: ParseErrorKind::ExpectedSubstitution,
+            Err(parse::Error {
+                kind: parse::ErrorKind::ExpectedSubstitution,
                 range: 1..1,
             }),
         );
@@ -232,8 +233,8 @@ mod tests {
     fn parse_replace_all() {
         assert_eq!(
             parse("R"),
-            Err(ParseError {
-                kind: ParseErrorKind::ExpectedSubstitution,
+            Err(parse::Error {
+                kind: parse::ErrorKind::ExpectedSubstitution,
                 range: 1..1,
             }),
         );
@@ -319,8 +320,8 @@ mod tests {
     fn parse_empty_error() {
         assert_eq!(
             parse(""),
-            Err(ParseError {
-                kind: ParseErrorKind::ExpectedFilter,
+            Err(parse::Error {
+                kind: parse::ErrorKind::ExpectedFilter,
                 range: 0..0,
             }),
         )
@@ -330,338 +331,382 @@ mod tests {
     fn parse_unknown_filter_error() {
         assert_eq!(
             parse("-_"),
-            Err(ParseError {
-                kind: ParseErrorKind::UnknownFilter(Char::Raw('-')),
+            Err(parse::Error {
+                kind: parse::ErrorKind::UnknownFilter(Char::Raw('-')),
                 range: 0..1,
             }),
         );
     }
 
-    fn parse(string: &str) -> ParseResult<Filter> {
+    fn parse(string: &str) -> parse::Result<Filter> {
         Filter::parse(&mut Reader::from(string))
     }
 
     #[test]
-    fn apply_substring_from_first() {
-        let mut string = String::from("ábčd");
-        string = Filter::Substring(Range::From(0)).apply(string);
-        assert_eq!(string, "ábčd");
+    fn eval_substring_from_first() {
+        assert_eq!(
+            Filter::Substring(Range::From(0)).eval(String::from("ábčd")),
+            Ok(String::from("ábčd"))
+        );
     }
 
     #[test]
-    fn apply_substring_from_last() {
-        let mut string = String::from("ábčd");
-        string = Filter::Substring(Range::From(3)).apply(string);
-        assert_eq!(string, "d");
+    fn eval_substring_from_last() {
+        assert_eq!(
+            Filter::Substring(Range::From(3)).eval(String::from("ábčd")),
+            Ok(String::from("d"))
+        );
     }
 
     #[test]
-    fn apply_substring_from_over() {
-        let mut string = String::from("ábčd");
-        string = Filter::Substring(Range::From(4)).apply(string);
-        assert_eq!(string, "");
+    fn eval_substring_from_over() {
+        assert_eq!(
+            Filter::Substring(Range::From(4)).eval(String::from("ábčd")),
+            Ok(String::from(""))
+        );
     }
 
     #[test]
-    fn apply_substring_to_below() {
-        let mut string = String::from("ábčd");
-        string = Filter::Substring(Range::To(0)).apply(string);
-        assert_eq!(string, "");
+    fn eval_substring_to_below() {
+        assert_eq!(
+            Filter::Substring(Range::To(0)).eval(String::from("ábčd")),
+            Ok(String::from(""))
+        );
     }
 
     #[test]
-    fn apply_substring_to_last_but_one() {
-        let mut string = String::from("ábčd");
-        string = Filter::Substring(Range::To(3)).apply(string);
-        assert_eq!(string, "ábč");
+    fn eval_substring_to_last_but_one() {
+        assert_eq!(
+            Filter::Substring(Range::To(3)).eval(String::from("ábčd")),
+            Ok(String::from("ábč"))
+        );
     }
 
     #[test]
-    fn apply_substring_to_last() {
-        let mut string = String::from("ábčd");
-        string = Filter::Substring(Range::To(4)).apply(string);
-        assert_eq!(string, "ábčd");
+    fn eval_substring_to_last() {
+        assert_eq!(
+            Filter::Substring(Range::To(4)).eval(String::from("ábčd")),
+            Ok(String::from("ábčd"))
+        );
     }
 
     #[test]
-    fn apply_substring_to_over() {
-        let mut string = String::from("ábčd");
-        string = Filter::Substring(Range::To(5)).apply(string);
-        assert_eq!(string, "ábčd");
+    fn eval_substring_to_over() {
+        assert_eq!(
+            Filter::Substring(Range::To(5)).eval(String::from("ábčd")),
+            Ok(String::from("ábčd"))
+        );
     }
 
     #[test]
-    fn apply_substring_from_first_to_below() {
-        let mut string = String::from("ábčd");
-        string = Filter::Substring(Range::FromTo(0, 0)).apply(string);
-        assert_eq!(string, "");
+    fn eval_substring_from_first_to_below() {
+        assert_eq!(
+            Filter::Substring(Range::FromTo(0, 0)).eval(String::from("ábčd")),
+            Ok(String::from(""))
+        );
     }
 
     #[test]
-    fn apply_substring_from_first_to_last_but_one() {
-        let mut string = String::from("ábčd");
-        string = Filter::Substring(Range::FromTo(0, 3)).apply(string);
-        assert_eq!(string, "ábč");
+    fn eval_substring_from_first_to_last_but_one() {
+        assert_eq!(
+            Filter::Substring(Range::FromTo(0, 3)).eval(String::from("ábčd")),
+            Ok(String::from("ábč"))
+        );
     }
 
     #[test]
-    fn apply_substring_from_first_to_last() {
-        let mut string = String::from("ábčd");
-        string = Filter::Substring(Range::FromTo(0, 4)).apply(string);
-        assert_eq!(string, "ábčd");
+    fn eval_substring_from_first_to_last() {
+        assert_eq!(
+            Filter::Substring(Range::FromTo(0, 4)).eval(String::from("ábčd")),
+            Ok(String::from("ábčd"))
+        );
     }
 
     #[test]
-    fn apply_substring_from_last_to_last() {
-        let mut string = String::from("ábčd");
-        string = Filter::Substring(Range::FromTo(3, 4)).apply(string);
-        assert_eq!(string, "d");
+    fn eval_substring_from_last_to_last() {
+        assert_eq!(
+            Filter::Substring(Range::FromTo(3, 4)).eval(String::from("ábčd")),
+            Ok(String::from("d"))
+        );
     }
 
     #[test]
-    fn apply_substring_from_last_to_over() {
-        let mut string = String::from("ábčd");
-        string = Filter::Substring(Range::FromTo(3, 5)).apply(string);
-        assert_eq!(string, "d");
+    fn eval_substring_from_last_to_over() {
+        assert_eq!(
+            Filter::Substring(Range::FromTo(3, 5)).eval(String::from("ábčd")),
+            Ok(String::from("d"))
+        );
     }
 
     #[test]
-    fn apply_substring_from_over_to_over() {
-        let mut string = String::from("ábčd");
-        string = Filter::Substring(Range::FromTo(4, 5)).apply(string);
-        assert_eq!(string, "");
+    fn eval_substring_from_over_to_over() {
+        assert_eq!(
+            Filter::Substring(Range::FromTo(4, 5)).eval(String::from("ábčd")),
+            Ok(String::from(""))
+        );
     }
 
     #[test]
-    fn apply_substring_reverse_from_first() {
-        let mut string = String::from("ábčd");
-        string = Filter::SubstringReverse(Range::From(0)).apply(string);
-        assert_eq!(string, "ábčd");
+    fn eval_substring_reverse_from_first() {
+        assert_eq!(
+            Filter::SubstringReverse(Range::From(0)).eval(String::from("ábčd")),
+            Ok(String::from("ábčd"))
+        );
     }
 
     #[test]
-    fn apply_substring_reverse_from_last() {
-        let mut string = String::from("ábčd");
-        string = Filter::SubstringReverse(Range::From(3)).apply(string);
-        assert_eq!(string, "á");
+    fn eval_substring_reverse_from_last() {
+        assert_eq!(
+            Filter::SubstringReverse(Range::From(3)).eval(String::from("ábčd")),
+            Ok(String::from("á"))
+        );
     }
 
     #[test]
-    fn apply_substring_reverse_from_over() {
-        let mut string = String::from("ábčd");
-        string = Filter::SubstringReverse(Range::From(4)).apply(string);
-        assert_eq!(string, "");
+    fn eval_substring_reverse_from_over() {
+        assert_eq!(
+            Filter::SubstringReverse(Range::From(4)).eval(String::from("ábčd")),
+            Ok(String::from(""))
+        );
     }
 
     #[test]
-    fn apply_substring_reverse_to_below() {
-        let mut string = String::from("ábčd");
-        string = Filter::SubstringReverse(Range::To(0)).apply(string);
-        assert_eq!(string, "");
+    fn eval_substring_reverse_to_below() {
+        assert_eq!(
+            Filter::SubstringReverse(Range::To(0)).eval(String::from("ábčd")),
+            Ok(String::from(""))
+        );
     }
 
     #[test]
-    fn apply_substring_reverse_to_last_but_one() {
-        let mut string = String::from("ábčd");
-        string = Filter::SubstringReverse(Range::To(3)).apply(string);
-        assert_eq!(string, "bčd");
+    fn eval_substring_reverse_to_last_but_one() {
+        assert_eq!(
+            Filter::SubstringReverse(Range::To(3)).eval(String::from("ábčd")),
+            Ok(String::from("bčd"))
+        );
     }
 
     #[test]
-    fn apply_substring_reverse_to_last() {
-        let mut string = String::from("ábčd");
-        string = Filter::SubstringReverse(Range::To(4)).apply(string);
-        assert_eq!(string, "ábčd");
+    fn eval_substring_reverse_to_last() {
+        assert_eq!(
+            Filter::SubstringReverse(Range::To(4)).eval(String::from("ábčd")),
+            Ok(String::from("ábčd"))
+        );
     }
 
     #[test]
-    fn apply_substring_reverse_to_over() {
-        let mut string = String::from("ábčd");
-        string = Filter::SubstringReverse(Range::To(5)).apply(string);
-        assert_eq!(string, "ábčd");
+    fn eval_substring_reverse_to_over() {
+        assert_eq!(
+            Filter::SubstringReverse(Range::To(5)).eval(String::from("ábčd")),
+            Ok(String::from("ábčd"))
+        );
     }
 
     #[test]
-    fn apply_substring_reverse_from_first_to_below() {
-        let mut string = String::from("ábčd");
-        string = Filter::SubstringReverse(Range::FromTo(0, 0)).apply(string);
-        assert_eq!(string, "");
+    fn eval_substring_reverse_from_first_to_below() {
+        assert_eq!(
+            Filter::SubstringReverse(Range::FromTo(0, 0)).eval(String::from("ábčd")),
+            Ok(String::from(""))
+        );
     }
 
     #[test]
-    fn apply_substring_reverse_from_first_to_last_but_one() {
-        let mut string = String::from("ábčd");
-        string = Filter::SubstringReverse(Range::FromTo(0, 3)).apply(string);
-        assert_eq!(string, "bčd");
+    fn eval_substring_reverse_from_first_to_last_but_one() {
+        assert_eq!(
+            Filter::SubstringReverse(Range::FromTo(0, 3)).eval(String::from("ábčd")),
+            Ok(String::from("bčd"))
+        );
     }
 
     #[test]
-    fn apply_substring_reverse_from_first_to_last() {
-        let mut string = String::from("ábčd");
-        string = Filter::SubstringReverse(Range::FromTo(0, 4)).apply(string);
-        assert_eq!(string, "ábčd");
+    fn eval_substring_reverse_from_first_to_last() {
+        assert_eq!(
+            Filter::SubstringReverse(Range::FromTo(0, 4)).eval(String::from("ábčd")),
+            Ok(String::from("ábčd"))
+        );
     }
 
     #[test]
-    fn apply_substring_reverse_from_last_to_last() {
-        let mut string = String::from("ábčd");
-        string = Filter::SubstringReverse(Range::FromTo(3, 4)).apply(string);
-        assert_eq!(string, "á");
+    fn eval_substring_reverse_from_last_to_last() {
+        assert_eq!(
+            Filter::SubstringReverse(Range::FromTo(3, 4)).eval(String::from("ábčd")),
+            Ok(String::from("á"))
+        );
     }
 
     #[test]
-    fn apply_substring_reverse_from_last_to_over() {
-        let mut string = String::from("ábčd");
-        string = Filter::SubstringReverse(Range::FromTo(3, 5)).apply(string);
-        assert_eq!(string, "á");
+    fn eval_substring_reverse_from_last_to_over() {
+        assert_eq!(
+            Filter::SubstringReverse(Range::FromTo(3, 5)).eval(String::from("ábčd")),
+            Ok(String::from("á"))
+        );
     }
 
     #[test]
-    fn apply_substring_reverse_from_over_to_over() {
-        let mut string = String::from("ábčd");
-        string = Filter::SubstringReverse(Range::FromTo(4, 5)).apply(string);
-        assert_eq!(string, "");
+    fn eval_substring_reverse_from_over_to_over() {
+        assert_eq!(
+            Filter::SubstringReverse(Range::FromTo(4, 5)).eval(String::from("ábčd")),
+            Ok(String::from(""))
+        );
     }
 
     #[test]
-    fn apply_replace_first() {
-        let mut string = String::from("abcd_abcd");
-        string = Filter::ReplaceFirst(Substitution {
-            value: String::from("ab"),
-            replacement: String::from("x"),
-        })
-        .apply(string);
-        assert_eq!(string, "xcd_abcd");
+    fn eval_replace_first() {
+        assert_eq!(
+            Filter::ReplaceFirst(Substitution {
+                value: String::from("ab"),
+                replacement: String::from("x"),
+            })
+            .eval(String::from("abcd_abcd")),
+            Ok(String::from("xcd_abcd"))
+        );
     }
 
     #[test]
-    fn apply_replace_all() {
-        let mut string = String::from("abcd_abcd");
-        string = Filter::ReplaceAll(Substitution {
-            value: String::from("ab"),
-            replacement: String::from("x"),
-        })
-        .apply(string);
-        assert_eq!(string, "xcd_xcd");
+    fn eval_replace_all() {
+        assert_eq!(
+            Filter::ReplaceAll(Substitution {
+                value: String::from("ab"),
+                replacement: String::from("x"),
+            })
+            .eval(String::from("abcd_abcd")),
+            Ok(String::from("xcd_xcd"))
+        );
     }
 
     #[test]
-    fn apply_remove_first() {
-        let mut string = String::from("abcd_abcd");
-        string = Filter::ReplaceFirst(Substitution {
-            value: String::from("ab"),
-            replacement: String::new(),
-        })
-        .apply(string);
-        assert_eq!(string, "cd_abcd");
+    fn eval_remove_first() {
+        assert_eq!(
+            Filter::ReplaceFirst(Substitution {
+                value: String::from("ab"),
+                replacement: String::new(),
+            })
+            .eval(String::from("abcd_abcd")),
+            Ok(String::from("cd_abcd"))
+        );
     }
 
     #[test]
-    fn apply_remove_all() {
-        let mut string = String::from("abcd_abcd");
-        string = Filter::ReplaceAll(Substitution {
-            value: String::from("ab"),
-            replacement: String::new(),
-        })
-        .apply(string);
-        assert_eq!(string, "cd_cd");
+    fn eval_remove_all() {
+        assert_eq!(
+            Filter::ReplaceAll(Substitution {
+                value: String::from("ab"),
+                replacement: String::new(),
+            })
+            .eval(String::from("abcd_abcd")),
+            Ok(String::from("cd_cd"))
+        );
     }
 
     #[test]
-    fn apply_trim_none() {
-        let mut string = String::from("abcd");
-        string = Filter::Trim.apply(string);
-        assert_eq!(string, "abcd");
+    fn eval_trim_none() {
+        assert_eq!(
+            Filter::Trim.eval(String::from("abcd")),
+            Ok(String::from("abcd"))
+        );
     }
 
     #[test]
-    fn apply_trim() {
-        let mut string = String::from(" abcd ");
-        string = Filter::Trim.apply(string);
-        assert_eq!(string, "abcd");
+    fn eval_trim() {
+        assert_eq!(
+            Filter::Trim.eval(String::from(" abcd ")),
+            Ok(String::from("abcd"))
+        );
     }
 
     #[test]
-    fn apply_to_lowercase() {
-        let mut string = String::from("ábčdÁBČD");
-        string = Filter::ToLowercase.apply(string);
-        assert_eq!(string, "ábčdábčd");
+    fn eval_to_lowercase() {
+        assert_eq!(
+            Filter::ToLowercase.eval(String::from("ábčdÁBČD")),
+            Ok(String::from("ábčdábčd"))
+        );
     }
 
     #[test]
-    fn apply_to_uppercase() {
-        let mut string = String::from("ábčdÁBČD");
-        string = Filter::ToUppercase.apply(string);
-        assert_eq!(string, "ÁBČDÁBČD");
+    fn eval_to_uppercase() {
+        assert_eq!(
+            Filter::ToUppercase.eval(String::from("ábčdÁBČD")),
+            Ok(String::from("ÁBČDÁBČD"))
+        );
     }
 
     #[test]
-    fn apply_to_ascii() {
-        let mut string = String::from("ábčdÁBČD");
-        string = Filter::ToAscii.apply(string);
-        assert_eq!(string, "abcdABCD");
+    fn eval_to_ascii() {
+        assert_eq!(
+            Filter::ToAscii.eval(String::from("ábčdÁBČD")),
+            Ok(String::from("abcdABCD"))
+        );
     }
 
     #[test]
-    fn apply_remove_non_ascii() {
-        let mut string = String::from("ábčdÁBČD");
-        string = Filter::RemoveNonAscii.apply(string);
-        assert_eq!(string, "bdBD");
+    fn eval_remove_non_ascii() {
+        assert_eq!(
+            Filter::RemoveNonAscii.eval(String::from("ábčdÁBČD")),
+            Ok(String::from("bdBD"))
+        );
     }
 
     #[test]
-    fn apply_left_pad_all() {
-        let mut string = String::from("");
-        string = Filter::LeftPad(String::from("0123")).apply(string);
-        assert_eq!(string, "0123");
+    fn eval_left_pad_all() {
+        assert_eq!(
+            Filter::LeftPad(String::from("0123")).eval(String::from("")),
+            Ok(String::from("0123"))
+        );
     }
 
     #[test]
-    fn apply_left_pad_some() {
-        let mut string = String::from("ab");
-        string = Filter::LeftPad(String::from("0123")).apply(string);
-        assert_eq!(string, "01ab");
+    fn eval_left_pad_some() {
+        assert_eq!(
+            Filter::LeftPad(String::from("0123")).eval(String::from("ab")),
+            Ok(String::from("01ab"))
+        );
     }
 
     #[test]
-    fn apply_left_pad_none() {
-        let mut string = String::from("abcd");
-        string = Filter::LeftPad(String::from("0123")).apply(string);
-        assert_eq!(string, "abcd");
+    fn eval_left_pad_none() {
+        assert_eq!(
+            Filter::LeftPad(String::from("0123")).eval(String::from("abcd")),
+            Ok(String::from("abcd"))
+        );
     }
 
     #[test]
-    fn apply_right_pad_all() {
-        let mut string = String::from("");
-        string = Filter::RightPad(String::from("0123")).apply(string);
-        assert_eq!(string, "0123");
+    fn eval_right_pad_all() {
+        assert_eq!(
+            Filter::RightPad(String::from("0123")).eval(String::from("")),
+            Ok(String::from("0123"))
+        );
     }
 
     #[test]
-    fn apply_right_pad_some() {
-        let mut string = String::from("ab");
-        string = Filter::RightPad(String::from("0123")).apply(string);
-        assert_eq!(string, "ab23");
+    fn eval_right_pad_some() {
+        assert_eq!(
+            Filter::RightPad(String::from("0123")).eval(String::from("ab")),
+            Ok(String::from("ab23"))
+        );
     }
 
     #[test]
-    fn apply_right_pad_none() {
-        let mut string = String::from("abcd");
-        string = Filter::RightPad(String::from("0123")).apply(string);
-        assert_eq!(string, "abcd");
+    fn eval_right_pad_none() {
+        assert_eq!(
+            Filter::RightPad(String::from("0123")).eval(String::from("abcd")),
+            Ok(String::from("abcd"))
+        );
     }
 
     #[test]
-    fn apply_default_used() {
-        let mut string = String::from("");
-        string = Filter::Default(String::from("xyz")).apply(string);
-        assert_eq!(string, "xyz");
+    fn eval_default_used() {
+        assert_eq!(
+            Filter::Default(String::from("xyz")).eval(String::from("")),
+            Ok(String::from("xyz"))
+        );
     }
 
     #[test]
-    fn apply_default_unused() {
-        let mut string = String::from("abcd");
-        string = Filter::Default(String::from("xyz")).apply(string);
-        assert_eq!(string, "abcd");
+    fn eval_default_unused() {
+        assert_eq!(
+            Filter::Default(String::from("xyz")).eval(String::from("abcd")),
+            Ok(String::from("abcd"))
+        );
     }
 }

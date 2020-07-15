@@ -1,6 +1,6 @@
 use crate::cli::Cli;
 use crate::input::Input;
-use crate::pattern::{EvalContext, Lexer, Parser, Pattern};
+use crate::pattern::{eval, Lexer, Parser, Pattern};
 use std::collections::HashMap;
 use std::io::{self, Write};
 use std::process;
@@ -120,14 +120,14 @@ fn main() -> Result<(), io::Error> {
             None
         };
 
-        let eval_context = EvalContext {
+        let context = eval::Context {
             path: src_path,
             global_counter,
             local_counter,
             regex_captures,
         };
 
-        let dst_path = pattern.eval(&eval_context).unwrap(); // TODO handle error
+        let dst_path = pattern.eval(&context).unwrap(); // TODO handle error
 
         if let Some(delimiter_value) = delimiter {
             write!(&mut stdout, "{}{}", dst_path, delimiter_value)?;

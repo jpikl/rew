@@ -1,23 +1,23 @@
 use crate::pattern::char::{AsChar, Char};
 use crate::pattern::filter::Filter;
 use crate::pattern::lexer::{Lexer, Token};
-use crate::pattern::parse::{ParseError, ParseErrorKind, ParseResult, Parsed};
+use crate::pattern::parse::{Error, ErrorKind, Output, Result};
 use crate::pattern::reader::Reader;
 use crate::pattern::variable::Variable;
 use std::ops::Range;
 
 #[derive(Debug, PartialEq)]
-pub enum PatternItem {
+pub enum Item {
     Constant(String),
     Expression {
-        variable: Parsed<Variable>,
-        filters: Vec<Parsed<Filter>>,
+        variable: Output<Variable>,
+        filters: Vec<Output<Filter>>,
     },
 }
 
 pub struct Parser {
     lexer: Lexer,
-    token: Option<Parsed<Token>>,
+    token: Option<Output<Token>>,
 }
 
 impl From<&str> for Parser {
@@ -31,7 +31,7 @@ impl Parser {
         Self { lexer, token: None }
     }
 
-    pub fn parse_items(&mut self) -> ParseResult<Vec<Parsed<PatternItem>>> {
+    pub fn parse_items(&mut self) -> Result<Vec<Output<Item>>> {
         let mut items = Vec::new();
 
         while let Some(item) = self.parse_item()? {
@@ -41,11 +41,11 @@ impl Parser {
         Ok(items)
     }
 
-    fn parse_item(&mut self) -> ParseResult<Option<Parsed<PatternItem>>> {
+    fn parse_item(&mut self) -> Result<Option<Output<Item>>> {
         if let Some(token) = self.fetch_token()? {
             match &token.value {
-                Token::Raw(raw) => Ok(Some(Parsed {
-                    value: PatternItem::Constant(Char::join(raw)),
+                Token::Raw(raw) => Ok(Some(Output {
+                    value: Item::Constant(Char::join(raw)),
                     range: token.range.clone(),
                 })),
                 Token::ExprStart => {
@@ -55,18 +55,18 @@ impl Parser {
                     if let Some(Token::ExprEnd) = self.token_value() {
                         Ok(expression)
                     } else {
-                        Err(ParseError {
-                            kind: ParseErrorKind::UnmatchedExprStart,
+                        Err(Error {
+                            kind: ErrorKind::UnmatchedExprStart,
                             range: expr_start_range,
                         })
                     }
                 }
-                Token::ExprEnd => Err(ParseError {
-                    kind: ParseErrorKind::UnmatchedExprEnd,
+                Token::ExprEnd => Err(Error {
+                    kind: ErrorKind::UnmatchedExprEnd,
                     range: token.range.clone(),
                 }),
-                Token::Pipe => Err(ParseError {
-                    kind: ParseErrorKind::PipeOutsideExpr,
+                Token::Pipe => Err(Error {
+                    kind: ErrorKind::PipeOutsideExpr,
                     range: token.range.clone(),
                 }),
             }
@@ -75,24 +75,24 @@ impl Parser {
         }
     }
 
-    fn parse_expression(&mut self) -> ParseResult<Option<Parsed<PatternItem>>> {
+    fn parse_expression(&mut self) -> Result<Option<Output<Item>>> {
         let start = self.token_range().start;
         let variable = self.parse_variable()?;
         let filters = self.parse_filters()?;
         let end = self.token_range().end;
 
-        Ok(Some(Parsed {
-            value: PatternItem::Expression { variable, filters },
+        Ok(Some(Output {
+            value: Item::Expression { variable, filters },
             range: start..end,
         }))
     }
 
-    fn parse_variable(&mut self) -> ParseResult<Parsed<Variable>> {
-        self.parse_expression_member(Variable::parse, ParseErrorKind::ExpectedVariable)
+    fn parse_variable(&mut self) -> Result<Output<Variable>> {
+        self.parse_expression_member(Variable::parse, ErrorKind::ExpectedVariable)
     }
 
-    fn parse_filters(&mut self) -> ParseResult<Vec<Parsed<Filter>>> {
-        let mut filters: Vec<Parsed<Filter>> = Vec::new();
+    fn parse_filters(&mut self) -> Result<Vec<Output<Filter>>> {
+        let mut filters: Vec<Output<Filter>> = Vec::new();
 
         while let Some(token) = self.fetch_token()? {
             match token.value {
@@ -100,8 +100,8 @@ impl Parser {
                     filters.push(self.parse_filter()?);
                 }
                 Token::ExprStart => {
-                    return Err(ParseError {
-                        kind: ParseErrorKind::ExprStartInsideExpr,
+                    return Err(Error {
+                        kind: ErrorKind::ExprStartInsideExpr,
                         range: token.range.clone(),
                     })
                 }
@@ -117,17 +117,17 @@ impl Parser {
         Ok(filters)
     }
 
-    fn parse_filter(&mut self) -> ParseResult<Parsed<Filter>> {
-        self.parse_expression_member(Filter::parse, ParseErrorKind::ExpectedFilter)
+    fn parse_filter(&mut self) -> Result<Output<Filter>> {
+        self.parse_expression_member(Filter::parse, ErrorKind::ExpectedFilter)
     }
 
-    fn parse_expression_member<T, F: FnOnce(&mut Reader<Char>) -> ParseResult<T>>(
+    fn parse_expression_member<T, F: FnOnce(&mut Reader<Char>) -> Result<T>>(
         &mut self,
         parse: F,
-        error_kind: ParseErrorKind,
-    ) -> ParseResult<Parsed<T>> {
+        error_kind: ErrorKind,
+    ) -> Result<Output<T>> {
         let position = self.token_range().end;
-        let token = self.fetch_token()?.ok_or_else(|| ParseError {
+        let token = self.fetch_token()?.ok_or_else(|| Error {
             kind: error_kind.clone(),
             range: position..position,
         })?;
@@ -147,25 +147,25 @@ impl Parser {
                 let start = position + reader.position();
                 let end = position + reader.position() + char.len_utf8();
 
-                Err(ParseError {
-                    kind: ParseErrorKind::ExpectedPipeOrExprEnd,
+                Err(Error {
+                    kind: ErrorKind::ExpectedPipeOrExprEnd,
                     range: start..end,
                 })
             } else {
-                Ok(Parsed {
+                Ok(Output {
                     value,
                     range: token.range.clone(),
                 })
             }
         } else {
-            Err(ParseError {
+            Err(Error {
                 kind: error_kind,
                 range: token.range.clone(),
             })
         }
     }
 
-    fn fetch_token(&mut self) -> ParseResult<Option<&Parsed<Token>>> {
+    fn fetch_token(&mut self) -> Result<Option<&Output<Token>>> {
         self.token = self.lexer.read_token()?;
         Ok(self.token.as_ref())
     }
@@ -194,8 +194,8 @@ mod tests {
     fn constant() {
         assert_eq!(
             Parser::from("a").parse_items(),
-            Ok(vec![Parsed {
-                value: PatternItem::Constant(String::from("a")),
+            Ok(vec![Output {
+                value: Item::Constant(String::from("a")),
                 range: 0..1,
             }])
         );
@@ -205,8 +205,8 @@ mod tests {
     fn expected_variable_but_end_error() {
         assert_eq!(
             Parser::from("{").parse_items(),
-            Err(ParseError {
-                kind: ParseErrorKind::ExpectedVariable,
+            Err(Error {
+                kind: ErrorKind::ExpectedVariable,
                 range: 1..1,
             })
         );
@@ -216,8 +216,8 @@ mod tests {
     fn expected_variable_but_pipe_error() {
         assert_eq!(
             Parser::from("{|").parse_items(),
-            Err(ParseError {
-                kind: ParseErrorKind::ExpectedVariable,
+            Err(Error {
+                kind: ErrorKind::ExpectedVariable,
                 range: 1..2,
             })
         );
@@ -227,8 +227,8 @@ mod tests {
     fn pipe_outside_expr_error() {
         assert_eq!(
             Parser::from("|").parse_items(),
-            Err(ParseError {
-                kind: ParseErrorKind::PipeOutsideExpr,
+            Err(Error {
+                kind: ErrorKind::PipeOutsideExpr,
                 range: 0..1,
             })
         );
@@ -238,8 +238,8 @@ mod tests {
     fn expected_variable_but_expr_end_error() {
         assert_eq!(
             Parser::from("{}").parse_items(),
-            Err(ParseError {
-                kind: ParseErrorKind::ExpectedVariable,
+            Err(Error {
+                kind: ErrorKind::ExpectedVariable,
                 range: 1..2,
             })
         );
@@ -249,8 +249,8 @@ mod tests {
     fn unmatched_expr_end_error() {
         assert_eq!(
             Parser::from("}").parse_items(),
-            Err(ParseError {
-                kind: ParseErrorKind::UnmatchedExprEnd,
+            Err(Error {
+                kind: ErrorKind::UnmatchedExprEnd,
                 range: 0..1,
             })
         );
@@ -260,8 +260,8 @@ mod tests {
     fn unterminated_expr_start_after_variable_error() {
         assert_eq!(
             Parser::from("{f").parse_items(),
-            Err(ParseError {
-                kind: ParseErrorKind::UnmatchedExprStart,
+            Err(Error {
+                kind: ErrorKind::UnmatchedExprStart,
                 range: 0..1,
             })
         );
@@ -271,9 +271,9 @@ mod tests {
     fn variable() {
         assert_eq!(
             Parser::from("{f}").parse_items(),
-            Ok(vec![Parsed {
-                value: PatternItem::Expression {
-                    variable: Parsed {
+            Ok(vec![Output {
+                value: Item::Expression {
+                    variable: Output {
                         value: Variable::Filename,
                         range: 1..2,
                     },
@@ -288,8 +288,8 @@ mod tests {
     fn unknown_variable_error() {
         assert_eq!(
             Parser::from("{x}").parse_items(),
-            Err(ParseError {
-                kind: ParseErrorKind::UnknownVariable(Char::Raw('x')),
+            Err(Error {
+                kind: ErrorKind::UnknownVariable(Char::Raw('x')),
                 range: 1..2,
             })
         );
@@ -299,8 +299,8 @@ mod tests {
     fn expr_start_inside_expr_error() {
         assert_eq!(
             Parser::from("{f{").parse_items(),
-            Err(ParseError {
-                kind: ParseErrorKind::ExprStartInsideExpr,
+            Err(Error {
+                kind: ErrorKind::ExprStartInsideExpr,
                 range: 2..3,
             })
         );
@@ -310,8 +310,8 @@ mod tests {
     fn expected_pipe_or_expr_end_after_variable_error() {
         assert_eq!(
             Parser::from("{fg").parse_items(),
-            Err(ParseError {
-                kind: ParseErrorKind::ExpectedPipeOrExprEnd,
+            Err(Error {
+                kind: ErrorKind::ExpectedPipeOrExprEnd,
                 range: 2..3,
             })
         );
@@ -321,8 +321,8 @@ mod tests {
     fn expected_filter_but_end_error() {
         assert_eq!(
             Parser::from("{f|").parse_items(),
-            Err(ParseError {
-                kind: ParseErrorKind::ExpectedFilter,
+            Err(Error {
+                kind: ErrorKind::ExpectedFilter,
                 range: 3..3,
             })
         );
@@ -332,8 +332,8 @@ mod tests {
     fn expected_filter_but_pipe_error() {
         assert_eq!(
             Parser::from("{f||").parse_items(),
-            Err(ParseError {
-                kind: ParseErrorKind::ExpectedFilter,
+            Err(Error {
+                kind: ErrorKind::ExpectedFilter,
                 range: 3..4,
             })
         );
@@ -343,8 +343,8 @@ mod tests {
     fn expected_filter_but_expr_end_error() {
         assert_eq!(
             Parser::from("{f|}").parse_items(),
-            Err(ParseError {
-                kind: ParseErrorKind::ExpectedFilter,
+            Err(Error {
+                kind: ErrorKind::ExpectedFilter,
                 range: 3..4,
             })
         );
@@ -354,8 +354,8 @@ mod tests {
     fn unternimeted_expr_start_after_filter_error() {
         assert_eq!(
             Parser::from("{f|l").parse_items(),
-            Err(ParseError {
-                kind: ParseErrorKind::UnmatchedExprStart,
+            Err(Error {
+                kind: ErrorKind::UnmatchedExprStart,
                 range: 0..1,
             })
         );
@@ -365,8 +365,8 @@ mod tests {
     fn expected_pipe_or_expr_end_after_filter_error() {
         assert_eq!(
             Parser::from("{f|ll").parse_items(),
-            Err(ParseError {
-                kind: ParseErrorKind::ExpectedPipeOrExprEnd,
+            Err(Error {
+                kind: ErrorKind::ExpectedPipeOrExprEnd,
                 range: 4..5,
             })
         );
@@ -376,13 +376,13 @@ mod tests {
     fn variable_single_filter() {
         assert_eq!(
             Parser::from("{b|l}").parse_items(),
-            Ok(vec![Parsed {
-                value: PatternItem::Expression {
-                    variable: Parsed {
+            Ok(vec![Output {
+                value: Item::Expression {
+                    variable: Output {
                         value: Variable::Basename,
                         range: 1..2,
                     },
-                    filters: vec![Parsed {
+                    filters: vec![Output {
                         value: Filter::ToLowercase,
                         range: 3..4,
                     }],
@@ -396,18 +396,18 @@ mod tests {
     fn variable_multiple_filters() {
         assert_eq!(
             Parser::from("{e|t|n1-3}").parse_items(),
-            Ok(vec![Parsed {
-                value: PatternItem::Expression {
-                    variable: Parsed {
+            Ok(vec![Output {
+                value: Item::Expression {
+                    variable: Output {
                         value: Variable::Extension,
                         range: 1..2,
                     },
                     filters: vec![
-                        Parsed {
+                        Output {
                             value: Filter::Trim,
                             range: 3..4,
                         },
-                        Parsed {
+                        Output {
                             value: Filter::Substring(Range::FromTo(0, 3)),
                             range: 5..9,
                         },
@@ -422,8 +422,8 @@ mod tests {
     fn invalid_filter_error() {
         assert_eq!(
             Parser::from("{f|n2-1}").parse_items(),
-            Err(ParseError {
-                kind: ParseErrorKind::RangeStartOverEnd(2, 1),
+            Err(Error {
+                kind: ErrorKind::RangeStartOverEnd(2, 1),
                 range: 4..7,
             })
         );
@@ -434,39 +434,39 @@ mod tests {
         assert_eq!(
             Parser::from("image_{c|<000}.{e|l|r_e}2").parse_items(),
             Ok(vec![
-                Parsed {
-                    value: PatternItem::Constant(String::from("image_")),
+                Output {
+                    value: Item::Constant(String::from("image_")),
                     range: 0..6,
                 },
-                Parsed {
-                    value: PatternItem::Expression {
-                        variable: Parsed {
+                Output {
+                    value: Item::Expression {
+                        variable: Output {
                             value: Variable::LocalCounter,
                             range: 7..8,
                         },
-                        filters: vec![Parsed {
+                        filters: vec![Output {
                             value: Filter::LeftPad(String::from("000")),
                             range: 9..13,
                         }],
                     },
                     range: 6..14,
                 },
-                Parsed {
-                    value: PatternItem::Constant(String::from(".")),
+                Output {
+                    value: Item::Constant(String::from(".")),
                     range: 14..15,
                 },
-                Parsed {
-                    value: PatternItem::Expression {
-                        variable: Parsed {
+                Output {
+                    value: Item::Expression {
+                        variable: Output {
                             value: Variable::Extension,
                             range: 16..17,
                         },
                         filters: vec![
-                            Parsed {
+                            Output {
                                 value: Filter::ToLowercase,
                                 range: 18..19,
                             },
-                            Parsed {
+                            Output {
                                 value: Filter::ReplaceFirst(Substitution {
                                     value: 'e'.to_string(),
                                     replacement: String::new(),
@@ -477,8 +477,8 @@ mod tests {
                     },
                     range: 15..24,
                 },
-                Parsed {
-                    value: PatternItem::Constant(String::from("2")),
+                Output {
+                    value: Item::Constant(String::from("2")),
                     range: 24..25,
                 },
             ])

@@ -1,8 +1,8 @@
 use crate::pattern::char::Char;
-use crate::pattern::parse::{ParseError, ParseErrorKind, ParseResult};
+use crate::pattern::parse::{Error, ErrorKind, Result};
 use crate::pattern::reader::Reader;
 
-pub fn parse_usize(reader: &mut Reader<Char>) -> ParseResult<usize> {
+pub fn parse_usize(reader: &mut Reader<Char>) -> Result<usize> {
     match reader.peek_char() {
         Some('0') => {
             reader.seek();
@@ -17,8 +17,8 @@ pub fn parse_usize(reader: &mut Reader<Char>) -> ParseResult<usize> {
             }
             Ok(number)
         }
-        _ => Err(ParseError {
-            kind: ParseErrorKind::ExpectedNumber,
+        _ => Err(Error {
+            kind: ErrorKind::ExpectedNumber,
             range: reader.position()..reader.end(),
         }),
     }
@@ -33,8 +33,8 @@ mod tests {
         let mut reader = Reader::from("");
         assert_eq!(
             parse_usize(&mut reader),
-            Err(ParseError {
-                kind: ParseErrorKind::ExpectedNumber,
+            Err(Error {
+                kind: ErrorKind::ExpectedNumber,
                 range: 0..0,
             })
         );
@@ -46,8 +46,8 @@ mod tests {
         let mut reader = Reader::from("ab");
         assert_eq!(
             parse_usize(&mut reader),
-            Err(ParseError {
-                kind: ParseErrorKind::ExpectedNumber,
+            Err(Error {
+                kind: ErrorKind::ExpectedNumber,
                 range: 0..2,
             })
         );

@@ -2,23 +2,24 @@ use crate::pattern::char::{Char, EscapeSequence};
 use crate::pattern::symbols::{EXPR_END, EXPR_START, PIPE};
 use std::fmt;
 use std::ops::Range;
+use std::result;
 
 #[derive(Debug, PartialEq)]
-pub struct Parsed<T> {
+pub struct Output<T> {
     pub value: T,
     pub range: Range<usize>,
 }
 
-pub type ParseResult<T> = Result<T, ParseError>;
+pub type Result<T> = result::Result<T, Error>;
 
 #[derive(Debug, PartialEq)]
-pub struct ParseError {
-    pub kind: ParseErrorKind,
+pub struct Error {
+    pub kind: ErrorKind,
     pub range: Range<usize>,
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub enum ParseErrorKind {
+pub enum ErrorKind {
     ExpectedFilter,
     ExpectedNumber,
     ExpectedPipeOrExprEnd,
@@ -41,71 +42,80 @@ pub enum ParseErrorKind {
     UnterminatedEscapeSequence(char),
 }
 
-impl fmt::Display for ParseErrorKind {
+impl fmt::Display for ErrorKind {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        use ParseErrorKind::*;
         match self {
-            ExpectedFilter => write!(formatter, "Expected filter after '{}'", PIPE),
-            ExpectedNumber => write!(formatter, "Expected number"),
-            ExpectedPipeOrExprEnd => {
+            ErrorKind::ExpectedFilter => write!(formatter, "Expected filter after '{}'", PIPE),
+            ErrorKind::ExpectedNumber => write!(formatter, "Expected number"),
+            ErrorKind::ExpectedPipeOrExprEnd => {
                 write!(formatter, "Expected '{}' or closing '{}'", PIPE, EXPR_END)
             }
-            ExpectedRange => write!(formatter, "Filter requires range as a parameter"),
-            ExpectedSubstitution => {
+            ErrorKind::ExpectedRange => write!(formatter, "Filter requires range as a parameter"),
+            ErrorKind::ExpectedSubstitution => {
                 write!(formatter, "Filter requires substitution as a parameter")
             }
-            ExpectedVariable => write!(formatter, "Expected variable after '{}'", EXPR_START),
-            ExprStartInsideExpr => {
+            ErrorKind::ExpectedVariable => {
+                write!(formatter, "Expected variable after '{}'", EXPR_START)
+            }
+            ErrorKind::ExprStartInsideExpr => {
                 write!(formatter, "Unescaped '{}' inside expression", EXPR_START)
             }
-            PipeOutsideExpr => write!(formatter, "Unescaped '{}' outside expression", PIPE),
-            RangeIndexZero => write!(formatter, "Range indices start from 1, not 0"),
-            RangeInvalid(value) => write!(formatter, "Invalid range '{}'", value),
-            RangeUnbounded => write!(formatter, "Unbounded range"),
-            RangeStartOverEnd(start, end) => write!(
+            ErrorKind::PipeOutsideExpr => {
+                write!(formatter, "Unescaped '{}' outside expression", PIPE)
+            }
+            ErrorKind::RangeIndexZero => write!(formatter, "Range indices start from 1, not 0"),
+            ErrorKind::RangeInvalid(value) => write!(formatter, "Invalid range '{}'", value),
+            ErrorKind::RangeUnbounded => write!(formatter, "Unbounded range"),
+            ErrorKind::RangeStartOverEnd(start, end) => write!(
                 formatter,
                 "Range start ({}) is bigger than end ({})",
                 start, end
             ),
-            RegexCaptureZero => write!(formatter, "Regex capture groups starts from 1, not 0"),
-            SubstituteWithoutValue(Char::Raw(value)) => write!(
+            ErrorKind::RegexCaptureZero => {
+                write!(formatter, "Regex capture groups starts from 1, not 0")
+            }
+            ErrorKind::SubstituteWithoutValue(Char::Raw(value)) => write!(
                 formatter,
                 "Substitution is missing value after separator '{}'",
                 value
             ),
-            SubstituteWithoutValue(Char::Escaped(_, sequence)) => write!(
+            ErrorKind::SubstituteWithoutValue(Char::Escaped(_, sequence)) => write!(
                 formatter,
                 "Substitution is missing value after separator '{}{}' (escape sequence)",
                 sequence[0], sequence[1]
             ),
-            UnknownEscapeSequence(sequence) => write!(
+            ErrorKind::UnknownEscapeSequence(sequence) => write!(
                 formatter,
                 "Unknown escape sequence '{}{}'",
                 sequence[0], sequence[1]
             ),
-            UnknownFilter(Char::Raw(value)) => write!(formatter, "Unknown filter '{}'", value),
-            UnknownFilter(Char::Escaped(value, sequence)) => write!(
+            ErrorKind::UnknownFilter(Char::Raw(value)) => {
+                write!(formatter, "Unknown filter '{}'", value)
+            }
+            ErrorKind::UnknownFilter(Char::Escaped(value, sequence)) => write!(
                 formatter,
                 "Unknown filter '{}' written as escape sequence '{}{}'",
                 value, sequence[0], sequence[1]
             ),
-            UnknownVariable(Char::Raw(char)) => write!(formatter, "Unknown variable '{}'", char),
-            UnknownVariable(Char::Escaped(value, sequence)) => write!(
+            ErrorKind::UnknownVariable(Char::Raw(char)) => {
+                write!(formatter, "Unknown variable '{}'", char)
+            }
+            ErrorKind::UnknownVariable(Char::Escaped(value, sequence)) => write!(
                 formatter,
                 "Unknown variable '{}' written as escape sequence '{}{}'",
                 value, sequence[0], sequence[1],
             ),
-            UnmatchedExprEnd => write!(
+            ErrorKind::UnmatchedExprEnd => write!(
                 formatter,
                 "No matching '{}' before expression end",
                 EXPR_START
             ),
-            UnmatchedExprStart => write!(
+            ErrorKind::UnmatchedExprStart => write!(
                 formatter,
                 "No matching '{}' after expression start",
                 EXPR_END
             ),
-            UnterminatedEscapeSequence(escape) => {
+            ErrorKind::UnterminatedEscapeSequence(escape) => {
                 write!(formatter, "Unterminated escape sequence '{}'", escape)
             }
         }

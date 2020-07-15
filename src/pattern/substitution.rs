@@ -1,5 +1,5 @@
 use crate::pattern::char::{AsChar, Char};
-use crate::pattern::parse::{ParseError, ParseErrorKind, ParseResult};
+use crate::pattern::parse::{Error, ErrorKind, Result};
 use crate::pattern::reader::Reader;
 use std::fmt;
 
@@ -10,7 +10,7 @@ pub struct Substitution {
 }
 
 impl Substitution {
-    pub fn parse(reader: &mut Reader<Char>) -> ParseResult<Self> {
+    pub fn parse(reader: &mut Reader<Char>) -> Result<Self> {
         if let Some(separator) = reader.read().cloned() {
             let mut value = String::new();
             let position = reader.position();
@@ -24,8 +24,8 @@ impl Substitution {
             }
 
             if value.is_empty() {
-                return Err(ParseError {
-                    kind: ParseErrorKind::SubstituteWithoutValue(separator),
+                return Err(Error {
+                    kind: ErrorKind::SubstituteWithoutValue(separator),
                     range: position..position,
                 });
             }
@@ -35,8 +35,8 @@ impl Substitution {
                 replacement: Char::join(reader.read_to_end()),
             })
         } else {
-            Err(ParseError {
-                kind: ParseErrorKind::ExpectedSubstitution,
+            Err(Error {
+                kind: ErrorKind::ExpectedSubstitution,
                 range: reader.position()..reader.end(),
             })
         }
@@ -58,8 +58,8 @@ mod tests {
         let mut reader = Reader::from("");
         assert_eq!(
             Substitution::parse(&mut reader),
-            Err(ParseError {
-                kind: ParseErrorKind::ExpectedSubstitution,
+            Err(Error {
+                kind: ErrorKind::ExpectedSubstitution,
                 range: 0..0,
             })
         );
@@ -71,8 +71,8 @@ mod tests {
         let mut reader = Reader::from("/");
         assert_eq!(
             Substitution::parse(&mut reader),
-            Err(ParseError {
-                kind: ParseErrorKind::SubstituteWithoutValue(Char::Raw('/')),
+            Err(Error {
+                kind: ErrorKind::SubstituteWithoutValue(Char::Raw('/')),
                 range: 1..1,
             })
         );
@@ -84,8 +84,8 @@ mod tests {
         let mut reader = Reader::from("//");
         assert_eq!(
             Substitution::parse(&mut reader),
-            Err(ParseError {
-                kind: ParseErrorKind::SubstituteWithoutValue(Char::Raw('/')),
+            Err(Error {
+                kind: ErrorKind::SubstituteWithoutValue(Char::Raw('/')),
                 range: 1..1,
             })
         );

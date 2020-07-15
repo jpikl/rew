@@ -1,33 +1,40 @@
-use crate::pattern::parse::Parsed;
-use crate::pattern::parser::PatternItem;
+use crate::pattern::filter::Filter;
+use crate::pattern::parse::Output;
+use crate::pattern::variable::Variable;
 use std::fmt;
 use std::path::Path;
+use std::result;
 
-pub struct EvalContext<'a> {
+pub struct Context<'a> {
     pub path: &'a Path,
     pub global_counter: u32,
     pub local_counter: u32,
     pub regex_captures: Option<regex::Captures<'a>>,
 }
 
-pub type EvalResult<'a, T> = Result<T, EvalError<'a>>;
+pub type Result<'a, T> = result::Result<T, Error<'a>>;
 
 #[derive(Debug, PartialEq)]
-pub struct EvalError<'a> {
-    pub kind: EvalErrorKind,
-    pub item: &'a Parsed<PatternItem>,
+pub struct Error<'a> {
+    pub kind: ErrorKind,
+    pub cause: ErrorCause<'a>,
 }
 
 #[derive(Debug, PartialEq)]
-pub enum EvalErrorKind {
-    NotUtf8,
+pub enum ErrorKind {
+    ValueNotUtf8,
 }
 
-impl fmt::Display for EvalErrorKind {
+#[derive(Debug, PartialEq)]
+pub enum ErrorCause<'a> {
+    Variable(&'a Output<Variable>),
+    Filter(&'a Output<Filter>),
+}
+
+impl fmt::Display for ErrorKind {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        use EvalErrorKind::*;
         match self {
-            NotUtf8 => write!(formatter, "Value does not have UTF-8 encoding"),
+            ErrorKind::ValueNotUtf8 => write!(formatter, "Value does not have UTF-8 encoding"),
         }
     }
 }
