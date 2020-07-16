@@ -1,4 +1,4 @@
-use std::io::{stdin, BufRead, Error, ErrorKind, Result, Stdin};
+use std::io::{stdin, BufRead, Error, ErrorKind, Read, Result, Stdin};
 use std::path::{Path, PathBuf};
 use std::slice::Iter;
 
@@ -9,7 +9,7 @@ pub enum Input<'a> {
     Stdin {
         buffer: Vec<u8>,
         stdin: Stdin, // TODO global lock
-        delimiter: u8,
+        delimiter: Option<u8>,
     },
 }
 
@@ -20,7 +20,7 @@ impl<'a> Input<'a> {
         }
     }
 
-    pub fn from_stdin(delimiter: u8) -> Self {
+    pub fn from_stdin(delimiter: Option<u8>) -> Self {
         Input::Stdin {
             buffer: Vec::new(),
             stdin: stdin(),
@@ -37,13 +37,26 @@ impl<'a> Input<'a> {
                 delimiter,
             } => {
                 buffer.clear();
-                match stdin.lock().read_until(*delimiter, buffer) {
+
+                let mut lock = stdin.lock();
+                let result = if let Some(delimiter_value) = delimiter {
+                    lock.read_until(*delimiter_value, buffer)
+                } else {
+                    lock.read_to_end(buffer)
+                };
+
+                match result {
                     Ok(0) => Ok(None),
                     Ok(mut size) => {
-                        if buffer[size - 1] == *delimiter {
-                            size -= 1;
-                            if *delimiter == b'\n' && size > 0 && buffer[size - 1] == b'\r' {
+                        if let Some(delimiter_value) = delimiter {
+                            if buffer[size - 1] == *delimiter_value {
                                 size -= 1;
+                                if *delimiter_value == b'\n'
+                                    && size > 0
+                                    && buffer[size - 1] == b'\r'
+                                {
+                                    size -= 1;
+                                }
                             }
                         }
                         match std::str::from_utf8(&buffer[..size]) {

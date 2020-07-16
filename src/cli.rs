@@ -26,12 +26,16 @@ pub struct Cli {
     #[structopt(short = "z", long = "read-0")]
     pub read_nul: bool,
 
+    /// Read the whole input as a path
+    #[structopt(short = "r", long, conflicts_with = "read-nul")]
+    pub read_raw: bool,
+
     /// Print paths delimited by NUL, not newline
     #[structopt(short = "Z", long = "print-0")]
     pub print_nul: bool,
 
     /// Print paths without any delimiter
-    #[structopt(short = "R", long = "print-raw", conflicts_with = "print-nul")]
+    #[structopt(short = "R", long, conflicts_with = "print-nul")]
     pub print_raw: bool,
 
     /// Regular expression matched against filename

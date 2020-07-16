@@ -57,7 +57,13 @@ fn main() -> Result<(), io::Error> {
     };
 
     let mut input = if cli.paths.is_empty() {
-        let input_delimiter = if cli.read_nul { 0 } else { b'\n' };
+        let input_delimiter = if cli.read_raw {
+            None
+        } else if cli.read_nul {
+            Some(0)
+        } else {
+            Some(b'\n')
+        };
         Input::from_stdin(input_delimiter)
     } else {
         Input::from_args(cli.paths.as_slice())
@@ -75,6 +81,7 @@ fn main() -> Result<(), io::Error> {
     let local_counter_step = cli.lc_step.unwrap_or(1);
 
     while let Some(src_path) = input.next()? {
+        // TODO nicer error message for utf error
         let local_counter = if local_counter_used {
             if let Some(directory) = src_path.parent() {
                 let directory_buf = directory.to_path_buf();
