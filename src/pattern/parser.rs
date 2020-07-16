@@ -42,7 +42,7 @@ pub struct Parser {
 
 impl From<&str> for Parser {
     fn from(string: &str) -> Self {
-        Self::new(Lexer::from(string))
+        Self::new(Lexer::new(string))
     }
 }
 

@@ -12,6 +12,7 @@ mod cli;
 mod input;
 mod output;
 mod pattern;
+mod utils;
 
 const EXIT_PARSE_ERROR: i32 = 2;
 const EXIT_EVAL_ERROR: i32 = 3;
@@ -42,7 +43,7 @@ fn main() -> Result<(), io::Error> {
     let mut output = Output::new(output_colors, output_delimiter);
 
     let raw_pattern = cli.pattern.as_str();
-    let mut lexer = Lexer::from(raw_pattern);
+    let mut lexer = Lexer::new(raw_pattern);
 
     if let Some(escape) = cli.escape {
         lexer.set_escape(escape);
@@ -57,7 +58,7 @@ fn main() -> Result<(), io::Error> {
     };
 
     if cli.explain {
-        return output.write_pattern_explanation(raw_pattern, &pattern);
+        return output.write_explanation(&pattern, raw_pattern);
     }
 
     let mut input = if cli.paths.is_empty() {
