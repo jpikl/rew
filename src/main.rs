@@ -56,6 +56,10 @@ fn main() -> Result<(), io::Error> {
         }
     };
 
+    if cli.explain {
+        return output.write_pattern_explanation(raw_pattern, &pattern);
+    }
+
     let mut input = if cli.paths.is_empty() {
         let input_delimiter = if cli.read_raw {
             None

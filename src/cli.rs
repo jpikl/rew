@@ -38,6 +38,10 @@ pub struct Cli {
     #[structopt(short = "R", long, conflicts_with = "print-nul")]
     pub print_raw: bool,
 
+    /// Print explanation of a given pattern
+    #[structopt(long)]
+    pub explain: bool,
+
     /// Regular expression matched against filename
     #[structopt(short = "e", long)]
     pub regex: Option<Regex>,

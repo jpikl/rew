@@ -4,6 +4,7 @@ use crate::pattern::lexer::{Lexer, Token};
 use crate::pattern::parse::{Error, ErrorKind, Output, Result};
 use crate::pattern::reader::Reader;
 use crate::pattern::variable::Variable;
+use std::fmt;
 use std::ops::Range;
 
 #[derive(Debug, PartialEq)]
@@ -13,6 +14,25 @@ pub enum Item {
         variable: Output<Variable>,
         filters: Vec<Output<Filter>>,
     },
+}
+
+impl fmt::Display for Item {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Item::Constant(value) => write!(formatter, "Constant '{}'", value),
+            Item::Expression { filters, .. } if filters.is_empty() => {
+                write!(formatter, "Expression with a variable")
+            }
+            Item::Expression { filters, .. } if filters.len() == 1 => {
+                write!(formatter, "Expression with a variable and a filter")
+            }
+            Item::Expression { filters, .. } => write!(
+                formatter,
+                "Expression with a variable and {} filters",
+                filters.len()
+            ),
+        }
+    }
 }
 
 pub struct Parser {

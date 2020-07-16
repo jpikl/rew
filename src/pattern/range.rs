@@ -105,8 +105,8 @@ fn parse_index(reader: &mut Reader<Char>) -> Result<usize> {
 impl fmt::Display for Range {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Range::From(start) => write!(formatter, "from {} to end", start),
-            Range::FromTo(start, end) => write!(formatter, "from {} to {}", start, end),
+            Range::From(start) => write!(formatter, "from {} to end", start + 1),
+            Range::FromTo(start, end) => write!(formatter, "from {} to {}", start + 1, end),
             Range::To(end) => write!(formatter, "from start to {}", end),
         }
     }

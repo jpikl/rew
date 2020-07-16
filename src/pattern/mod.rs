@@ -1,9 +1,10 @@
 use crate::pattern::eval::{Context, Error, ErrorCause, Result};
 pub use crate::pattern::lexer::{Lexer, Token};
 use crate::pattern::parse::Output;
-use crate::pattern::parser::Item;
+pub use crate::pattern::parser::Item;
 pub use crate::pattern::parser::Parser;
 use crate::pattern::variable::Variable;
+use std::slice::Iter;
 
 mod char;
 pub mod eval;
@@ -50,10 +51,14 @@ impl Pattern {
         })
     }
 
+    pub fn items(&self) -> Iter<Output<Item>> {
+        self.items.iter()
+    }
+
     pub fn eval(&self, context: &Context) -> Result<String> {
         let mut output = String::new();
 
-        for item in self.items.iter() {
+        for item in self.items() {
             match &item.value {
                 Item::Constant(string) => output.push_str(string),
                 Item::Expression { variable, filters } => {

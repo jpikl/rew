@@ -1,4 +1,4 @@
-use crate::pattern::{eval, parse, Lexer, Token};
+use crate::pattern::{eval, parse, Item, Lexer, Pattern, Token};
 use std::fmt;
 use std::io::{Result, Write};
 use std::ops::Range;
@@ -6,7 +6,9 @@ use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 const ERROR_COLOR: Color = Color::Red;
 const CONSTANT_COLOR: Color = Color::Green;
-const VARIABLE_COLOR: Color = Color::Yellow;
+const EXPRESSION_COLOR: Color = Color::Yellow;
+const VARIABLE_COLOR: Color = Color::Blue;
+const FILTER_COLOR: Color = Color::Magenta;
 const SYMBOL_COLOR: Color = Color::Blue;
 
 pub struct Output {
@@ -40,10 +42,10 @@ impl Output {
     ) -> Result<()> {
         self.stderr
             .set_color(ColorSpec::new().set_fg(Some(ERROR_COLOR)))?;
-        write!(&mut self.stderr, "error:")?;
+        write!(self.stderr, "error:")?;
 
         self.stderr.reset()?;
-        writeln!(&mut self.stderr, " {}\n", message)?;
+        writeln!(self.stderr, " {}\n", message)?;
 
         let mut lexer = Lexer::from(pattern);
         let mut in_expression = false;
@@ -53,7 +55,7 @@ impl Output {
             let (color, bold) = match token.value {
                 Token::Raw(_) => {
                     if in_expression {
-                        (VARIABLE_COLOR, false)
+                        (EXPRESSION_COLOR, false)
                     } else {
                         (CONSTANT_COLOR, false)
                     }
@@ -72,22 +74,83 @@ impl Output {
             self.stderr
                 .set_color(ColorSpec::new().set_fg(Some(color)).set_bold(bold))?;
             position = token.range.end;
-            write!(&mut self.stderr, "{}", &pattern[token.range])?;
+            write!(self.stderr, "{}", &pattern[token.range])?;
         }
 
         self.stderr.reset()?;
-        write!(&mut self.stderr, "{}", &pattern[position..])?;
+        write!(self.stderr, "{}", &pattern[position..])?;
 
         let spaces_count = pattern[..range.start].chars().count();
         let markers_count = pattern[range.start..range.end].chars().count().max(1);
 
-        write!(&mut self.stderr, "\n{}", " ".repeat(spaces_count))?;
+        write!(self.stderr, "\n{}", " ".repeat(spaces_count))?;
         self.stderr
             .set_color(ColorSpec::new().set_fg(Some(Color::Red)).set_bold(true))?;
-        write!(&mut self.stderr, "{}", "^".repeat(markers_count))?;
+        write!(self.stderr, "{}", "^".repeat(markers_count))?;
 
         self.stderr.reset()?;
-        writeln!(&mut self.stderr)
+        writeln!(self.stderr)
+    }
+
+    pub fn write_pattern_explanation(
+        &mut self,
+        raw_pattern: &str,
+        pattern: &Pattern,
+    ) -> Result<()> {
+        for item in pattern.items() {
+            let color = match item.value {
+                Item::Constant(_) => CONSTANT_COLOR,
+                Item::Expression { .. } => EXPRESSION_COLOR,
+            };
+
+            self.write_pattern_item_exlanation(raw_pattern, &item, color)?;
+
+            if let Item::Expression { variable, filters } = &item.value {
+                self.write_pattern_item_exlanation(raw_pattern, &variable, VARIABLE_COLOR)?;
+
+                for filter in filters {
+                    self.write_pattern_item_exlanation(raw_pattern, &filter, FILTER_COLOR)?;
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn write_pattern_item_exlanation<T: fmt::Display>(
+        &mut self,
+        pattern: &str,
+        item: &parse::Output<T>,
+        color: Color,
+    ) -> Result<()> {
+        let parse::Output { value, range } = item;
+        let spaces_count = pattern[..range.start].chars().count();
+        let markers_count = pattern[range.start..range.end].chars().count().max(1);
+
+        let mut color_spec = ColorSpec::new();
+        color_spec.set_fg(Some(color));
+        color_spec.set_bold(true);
+
+        write!(self.stdout, "{}", &pattern[..range.start])?;
+        self.stdout.set_color(&color_spec)?;
+        write!(self.stdout, "{}", &pattern[range.start..range.end])?;
+        self.stdout.reset()?;
+        write!(
+            &mut self.stdout,
+            "{}\n{}",
+            &pattern[range.end..],
+            " ".repeat(spaces_count)
+        )?;
+        self.stdout.set_color(&color_spec)?;
+        writeln!(self.stdout, "{}", "^".repeat(markers_count))?;
+        self.stdout.reset()?;
+
+        color_spec.set_bold(false);
+
+        writeln!(self.stdout)?;
+        self.stdout.set_color(&color_spec)?;
+        writeln!(self.stdout, "{}", value)?;
+        self.stdout.reset()?;
+        writeln!(self.stdout)
     }
 
     pub fn write_path(&mut self, path: &str) -> Result<()> {
