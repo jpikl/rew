@@ -66,7 +66,7 @@ impl Pattern {
     pub fn eval(&self, context: &eval::Context) -> eval::Result<String> {
         let mut output = String::new();
 
-        for item in self.items.iter() {
+        for item in &self.items {
             match &item.value {
                 Item::Constant(string) => output.push_str(string),
                 Item::Expression { variable, filters } => {

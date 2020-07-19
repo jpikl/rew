@@ -8,21 +8,18 @@ use termcolor::{Color, WriteColor};
 
 impl Pattern {
     pub fn explain<S: Write + WriteColor>(&self, stream: &mut S) -> Result<()> {
-        for item in self.items.iter() {
-            let color = match item.value {
-                Item::Constant(_) => Color::Green,
-                Item::Expression { .. } => Color::Yellow,
-            };
-
-            self.explain_part(stream, &item, color)?;
-
-            if let Item::Expression { variable, filters } = &item.value {
-                self.explain_part(stream, &variable, Color::Blue)?;
-
-                for filter in filters {
-                    self.explain_part(stream, &filter, Color::Magenta)?;
+        for item in &self.items {
+            match &item.value {
+                Item::Constant(_) => self.explain_part(stream, &item, Color::Green),
+                Item::Expression { variable, filters } => {
+                    self.explain_part(stream, &item, Color::Yellow)?;
+                    self.explain_part(stream, &variable, Color::Blue)?;
+                    for filter in filters {
+                        self.explain_part(stream, &filter, Color::Magenta)?;
+                    }
+                    Ok(())
                 }
-            }
+            }?;
         }
         Ok(())
     }
