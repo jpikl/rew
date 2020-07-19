@@ -20,15 +20,15 @@ impl Output {
     }
 
     pub fn write_path(&mut self, path: &str) -> Result<()> {
-        if let Some(delimiter_value) = self.delimiter {
-            write!(self.stdout, "{}{}", path, delimiter_value)
+        if let Some(delimiter) = self.delimiter {
+            write!(self.stdout, "{}{}", path, delimiter)
         } else {
             write!(self.stdout, "{}", path)
         }
     }
 
-    pub fn write_explanation(&mut self, pattern: &Pattern, raw_pattern: &str) -> Result<()> {
-        pattern.explain(&mut self.stdout, raw_pattern)
+    pub fn write_explanation(&mut self, pattern: &Pattern) -> Result<()> {
+        pattern.explain(&mut self.stdout)
     }
 
     pub fn write_parse_error(&mut self, raw_pattern: &str, error: &parse::Error) -> Result<()> {

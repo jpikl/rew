@@ -39,8 +39,8 @@ impl<'a> Input<'a> {
                 buffer.clear();
 
                 let mut lock = stdin.lock();
-                let result = if let Some(delimiter_value) = delimiter {
-                    lock.read_until(*delimiter_value, buffer)
+                let result = if let Some(delimiter) = delimiter {
+                    lock.read_until(*delimiter, buffer)
                 } else {
                     lock.read_to_end(buffer)
                 };
@@ -48,13 +48,10 @@ impl<'a> Input<'a> {
                 match result {
                     Ok(0) => Ok(None),
                     Ok(mut size) => {
-                        if let Some(delimiter_value) = delimiter {
-                            if buffer[size - 1] == *delimiter_value {
+                        if let Some(delimiter) = delimiter {
+                            if buffer[size - 1] == *delimiter {
                                 size -= 1;
-                                if *delimiter_value == b'\n'
-                                    && size > 0
-                                    && buffer[size - 1] == b'\r'
-                                {
+                                if *delimiter == b'\n' && size > 0 && buffer[size - 1] == b'\r' {
                                     size -= 1;
                                 }
                             }

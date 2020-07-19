@@ -18,6 +18,7 @@ pub type Result<'a, T> = result::Result<T, Error<'a>>;
 #[derive(Debug, PartialEq)]
 pub struct Error<'a> {
     pub kind: ErrorKind,
+    // TODO separate range field
     pub cause: ErrorCause<'a>,
 }
 

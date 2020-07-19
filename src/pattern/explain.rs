@@ -7,21 +7,20 @@ use std::io::{Result, Write};
 use termcolor::{Color, WriteColor};
 
 impl Pattern {
-    pub fn explain<S: Write + WriteColor>(&self, stream: &mut S, raw_pattern: &str) -> Result<()> {
-        // TODO add Pattern visitor for Output<T>
+    pub fn explain<S: Write + WriteColor>(&self, stream: &mut S) -> Result<()> {
         for item in self.items.iter() {
             let color = match item.value {
                 Item::Constant(_) => Color::Green,
                 Item::Expression { .. } => Color::Yellow,
             };
 
-            self.explain_part(stream, &item, raw_pattern, color)?;
+            self.explain_part(stream, &item, color)?;
 
             if let Item::Expression { variable, filters } = &item.value {
-                self.explain_part(stream, &variable, raw_pattern, Color::Blue)?;
+                self.explain_part(stream, &variable, Color::Blue)?;
 
                 for filter in filters {
-                    self.explain_part(stream, &filter, raw_pattern, Color::Magenta)?;
+                    self.explain_part(stream, &filter, Color::Magenta)?;
                 }
             }
         }
@@ -32,10 +31,9 @@ impl Pattern {
         &self,
         stream: &mut S,
         part: &Output<T>,
-        raw_pattern: &str,
         color: Color,
     ) -> Result<()> {
-        highlight_range(stream, raw_pattern, &part.range, color)?;
+        highlight_range(stream, &self.source, &part.range, color)?;
         stream.set_color(&spec_color(color))?;
         writeln!(stream, "\n{}\n", part.value)?;
         stream.reset()

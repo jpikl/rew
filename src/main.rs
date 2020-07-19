@@ -1,7 +1,7 @@
 use crate::cli::Cli;
 use crate::input::Input;
 use crate::output::Output;
-use crate::pattern::{eval, Lexer, Parser, Pattern};
+use crate::pattern::{eval, Pattern};
 use std::collections::HashMap;
 use std::io;
 use std::process;
@@ -40,17 +40,11 @@ fn main() -> Result<(), io::Error> {
         Some('\n')
     };
 
+    let raw_pattern = &cli.pattern;
     let mut output = Output::new(output_colors, output_delimiter);
 
-    let raw_pattern = cli.pattern.as_str();
-    let mut lexer = Lexer::new(raw_pattern);
-
-    if let Some(escape) = cli.escape {
-        lexer.set_escape(escape);
-    }
-
-    let pattern = match Parser::new(lexer).parse_items() {
-        Ok(items) => Pattern::new(items),
+    let pattern = match Pattern::parse(raw_pattern, cli.escape) {
+        Ok(pattern) => pattern,
         Err(error) => {
             output.write_parse_error(raw_pattern, &error)?;
             process::exit(EXIT_PARSE_ERROR);
@@ -58,7 +52,7 @@ fn main() -> Result<(), io::Error> {
     };
 
     if cli.explain {
-        return output.write_explanation(&pattern, raw_pattern);
+        return output.write_explanation(&pattern);
     }
 
     let mut input = if cli.paths.is_empty() {

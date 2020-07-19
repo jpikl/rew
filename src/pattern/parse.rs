@@ -4,6 +4,7 @@ use std::fmt;
 use std::ops::Range;
 use std::result;
 
+// TODO better name ... maybe Out, Tag, ...
 #[derive(Debug, PartialEq)]
 pub struct Output<T> {
     pub value: T,
