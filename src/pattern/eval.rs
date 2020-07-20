@@ -1,6 +1,6 @@
 use crate::pattern::filter::Filter;
-use crate::pattern::parse::Output;
 use crate::pattern::variable::Variable;
+use crate::utils::HasRange;
 use std::fmt;
 use std::ops::Range;
 use std::path::Path;
@@ -18,8 +18,8 @@ pub type Result<'a, T> = result::Result<T, Error<'a>>;
 #[derive(Debug, PartialEq)]
 pub struct Error<'a> {
     pub kind: ErrorKind,
-    // TODO separate range field
     pub cause: ErrorCause<'a>,
+    pub range: &'a Range<usize>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -29,8 +29,14 @@ pub enum ErrorKind {
 
 #[derive(Debug, PartialEq)]
 pub enum ErrorCause<'a> {
-    Variable(&'a Output<Variable>),
-    Filter(&'a Output<Filter>),
+    Variable(&'a Variable),
+    Filter(&'a Filter),
+}
+
+impl<'a> HasRange for Error<'a> {
+    fn range(&self) -> &Range<usize> {
+        self.range
+    }
 }
 
 impl<'a> fmt::Display for Error<'a> {
@@ -47,20 +53,11 @@ impl fmt::Display for ErrorKind {
     }
 }
 
-impl<'a> ErrorCause<'a> {
-    pub fn range(&self) -> &Range<usize> {
-        match self {
-            ErrorCause::Variable(variable) => &variable.range,
-            ErrorCause::Filter(filter) => &filter.range,
-        }
-    }
-}
-
 impl<'a> fmt::Display for ErrorCause<'a> {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            ErrorCause::Variable(variable) => write!(formatter, "`{}` variable", variable.value),
-            ErrorCause::Filter(filter) => write!(formatter, "`{}` filter", filter.value),
+            ErrorCause::Variable(variable) => write!(formatter, "`{}` variable", variable),
+            ErrorCause::Filter(filter) => write!(formatter, "`{}` filter", filter),
         }
     }
 }

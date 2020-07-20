@@ -1,5 +1,6 @@
 use crate::pattern::char::{Char, EscapeSequence};
 use crate::pattern::symbols::{EXPR_END, EXPR_START, PIPE};
+use crate::utils::HasRange;
 use std::fmt;
 use std::ops::Range;
 use std::result;
@@ -41,6 +42,12 @@ pub enum ErrorKind {
     UnmatchedExprEnd,
     UnmatchedExprStart,
     UnterminatedEscapeSequence(char),
+}
+
+impl HasRange for Error {
+    fn range(&self) -> &Range<usize> {
+        &self.range
+    }
 }
 
 impl fmt::Display for Error {

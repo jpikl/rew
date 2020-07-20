@@ -78,7 +78,8 @@ impl Pattern {
                                     Err(kind) => {
                                         return Err(eval::Error {
                                             kind,
-                                            cause: eval::ErrorCause::Filter(filter),
+                                            cause: eval::ErrorCause::Filter(&filter.value),
+                                            range: &filter.range,
                                         });
                                     }
                                 }
@@ -88,7 +89,8 @@ impl Pattern {
                         Err(kind) => {
                             return Err(eval::Error {
                                 kind,
-                                cause: eval::ErrorCause::Variable(variable),
+                                cause: eval::ErrorCause::Variable(&variable.value),
+                                range: &variable.range,
                             });
                         }
                     };

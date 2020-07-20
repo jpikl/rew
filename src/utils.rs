@@ -14,6 +14,10 @@ pub fn spec_bold_color(color: Color) -> ColorSpec {
     spec
 }
 
+pub trait HasRange {
+    fn range(&self) -> &Range<usize>;
+}
+
 pub fn highlight_range<S: Write + WriteColor>(
     stream: &mut S,
     string: &str,

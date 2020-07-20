@@ -46,7 +46,7 @@ fn main() -> Result<(), io::Error> {
     let pattern = match Pattern::parse(raw_pattern, cli.escape) {
         Ok(pattern) => pattern,
         Err(error) => {
-            output.write_parse_error(raw_pattern, &error)?;
+            output.write_pattern_error(raw_pattern, &error)?;
             process::exit(EXIT_PARSE_ERROR);
         }
     };
@@ -81,6 +81,7 @@ fn main() -> Result<(), io::Error> {
 
     while let Some(src_path) = input.next()? {
         // TODO nicer error message for utf error
+        // TODO move to counter module
         let local_counter = if local_counter_used {
             if let Some(directory) = src_path.parent() {
                 let directory_buf = directory.to_path_buf();
@@ -98,6 +99,7 @@ fn main() -> Result<(), io::Error> {
             0
         };
 
+        // TODO move to separate module
         let regex_captures = if regex_captures_used {
             if let Some(regex) = &cli.regex {
                 src_path
@@ -123,13 +125,14 @@ fn main() -> Result<(), io::Error> {
         let dst_path = match pattern.eval(&context) {
             Ok(path) => path,
             Err(error) => {
-                output.write_eval_error(raw_pattern, &error)?;
+                output.write_pattern_error(raw_pattern, &error)?;
                 process::exit(EXIT_EVAL_ERROR);
             }
         };
 
         output.write_path(&dst_path)?;
 
+        // TODO move to counter module
         if global_counter_used {
             global_counter += global_counter_step;
         }
