@@ -12,6 +12,7 @@ mod counter;
 mod input;
 mod output;
 mod pattern;
+mod regex;
 mod utils;
 
 fn main() -> Result<(), io::Error> {
@@ -71,10 +72,19 @@ fn main() -> Result<(), io::Error> {
 
     let mut global_counter =
         counter::Global::new(cli.gc_init.unwrap_or(1), cli.gc_step.unwrap_or(1));
+
     let mut local_counter = counter::Local::new(cli.lc_init.unwrap_or(1), cli.lc_step.unwrap_or(1));
 
+    let regex_capture = if let Some(regex) = &cli.regex {
+        regex::Capture::of_file_name(regex)
+    } else if let Some(regex) = &cli.regex_full {
+        regex::Capture::of_full_path(regex)
+    } else {
+        regex::Capture::of_none()
+    };
+
     // TODO nicer error message for utf error
-    while let Some(src_path) = input.next()? {
+    while let Some(path) = input.next()? {
         let global_counter = if global_counter_used {
             global_counter.next()
         } else {
@@ -82,35 +92,25 @@ fn main() -> Result<(), io::Error> {
         };
 
         let local_counter = if local_counter_used {
-            local_counter.next(src_path)
+            local_counter.next(path)
         } else {
             0
         };
 
-        // TODO move to separate module
         let regex_captures = if regex_captures_used {
-            if let Some(regex) = &cli.regex {
-                src_path
-                    .file_name()
-                    .map(|file_name| regex.captures(file_name.to_str().unwrap())) // TODO handle utf error
-                    .flatten()
-            } else if let Some(regex) = &cli.regex_full {
-                regex.captures(src_path.to_str().unwrap()) // TODO handle utf error
-            } else {
-                None
-            }
+            regex_capture.get(path)
         } else {
             None
         };
 
         let context = eval::Context {
-            path: src_path,
+            path,
             global_counter,
             local_counter,
             regex_captures,
         };
 
-        let dst_path = match pattern.eval(&context) {
+        let out_path = match pattern.eval(&context) {
             Ok(path) => path,
             Err(error) => {
                 output.write_pattern_error(raw_pattern, &error)?;
@@ -118,7 +118,7 @@ fn main() -> Result<(), io::Error> {
             }
         };
 
-        output.write_path(&dst_path)?;
+        output.write_path(&out_path)?;
     }
 
     Ok(())
