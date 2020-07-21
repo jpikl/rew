@@ -14,9 +14,6 @@ mod output;
 mod pattern;
 mod utils;
 
-const EXIT_PARSE_ERROR: i32 = 2;
-const EXIT_EVAL_ERROR: i32 = 3;
-
 fn main() -> Result<(), io::Error> {
     // Explicit variable type, because IDE is unable to detect it.
     let cli: Cli = Cli::from_args();
@@ -47,7 +44,7 @@ fn main() -> Result<(), io::Error> {
         Ok(pattern) => pattern,
         Err(error) => {
             output.write_pattern_error(raw_pattern, &error)?;
-            process::exit(EXIT_PARSE_ERROR);
+            process::exit(2);
         }
     };
 
@@ -117,7 +114,7 @@ fn main() -> Result<(), io::Error> {
             Ok(path) => path,
             Err(error) => {
                 output.write_pattern_error(raw_pattern, &error)?;
-                process::exit(EXIT_EVAL_ERROR);
+                process::exit(3);
             }
         };
 
