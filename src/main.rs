@@ -2,13 +2,13 @@ use crate::cli::Cli;
 use crate::input::Input;
 use crate::output::Output;
 use crate::pattern::{eval, Pattern};
-use std::collections::HashMap;
 use std::io;
 use std::process;
 use structopt::StructOpt;
 use termcolor::ColorChoice;
 
 mod cli;
+mod counter;
 mod input;
 mod output;
 mod pattern;
@@ -72,29 +72,20 @@ fn main() -> Result<(), io::Error> {
     let local_counter_used = pattern.uses_local_counter();
     let regex_captures_used = pattern.uses_regex_captures();
 
-    let mut global_counter = cli.gc_init.unwrap_or(1);
-    let global_counter_step = cli.gc_step.unwrap_or(1);
+    let mut global_counter =
+        counter::Global::new(cli.gc_init.unwrap_or(1), cli.gc_step.unwrap_or(1));
+    let mut local_counter = counter::Local::new(cli.lc_init.unwrap_or(1), cli.lc_step.unwrap_or(1));
 
-    let mut local_counters = HashMap::new();
-    let local_counter_start = cli.lc_init.unwrap_or(1);
-    let local_counter_step = cli.lc_step.unwrap_or(1);
-
+    // TODO nicer error message for utf error
     while let Some(src_path) = input.next()? {
-        // TODO nicer error message for utf error
-        // TODO move to counter module
+        let global_counter = if global_counter_used {
+            global_counter.next()
+        } else {
+            0
+        };
+
         let local_counter = if local_counter_used {
-            if let Some(directory) = src_path.parent() {
-                let directory_buf = directory.to_path_buf();
-                if let Some(local_counter) = local_counters.get_mut(&directory_buf) {
-                    *local_counter += local_counter_step;
-                    *local_counter
-                } else {
-                    local_counters.insert(directory_buf, local_counter_start);
-                    local_counter_start
-                }
-            } else {
-                0
-            }
+            local_counter.next(src_path)
         } else {
             0
         };
@@ -131,11 +122,6 @@ fn main() -> Result<(), io::Error> {
         };
 
         output.write_path(&dst_path)?;
-
-        // TODO move to counter module
-        if global_counter_used {
-            global_counter += global_counter_step;
-        }
     }
 
     Ok(())
