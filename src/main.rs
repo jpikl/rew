@@ -53,19 +53,6 @@ fn main() -> Result<(), io::Error> {
         return output.write_explanation(&pattern);
     }
 
-    let mut input = if cli.paths.is_empty() {
-        let input_delimiter = if cli.read_raw {
-            None
-        } else if cli.read_nul {
-            Some(0)
-        } else {
-            Some(b'\n')
-        };
-        Input::from_stdin(input_delimiter)
-    } else {
-        Input::from_args(cli.paths.as_slice())
-    };
-
     let global_counter_used = pattern.uses_global_counter();
     let local_counter_used = pattern.uses_local_counter();
     let regex_captures_used = pattern.uses_regex_captures();
@@ -81,6 +68,19 @@ fn main() -> Result<(), io::Error> {
         regex::Capture::of_full_path(regex)
     } else {
         regex::Capture::of_none()
+    };
+
+    let mut input = if cli.paths.is_empty() {
+        let input_delimiter = if cli.read_raw {
+            None
+        } else if cli.read_nul {
+            Some(0)
+        } else {
+            Some(b'\n')
+        };
+        Input::from_stdin(input_delimiter)
+    } else {
+        Input::from_args(cli.paths.as_slice())
     };
 
     // TODO nicer error message for utf error
