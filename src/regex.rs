@@ -1,65 +1,56 @@
 use regex::{Captures, Regex};
 use std::path::Path;
 
-pub struct Capture<'a> {
-    regex: Option<&'a Regex>,
-    full: bool,
+pub enum Solver<'a> {
+    Filename(&'a Regex),
+    FullPath(&'a Regex),
+    None,
 }
 
-impl<'a> Capture<'a> {
-    pub fn of_full_path(regex: &'a Regex) -> Self {
-        Self {
-            regex: Some(regex),
-            full: true,
+impl<'a> Solver<'a> {
+    pub fn eval<'t>(&self, path: &'t Path) -> Option<Captures<'t>> {
+        match self {
+            Self::Filename(regex) => path
+                .file_name()
+                .map(|file_name| regex.captures(file_name.to_str().unwrap())) // TODO handle utf error
+                .flatten(),
+            Self::FullPath(regex) => regex.captures(path.to_str().unwrap()), // TODO handle utf error,
+            Self::None => None,
         }
-    }
-
-    pub fn of_file_name(regex: &'a Regex) -> Self {
-        Self {
-            regex: Some(regex),
-            full: false,
-        }
-    }
-
-    pub fn of_none() -> Self {
-        Self {
-            regex: None,
-            full: false,
-        }
-    }
-
-    pub fn get<'t>(&self, path: &'t Path) -> Option<Captures<'t>> {
-        self.regex
-            .as_ref()
-            .map(|regex| {
-                if self.full {
-                    path.file_name()
-                        .map(|file_name| regex.captures(file_name.to_str().unwrap())) // TODO handle utf error
-                        .flatten()
-                } else {
-                    regex.captures(path.to_str().unwrap()) // TODO handle utf error
-                }
-            })
-            .flatten()
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn full_path() {
-        // TODO test
-    }
+    use regex::Match;
 
     #[test]
     fn file_name() {
-        // TODO test
+        let regex = Regex::new("([a-z]+)_([A-Z]+)").unwrap();
+        let captures = eval(Solver::Filename(&regex)).unwrap();
+
+        assert_eq!(captures.len(), 3);
+        assert_eq!(captures.get(1).as_ref().map(Match::as_str), Some("file"));
+        assert_eq!(captures.get(2).as_ref().map(Match::as_str), Some("FILE"));
+    }
+
+    #[test]
+    fn full_path() {
+        let regex = Regex::new("([a-z]+)_([A-Z]+)").unwrap();
+        let captures = eval(Solver::FullPath(&regex)).unwrap();
+
+        assert_eq!(captures.len(), 3);
+        assert_eq!(captures.get(1).as_ref().map(Match::as_str), Some("dir"));
+        assert_eq!(captures.get(2).as_ref().map(Match::as_str), Some("DIR"));
+    }
+
+    fn eval(solver: Solver) -> Option<Captures> {
+        solver.eval(&Path::new("dir_DIR/file_FILE.ext"))
     }
 
     #[test]
     fn none() {
-        // TODO test
+        assert!(eval(Solver::None).is_none());
     }
 }

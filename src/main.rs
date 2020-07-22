@@ -62,12 +62,12 @@ fn main() -> Result<(), io::Error> {
 
     let mut local_counter = counter::Local::new(cli.lc_init.unwrap_or(1), cli.lc_step.unwrap_or(1));
 
-    let regex_capture = if let Some(regex) = &cli.regex {
-        regex::Capture::of_file_name(regex)
+    let regex_solver = if let Some(regex) = &cli.regex {
+        regex::Solver::Filename(regex)
     } else if let Some(regex) = &cli.regex_full {
-        regex::Capture::of_full_path(regex)
+        regex::Solver::FullPath(regex)
     } else {
-        regex::Capture::of_none()
+        regex::Solver::None
     };
 
     let mut input = if cli.paths.is_empty() {
@@ -98,7 +98,7 @@ fn main() -> Result<(), io::Error> {
         };
 
         let regex_captures = if regex_captures_used {
-            regex_capture.get(path)
+            regex_solver.eval(path)
         } else {
             None
         };
