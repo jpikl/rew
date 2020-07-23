@@ -1,15 +1,10 @@
 use regex::{Captures, Regex};
+use std::ffi::OsStr;
 use std::path::Path;
 use std::{error, fmt};
 
 #[derive(Debug)]
 pub struct Utf8Error {}
-
-impl Utf8Error {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 
 impl error::Error for Utf8Error {}
 
@@ -30,15 +25,19 @@ impl<'a> Solver<'a> {
         match self {
             Self::Filename(regex) => {
                 if let Some(filename) = path.file_name() {
-                    Ok(regex.captures(filename.to_str().ok_or_else(Utf8Error::new)?))
+                    Ok(regex.captures(to_str(filename)?))
                 } else {
                     Ok(None)
                 }
             }
-            Self::FullPath(regex) => Ok(regex.captures(path.to_str().ok_or_else(Utf8Error::new)?)),
+            Self::FullPath(regex) => Ok(regex.captures(to_str(path)?)),
             Self::None => Ok(None),
         }
     }
+}
+
+fn to_str<S: AsRef<OsStr> + ?Sized>(value: &S) -> Result<&str, Utf8Error> {
+    value.as_ref().to_str().ok_or_else(|| Utf8Error {})
 }
 
 #[cfg(test)]

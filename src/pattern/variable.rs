@@ -65,45 +65,21 @@ impl Variable {
 
     pub fn eval(&self, context: &eval::Context) -> Result<String, eval::ErrorKind> {
         match self {
-            Variable::Filename => context
-                .path
-                .file_name()
-                .map_or_else(ok_new_string, os_str_to_string),
-
-            Variable::Basename => context
-                .path
-                .file_stem()
-                .map_or_else(ok_new_string, os_str_to_string),
-
-            Variable::Extension => context
-                .path
-                .extension()
-                .map_or_else(ok_new_string, os_str_to_string),
+            Variable::Filename => to_string(context.path.file_name()),
+            Variable::Basename => to_string(context.path.file_stem()),
+            Variable::Extension => to_string(context.path.extension()),
 
             Variable::ExtensionWithDot => {
-                context
-                    .path
-                    .extension()
-                    .map_or_else(ok_new_string, |os_str| {
-                        let mut string = os_str_to_string(os_str)?;
-                        string.insert(0, '.');
-                        Ok(string)
-                    })
+                let mut string = to_string(context.path.extension())?;
+                if !string.is_empty() {
+                    string.insert(0, '.');
+                }
+                Ok(string)
             }
 
-            Variable::FullDirname => context
-                .path
-                .parent()
-                .map(Path::as_os_str)
-                .map_or_else(ok_new_string, os_str_to_string),
-
-            Variable::ParentDirname => context
-                .path
-                .parent()
-                .and_then(Path::file_name)
-                .map_or_else(ok_new_string, os_str_to_string),
-
-            Variable::FullPath => os_str_to_string(context.path.as_os_str()),
+            Variable::FullDirname => to_string(context.path.parent()),
+            Variable::ParentDirname => to_string(context.path.parent().and_then(Path::file_name)),
+            Variable::FullPath => to_string(Some(context.path)),
             Variable::LocalCounter => Ok(context.local_counter.to_string()),
             Variable::GlobalCounter => Ok(context.global_counter.to_string()),
 
@@ -123,15 +99,15 @@ impl Variable {
     }
 }
 
-fn ok_new_string() -> Result<String, eval::ErrorKind> {
-    Ok(String::new())
-}
-
-// TODO add test
-fn os_str_to_string(os_str: &OsStr) -> Result<String, eval::ErrorKind> {
-    match os_str.to_str() {
-        Some(str) => Ok(str.to_string()),
-        None => Err(eval::ErrorKind::InputNotUtf8),
+fn to_string<S: AsRef<OsStr> + ?Sized>(value: Option<&S>) -> Result<String, eval::ErrorKind> {
+    if let Some(value) = value {
+        if let Some(str) = value.as_ref().to_str() {
+            Ok(str.to_string())
+        } else {
+            Err(eval::ErrorKind::InputNotUtf8)
+        }
+    } else {
+        Ok(String::new())
     }
 }
 
