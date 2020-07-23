@@ -1,5 +1,23 @@
 use regex::{Captures, Regex};
 use std::path::Path;
+use std::{error, fmt};
+
+#[derive(Debug)]
+pub struct Utf8Error {}
+
+impl Utf8Error {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+impl error::Error for Utf8Error {}
+
+impl fmt::Display for Utf8Error {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        write!(formatter, "Input does not have UTF-8 encoding")
+    }
+}
 
 pub enum Solver<'a> {
     Filename(&'a Regex),
@@ -8,14 +26,17 @@ pub enum Solver<'a> {
 }
 
 impl<'a> Solver<'a> {
-    pub fn eval<'t>(&self, path: &'t Path) -> Option<Captures<'t>> {
+    pub fn eval<'t>(&self, path: &'t Path) -> Result<Option<Captures<'t>>, Utf8Error> {
         match self {
-            Self::Filename(regex) => path
-                .file_name()
-                .map(|file_name| regex.captures(file_name.to_str().unwrap())) // TODO handle utf error
-                .flatten(),
-            Self::FullPath(regex) => regex.captures(path.to_str().unwrap()), // TODO handle utf error,
-            Self::None => None,
+            Self::Filename(regex) => {
+                if let Some(filename) = path.file_name() {
+                    Ok(regex.captures(filename.to_str().ok_or_else(Utf8Error::new)?))
+                } else {
+                    Ok(None)
+                }
+            }
+            Self::FullPath(regex) => Ok(regex.captures(path.to_str().ok_or_else(Utf8Error::new)?)),
+            Self::None => Ok(None),
         }
     }
 }
@@ -46,7 +67,7 @@ mod tests {
     }
 
     fn eval(solver: Solver) -> Option<Captures> {
-        solver.eval(&Path::new("dir_DIR/file_FILE.ext"))
+        solver.eval(&Path::new("dir_DIR/file_FILE.ext")).unwrap()
     }
 
     #[test]

@@ -98,7 +98,13 @@ fn main() -> Result<(), io::Error> {
         };
 
         let regex_captures = if regex_captures_used {
-            regex_solver.eval(path)
+            match regex_solver.eval(path) {
+                Ok(captures) => captures,
+                Err(error) => {
+                    output.write_error(&error)?;
+                    process::exit(4)
+                }
+            }
         } else {
             None
         };
