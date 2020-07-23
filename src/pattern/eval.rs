@@ -1,10 +1,9 @@
 use crate::pattern::filter::Filter;
 use crate::pattern::variable::Variable;
 use crate::utils::HasRange;
-use std::fmt;
 use std::ops::Range;
 use std::path::Path;
-use std::result;
+use std::{error, fmt, result};
 
 pub struct Context<'a> {
     pub path: &'a Path,
@@ -32,6 +31,8 @@ pub enum ErrorCause<'a> {
     Variable(&'a Variable),
     Filter(&'a Filter),
 }
+
+impl<'a> error::Error for Error<'a> {}
 
 impl<'a> HasRange for Error<'a> {
     fn range(&self) -> &Range<usize> {

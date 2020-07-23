@@ -1,6 +1,6 @@
 use crate::pattern::Pattern;
 use crate::utils::{highlight_range, spec_color, HasRange};
-use std::fmt::Display;
+use std::error::Error;
 use std::io::{Result, Write};
 use termcolor::{Color, ColorChoice, StandardStream, WriteColor};
 
@@ -31,18 +31,18 @@ impl Output {
         pattern.explain(&mut self.stdout)
     }
 
-    pub fn write_pattern_error<T: Display + HasRange>(
+    pub fn write_pattern_error<T: Error + HasRange>(
         &mut self,
         raw_pattern: &str,
         error: &T,
     ) -> Result<()> {
-        self.write_error(&error)?;
+        self.write_error(error)?;
         writeln!(self.stderr)?;
         highlight_range(&mut self.stderr, raw_pattern, error.range(), Color::Red)?;
         self.stderr.reset()
     }
 
-    pub fn write_error<T: Display>(&mut self, error: &T) -> Result<()> {
+    pub fn write_error<T: Error>(&mut self, error: &T) -> Result<()> {
         self.stderr.set_color(&spec_color(Color::Red))?;
         write!(self.stderr, "error:")?;
         self.stderr.reset()?;

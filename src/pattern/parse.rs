@@ -1,9 +1,8 @@
 use crate::pattern::char::{Char, EscapeSequence};
 use crate::pattern::symbols::{EXPR_END, EXPR_START, PIPE};
 use crate::utils::HasRange;
-use std::fmt;
 use std::ops::Range;
-use std::result;
+use std::{error, fmt, result};
 
 // TODO better name ... maybe Out, Tag, ...
 #[derive(Debug, PartialEq)]
@@ -43,6 +42,8 @@ pub enum ErrorKind {
     UnmatchedExprStart,
     UnterminatedEscapeSequence(char),
 }
+
+impl error::Error for Error {}
 
 impl HasRange for Error {
     fn range(&self) -> &Range<usize> {
