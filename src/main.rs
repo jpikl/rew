@@ -59,7 +59,6 @@ fn main() -> Result<(), io::Error> {
 
     let mut global_counter =
         counter::Global::new(cli.gc_init.unwrap_or(1), cli.gc_step.unwrap_or(1));
-
     let mut local_counter = counter::Local::new(cli.lc_init.unwrap_or(1), cli.lc_step.unwrap_or(1));
 
     let regex_solver = if let Some(regex) = &cli.regex {
@@ -83,48 +82,57 @@ fn main() -> Result<(), io::Error> {
         Input::from_args(cli.paths.as_slice())
     };
 
-    // TODO nicer error message for utf error
-    while let Some(path) = input.next()? {
-        let global_counter = if global_counter_used {
-            global_counter.next()
-        } else {
-            0
-        };
+    loop {
+        match input.next() {
+            Ok(Some(path)) => {
+                let global_counter = if global_counter_used {
+                    global_counter.next()
+                } else {
+                    0
+                };
 
-        let local_counter = if local_counter_used {
-            local_counter.next(path)
-        } else {
-            0
-        };
+                let local_counter = if local_counter_used {
+                    local_counter.next(path)
+                } else {
+                    0
+                };
 
-        let regex_captures = if regex_captures_used {
-            match regex_solver.eval(path) {
-                Ok(captures) => captures,
-                Err(error) => {
-                    output.write_error(&error)?;
-                    process::exit(4)
-                }
+                let regex_captures = if regex_captures_used {
+                    match regex_solver.eval(path) {
+                        Ok(captures) => captures,
+                        Err(error) => {
+                            output.write_error(&error)?;
+                            process::exit(4)
+                        }
+                    }
+                } else {
+                    None
+                };
+
+                let context = eval::Context {
+                    path,
+                    global_counter,
+                    local_counter,
+                    regex_captures,
+                };
+
+                let out_path = match pattern.eval(&context) {
+                    Ok(path) => path,
+                    Err(error) => {
+                        output.write_pattern_error(raw_pattern, &error)?;
+                        process::exit(3);
+                    }
+                };
+
+                output.write_path(&out_path)?;
             }
-        } else {
-            None
-        };
 
-        let context = eval::Context {
-            path,
-            global_counter,
-            local_counter,
-            regex_captures,
-        };
-
-        let out_path = match pattern.eval(&context) {
-            Ok(path) => path,
+            Ok(None) => break,
             Err(error) => {
-                output.write_pattern_error(raw_pattern, &error)?;
-                process::exit(3);
+                output.write_error(&error)?;
+                process::exit(5)
             }
-        };
-
-        output.write_path(&out_path)?;
+        }
     }
 
     Ok(())
