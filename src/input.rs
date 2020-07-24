@@ -1,29 +1,29 @@
-use std::io::{stdin, BufRead, Error, ErrorKind, Read, Result, Stdin};
+use std::io::{BufRead, Error, ErrorKind, Read, Result, Stdin, StdinLock};
 use std::path::{Path, PathBuf};
 use std::slice::Iter;
 
-pub enum Input<'a> {
+pub enum Paths<'a> {
     Args {
         iter: Iter<'a, PathBuf>,
     },
     Stdin {
         buffer: Vec<u8>,
-        stdin: Stdin, // TODO global lock
+        lock: StdinLock<'a>,
         delimiter: Option<u8>,
     },
 }
 
-impl<'a> Input<'a> {
+impl<'a> Paths<'a> {
     pub fn from_args(values: &'a [PathBuf]) -> Self {
-        Input::Args {
+        Paths::Args {
             iter: values.iter(),
         }
     }
 
-    pub fn from_stdin(delimiter: Option<u8>) -> Self {
-        Input::Stdin {
+    pub fn from_stdin(stdin: &'a mut Stdin, delimiter: Option<u8>) -> Self {
+        Paths::Stdin {
             buffer: Vec::new(),
-            stdin: stdin(),
+            lock: stdin.lock(),
             delimiter,
         }
     }
@@ -33,12 +33,11 @@ impl<'a> Input<'a> {
             Self::Args { iter } => Ok(iter.next().map(PathBuf::as_path)),
             Self::Stdin {
                 buffer,
-                stdin,
+                lock,
                 delimiter,
             } => {
                 buffer.clear();
 
-                let mut lock = stdin.lock();
                 let result = if let Some(delimiter) = delimiter {
                     lock.read_until(*delimiter, buffer)
                 } else {

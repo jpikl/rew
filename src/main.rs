@@ -1,11 +1,8 @@
 use crate::cli::Cli;
-use crate::input::Input;
-use crate::output::Output;
 use crate::pattern::{eval, Pattern};
-use std::io;
-use std::process;
+use std::{io, process};
 use structopt::StructOpt;
-use termcolor::ColorChoice;
+use termcolor::{ColorChoice, StandardStream};
 
 mod cli;
 mod counter;
@@ -30,36 +27,32 @@ fn main() -> Result<(), io::Error> {
         Some(other) => other,
     };
 
-    let output_delimiter = if cli.print_raw {
-        None
-    } else if cli.print_nul {
-        Some('\0')
-    } else {
-        Some('\n')
-    };
+    let mut stdin = io::stdin();
+    let mut stdout = StandardStream::stdout(output_colors);
+    let mut stderr = StandardStream::stderr(output_colors);
+    let mut output_errors = output::Errors::new(&mut stderr);
 
-    let raw_pattern = &cli.pattern;
-    let mut output = Output::new(output_colors, output_delimiter);
-
-    let pattern = match Pattern::parse(raw_pattern, cli.escape) {
+    let pattern = match Pattern::parse(&cli.pattern, cli.escape) {
         Ok(pattern) => pattern,
         Err(error) => {
-            output.write_pattern_error(raw_pattern, &error)?;
+            output_errors.write_with_highlight(&error, &cli.pattern)?;
             process::exit(2);
         }
     };
 
     if cli.explain {
-        return output.write_explanation(&pattern);
+        return pattern.explain(&mut stdout);
     }
 
     let global_counter_used = pattern.uses_global_counter();
     let local_counter_used = pattern.uses_local_counter();
     let regex_captures_used = pattern.uses_regex_captures();
 
-    let mut global_counter =
-        counter::Global::new(cli.gc_init.unwrap_or(1), cli.gc_step.unwrap_or(1));
-    let mut local_counter = counter::Local::new(cli.lc_init.unwrap_or(1), cli.lc_step.unwrap_or(1));
+    let mut global_counter_generator =
+        counter::GlobalGenerator::new(cli.gc_init.unwrap_or(1), cli.gc_step.unwrap_or(1));
+
+    let mut local_counter_generator =
+        counter::LocalGenerator::new(cli.lc_init.unwrap_or(1), cli.lc_step.unwrap_or(1));
 
     let regex_solver = if let Some(regex) = &cli.regex {
         regex::Solver::Filename(regex)
@@ -69,7 +62,7 @@ fn main() -> Result<(), io::Error> {
         regex::Solver::None
     };
 
-    let mut input = if cli.paths.is_empty() {
+    let mut input_paths = if cli.paths.is_empty() {
         let input_delimiter = if cli.read_raw {
             None
         } else if cli.read_nul {
@@ -77,22 +70,32 @@ fn main() -> Result<(), io::Error> {
         } else {
             Some(b'\n')
         };
-        Input::from_stdin(input_delimiter)
+        input::Paths::from_stdin(&mut stdin, input_delimiter)
     } else {
-        Input::from_args(cli.paths.as_slice())
+        input::Paths::from_args(cli.paths.as_slice())
     };
 
+    let output_delimiter = if cli.print_raw {
+        None
+    } else if cli.print_nul {
+        Some('\0')
+    } else {
+        Some('\n')
+    };
+
+    let mut output_paths = output::Paths::new(&mut stdout, output_delimiter);
+
     loop {
-        match input.next() {
+        match input_paths.next() {
             Ok(Some(path)) => {
                 let global_counter = if global_counter_used {
-                    global_counter.next()
+                    global_counter_generator.next()
                 } else {
                     0
                 };
 
                 let local_counter = if local_counter_used {
-                    local_counter.next(path)
+                    local_counter_generator.next(path)
                 } else {
                     0
                 };
@@ -101,7 +104,7 @@ fn main() -> Result<(), io::Error> {
                     match regex_solver.eval(path) {
                         Ok(captures) => captures,
                         Err(error) => {
-                            output.write_error(&error)?;
+                            output_errors.write(&error)?;
                             process::exit(4)
                         }
                     }
@@ -116,20 +119,20 @@ fn main() -> Result<(), io::Error> {
                     regex_captures,
                 };
 
-                let out_path = match pattern.eval(&context) {
+                let output_path = match pattern.eval(&context) {
                     Ok(path) => path,
                     Err(error) => {
-                        output.write_pattern_error(raw_pattern, &error)?;
+                        output_errors.write_with_highlight(&error, &cli.pattern)?;
                         process::exit(3);
                     }
                 };
 
-                output.write_path(&out_path)?;
+                output_paths.write(&output_path)?;
             }
 
             Ok(None) => break,
             Err(error) => {
-                output.write_error(&error)?;
+                output_errors.write(&error)?;
                 process::exit(5)
             }
         }

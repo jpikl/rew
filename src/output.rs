@@ -1,51 +1,56 @@
-use crate::pattern::Pattern;
 use crate::utils::{highlight_range, spec_color, HasRange};
 use std::error::Error;
 use std::io::{Result, Write};
-use termcolor::{Color, ColorChoice, StandardStream, WriteColor};
+use termcolor::{Color, StandardStream, StandardStreamLock, WriteColor};
 
-pub struct Output {
-    stdout: StandardStream,
-    stderr: StandardStream,
+pub struct Paths<'a> {
+    lock: StandardStreamLock<'a>,
     delimiter: Option<char>,
 }
 
-impl Output {
-    pub fn new(colors: ColorChoice, delimiter: Option<char>) -> Self {
+impl<'a> Paths<'a> {
+    pub fn new(stream: &'a mut StandardStream, delimiter: Option<char>) -> Self {
         Self {
-            stdout: StandardStream::stdout(colors), // TODO global lock
-            stderr: StandardStream::stderr(colors), // TODO global lock
+            lock: stream.lock(),
             delimiter,
         }
     }
 
-    pub fn write_path(&mut self, path: &str) -> Result<()> {
+    pub fn write(&mut self, path: &str) -> Result<()> {
         if let Some(delimiter) = self.delimiter {
-            write!(self.stdout, "{}{}", path, delimiter)
+            write!(self.lock, "{}{}", path, delimiter)
         } else {
-            write!(self.stdout, "{}", path)
+            write!(self.lock, "{}", path)
+        }
+    }
+}
+
+pub struct Errors<'a> {
+    lock: StandardStreamLock<'a>,
+}
+
+impl<'a> Errors<'a> {
+    pub fn new(stream: &'a mut StandardStream) -> Self {
+        Self {
+            lock: stream.lock(),
         }
     }
 
-    pub fn write_explanation(&mut self, pattern: &Pattern) -> Result<()> {
-        pattern.explain(&mut self.stdout)
+    pub fn write<T: Error>(&mut self, error: &T) -> Result<()> {
+        self.lock.set_color(&spec_color(Color::Red))?;
+        write!(self.lock, "error:")?;
+        self.lock.reset()?;
+        writeln!(self.lock, " {}", error)
     }
 
-    pub fn write_pattern_error<T: Error + HasRange>(
+    pub fn write_with_highlight<T: Error + HasRange>(
         &mut self,
-        raw_pattern: &str,
         error: &T,
+        raw_pattern: &str,
     ) -> Result<()> {
-        self.write_error(error)?;
-        writeln!(self.stderr)?;
-        highlight_range(&mut self.stderr, raw_pattern, error.range(), Color::Red)?;
-        self.stderr.reset()
-    }
-
-    pub fn write_error<T: Error>(&mut self, error: &T) -> Result<()> {
-        self.stderr.set_color(&spec_color(Color::Red))?;
-        write!(self.stderr, "error:")?;
-        self.stderr.reset()?;
-        writeln!(self.stderr, " {}", error)
+        self.write(error)?;
+        writeln!(self.lock)?;
+        highlight_range(&mut self.lock, raw_pattern, error.range(), Color::Red)?;
+        self.lock.reset()
     }
 }

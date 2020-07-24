@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
-pub struct Global {
+pub struct GlobalGenerator {
     value: u32,
     step: u32,
 }
 
-impl Global {
+impl GlobalGenerator {
     pub fn new(inital: u32, step: u32) -> Self {
         Self {
             value: inital,
@@ -21,13 +21,13 @@ impl Global {
     }
 }
 
-pub struct Local {
+pub struct LocalGenerator {
     values: HashMap<Option<PathBuf>, u32>,
     inital: u32,
     step: u32,
 }
 
-impl Local {
+impl LocalGenerator {
     pub fn new(inital: u32, step: u32) -> Self {
         Self {
             values: HashMap::new(),
@@ -54,7 +54,7 @@ mod tests {
 
     #[test]
     fn global_from_zero_per_one() {
-        let mut counter = Global::new(0, 1);
+        let mut counter = GlobalGenerator::new(0, 1);
         assert_eq!(counter.next(), 0);
         assert_eq!(counter.next(), 1);
         assert_eq!(counter.next(), 2);
@@ -62,7 +62,7 @@ mod tests {
 
     #[test]
     fn global_from_one_per_ten() {
-        let mut counter = Global::new(1, 10);
+        let mut counter = GlobalGenerator::new(1, 10);
         assert_eq!(counter.next(), 1);
         assert_eq!(counter.next(), 11);
         assert_eq!(counter.next(), 21);
@@ -73,7 +73,7 @@ mod tests {
         let path_1 = Path::new("dir/subdir/file.ext");
         let path_2 = path_1.parent().unwrap();
         let path_3 = path_2.parent().unwrap();
-        let mut counter = Local::new(0, 1);
+        let mut counter = LocalGenerator::new(0, 1);
 
         assert_eq!(counter.next(path_1), 0);
         assert_eq!(counter.next(path_1), 1);
@@ -94,7 +94,7 @@ mod tests {
         let path_1 = Path::new("dir/subdir/file.ext");
         let path_2 = path_1.parent().unwrap();
         let path_3 = path_2.parent().unwrap();
-        let mut counter = Local::new(1, 10);
+        let mut counter = LocalGenerator::new(1, 10);
 
         assert_eq!(counter.next(path_1), 1);
         assert_eq!(counter.next(path_1), 11);
