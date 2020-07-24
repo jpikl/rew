@@ -4,7 +4,6 @@ use crate::utils::HasRange;
 use std::ops::Range;
 use std::{error, fmt, result};
 
-// TODO better name ... maybe Out, Tag, ...
 #[derive(Debug, PartialEq)]
 pub struct Output<T> {
     pub value: T,

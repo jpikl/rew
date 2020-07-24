@@ -193,8 +193,8 @@ mod tests {
     fn uses_none() {
         let pattern = Pattern {
             source: String::new(),
-            items: vec![parsed(Item::Expression {
-                variable: parsed(Variable::Filename),
+            items: vec![output(Item::Expression {
+                variable: output(Variable::Filename),
                 filters: Vec::new(),
             })],
         };
@@ -207,8 +207,8 @@ mod tests {
     fn uses_local_counter() {
         let pattern = Pattern {
             source: String::new(),
-            items: vec![parsed(Item::Expression {
-                variable: parsed(Variable::LocalCounter),
+            items: vec![output(Item::Expression {
+                variable: output(Variable::LocalCounter),
                 filters: Vec::new(),
             })],
         };
@@ -219,8 +219,8 @@ mod tests {
     fn uses_global_counter() {
         let pattern = Pattern {
             source: String::new(),
-            items: vec![parsed(Item::Expression {
-                variable: parsed(Variable::GlobalCounter),
+            items: vec![output(Item::Expression {
+                variable: output(Variable::GlobalCounter),
                 filters: Vec::new(),
             })],
         };
@@ -231,8 +231,8 @@ mod tests {
     fn uses_regex_captures() {
         let pattern = Pattern {
             source: String::new(),
-            items: vec![parsed(Item::Expression {
-                variable: parsed(Variable::RegexCapture(1)),
+            items: vec![output(Item::Expression {
+                variable: output(Variable::RegexCapture(1)),
                 filters: Vec::new(),
             })],
         };
@@ -243,7 +243,7 @@ mod tests {
     fn evals_constant() {
         let pattern = Pattern {
             source: String::new(),
-            items: vec![parsed(Item::Constant(String::from("abc")))],
+            items: vec![output(Item::Constant(String::from("abc")))],
         };
         assert_eq!(pattern.eval(&make_context()), Ok(String::from("abc")));
     }
@@ -252,8 +252,8 @@ mod tests {
     fn evals_expression() {
         let pattern = Pattern {
             source: String::new(),
-            items: vec![parsed(Item::Expression {
-                variable: parsed(Variable::Filename),
+            items: vec![output(Item::Expression {
+                variable: output(Variable::Filename),
                 filters: Vec::new(),
             })],
         };
@@ -264,9 +264,9 @@ mod tests {
     fn evals_expression_single_filter() {
         let pattern = Pattern {
             source: String::new(),
-            items: vec![parsed(Item::Expression {
-                variable: parsed(Variable::Filename),
-                filters: vec![parsed(Filter::ToUppercase)],
+            items: vec![output(Item::Expression {
+                variable: output(Variable::Filename),
+                filters: vec![output(Filter::ToUppercase)],
             })],
         };
         assert_eq!(pattern.eval(&make_context()), Ok(String::from("FILE.EXT")));
@@ -276,11 +276,11 @@ mod tests {
     fn evals_expression_multiple_filters() {
         let pattern = Pattern {
             source: String::new(),
-            items: vec![parsed(Item::Expression {
-                variable: parsed(Variable::Filename),
+            items: vec![output(Item::Expression {
+                variable: output(Variable::Filename),
                 filters: vec![
-                    parsed(Filter::ToUppercase),
-                    parsed(Filter::Substring(Range::To(4))),
+                    output(Filter::ToUppercase),
+                    output(Filter::Substring(Range::To(4))),
                 ],
             })],
         };
@@ -292,32 +292,32 @@ mod tests {
         let pattern = Pattern {
             source: String::new(),
             items: vec![
-                parsed(Item::Constant(String::from("prefix_"))),
-                parsed(Item::Expression {
-                    variable: parsed(Variable::Basename),
-                    filters: vec![parsed(Filter::Substring(Range::To(3)))],
+                output(Item::Constant(String::from("prefix_"))),
+                output(Item::Expression {
+                    variable: output(Variable::Basename),
+                    filters: vec![output(Filter::Substring(Range::To(3)))],
                 }),
-                parsed(Item::Constant(String::from("_"))),
-                parsed(Item::Expression {
-                    variable: parsed(Variable::RegexCapture(1)),
+                output(Item::Constant(String::from("_"))),
+                output(Item::Expression {
+                    variable: output(Variable::RegexCapture(1)),
                     filters: Vec::new(),
                 }),
-                parsed(Item::Constant(String::from("_"))),
-                parsed(Item::Expression {
-                    variable: parsed(Variable::LocalCounter),
+                output(Item::Constant(String::from("_"))),
+                output(Item::Expression {
+                    variable: output(Variable::LocalCounter),
                     filters: Vec::new(),
                 }),
-                parsed(Item::Constant(String::from("_"))),
-                parsed(Item::Expression {
-                    variable: parsed(Variable::GlobalCounter),
+                output(Item::Constant(String::from("_"))),
+                output(Item::Expression {
+                    variable: output(Variable::GlobalCounter),
                     filters: Vec::new(),
                 }),
-                parsed(Item::Constant(String::from("."))),
-                parsed(Item::Expression {
-                    variable: parsed(Variable::Extension),
+                output(Item::Constant(String::from("."))),
+                output(Item::Expression {
+                    variable: output(Variable::Extension),
                     filters: vec![
-                        parsed(Filter::ToUppercase),
-                        parsed(Filter::ReplaceAll(Substitution {
+                        output(Filter::ToUppercase),
+                        output(Filter::ReplaceAll(Substitution {
                             value: String::from("X"),
                             replacement: String::from(""),
                         })),
@@ -331,7 +331,7 @@ mod tests {
         );
     }
 
-    fn parsed<T>(value: T) -> Output<T> {
+    fn output<T>(value: T) -> Output<T> {
         Output { value, range: 0..0 }
     }
 
