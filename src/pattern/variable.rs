@@ -65,11 +65,11 @@ impl Variable {
 
     pub fn eval(&self, context: &eval::Context) -> Result<String, eval::ErrorKind> {
         match self {
-            Variable::Filename => to_string(context.path.file_name()),
-            Variable::Basename => to_string(context.path.file_stem()),
-            Variable::Extension => to_string(context.path.extension()),
+            Self::Filename => to_string(context.path.file_name()),
+            Self::Basename => to_string(context.path.file_stem()),
+            Self::Extension => to_string(context.path.extension()),
 
-            Variable::ExtensionWithDot => {
+            Self::ExtensionWithDot => {
                 let mut string = to_string(context.path.extension())?;
                 if !string.is_empty() {
                     string.insert(0, '.');
@@ -77,20 +77,20 @@ impl Variable {
                 Ok(string)
             }
 
-            Variable::FullDirname => to_string(context.path.parent()),
-            Variable::ParentDirname => to_string(context.path.parent().and_then(Path::file_name)),
-            Variable::FullPath => to_string(Some(context.path)),
-            Variable::LocalCounter => Ok(context.local_counter.to_string()),
-            Variable::GlobalCounter => Ok(context.global_counter.to_string()),
+            Self::FullDirname => to_string(context.path.parent()),
+            Self::ParentDirname => to_string(context.path.parent().and_then(Path::file_name)),
+            Self::FullPath => to_string(Some(context.path)),
+            Self::LocalCounter => Ok(context.local_counter.to_string()),
+            Self::GlobalCounter => Ok(context.global_counter.to_string()),
 
-            Variable::RegexCapture(index) => Ok(context
+            Self::RegexCapture(index) => Ok(context
                 .regex_captures
                 .as_ref()
                 .and_then(|captures| captures.get(*index))
                 .map(|capture| capture.as_str())
                 .map_or_else(String::new, String::from)),
 
-            Variable::Uuid => {
+            Self::Uuid => {
                 let mut buffer = Uuid::encode_buffer();
                 let str = Uuid::new_v4().to_hyphenated().encode_lower(&mut buffer);
                 Ok((*str).to_string())
@@ -114,17 +114,17 @@ fn to_string<S: AsRef<OsStr> + ?Sized>(value: Option<&S>) -> Result<String, eval
 impl fmt::Display for Variable {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Variable::Filename => write!(formatter, "Filename"),
-            Variable::Basename => write!(formatter, "Basename"),
-            Variable::Extension => write!(formatter, "Extension"),
-            Variable::ExtensionWithDot => write!(formatter, "Extension with dot"),
-            Variable::FullDirname => write!(formatter, "Full dirname"),
-            Variable::ParentDirname => write!(formatter, "Parent dirname"),
-            Variable::FullPath => write!(formatter, "Full path"),
-            Variable::LocalCounter => write!(formatter, "Local counter"),
-            Variable::GlobalCounter => write!(formatter, "Global counter"),
-            Variable::RegexCapture(index) => write!(formatter, "Regex capture ({})", index),
-            Variable::Uuid => write!(formatter, "UUID"),
+            Self::Filename => write!(formatter, "Filename"),
+            Self::Basename => write!(formatter, "Basename"),
+            Self::Extension => write!(formatter, "Extension"),
+            Self::ExtensionWithDot => write!(formatter, "Extension with dot"),
+            Self::FullDirname => write!(formatter, "Full dirname"),
+            Self::ParentDirname => write!(formatter, "Parent dirname"),
+            Self::FullPath => write!(formatter, "Full path"),
+            Self::LocalCounter => write!(formatter, "Local counter"),
+            Self::GlobalCounter => write!(formatter, "Global counter"),
+            Self::RegexCapture(index) => write!(formatter, "Regex capture ({})", index),
+            Self::Uuid => write!(formatter, "UUID"),
         }
     }
 }

@@ -19,14 +19,14 @@ pub enum Item {
 impl fmt::Display for Item {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Item::Constant(value) => write!(formatter, "Constant '{}'", value),
-            Item::Expression { filters, .. } if filters.is_empty() => {
+            Self::Constant(value) => write!(formatter, "Constant '{}'", value),
+            Self::Expression { filters, .. } if filters.is_empty() => {
                 write!(formatter, "Expression with a variable")
             }
-            Item::Expression { filters, .. } if filters.len() == 1 => {
+            Self::Expression { filters, .. } if filters.len() == 1 => {
                 write!(formatter, "Expression with a variable and a filter")
             }
-            Item::Expression { filters, .. } => write!(
+            Self::Expression { filters, .. } => write!(
                 formatter,
                 "Expression with a variable and {} filters",
                 filters.len()

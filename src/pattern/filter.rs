@@ -59,7 +59,7 @@ impl Filter {
 
     pub fn eval(&self, mut string: String) -> Result<String, eval::ErrorKind> {
         match self {
-            Filter::Substring(range) => {
+            Self::Substring(range) => {
                 if let Some(start) = range.start() {
                     if let Some((start, _)) = string.char_indices().nth(start) {
                         string.replace_range(..start, "");
@@ -75,7 +75,7 @@ impl Filter {
                 Ok(string)
             }
 
-            Filter::SubstringReverse(range) => {
+            Self::SubstringReverse(range) => {
                 if let Some(start) = range.start() {
                     if start > 0 {
                         if let Some((start, _)) = string.char_indices().nth_back(start - 1) {
@@ -97,39 +97,39 @@ impl Filter {
                 Ok(string)
             }
 
-            Filter::ReplaceFirst(Substitution { value, replacement }) => {
+            Self::ReplaceFirst(Substitution { value, replacement }) => {
                 Ok(string.replacen(value, replacement, 1))
             }
 
-            Filter::ReplaceAll(Substitution { value, replacement }) => {
+            Self::ReplaceAll(Substitution { value, replacement }) => {
                 Ok(string.replace(value, replacement))
             }
 
-            Filter::Trim => Ok(string.trim().to_string()),
-            Filter::ToLowercase => Ok(string.to_lowercase()),
-            Filter::ToUppercase => Ok(string.to_uppercase()),
-            Filter::ToAscii => Ok(unidecode(&string)),
+            Self::Trim => Ok(string.trim().to_string()),
+            Self::ToLowercase => Ok(string.to_lowercase()),
+            Self::ToUppercase => Ok(string.to_uppercase()),
+            Self::ToAscii => Ok(unidecode(&string)),
 
-            Filter::RemoveNonAscii => {
+            Self::RemoveNonAscii => {
                 string.retain(|ch| ch.is_ascii());
                 Ok(string)
             }
 
-            Filter::LeftPad(padding) => {
+            Self::LeftPad(padding) => {
                 for char in padding.chars().rev().skip(string.len()) {
                     string.insert(0, char);
                 }
                 Ok(string)
             }
 
-            Filter::RightPad(padding) => {
+            Self::RightPad(padding) => {
                 for char in padding.chars().skip(string.len()) {
                     string.push(char);
                 }
                 Ok(string)
             }
 
-            Filter::Default(default) => {
+            Self::Default(default) => {
                 if string.is_empty() {
                     string.push_str(default);
                 }
@@ -142,20 +142,18 @@ impl Filter {
 impl fmt::Display for Filter {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Filter::Substring(range) => write!(formatter, "Substring {}", range),
-            Filter::SubstringReverse(range) => write!(formatter, "Substring (reverse) {}", range),
-            Filter::ReplaceFirst(substitution) => {
-                write!(formatter, "Replace first {}", substitution)
-            }
-            Filter::ReplaceAll(substitution) => write!(formatter, "Replace all {}", substitution),
-            Filter::Trim => write!(formatter, "Trim"),
-            Filter::ToLowercase => write!(formatter, "To lowercase"),
-            Filter::ToUppercase => write!(formatter, "To uppercase"),
-            Filter::ToAscii => write!(formatter, "To ASCII"),
-            Filter::RemoveNonAscii => write!(formatter, "Remove non-ASCII"),
-            Filter::LeftPad(padding) => write!(formatter, "Left pad with '{}'", padding),
-            Filter::RightPad(padding) => write!(formatter, "Right pad with '{}'", padding),
-            Filter::Default(default) => write!(formatter, "Use '{}' as default", default),
+            Self::Substring(range) => write!(formatter, "Substring {}", range),
+            Self::SubstringReverse(range) => write!(formatter, "Substring (reverse) {}", range),
+            Self::ReplaceFirst(substitution) => write!(formatter, "Replace first {}", substitution),
+            Self::ReplaceAll(substitution) => write!(formatter, "Replace all {}", substitution),
+            Self::Trim => write!(formatter, "Trim"),
+            Self::ToLowercase => write!(formatter, "To lowercase"),
+            Self::ToUppercase => write!(formatter, "To uppercase"),
+            Self::ToAscii => write!(formatter, "To ASCII"),
+            Self::RemoveNonAscii => write!(formatter, "Remove non-ASCII"),
+            Self::LeftPad(padding) => write!(formatter, "Left pad with '{}'", padding),
+            Self::RightPad(padding) => write!(formatter, "Right pad with '{}'", padding),
+            Self::Default(default) => write!(formatter, "Use '{}' as default", default),
         }
     }
 }

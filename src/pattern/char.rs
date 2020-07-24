@@ -37,15 +37,15 @@ impl AsChar for char {
 impl AsChar for Char {
     fn as_char(&self) -> char {
         match self {
-            Char::Raw(value) => *value,
-            Char::Escaped(value, _) => *value,
+            Self::Raw(value) => *value,
+            Self::Escaped(value, _) => *value,
         }
     }
 
     fn len_utf8(&self) -> usize {
         match self {
-            Char::Raw(value) => value.len_utf8(),
-            Char::Escaped(_, sequence) => sequence[0].len_utf8() + sequence[1].len_utf8(),
+            Self::Raw(value) => value.len_utf8(),
+            Self::Escaped(_, sequence) => sequence[0].len_utf8() + sequence[1].len_utf8(),
         }
     }
 }

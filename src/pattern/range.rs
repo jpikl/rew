@@ -15,22 +15,22 @@ pub enum Range {
 impl Range {
     pub fn start(&self) -> Option<usize> {
         match self {
-            Range::From(start) => Some(*start),
-            Range::FromTo(start, _) => Some(*start),
-            Range::To(_) => None,
+            Self::From(start) => Some(*start),
+            Self::FromTo(start, _) => Some(*start),
+            Self::To(_) => None,
         }
     }
 
     pub fn length(&self) -> Option<usize> {
         match self {
-            Range::From(_) => None,
-            Range::FromTo(start, end) => {
+            Self::From(_) => None,
+            Self::FromTo(start, end) => {
                 if start > end {
                     panic!("Range start ({}) > end ({})", start, end)
                 }
                 Some(end - start)
             }
-            Range::To(end) => Some(*end),
+            Self::To(end) => Some(*end),
         }
     }
 
@@ -105,9 +105,9 @@ fn parse_index(reader: &mut Reader<Char>) -> Result<usize> {
 impl fmt::Display for Range {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Range::From(start) => write!(formatter, "from {} to end", start + 1),
-            Range::FromTo(start, end) => write!(formatter, "from {} to {}", start + 1, end),
-            Range::To(end) => write!(formatter, "from start to {}", end),
+            Self::From(start) => write!(formatter, "from {} to end", start + 1),
+            Self::FromTo(start, end) => write!(formatter, "from {} to {}", start + 1, end),
+            Self::To(end) => write!(formatter, "from start to {}", end),
         }
     }
 }
