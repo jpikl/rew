@@ -198,6 +198,7 @@ mod tests {
     use super::*;
     use crate::pattern::range::Range;
     use crate::pattern::substitution::Substitution;
+    use crate::utils::AnyString;
     use regex::Regex;
 
     #[test]
@@ -312,12 +313,9 @@ mod tests {
         assert_eq!(
             parse("s/[0-9+/cd"),
             Err(parse::Error {
-                kind: parse::ErrorKind::SubstituteRegexInvalid(String::from(
-                    "regex parse error:
-    [0-9+
-    ^
-error: unclosed character class"
-                )),
+                kind: parse::ErrorKind::SubstituteRegexInvalid(AnyString(String::from(
+                    "this string is not compared by assertion"
+                ))),
                 range: 2..7,
             }),
         );
@@ -349,12 +347,9 @@ error: unclosed character class"
         assert_eq!(
             parse("S/[0-9+/cd"),
             Err(parse::Error {
-                kind: parse::ErrorKind::SubstituteRegexInvalid(String::from(
-                    "regex parse error:
-    [0-9+
-    ^
-error: unclosed character class"
-                )),
+                kind: parse::ErrorKind::SubstituteRegexInvalid(AnyString(String::from(
+                    "this string is not compared by assertion"
+                ))),
                 range: 2..7,
             }),
         );

@@ -2,6 +2,7 @@ use crate::pattern::char::{AsChar, Char};
 use crate::pattern::parse::{Error, ErrorKind, Result};
 use crate::pattern::reader::Reader;
 use crate::pattern::regex::RegexHolder;
+use crate::utils::AnyString;
 use regex::Regex;
 use std::fmt;
 use std::ops::Range;
@@ -26,7 +27,7 @@ impl Substitution<RegexHolder> {
             Ok(regex) => RegexHolder(regex),
             Err(error) => {
                 return Err(Error {
-                    kind: ErrorKind::SubstituteRegexInvalid(error.to_string()),
+                    kind: ErrorKind::SubstituteRegexInvalid(AnyString(error.to_string())),
                     range: value_range,
                 })
             }
@@ -223,12 +224,9 @@ mod tests {
         assert_eq!(
             Substitution::parse_regex(&mut reader),
             Err(Error {
-                kind: ErrorKind::SubstituteRegexInvalid(String::from(
-                    "regex parse error:
-    [0-9+
-    ^
-error: unclosed character class"
-                )),
+                kind: ErrorKind::SubstituteRegexInvalid(AnyString(String::from(
+                    "this string is not compared by assertion"
+                ))),
                 range: 1..6,
             })
         );

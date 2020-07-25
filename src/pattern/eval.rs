@@ -1,6 +1,6 @@
 use crate::pattern::filter::Filter;
 use crate::pattern::variable::Variable;
-use crate::utils::HasRange;
+use crate::utils::{AnyString, HasRange};
 use std::ops::Range;
 use std::path::Path;
 use std::{error, fmt, result};
@@ -25,6 +25,7 @@ pub struct Error<'a> {
 #[derive(Debug, PartialEq)]
 pub enum ErrorKind {
     InputNotUtf8,
+    CanonicalizationFailed(AnyString),
 }
 
 #[derive(Debug, PartialEq)]
@@ -51,6 +52,9 @@ impl fmt::Display for ErrorKind {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::InputNotUtf8 => write!(formatter, "Input does not have UTF-8 encoding"),
+            Self::CanonicalizationFailed(reason) => {
+                write!(formatter, "Path canonicalization failed: {}", reason)
+            }
         }
     }
 }

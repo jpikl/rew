@@ -1,6 +1,6 @@
 use crate::pattern::char::{Char, EscapeSequence};
 use crate::pattern::symbols::{EXPR_END, EXPR_START, PIPE};
-use crate::utils::HasRange;
+use crate::utils::{AnyString, HasRange};
 use std::ops::Range;
 use std::{error, fmt, result};
 
@@ -34,7 +34,7 @@ pub enum ErrorKind {
     RangeStartOverEnd(usize, usize),
     RegexCaptureZero,
     SubstituteWithoutValue(Char),
-    SubstituteRegexInvalid(String),
+    SubstituteRegexInvalid(AnyString),
     UnknownEscapeSequence(EscapeSequence),
     UnknownFilter(Char),
     UnknownVariable(Char),

@@ -1,6 +1,23 @@
+use std::fmt;
+use std::fmt::Debug;
 use std::io::{Result, Write};
 use std::ops::Range;
 use termcolor::{Color, ColorSpec, WriteColor};
+
+#[derive(Debug, Clone)]
+pub struct AnyString(pub String);
+
+impl PartialEq for AnyString {
+    fn eq(&self, _: &Self) -> bool {
+        true
+    }
+}
+
+impl fmt::Display for AnyString {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        write!(formatter, "{}", self.0)
+    }
+}
 
 pub fn spec_color(color: Color) -> ColorSpec {
     let mut spec = ColorSpec::new();

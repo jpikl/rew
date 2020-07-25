@@ -3,15 +3,17 @@ use crate::pattern::eval;
 use crate::pattern::number::parse_usize;
 use crate::pattern::parse;
 use crate::pattern::reader::Reader;
+use crate::utils::AnyString;
 use std::ffi::OsStr;
-use std::fmt;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::{fmt, fs};
 use uuid::Uuid;
 
 #[derive(Debug, PartialEq)]
 pub enum Variable {
     Path,
     AbsolutePath,
+    CanonicalPath,
     FileName,
     BaseName,
     Extension,
@@ -41,7 +43,8 @@ impl Variable {
         } else if let Some(char) = reader.read() {
             match char.as_char() {
                 'p' => Ok(Variable::Path),
-                'P' => Ok(Variable::AbsolutePath),
+                'a' => Ok(Variable::AbsolutePath),
+                'A' => Ok(Variable::CanonicalPath),
                 'f' => Ok(Variable::FileName),
                 'b' => Ok(Variable::BaseName),
                 'e' => Ok(Variable::Extension),
@@ -67,13 +70,13 @@ impl Variable {
     pub fn eval(&self, context: &eval::Context) -> Result<String, eval::ErrorKind> {
         match self {
             Self::Path => to_string(context.path),
-            Self::AbsolutePath => {
-                if context.path.is_absolute() {
-                    to_string(context.path)
-                } else {
-                    to_string(&context.current_dir.join(context.path))
-                }
-            }
+            Self::AbsolutePath => to_string(&get_absolute_path(context)),
+            Self::CanonicalPath => match fs::canonicalize(&get_absolute_path(context)) {
+                Ok(path) => to_string(&path),
+                Err(error) => Err(eval::ErrorKind::CanonicalizationFailed(AnyString(
+                    error.to_string(),
+                ))),
+            },
             Self::FileName => opt_to_string(context.path.file_name()),
             Self::BaseName => opt_to_string(context.path.file_stem()),
             Self::Extension => opt_to_string(context.path.extension()),
@@ -107,6 +110,14 @@ impl Variable {
     }
 }
 
+pub fn get_absolute_path(context: &eval::Context) -> PathBuf {
+    if context.path.is_absolute() {
+        context.path.to_path_buf()
+    } else {
+        context.current_dir.join(context.path)
+    }
+}
+
 pub fn opt_to_string<S: AsRef<OsStr> + ?Sized>(
     value: Option<&S>,
 ) -> Result<String, eval::ErrorKind> {
@@ -130,6 +141,7 @@ impl fmt::Display for Variable {
         match self {
             Self::Path => write!(formatter, "Path"),
             Self::AbsolutePath => write!(formatter, "Absolute path"),
+            Self::CanonicalPath => write!(formatter, "Canonical path"),
             Self::FileName => write!(formatter, "File name"),
             Self::BaseName => write!(formatter, "Base name"),
             Self::Extension => write!(formatter, "Extension"),
@@ -158,7 +170,12 @@ mod tests {
 
     #[test]
     fn parse_absolute_path() {
-        assert_eq!(parse("P"), Ok(Variable::AbsolutePath));
+        assert_eq!(parse("a"), Ok(Variable::AbsolutePath));
+    }
+
+    #[test]
+    fn parse_canonical_path() {
+        assert_eq!(parse("A"), Ok(Variable::CanonicalPath));
     }
 
     #[test]
@@ -273,6 +290,31 @@ mod tests {
         assert_eq!(
             Variable::AbsolutePath.eval(&make_context()),
             Ok(String::from("current_dir/root/parent/file.ext"))
+        );
+    }
+
+    #[test]
+    fn eval_canonical_path() {
+        let current_dir = std::env::current_dir().unwrap();
+        let file_name = Path::new("Cargo.toml");
+
+        let mut context = make_context();
+        context.current_dir = &current_dir;
+        context.path = Path::new("Cargo.toml");
+
+        assert_eq!(
+            Variable::CanonicalPath.eval(&context),
+            Ok(current_dir.join(file_name).to_string_lossy().to_string())
+        );
+    }
+
+    #[test]
+    fn eval_canonical_path_error() {
+        assert_eq!(
+            Variable::CanonicalPath.eval(&make_context()),
+            Err(eval::ErrorKind::CanonicalizationFailed(AnyString(
+                String::from("this string is not compared by assertion")
+            )))
         );
     }
 
