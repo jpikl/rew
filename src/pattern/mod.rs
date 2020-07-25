@@ -80,6 +80,7 @@ impl Pattern {
                                         return Err(eval::Error {
                                             kind,
                                             cause: eval::ErrorCause::Filter(&filter.value),
+                                            value: context.path.to_string_lossy().to_string(),
                                             range: &filter.range,
                                         });
                                     }
@@ -91,6 +92,7 @@ impl Pattern {
                             return Err(eval::Error {
                                 kind,
                                 cause: eval::ErrorCause::Variable(&variable.value),
+                                value: context.path.to_string_lossy().to_string(),
                                 range: &variable.range,
                             });
                         }

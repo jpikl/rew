@@ -19,6 +19,7 @@ pub type Result<'a, T> = result::Result<T, Error<'a>>;
 pub struct Error<'a> {
     pub kind: ErrorKind,
     pub cause: ErrorCause<'a>,
+    pub value: String,
     pub range: &'a Range<usize>,
 }
 
@@ -44,7 +45,11 @@ impl<'a> HasRange for Error<'a> {
 
 impl<'a> fmt::Display for Error<'a> {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(formatter, "{} evaluation failed: {}", self.cause, self.kind)
+        write!(
+            formatter,
+            "{} evaluation failed for value '{}': {}",
+            self.cause, self.value, self.kind
+        )
     }
 }
 
