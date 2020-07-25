@@ -294,7 +294,7 @@ mod tests {
             Ok(vec![Output {
                 value: Item::Expression {
                     variable: Output {
-                        value: Variable::Filename,
+                        value: Variable::FileName,
                         range: 1..2,
                     },
                     filters: Vec::new(),
@@ -399,7 +399,7 @@ mod tests {
             Ok(vec![Output {
                 value: Item::Expression {
                     variable: Output {
-                        value: Variable::Basename,
+                        value: Variable::BaseName,
                         range: 1..2,
                     },
                     filters: vec![Output {

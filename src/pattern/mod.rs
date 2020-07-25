@@ -127,7 +127,7 @@ mod tests {
                     Output {
                         value: Item::Expression {
                             variable: Output {
-                                value: Variable::FullPath,
+                                value: Variable::Path,
                                 range: 4..5,
                             },
                             filters: vec![Output {
@@ -160,7 +160,7 @@ mod tests {
                     Output {
                         value: Item::Expression {
                             variable: Output {
-                                value: Variable::FullPath,
+                                value: Variable::Path,
                                 range: 4..5,
                             },
                             filters: vec![Output {
@@ -195,7 +195,7 @@ mod tests {
         let pattern = Pattern {
             source: String::new(),
             items: vec![output(Item::Expression {
-                variable: output(Variable::Filename),
+                variable: output(Variable::FileName),
                 filters: Vec::new(),
             })],
         };
@@ -254,7 +254,7 @@ mod tests {
         let pattern = Pattern {
             source: String::new(),
             items: vec![output(Item::Expression {
-                variable: output(Variable::Filename),
+                variable: output(Variable::FileName),
                 filters: Vec::new(),
             })],
         };
@@ -266,7 +266,7 @@ mod tests {
         let pattern = Pattern {
             source: String::new(),
             items: vec![output(Item::Expression {
-                variable: output(Variable::Filename),
+                variable: output(Variable::FileName),
                 filters: vec![output(Filter::ToUppercase)],
             })],
         };
@@ -278,7 +278,7 @@ mod tests {
         let pattern = Pattern {
             source: String::new(),
             items: vec![output(Item::Expression {
-                variable: output(Variable::Filename),
+                variable: output(Variable::FileName),
                 filters: vec![
                     output(Filter::ToUppercase),
                     output(Filter::Substring(Range::To(4))),
@@ -295,7 +295,7 @@ mod tests {
             items: vec![
                 output(Item::Constant(String::from("prefix_"))),
                 output(Item::Expression {
-                    variable: output(Variable::Basename),
+                    variable: output(Variable::BaseName),
                     filters: vec![output(Filter::Substring(Range::To(3)))],
                 }),
                 output(Item::Constant(String::from("_"))),

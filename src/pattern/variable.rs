@@ -10,13 +10,13 @@ use uuid::Uuid;
 
 #[derive(Debug, PartialEq)]
 pub enum Variable {
-    Filename,
-    Basename,
+    Path,
+    FileName,
+    BaseName,
     Extension,
     ExtensionWithDot,
-    FullDirname,
-    ParentDirname,
-    FullPath,
+    Parent,
+    ParentFileName,
     LocalCounter,
     GlobalCounter,
     RegexCapture(usize),
@@ -39,13 +39,13 @@ impl Variable {
             }
         } else if let Some(char) = reader.read() {
             match char.as_char() {
-                'f' => Ok(Variable::Filename),
-                'b' => Ok(Variable::Basename),
+                'p' => Ok(Variable::Path),
+                'f' => Ok(Variable::FileName),
+                'b' => Ok(Variable::BaseName),
                 'e' => Ok(Variable::Extension),
                 'E' => Ok(Variable::ExtensionWithDot),
-                'd' => Ok(Variable::FullDirname),
-                'D' => Ok(Variable::ParentDirname),
-                'p' => Ok(Variable::FullPath),
+                'd' => Ok(Variable::Parent),
+                'D' => Ok(Variable::ParentFileName),
                 'c' => Ok(Variable::LocalCounter),
                 'C' => Ok(Variable::GlobalCounter),
                 'u' => Ok(Variable::Uuid),
@@ -64,8 +64,9 @@ impl Variable {
 
     pub fn eval(&self, context: &eval::Context) -> Result<String, eval::ErrorKind> {
         match self {
-            Self::Filename => to_string(context.path.file_name()),
-            Self::Basename => to_string(context.path.file_stem()),
+            Self::Path => to_string(Some(context.path)),
+            Self::FileName => to_string(context.path.file_name()),
+            Self::BaseName => to_string(context.path.file_stem()),
             Self::Extension => to_string(context.path.extension()),
 
             Self::ExtensionWithDot => {
@@ -76,9 +77,8 @@ impl Variable {
                 Ok(string)
             }
 
-            Self::FullDirname => to_string(context.path.parent()),
-            Self::ParentDirname => to_string(context.path.parent().and_then(Path::file_name)),
-            Self::FullPath => to_string(Some(context.path)),
+            Self::Parent => to_string(context.path.parent()),
+            Self::ParentFileName => to_string(context.path.parent().and_then(Path::file_name)),
             Self::LocalCounter => Ok(context.local_counter.to_string()),
             Self::GlobalCounter => Ok(context.global_counter.to_string()),
 
@@ -113,13 +113,13 @@ fn to_string<S: AsRef<OsStr> + ?Sized>(value: Option<&S>) -> Result<String, eval
 impl fmt::Display for Variable {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::Filename => write!(formatter, "Filename"),
-            Self::Basename => write!(formatter, "Basename"),
+            Self::Path => write!(formatter, "Path"),
+            Self::FileName => write!(formatter, "File name"),
+            Self::BaseName => write!(formatter, "Base name"),
             Self::Extension => write!(formatter, "Extension"),
             Self::ExtensionWithDot => write!(formatter, "Extension with dot"),
-            Self::FullDirname => write!(formatter, "Full dirname"),
-            Self::ParentDirname => write!(formatter, "Parent dirname"),
-            Self::FullPath => write!(formatter, "Full path"),
+            Self::Parent => write!(formatter, "Parent"),
+            Self::ParentFileName => write!(formatter, "Parent file name"),
             Self::LocalCounter => write!(formatter, "Local counter"),
             Self::GlobalCounter => write!(formatter, "Global counter"),
             Self::RegexCapture(index) => write!(formatter, "Regex capture ({})", index),
@@ -136,13 +136,18 @@ mod tests {
     use std::path::Path;
 
     #[test]
-    fn parse_filename() {
-        assert_eq!(parse("f"), Ok(Variable::Filename));
+    fn parse_path() {
+        assert_eq!(parse("p"), Ok(Variable::Path));
     }
 
     #[test]
-    fn parse_basename() {
-        assert_eq!(parse("b"), Ok(Variable::Basename));
+    fn parse_file_name() {
+        assert_eq!(parse("f"), Ok(Variable::FileName));
+    }
+
+    #[test]
+    fn parse_base_name() {
+        assert_eq!(parse("b"), Ok(Variable::BaseName));
     }
 
     #[test]
@@ -156,18 +161,13 @@ mod tests {
     }
 
     #[test]
-    fn parse_full_dirname() {
-        assert_eq!(parse("d"), Ok(Variable::FullDirname));
+    fn parse_parent() {
+        assert_eq!(parse("d"), Ok(Variable::Parent));
     }
 
     #[test]
-    fn parse_parent_dirname() {
-        assert_eq!(parse("D"), Ok(Variable::ParentDirname));
-    }
-
-    #[test]
-    fn parse_full_path() {
-        assert_eq!(parse("p"), Ok(Variable::FullPath));
+    fn parse_parent_file_name() {
+        assert_eq!(parse("D"), Ok(Variable::ParentFileName));
     }
 
     #[test]
@@ -200,14 +200,14 @@ mod tests {
     }
 
     #[test]
-    fn parse_ignore_remaning_chars_after_variable() {
+    fn parse_ignore_remaining_chars_after_variable() {
         let mut reader = Reader::from("f_");
         Variable::parse(&mut reader).unwrap();
         assert_eq!(reader.position(), 1);
     }
 
     #[test]
-    fn parse_ignore_remaning_chars_capture_group_variable() {
+    fn parse_ignore_remaining_chars_capture_group_variable() {
         let mut reader = Reader::from("123_");
         Variable::parse(&mut reader).unwrap();
         assert_eq!(reader.position(), 3);
@@ -240,17 +240,25 @@ mod tests {
     }
 
     #[test]
-    fn eval_filename() {
+    fn eval_path() {
         assert_eq!(
-            Variable::Filename.eval(&make_context()),
+            Variable::Path.eval(&make_context()),
+            Ok(String::from("root/parent/file.ext"))
+        );
+    }
+
+    #[test]
+    fn eval_file_name() {
+        assert_eq!(
+            Variable::FileName.eval(&make_context()),
             Ok(String::from("file.ext"))
         );
     }
 
     #[test]
-    fn eval_basename() {
+    fn eval_base_name() {
         assert_eq!(
-            Variable::Basename.eval(&make_context()),
+            Variable::BaseName.eval(&make_context()),
             Ok(String::from("file"))
         );
     }
@@ -264,7 +272,7 @@ mod tests {
     }
 
     #[test]
-    fn eval_extension_no_ext() {
+    fn eval_extension_missing() {
         let mut context = make_context();
         context.path = Path::new("root/parent/file");
         assert_eq!(Variable::Extension.eval(&context), Ok(String::from("")));
@@ -279,7 +287,7 @@ mod tests {
     }
 
     #[test]
-    fn eval_extension_with_dot_no_ext() {
+    fn eval_extension_with_dot_missing() {
         let mut context = make_context();
         context.path = Path::new("root/parent/file");
         assert_eq!(
@@ -289,41 +297,33 @@ mod tests {
     }
 
     #[test]
-    fn eval_full_dirname() {
+    fn eval_parent() {
         assert_eq!(
-            Variable::FullDirname.eval(&make_context()),
+            Variable::Parent.eval(&make_context()),
             Ok(String::from("root/parent"))
         );
     }
 
     #[test]
-    fn eval_full_dirname_no_parent() {
+    fn eval_parent_missing() {
         let mut context = make_context();
         context.path = Path::new("file.ext");
-        assert_eq!(Variable::FullDirname.eval(&context), Ok(String::new()));
+        assert_eq!(Variable::Parent.eval(&context), Ok(String::new()));
     }
 
     #[test]
-    fn eval_parent_dirname() {
+    fn eval_parent_file_name() {
         assert_eq!(
-            Variable::ParentDirname.eval(&make_context()),
+            Variable::ParentFileName.eval(&make_context()),
             Ok(String::from("parent"))
         );
     }
 
     #[test]
-    fn eval_parent_dirname_no_parent() {
+    fn eval_parent_file_name_missing() {
         let mut context = make_context();
         context.path = Path::new("file.ext");
-        assert_eq!(Variable::ParentDirname.eval(&context), Ok(String::new()));
-    }
-
-    #[test]
-    fn eval_full_path() {
-        assert_eq!(
-            Variable::FullPath.eval(&make_context()),
-            Ok(String::from("root/parent/file.ext"))
-        );
+        assert_eq!(Variable::ParentFileName.eval(&context), Ok(String::new()));
     }
 
     #[test]

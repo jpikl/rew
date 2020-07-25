@@ -55,9 +55,9 @@ fn main() -> Result<(), io::Error> {
         counter::LocalGenerator::new(cli.lc_init.unwrap_or(1), cli.lc_step.unwrap_or(1));
 
     let regex_solver = if let Some(regex) = &cli.regex {
-        regex::Solver::Filename(regex)
+        regex::Solver::FileName(regex)
     } else if let Some(regex) = &cli.regex_full {
-        regex::Solver::FullPath(regex)
+        regex::Solver::Path(regex)
     } else {
         regex::Solver::None
     };

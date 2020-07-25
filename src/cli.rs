@@ -42,11 +42,11 @@ pub struct Cli {
     #[structopt(long)]
     pub explain: bool,
 
-    /// Regular expression matched against filename
+    /// Regular expression matched against file name
     #[structopt(short = "e", long)]
     pub regex: Option<Regex>,
 
-    /// Regular expression matched against full path
+    /// Regular expression matched against path
     #[structopt(short = "E", long, value_name = "regex")]
     pub regex_full: Option<Regex>,
 

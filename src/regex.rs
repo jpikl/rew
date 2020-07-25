@@ -15,22 +15,22 @@ impl fmt::Display for Utf8Error {
 }
 
 pub enum Solver<'a> {
-    Filename(&'a Regex),
-    FullPath(&'a Regex),
+    FileName(&'a Regex),
+    Path(&'a Regex),
     None,
 }
 
 impl<'a> Solver<'a> {
     pub fn eval<'t>(&self, path: &'t Path) -> Result<Option<Captures<'t>>, Utf8Error> {
         match self {
-            Self::Filename(regex) => {
-                if let Some(filename) = path.file_name() {
-                    Ok(regex.captures(to_str(filename)?))
+            Self::FileName(regex) => {
+                if let Some(file_name) = path.file_name() {
+                    Ok(regex.captures(to_str(file_name)?))
                 } else {
                     Ok(None)
                 }
             }
-            Self::FullPath(regex) => Ok(regex.captures(to_str(path)?)),
+            Self::Path(regex) => Ok(regex.captures(to_str(path)?)),
             Self::None => Ok(None),
         }
     }
@@ -48,7 +48,7 @@ mod tests {
     #[test]
     fn file_name() {
         let regex = Regex::new("([a-z]+)_([A-Z]+)").unwrap();
-        let captures = eval(Solver::Filename(&regex)).unwrap();
+        let captures = eval(Solver::FileName(&regex)).unwrap();
 
         assert_eq!(captures.len(), 3);
         assert_eq!(captures.get(1).as_ref().map(Match::as_str), Some("file"));
@@ -56,9 +56,9 @@ mod tests {
     }
 
     #[test]
-    fn full_path() {
+    fn path() {
         let regex = Regex::new("([a-z]+)_([A-Z]+)").unwrap();
-        let captures = eval(Solver::FullPath(&regex)).unwrap();
+        let captures = eval(Solver::Path(&regex)).unwrap();
 
         assert_eq!(captures.len(), 3);
         assert_eq!(captures.get(1).as_ref().map(Match::as_str), Some("dir"));
