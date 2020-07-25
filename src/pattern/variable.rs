@@ -66,28 +66,28 @@ impl Variable {
 
     pub fn eval(&self, context: &eval::Context) -> Result<String, eval::ErrorKind> {
         match self {
-            Self::Path => to_string(Some(context.path)),
+            Self::Path => to_string(context.path),
             Self::AbsolutePath => {
                 if context.path.is_absolute() {
-                    to_string(Some(context.path))
+                    to_string(context.path)
                 } else {
-                    to_string(Some(context.current_dir.join(context.path).as_path()))
+                    to_string(&context.current_dir.join(context.path))
                 }
             }
-            Self::FileName => to_string(context.path.file_name()),
-            Self::BaseName => to_string(context.path.file_stem()),
-            Self::Extension => to_string(context.path.extension()),
+            Self::FileName => opt_to_string(context.path.file_name()),
+            Self::BaseName => opt_to_string(context.path.file_stem()),
+            Self::Extension => opt_to_string(context.path.extension()),
 
             Self::ExtensionWithDot => {
-                let mut string = to_string(context.path.extension())?;
+                let mut string = opt_to_string(context.path.extension())?;
                 if !string.is_empty() {
                     string.insert(0, '.');
                 }
                 Ok(string)
             }
 
-            Self::Parent => to_string(context.path.parent()),
-            Self::ParentFileName => to_string(context.path.parent().and_then(Path::file_name)),
+            Self::Parent => opt_to_string(context.path.parent()),
+            Self::ParentFileName => opt_to_string(context.path.parent().and_then(Path::file_name)),
             Self::LocalCounter => Ok(context.local_counter.to_string()),
             Self::GlobalCounter => Ok(context.global_counter.to_string()),
 
@@ -107,15 +107,21 @@ impl Variable {
     }
 }
 
-fn to_string<S: AsRef<OsStr> + ?Sized>(value: Option<&S>) -> Result<String, eval::ErrorKind> {
+pub fn opt_to_string<S: AsRef<OsStr> + ?Sized>(
+    value: Option<&S>,
+) -> Result<String, eval::ErrorKind> {
     if let Some(value) = value {
-        if let Some(str) = value.as_ref().to_str() {
-            Ok(str.to_string())
-        } else {
-            Err(eval::ErrorKind::InputNotUtf8)
-        }
+        to_string(value)
     } else {
         Ok(String::new())
+    }
+}
+
+pub fn to_string<S: AsRef<OsStr> + ?Sized>(value: &S) -> Result<String, eval::ErrorKind> {
+    if let Some(str) = value.as_ref().to_str() {
+        Ok(str.to_string())
+    } else {
+        Err(eval::ErrorKind::InputNotUtf8)
     }
 }
 
