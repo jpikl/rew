@@ -1,6 +1,6 @@
 use crate::cli::Cli;
 use crate::pattern::{eval, Pattern};
-use std::{io, process};
+use std::{env, io, process};
 use structopt::StructOpt;
 use termcolor::{ColorChoice, StandardStream};
 
@@ -83,6 +83,8 @@ fn main() -> Result<(), io::Error> {
         Some('\n')
     };
 
+    let current_dir_buf = env::current_dir()?;
+    let current_dir = current_dir_buf.as_path();
     let mut output_paths = output::Paths::new(&mut stdout, output_delimiter);
 
     loop {
@@ -114,6 +116,7 @@ fn main() -> Result<(), io::Error> {
 
                 let context = eval::Context {
                     path,
+                    current_dir,
                     global_counter,
                     local_counter,
                     regex_captures,

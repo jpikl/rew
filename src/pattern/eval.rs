@@ -7,6 +7,7 @@ use std::{error, fmt, result};
 
 pub struct Context<'a> {
     pub path: &'a Path,
+    pub current_dir: &'a Path,
     pub global_counter: u32,
     pub local_counter: u32,
     pub regex_captures: Option<regex::Captures<'a>>,

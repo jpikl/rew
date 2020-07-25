@@ -11,6 +11,7 @@ use uuid::Uuid;
 #[derive(Debug, PartialEq)]
 pub enum Variable {
     Path,
+    AbsolutePath,
     FileName,
     BaseName,
     Extension,
@@ -40,6 +41,7 @@ impl Variable {
         } else if let Some(char) = reader.read() {
             match char.as_char() {
                 'p' => Ok(Variable::Path),
+                'P' => Ok(Variable::AbsolutePath),
                 'f' => Ok(Variable::FileName),
                 'b' => Ok(Variable::BaseName),
                 'e' => Ok(Variable::Extension),
@@ -65,6 +67,13 @@ impl Variable {
     pub fn eval(&self, context: &eval::Context) -> Result<String, eval::ErrorKind> {
         match self {
             Self::Path => to_string(Some(context.path)),
+            Self::AbsolutePath => {
+                if context.path.is_absolute() {
+                    to_string(Some(context.path))
+                } else {
+                    to_string(Some(context.current_dir.join(context.path).as_path()))
+                }
+            }
             Self::FileName => to_string(context.path.file_name()),
             Self::BaseName => to_string(context.path.file_stem()),
             Self::Extension => to_string(context.path.extension()),
@@ -114,6 +123,7 @@ impl fmt::Display for Variable {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::Path => write!(formatter, "Path"),
+            Self::AbsolutePath => write!(formatter, "Absolute path"),
             Self::FileName => write!(formatter, "File name"),
             Self::BaseName => write!(formatter, "Base name"),
             Self::Extension => write!(formatter, "Extension"),
@@ -138,6 +148,11 @@ mod tests {
     #[test]
     fn parse_path() {
         assert_eq!(parse("p"), Ok(Variable::Path));
+    }
+
+    #[test]
+    fn parse_absolute_path() {
+        assert_eq!(parse("P"), Ok(Variable::AbsolutePath));
     }
 
     #[test]
@@ -244,6 +259,14 @@ mod tests {
         assert_eq!(
             Variable::Path.eval(&make_context()),
             Ok(String::from("root/parent/file.ext"))
+        );
+    }
+
+    #[test]
+    fn eval_absolute_path() {
+        assert_eq!(
+            Variable::AbsolutePath.eval(&make_context()),
+            Ok(String::from("current_dir/root/parent/file.ext"))
         );
     }
 
@@ -370,6 +393,7 @@ mod tests {
     fn make_context<'a>() -> eval::Context<'a> {
         eval::Context {
             path: Path::new("root/parent/file.ext"),
+            current_dir: Path::new("current_dir"),
             local_counter: 1,
             global_counter: 2,
             regex_captures: Regex::new("(.*)").unwrap().captures("abc"),
