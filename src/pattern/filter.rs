@@ -24,6 +24,13 @@ pub enum Filter {
     LeftPad(String),
     RightPad(String),
     Default(String),
+    // TODO ExternalCommand
+    //  - Passed through cli option: `--extern='realpath {}' --extern='tr a b'`
+    //  - Filter references its number: `{p|e1|e2}`.
+    //  - Modes:
+    //    a) Spawn for every path, pass value as its argument: `realpath {}`.
+    //    b) Spawn once, values paths separated by LF or NUL through its stdin/stdout: `tr a b`.
+    //  - Mode a) is chosen over b) when `{}` value placeholder is used within command.
 }
 
 impl Filter {
@@ -48,7 +55,6 @@ impl Filter {
                 '<' => Ok(Filter::LeftPad(Char::join(reader.read_to_end()))),
                 '>' => Ok(Filter::RightPad(Char::join(reader.read_to_end()))),
                 '?' => Ok(Filter::Default(Char::join(reader.read_to_end()))),
-                // TODO 'e' ExternalCommand
                 _ => Err(parse::Error {
                     kind: parse::ErrorKind::UnknownFilter(char.clone()),
                     range: position..reader.position(),

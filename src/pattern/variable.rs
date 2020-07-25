@@ -49,7 +49,6 @@ impl Variable {
                 'c' => Ok(Variable::LocalCounter),
                 'C' => Ok(Variable::GlobalCounter),
                 'u' => Ok(Variable::Uuid),
-                // TODO 'e' ExternalCommand
                 _ => Err(parse::Error {
                     kind: parse::ErrorKind::UnknownVariable(char.clone()),
                     range: position..reader.position(),
