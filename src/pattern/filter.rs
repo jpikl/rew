@@ -3,6 +3,7 @@ use crate::pattern::eval;
 use crate::pattern::parse;
 use crate::pattern::range::Range;
 use crate::pattern::reader::Reader;
+use crate::pattern::regex::{add_capture_group_brackets, RegexHolder};
 use crate::pattern::substitution::Substitution;
 use std::fmt;
 use unidecode::unidecode;
@@ -11,8 +12,10 @@ use unidecode::unidecode;
 pub enum Filter {
     Substring(Range),
     SubstringReverse(Range),
-    ReplaceFirst(Substitution),
-    ReplaceAll(Substitution),
+    ReplaceFirst(Substitution<String>),
+    ReplaceAll(Substitution<String>),
+    RegexReplaceFirst(Substitution<RegexHolder>),
+    RegexReplaceAll(Substitution<RegexHolder>),
     Trim,
     ToLowercase,
     ToUppercase,
@@ -31,10 +34,12 @@ impl Filter {
             match char.as_char() {
                 'n' => Ok(Filter::Substring(Range::parse(reader)?)),
                 'N' => Ok(Filter::SubstringReverse(Range::parse(reader)?)),
-                'r' => Ok(Filter::ReplaceFirst(Substitution::parse(reader)?)),
-                'R' => Ok(Filter::ReplaceAll(Substitution::parse(reader)?)),
-                // TODO 's' RegexReplaceFirst
-                // TODO 'S' RegexReplaceAll
+                'r' => Ok(Filter::ReplaceFirst(Substitution::parse_string(reader)?)),
+                'R' => Ok(Filter::ReplaceAll(Substitution::parse_string(reader)?)),
+                's' => Ok(Filter::RegexReplaceFirst(Substitution::parse_regex(
+                    reader,
+                )?)),
+                'S' => Ok(Filter::RegexReplaceAll(Substitution::parse_regex(reader)?)),
                 't' => Ok(Filter::Trim),
                 'l' => Ok(Filter::ToLowercase),
                 'u' => Ok(Filter::ToUppercase),
@@ -105,6 +110,20 @@ impl Filter {
                 Ok(string.replace(value, replacement))
             }
 
+            Self::RegexReplaceFirst(Substitution {
+                value: RegexHolder(regex),
+                replacement,
+            }) => Ok(regex
+                .replacen(&string, 1, add_capture_group_brackets(replacement).as_ref())
+                .to_string()),
+
+            Self::RegexReplaceAll(Substitution {
+                value: RegexHolder(regex),
+                replacement,
+            }) => Ok(regex
+                .replace_all(&string, add_capture_group_brackets(replacement).as_ref())
+                .to_string()),
+
             Self::Trim => Ok(string.trim().to_string()),
             Self::ToLowercase => Ok(string.to_lowercase()),
             Self::ToUppercase => Ok(string.to_uppercase()),
@@ -146,6 +165,16 @@ impl fmt::Display for Filter {
             Self::SubstringReverse(range) => write!(formatter, "Substring (reverse) {}", range),
             Self::ReplaceFirst(substitution) => write!(formatter, "Replace first {}", substitution),
             Self::ReplaceAll(substitution) => write!(formatter, "Replace all {}", substitution),
+            Self::RegexReplaceFirst(substitution) => write!(
+                formatter,
+                "Replace first regular expression {}",
+                substitution
+            ),
+            Self::RegexReplaceAll(substitution) => write!(
+                formatter,
+                "Replace all regular expressions {}",
+                substitution
+            ),
             Self::Trim => write!(formatter, "Trim"),
             Self::ToLowercase => write!(formatter, "To lowercase"),
             Self::ToUppercase => write!(formatter, "To uppercase"),
@@ -163,6 +192,7 @@ mod tests {
     use super::*;
     use crate::pattern::range::Range;
     use crate::pattern::substitution::Substitution;
+    use regex::Regex;
 
     #[test]
     fn parse_substring() {
@@ -210,14 +240,14 @@ mod tests {
             }),
         );
         assert_eq!(
-            parse("r_ab"),
+            parse("r/ab"),
             Ok(Filter::ReplaceFirst(Substitution {
                 value: String::from("ab"),
                 replacement: String::from(""),
             })),
         );
         assert_eq!(
-            parse("r_ab_cd"),
+            parse("r/ab/cd"),
             Ok(Filter::ReplaceFirst(Substitution {
                 value: String::from("ab"),
                 replacement: String::from("cd"),
@@ -235,18 +265,92 @@ mod tests {
             }),
         );
         assert_eq!(
-            parse("R_ab"),
+            parse("R/ab"),
             Ok(Filter::ReplaceAll(Substitution {
                 value: String::from("ab"),
                 replacement: String::from(""),
             })),
         );
         assert_eq!(
-            parse("R_ab_cd"),
+            parse("R/ab/cd"),
             Ok(Filter::ReplaceAll(Substitution {
                 value: String::from("ab"),
                 replacement: String::from("cd"),
             })),
+        );
+    }
+
+    #[test]
+    fn parse_regex_replace_first() {
+        assert_eq!(
+            parse("s"),
+            Err(parse::Error {
+                kind: parse::ErrorKind::ExpectedSubstitution,
+                range: 1..1,
+            }),
+        );
+        assert_eq!(
+            parse("s/[0-9]+"),
+            Ok(Filter::RegexReplaceFirst(Substitution {
+                value: RegexHolder(Regex::new("[0-9]+").unwrap()),
+                replacement: String::from(""),
+            })),
+        );
+        assert_eq!(
+            parse("s/[0-9]+/cd"),
+            Ok(Filter::RegexReplaceFirst(Substitution {
+                value: RegexHolder(Regex::new("[0-9]+").unwrap()),
+                replacement: String::from("cd"),
+            })),
+        );
+        assert_eq!(
+            parse("s/[0-9+/cd"),
+            Err(parse::Error {
+                kind: parse::ErrorKind::SubstituteRegexInvalid(String::from(
+                    "regex parse error:
+    [0-9+
+    ^
+error: unclosed character class"
+                )),
+                range: 2..7,
+            }),
+        );
+    }
+
+    #[test]
+    fn parse_regex_replace_all() {
+        assert_eq!(
+            parse("S"),
+            Err(parse::Error {
+                kind: parse::ErrorKind::ExpectedSubstitution,
+                range: 1..1,
+            }),
+        );
+        assert_eq!(
+            parse("S/[0-9]+"),
+            Ok(Filter::RegexReplaceAll(Substitution {
+                value: RegexHolder(Regex::new("[0-9]+").unwrap()),
+                replacement: String::from(""),
+            })),
+        );
+        assert_eq!(
+            parse("S/[0-9]+/cd"),
+            Ok(Filter::RegexReplaceAll(Substitution {
+                value: RegexHolder(Regex::new("[0-9]+").unwrap()),
+                replacement: String::from("cd"),
+            })),
+        );
+        assert_eq!(
+            parse("S/[0-9+/cd"),
+            Err(parse::Error {
+                kind: parse::ErrorKind::SubstituteRegexInvalid(String::from(
+                    "regex parse error:
+    [0-9+
+    ^
+error: unclosed character class"
+                )),
+                range: 2..7,
+            }),
         );
     }
 
@@ -591,6 +695,54 @@ mod tests {
             })
             .eval(String::from("abcd_abcd")),
             Ok(String::from("cd_cd"))
+        );
+    }
+
+    #[test]
+    fn eval_regex_replace_first() {
+        assert_eq!(
+            Filter::RegexReplaceFirst(Substitution {
+                value: RegexHolder(Regex::new("([0-9])([0-9]+)").unwrap()),
+                replacement: String::from("_$2$1_"),
+            })
+            .eval(String::from("abc123def456")),
+            Ok(String::from("abc_231_def456"))
+        );
+    }
+
+    #[test]
+    fn eval_regex_replace_all() {
+        assert_eq!(
+            Filter::RegexReplaceAll(Substitution {
+                value: RegexHolder(Regex::new("([0-9])([0-9]+)").unwrap()),
+                replacement: String::from("_$2$1_"),
+            })
+            .eval(String::from("abc123def456")),
+            Ok(String::from("abc_231_def_564_"))
+        );
+    }
+
+    #[test]
+    fn eval_regex_remove_first() {
+        assert_eq!(
+            Filter::RegexReplaceFirst(Substitution {
+                value: RegexHolder(Regex::new("[0-9]+").unwrap()),
+                replacement: String::new(),
+            })
+            .eval(String::from("abc123def456")),
+            Ok(String::from("abcdef456"))
+        );
+    }
+
+    #[test]
+    fn eval_regex_remove_all() {
+        assert_eq!(
+            Filter::RegexReplaceAll(Substitution {
+                value: RegexHolder(Regex::new("[0-9]+").unwrap()),
+                replacement: String::new(),
+            })
+            .eval(String::from("abc123def456")),
+            Ok(String::from("abcdef"))
         );
     }
 

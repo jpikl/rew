@@ -34,6 +34,7 @@ pub enum ErrorKind {
     RangeStartOverEnd(usize, usize),
     RegexCaptureZero,
     SubstituteWithoutValue(Char),
+    SubstituteRegexInvalid(String),
     UnknownEscapeSequence(EscapeSequence),
     UnknownFilter(Char),
     UnknownVariable(Char),
@@ -93,6 +94,11 @@ impl fmt::Display for ErrorKind {
                 formatter,
                 "Substitution is missing value after separator '{}{}' (escape sequence)",
                 sequence[0], sequence[1]
+            ),
+            Self::SubstituteRegexInvalid(reason) => write!(
+                formatter,
+                "Invalid regular expression in substitution: {}",
+                reason
             ),
             Self::UnknownEscapeSequence(sequence) => write!(
                 formatter,

@@ -108,6 +108,7 @@ name = "mw"
 version = "0.1.0"
 dependencies = [
  "atty",
+ "lazy_static",
  "regex",
  "structopt",
  "termcolor",

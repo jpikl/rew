@@ -14,6 +14,7 @@ pub mod parse;
 mod parser;
 mod range;
 mod reader;
+mod regex;
 mod substitution;
 mod symbols;
 mod variable;
@@ -109,7 +110,7 @@ mod tests {
     use crate::pattern::parse::Output;
     use crate::pattern::range::Range;
     use crate::pattern::substitution::Substitution;
-    use regex::Regex;
+    use ::regex::Regex;
     use std::path::Path;
 
     #[test]
