@@ -9,6 +9,8 @@ pub struct AnyString(pub String);
 
 impl PartialEq for AnyString {
     fn eq(&self, _: &Self) -> bool {
+        // This is only useful when comparing system error messages in tests,
+        // because we cannot rely on a specific error message.
         true
     }
 }
