@@ -1,5 +1,6 @@
 use crate::cli::Cli;
 use crate::pattern::{eval, Pattern};
+use std::io::Stdin;
 use std::{env, io, process};
 use structopt::StructOpt;
 use termcolor::{ColorChoice, StandardStream};
@@ -12,11 +13,16 @@ mod pattern;
 mod regex;
 mod utils;
 
-fn main() -> Result<(), io::Error> {
+const ERR_IO: i32 = 1 << 2;
+const ERR_PARSE: i32 = 1 << 3;
+const ERR_EVAL: i32 = 1 << 4;
+const ERR_REGEX: i32 = 1 << 5;
+
+fn main() {
     // Explicit variable type, because IDE is unable to detect it.
     let cli: Cli = Cli::from_args();
 
-    let output_colors = match cli.color {
+    let color = match cli.color {
         Some(ColorChoice::Auto) | None => {
             if atty::is(atty::Stream::Stdout) {
                 ColorChoice::Auto
@@ -28,20 +34,35 @@ fn main() -> Result<(), io::Error> {
     };
 
     let mut stdin = io::stdin();
-    let mut stdout = StandardStream::stdout(output_colors);
-    let mut stderr = StandardStream::stderr(output_colors);
-    let mut output_errors = output::Errors::new(&mut stderr);
+    let mut stdout = StandardStream::stdout(color);
+    let mut stderr = StandardStream::stderr(color);
+
+    if let Some(error) = run(&cli, &mut stdin, &mut stdout, &mut stderr).err() {
+        output::Errors::new(&mut stderr)
+            .write(&error)
+            .expect("Failed to write to stderr!");
+        process::exit(ERR_IO);
+    }
+}
+
+fn run(
+    cli: &Cli,
+    stdin: &mut Stdin,
+    stdout: &mut StandardStream,
+    stderr: &mut StandardStream,
+) -> Result<(), io::Error> {
+    let mut output_errors = output::Errors::new(stderr);
 
     let pattern = match Pattern::parse(&cli.pattern, cli.escape) {
         Ok(pattern) => pattern,
         Err(error) => {
             output_errors.write_with_highlight(&error, &cli.pattern)?;
-            process::exit(2);
+            process::exit(ERR_PARSE);
         }
     };
 
     if cli.explain {
-        return pattern.explain(&mut stdout);
+        return pattern.explain(stdout);
     }
 
     let global_counter_used = pattern.uses_global_counter();
@@ -70,7 +91,7 @@ fn main() -> Result<(), io::Error> {
         } else {
             Some(b'\n')
         };
-        input::Paths::from_stdin(&mut stdin, input_delimiter)
+        input::Paths::from_stdin(stdin, input_delimiter)
     } else {
         input::Paths::from_args(cli.paths.as_slice())
     };
@@ -85,60 +106,50 @@ fn main() -> Result<(), io::Error> {
 
     let current_dir_buf = env::current_dir()?;
     let current_dir = current_dir_buf.as_path();
-    let mut output_paths = output::Paths::new(&mut stdout, output_delimiter);
+    let mut output_paths = output::Paths::new(stdout, output_delimiter);
 
-    loop {
-        match input_paths.next() {
-            Ok(Some(path)) => {
-                let global_counter = if global_counter_used {
-                    global_counter_generator.next()
-                } else {
-                    0
-                };
+    while let Some(path) = input_paths.next()? {
+        let global_counter = if global_counter_used {
+            global_counter_generator.next()
+        } else {
+            0
+        };
 
-                let local_counter = if local_counter_used {
-                    local_counter_generator.next(path)
-                } else {
-                    0
-                };
+        let local_counter = if local_counter_used {
+            local_counter_generator.next(path)
+        } else {
+            0
+        };
 
-                let regex_captures = if regex_captures_used {
-                    match regex_solver.eval(path) {
-                        Ok(captures) => captures,
-                        Err(error) => {
-                            output_errors.write(&error)?;
-                            process::exit(4)
-                        }
-                    }
-                } else {
-                    None
-                };
-
-                let context = eval::Context {
-                    path,
-                    current_dir,
-                    global_counter,
-                    local_counter,
-                    regex_captures,
-                };
-
-                let output_path = match pattern.eval(&context) {
-                    Ok(path) => path,
-                    Err(error) => {
-                        output_errors.write_with_highlight(&error, &cli.pattern)?;
-                        process::exit(3);
-                    }
-                };
-
-                output_paths.write(&output_path)?;
+        let regex_captures = if regex_captures_used {
+            match regex_solver.eval(path) {
+                Ok(captures) => captures,
+                Err(error) => {
+                    output_errors.write(&error)?;
+                    process::exit(ERR_REGEX)
+                }
             }
+        } else {
+            None
+        };
 
-            Ok(None) => break,
+        let context = eval::Context {
+            path,
+            current_dir,
+            global_counter,
+            local_counter,
+            regex_captures,
+        };
+
+        let output_path = match pattern.eval(&context) {
+            Ok(path) => path,
             Err(error) => {
-                output_errors.write(&error)?;
-                process::exit(5)
+                output_errors.write_with_highlight(&error, &cli.pattern)?;
+                process::exit(ERR_EVAL);
             }
-        }
+        };
+
+        output_paths.write(&output_path)?;
     }
 
     Ok(())
