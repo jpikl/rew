@@ -42,6 +42,10 @@ pub struct Cli {
     #[structopt(long)]
     pub explain: bool,
 
+    /// Continue after a path processing error, fail at end.
+    #[structopt(short = "c", long)]
+    pub fail_at_end: bool,
+
     /// Regular expression matched against file name
     #[structopt(short = "e", long)]
     pub regex: Option<Regex>,

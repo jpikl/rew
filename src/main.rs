@@ -62,7 +62,8 @@ fn run(
     };
 
     if cli.explain {
-        return pattern.explain(stdout);
+        pattern.explain(stdout)?;
+        process::exit(0);
     }
 
     let global_counter_used = pattern.uses_global_counter();
@@ -107,6 +108,7 @@ fn run(
     let current_dir_buf = env::current_dir()?;
     let current_dir = current_dir_buf.as_path();
     let mut output_paths = output::Paths::new(stdout, output_delimiter);
+    let mut exit_code = 0;
 
     while let Some(path) = input_paths.next()? {
         let global_counter = if global_counter_used {
@@ -126,7 +128,12 @@ fn run(
                 Ok(captures) => captures,
                 Err(error) => {
                     output_errors.write(&error)?;
-                    process::exit(ERR_REGEX)
+                    if cli.fail_at_end {
+                        exit_code |= ERR_REGEX;
+                        continue;
+                    } else {
+                        process::exit(ERR_REGEX);
+                    }
                 }
             }
         } else {
@@ -145,12 +152,17 @@ fn run(
             Ok(path) => path,
             Err(error) => {
                 output_errors.write_with_highlight(&error, &cli.pattern)?;
-                process::exit(ERR_EVAL);
+                if cli.fail_at_end {
+                    exit_code |= ERR_EVAL;
+                    continue;
+                } else {
+                    process::exit(ERR_EVAL);
+                }
             }
         };
 
         output_paths.write(&output_path)?;
     }
 
-    Ok(())
+    process::exit(exit_code);
 }
