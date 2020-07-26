@@ -13,10 +13,10 @@ mod pattern;
 mod regex;
 mod utils;
 
-const ERR_IO: i32 = 1 << 2;
-const ERR_PARSE: i32 = 1 << 3;
-const ERR_EVAL: i32 = 1 << 4;
-const ERR_REGEX: i32 = 1 << 5;
+const ERR_IO: i32 = 1 << 1;
+const ERR_PARSE: i32 = 1 << 2;
+const ERR_EVAL: i32 = 1 << 3;
+const ERR_REGEX: i32 = 1 << 4;
 
 fn main() {
     // Explicit variable type, because IDE is unable to detect it.
