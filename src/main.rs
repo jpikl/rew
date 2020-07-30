@@ -13,10 +13,9 @@ mod pattern;
 mod regex;
 mod utils;
 
-const ERR_IO: i32 = 1 << 1;
-const ERR_PARSE: i32 = 1 << 2;
-const ERR_EVAL: i32 = 1 << 3;
-const ERR_REGEX: i32 = 1 << 4;
+const ERR_IO: i32 = 2;
+const ERR_PARSE: i32 = 3;
+const ERR_EVAL: i32 = 4;
 
 fn main() {
     // Explicit variable type, because IDE is unable to detect it.
@@ -129,10 +128,10 @@ fn run(
                 Err(error) => {
                     output_errors.write(&error)?;
                     if cli.fail_at_end {
-                        exit_code |= ERR_REGEX;
+                        exit_code = ERR_EVAL;
                         continue;
                     } else {
-                        process::exit(ERR_REGEX);
+                        process::exit(ERR_EVAL);
                     }
                 }
             }
@@ -153,7 +152,7 @@ fn run(
             Err(error) => {
                 output_errors.write_with_highlight(&error, &cli.pattern)?;
                 if cli.fail_at_end {
-                    exit_code |= ERR_EVAL;
+                    exit_code = ERR_EVAL;
                     continue;
                 } else {
                     process::exit(ERR_EVAL);
