@@ -1,3 +1,4 @@
+use crate::action::Action;
 use crate::cli::Cli;
 use crate::pattern::{eval, Pattern};
 use std::io::Stdin;
@@ -5,8 +6,10 @@ use std::{env, io, process};
 use structopt::StructOpt;
 use termcolor::{ColorChoice, StandardStream};
 
+mod action;
 mod cli;
 mod counter;
+mod fs;
 mod input;
 mod output;
 mod pattern;
@@ -16,6 +19,7 @@ mod utils;
 const ERR_IO: i32 = 2;
 const ERR_PARSE: i32 = 3;
 const ERR_EVAL: i32 = 4;
+const ERR_FS: i32 = 5;
 
 fn main() {
     // Explicit variable type, because IDE is unable to detect it.
@@ -36,9 +40,9 @@ fn main() {
     let mut stdout = StandardStream::stdout(color);
     let mut stderr = StandardStream::stderr(color);
 
-    if let Some(error) = run(&cli, &mut stdin, &mut stdout, &mut stderr).err() {
+    if let Some(io_error) = run(&cli, &mut stdin, &mut stdout, &mut stderr).err() {
         output::Errors::new(&mut stderr)
-            .write(&error)
+            .write(&io_error)
             .expect("Failed to write to stderr!");
         process::exit(ERR_IO);
     }
@@ -96,18 +100,24 @@ fn run(
         input::Paths::from_args(cli.paths.as_slice())
     };
 
-    let output_delimiter = if cli.print_raw {
-        None
-    } else if cli.print_nul {
-        Some('\0')
-    } else {
-        Some('\n')
-    };
-
     let current_dir_buf = env::current_dir()?;
     let current_dir = current_dir_buf.as_path();
-    let mut output_paths = output::Paths::new(stdout, output_delimiter);
     let mut exit_code = 0;
+
+    let mut action = if cli.rename_or_move {
+        Action::move_paths(stdout, cli.overwrite, cli.recursive)
+    } else if cli.copy {
+        Action::copy_paths(stdout, cli.overwrite, cli.recursive)
+    } else {
+        let output_delimiter = if cli.print_raw {
+            None
+        } else if cli.print_nul {
+            Some('\0')
+        } else {
+            Some('\n')
+        };
+        Action::print_paths(stdout, output_delimiter)
+    };
 
     while let Some(path) = input_paths.next()? {
         let global_counter = if global_counter_used {
@@ -160,7 +170,19 @@ fn run(
             }
         };
 
-        output_paths.write(&output_path)?;
+        match action.exec(path, &output_path) {
+            Ok(()) => {}
+            Err(action::Error::Fs(error)) => {
+                output_errors.write(&error)?;
+                if cli.fail_at_end {
+                    exit_code = ERR_FS;
+                    continue;
+                } else {
+                    process::exit(ERR_FS);
+                }
+            }
+            Err(action::Error::Io(error)) => return Err(error),
+        }
     }
 
     process::exit(exit_code);

@@ -1,6 +1,7 @@
 use crate::utils::{highlight_range, spec_color, HasRange};
 use std::error::Error;
 use std::io::{Result, Write};
+use std::path::Path;
 use termcolor::{Color, StandardStream, StandardStreamLock, WriteColor};
 
 pub struct Paths<'a> {
@@ -22,6 +23,50 @@ impl<'a> Paths<'a> {
         } else {
             write!(self.lock, "{}", path)
         }
+    }
+}
+
+pub struct Actions<'a> {
+    lock: StandardStreamLock<'a>,
+}
+
+impl<'a> Actions<'a> {
+    pub fn new(stream: &'a mut StandardStream) -> Self {
+        Self {
+            lock: stream.lock(),
+        }
+    }
+
+    pub fn write_moving(&mut self, source: &Path, target: &Path) -> Result<()> {
+        self.write("Moving", source, target)
+    }
+
+    pub fn write_copying(&mut self, source: &Path, target: &Path) -> Result<()> {
+        self.write("Copying", source, target)
+    }
+
+    fn write(&mut self, action: &str, source: &Path, target: &Path) -> Result<()> {
+        write!(self.lock, "{} '", action)?;
+        self.lock.set_color(&spec_color(Color::Blue))?;
+        write!(self.lock, "{}", source.to_string_lossy())?;
+        self.lock.reset()?;
+        write!(self.lock, "' to '")?;
+        self.lock.set_color(&spec_color(Color::Blue))?;
+        write!(self.lock, "{}", target.to_string_lossy())?;
+        self.lock.reset()?;
+        write!(self.lock, "' ... ")
+    }
+
+    pub fn write_success(&mut self) -> Result<()> {
+        self.lock.set_color(&spec_color(Color::Green))?;
+        writeln!(self.lock, "OK")?;
+        self.lock.reset()
+    }
+
+    pub fn write_failure(&mut self) -> Result<()> {
+        self.lock.set_color(&spec_color(Color::Red))?;
+        writeln!(self.lock, "FAILED")?;
+        self.lock.reset()
     }
 }
 

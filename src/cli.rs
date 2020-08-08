@@ -27,24 +27,40 @@ pub struct Cli {
     pub read_nul: bool,
 
     /// Read the whole input as a path
-    #[structopt(short = "r", long, conflicts_with = "read-nul")]
+    #[structopt(short = "b", long, conflicts_with = "read-nul")]
     pub read_raw: bool,
 
     /// Print paths delimited by NUL, not newline
-    #[structopt(short = "Z", long = "print-0")]
+    #[structopt(short = "Z", long = "print-0", conflicts_with_all = &["print-raw", "move", "copy"])]
     pub print_nul: bool,
 
     /// Print paths without any delimiter
-    #[structopt(short = "R", long, conflicts_with = "print-nul")]
+    #[structopt(short = "B", long, conflicts_with_all = &["print-null", "move", "copy"])]
     pub print_raw: bool,
+
+    /// Move paths instead of printing
+    #[structopt(short = "m", long = "move", conflicts_with_all = &["print-nul", "print-raw", "copy"])]
+    pub rename_or_move: bool,
+
+    /// Copy paths instead of printing
+    #[structopt(short = "c", long, conflicts_with_all = &["print-nul", "print-raw", "move"])]
+    pub copy: bool,
+
+    /// Overwrite existing files when moving/copying
+    #[structopt(short = "f", long)]
+    pub overwrite: bool,
+
+    /// Copy directories recursively
+    #[structopt(short = "r", long)]
+    pub recursive: bool,
+
+    /// Continue after a path processing error, fail at end.
+    #[structopt(short = "s", long)]
+    pub fail_at_end: bool,
 
     /// Print explanation of a given pattern
     #[structopt(long)]
     pub explain: bool,
-
-    /// Continue after a path processing error, fail at end.
-    #[structopt(short = "c", long)]
-    pub fail_at_end: bool,
 
     /// Regular expression matched against file name
     #[structopt(short = "e", long)]
