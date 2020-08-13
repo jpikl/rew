@@ -157,7 +157,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_unbounded_erro() {
+    fn parse_unbounded_error() {
         let mut reader = Reader::from("-");
         assert_eq!(
             Range::parse(&mut reader),

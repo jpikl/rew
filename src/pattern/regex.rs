@@ -29,3 +29,41 @@ pub fn add_capture_group_brackets(string: &str) -> Cow<str> {
         Cow::Borrowed(string)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn regex_holder_eq() {
+        assert_eq!(
+            RegexHolder(Regex::new("[a-z]+").unwrap()),
+            RegexHolder(Regex::new("[a-z]+").unwrap())
+        );
+        assert_ne!(
+            RegexHolder(Regex::new("[a-z]+").unwrap()),
+            RegexHolder(Regex::new("[a-z]*").unwrap())
+        );
+    }
+
+    #[test]
+    fn regex_holder_fmt() {
+        assert_eq!(
+            format!("{}", RegexHolder(Regex::new("[a-z]+").unwrap())),
+            String::from("[a-z]+")
+        );
+    }
+
+    #[test]
+    fn add_capture_group_brackets() {
+        assert_eq!(super::add_capture_group_brackets("ab"), String::from("ab"));
+        assert_eq!(
+            super::add_capture_group_brackets("a$1b"),
+            String::from("a${1}b")
+        );
+        assert_eq!(
+            super::add_capture_group_brackets("$1a$12b$123"),
+            String::from("${1}a${12}b${123}")
+        );
+    }
+}

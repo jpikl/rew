@@ -245,7 +245,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_ignore_remaining_chars_capture_group_variable() {
+    fn parse_ignore_remaining_chars_after_capture_group() {
         let mut reader = Reader::from("123_");
         Variable::parse(&mut reader).unwrap();
         assert_eq!(reader.position(), 3);
@@ -313,7 +313,7 @@ mod tests {
         assert_eq!(
             Variable::CanonicalPath.eval(&make_context()),
             Err(eval::ErrorKind::CanonicalizationFailed(AnyString(
-                String::from("this string is not compared by assertion")
+                String::from("This string is not compared by assertion")
             )))
         );
     }

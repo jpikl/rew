@@ -225,7 +225,7 @@ mod tests {
             Substitution::parse_regex(&mut reader),
             Err(Error {
                 kind: ErrorKind::SubstituteRegexInvalid(AnyString(String::from(
-                    "this string is not compared by assertion"
+                    "This string is not compared by assertion"
                 ))),
                 range: 1..6,
             })

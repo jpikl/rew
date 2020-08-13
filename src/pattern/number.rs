@@ -42,7 +42,7 @@ mod tests {
     }
 
     #[test]
-    fn non_digit_error() {
+    fn no_digits_error() {
         let mut reader = Reader::from("ab");
         assert_eq!(
             parse_usize(&mut reader),
@@ -69,35 +69,35 @@ mod tests {
     }
 
     #[test]
-    fn only_a_first_zero() {
+    fn zero_ignore_following_zeros() {
         let mut reader = Reader::from("00");
         assert_eq!(parse_usize(&mut reader), Ok(0));
         assert_eq!(reader.position(), 1);
     }
 
     #[test]
-    fn positive_number_single_digit() {
+    fn single_digit() {
         let mut reader = Reader::from("1");
         assert_eq!(parse_usize(&mut reader), Ok(1));
         assert_eq!(reader.position(), 1);
     }
 
     #[test]
-    fn positive_number_single_digit_ignore_rest() {
+    fn single_digit_ignore_rest() {
         let mut reader = Reader::from("1a");
         assert_eq!(parse_usize(&mut reader), Ok(1));
         assert_eq!(reader.position(), 1);
     }
 
     #[test]
-    fn positive_number_multiple_digits() {
+    fn multiple_digits() {
         let mut reader = Reader::from("1234567890");
         assert_eq!(parse_usize(&mut reader), Ok(1_234_567_890));
         assert_eq!(reader.position(), 10);
     }
 
     #[test]
-    fn positive_number_multiple_digits_ignore_rest() {
+    fn multiple_digits_ignore_rest() {
         let mut reader = Reader::from("1234567890a");
         assert_eq!(parse_usize(&mut reader), Ok(1_234_567_890));
         assert_eq!(reader.position(), 10);

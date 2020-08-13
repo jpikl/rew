@@ -314,7 +314,7 @@ mod tests {
             parse("s/[0-9+/cd"),
             Err(parse::Error {
                 kind: parse::ErrorKind::SubstituteRegexInvalid(AnyString(String::from(
-                    "this string is not compared by assertion"
+                    "This string is not compared by assertion"
                 ))),
                 range: 2..7,
             }),
@@ -348,7 +348,7 @@ mod tests {
             parse("S/[0-9+/cd"),
             Err(parse::Error {
                 kind: parse::ErrorKind::SubstituteRegexInvalid(AnyString(String::from(
-                    "this string is not compared by assertion"
+                    "This string is not compared by assertion"
                 ))),
                 range: 2..7,
             }),

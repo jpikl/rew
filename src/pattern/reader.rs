@@ -41,10 +41,10 @@ impl<T: AsChar> Reader<T> {
     }
 
     fn peek_at(&self, index: usize) -> Option<&T> {
-        if index >= self.chars.len() {
-            None
-        } else {
+        if index < self.chars.len() {
             Some(&self.chars[index])
+        } else {
+            None
         }
     }
 
