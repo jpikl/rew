@@ -84,7 +84,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn empty_error() {
+    fn parse_empty_error() {
         let mut reader = Reader::from("");
         assert_eq!(
             parse_value_and_replacement(&mut reader),
@@ -97,7 +97,7 @@ mod tests {
     }
 
     #[test]
-    fn no_value_error() {
+    fn parse_no_value_error() {
         let mut reader = Reader::from("/");
         assert_eq!(
             parse_value_and_replacement(&mut reader),
@@ -110,7 +110,7 @@ mod tests {
     }
 
     #[test]
-    fn empty_value_error() {
+    fn parse_empty_value_error() {
         let mut reader = Reader::from("//");
         assert_eq!(
             parse_value_and_replacement(&mut reader),
@@ -123,7 +123,7 @@ mod tests {
     }
 
     #[test]
-    fn value_no_replacement() {
+    fn parse_value_no_replacement() {
         let mut reader = Reader::from("/a");
         assert_eq!(
             parse_value_and_replacement(&mut reader),
@@ -133,7 +133,7 @@ mod tests {
     }
 
     #[test]
-    fn long_value_no_replacement() {
+    fn parse_long_value_no_replacement() {
         let mut reader = Reader::from("/abc");
         assert_eq!(
             parse_value_and_replacement(&mut reader),
@@ -143,7 +143,7 @@ mod tests {
     }
 
     #[test]
-    fn value_empty_replacement() {
+    fn parse_value_empty_replacement() {
         let mut reader = Reader::from("/a/");
         assert_eq!(
             parse_value_and_replacement(&mut reader),
@@ -153,7 +153,7 @@ mod tests {
     }
 
     #[test]
-    fn long_value_empty_replacement() {
+    fn parse_long_value_empty_replacement() {
         let mut reader = Reader::from("/abc/");
         assert_eq!(
             parse_value_and_replacement(&mut reader),
@@ -163,7 +163,7 @@ mod tests {
     }
 
     #[test]
-    fn value_replacement() {
+    fn parse_value_replacement() {
         let mut reader = Reader::from("/a/d");
         assert_eq!(
             parse_value_and_replacement(&mut reader),
@@ -173,7 +173,7 @@ mod tests {
     }
 
     #[test]
-    fn long_value_replacement() {
+    fn parse_long_value_replacement() {
         let mut reader = Reader::from("/abc/def");
         assert_eq!(
             parse_value_and_replacement(&mut reader),
@@ -183,7 +183,7 @@ mod tests {
     }
 
     #[test]
-    fn value_replacement_with_redundant_separators() {
+    fn parse_value_replacement_with_redundant_separators() {
         let mut reader = Reader::from("/abc/d//e/");
         assert_eq!(
             parse_value_and_replacement(&mut reader),
@@ -193,7 +193,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_string() {
+    fn parse_as_string() {
         let mut reader = Reader::from("/abc/def");
         assert_eq!(
             Substitution::parse_string(&mut reader),
@@ -206,7 +206,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_regex() {
+    fn parse_as_regex() {
         let mut reader = Reader::from("/[0-9]+/def");
         assert_eq!(
             Substitution::parse_regex(&mut reader),
@@ -219,7 +219,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_regex_error() {
+    fn parse_as_regex_error() {
         let mut reader = Reader::from("/[0-9+/def");
         assert_eq!(
             Substitution::parse_regex(&mut reader),
@@ -231,5 +231,29 @@ mod tests {
             })
         );
         assert_eq!(reader.position(), 10);
+    }
+
+    #[test]
+    fn fmt() {
+        assert_eq!(
+            format!(
+                "{}",
+                Substitution {
+                    value: String::from("abc"),
+                    replacement: String::from("def")
+                }
+            ),
+            "'abc' by 'def'"
+        );
+        assert_eq!(
+            format!(
+                "{}",
+                Substitution {
+                    value: Regex::new("([a-z]+)").unwrap(),
+                    replacement: String::from("_$1_")
+                }
+            ),
+            "'([a-z]+)' by '_$1_'"
+        );
     }
 }

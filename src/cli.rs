@@ -109,3 +109,22 @@ fn parse_color(string: &str) -> Result<ColorChoice, &'static str> {
         _ => Err("invalid value"),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_color_ok() {
+        assert_eq!(parse_color(COLOR_ALWAYS), Ok(ColorChoice::Always));
+        assert_eq!(parse_color(COLOR_ANSI), Ok(ColorChoice::AlwaysAnsi));
+        assert_eq!(parse_color(COLOR_AUTO), Ok(ColorChoice::Auto));
+        assert_eq!(parse_color(COLOR_NEVER), Ok(ColorChoice::Never));
+    }
+
+    #[test]
+    fn parse_color_err() {
+        assert_eq!(parse_color(""), Err("invalid value"));
+        assert_eq!(parse_color("x"), Err("invalid value"));
+    }
+}

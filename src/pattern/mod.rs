@@ -116,7 +116,7 @@ mod tests {
     use std::path::Path;
 
     #[test]
-    fn parses_with_default_escape() {
+    fn parse_default_escape() {
         assert_eq!(
             Pattern::parse("_#{{p|l}#}_", None),
             Ok(Pattern {
@@ -149,7 +149,7 @@ mod tests {
     }
 
     #[test]
-    fn parses_with_custom_escape() {
+    fn parse_custom_escape() {
         assert_eq!(
             Pattern::parse("_\\{{p|l}\\}_", Some('\\')),
             Ok(Pattern {
@@ -182,7 +182,7 @@ mod tests {
     }
 
     #[test]
-    fn parses_with_error() {
+    fn parse_error() {
         assert_eq!(
             Pattern::parse("{", None),
             Err(parse::Error {
@@ -243,7 +243,7 @@ mod tests {
     }
 
     #[test]
-    fn evals_constant() {
+    fn eval_constant() {
         let pattern = Pattern {
             source: String::new(),
             items: vec![output(Item::Constant(String::from("abc")))],
@@ -252,7 +252,7 @@ mod tests {
     }
 
     #[test]
-    fn evals_expression() {
+    fn eval_expression() {
         let pattern = Pattern {
             source: String::new(),
             items: vec![output(Item::Expression {
@@ -264,7 +264,7 @@ mod tests {
     }
 
     #[test]
-    fn evals_expression_single_filter() {
+    fn eval_expression_single_filter() {
         let pattern = Pattern {
             source: String::new(),
             items: vec![output(Item::Expression {
@@ -276,7 +276,7 @@ mod tests {
     }
 
     #[test]
-    fn evals_expression_multiple_filters() {
+    fn eval_expression_multiple_filters() {
         let pattern = Pattern {
             source: String::new(),
             items: vec![output(Item::Expression {
@@ -291,7 +291,7 @@ mod tests {
     }
 
     #[test]
-    fn evals_multiple_constants_and_expressions() {
+    fn eval_multiple_constants_and_expressions() {
         let pattern = Pattern {
             source: String::new(),
             items: vec![

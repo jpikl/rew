@@ -29,7 +29,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn empty_error() {
+    fn parse_empty_error() {
         let mut reader = Reader::from("");
         assert_eq!(
             parse_usize(&mut reader),
@@ -42,7 +42,7 @@ mod tests {
     }
 
     #[test]
-    fn no_digits_error() {
+    fn parse_no_digits_error() {
         let mut reader = Reader::from("ab");
         assert_eq!(
             parse_usize(&mut reader),
@@ -55,49 +55,49 @@ mod tests {
     }
 
     #[test]
-    fn zero() {
+    fn parse_zero() {
         let mut reader = Reader::from("0");
         assert_eq!(parse_usize(&mut reader), Ok(0));
         assert_eq!(reader.position(), 1);
     }
 
     #[test]
-    fn zero_ignore_rest() {
+    fn parse_zero_ignore_rest() {
         let mut reader = Reader::from("0a");
         assert_eq!(parse_usize(&mut reader), Ok(0));
         assert_eq!(reader.position(), 1);
     }
 
     #[test]
-    fn zero_ignore_following_zeros() {
+    fn parse_zero_ignore_following_zeros() {
         let mut reader = Reader::from("00");
         assert_eq!(parse_usize(&mut reader), Ok(0));
         assert_eq!(reader.position(), 1);
     }
 
     #[test]
-    fn single_digit() {
+    fn parse_single_digit() {
         let mut reader = Reader::from("1");
         assert_eq!(parse_usize(&mut reader), Ok(1));
         assert_eq!(reader.position(), 1);
     }
 
     #[test]
-    fn single_digit_ignore_rest() {
+    fn parse_single_digit_ignore_rest() {
         let mut reader = Reader::from("1a");
         assert_eq!(parse_usize(&mut reader), Ok(1));
         assert_eq!(reader.position(), 1);
     }
 
     #[test]
-    fn multiple_digits() {
+    fn parse_multiple_digits() {
         let mut reader = Reader::from("1234567890");
         assert_eq!(parse_usize(&mut reader), Ok(1_234_567_890));
         assert_eq!(reader.position(), 10);
     }
 
     #[test]
-    fn multiple_digits_ignore_rest() {
+    fn parse_multiple_digits_ignore_rest() {
         let mut reader = Reader::from("1234567890a");
         assert_eq!(parse_usize(&mut reader), Ok(1_234_567_890));
         assert_eq!(reader.position(), 10);

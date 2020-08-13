@@ -35,6 +35,9 @@ impl Range {
     }
 
     pub fn parse(reader: &mut Reader<Char>) -> Result<Self> {
+        // For users, indices start from 1, end is inclusive.
+        // Internally, indices start from 0, end is exclusive.
+
         match reader.peek_char() {
             Some('0'..='9') => {
                 let position = reader.position();
@@ -105,6 +108,8 @@ fn parse_index(reader: &mut Reader<Char>) -> Result<usize> {
 impl fmt::Display for Range {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match self {
+            // For users, indices start from 1, end is inclusive.
+            // Internally, indices start from 0, end is exclusive.
             Self::From(start) => write!(formatter, "from {} to end", start + 1),
             Self::FromTo(start, end) => write!(formatter, "from {} to {}", start + 1, end),
             Self::To(end) => write!(formatter, "from start to {}", end),
@@ -261,5 +266,14 @@ mod tests {
         let mut reader = Reader::from("1ab");
         assert_eq!(Range::parse(&mut reader), Ok(Range::FromTo(0, 1)));
         assert_eq!(reader.position(), 1);
+    }
+
+    #[test]
+    fn fmt() {
+        // For users, indices start from 1, end is inclusive.
+        // Internally, indices start from 0, end is exclusive.
+        assert_eq!(format!("{}", Range::From(1)), "from 2 to end");
+        assert_eq!(format!("{}", Range::FromTo(1, 3)), "from 2 to 3");
+        assert_eq!(format!("{}", Range::To(3)), "from start to 3");
     }
 }
