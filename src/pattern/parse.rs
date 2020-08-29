@@ -82,9 +82,7 @@ impl fmt::Display for ErrorKind {
                 "Range start ({}) is bigger than end ({})",
                 start, end
             ),
-            Self::RegexCaptureZero => {
-                write!(formatter, "Regex capture groups starts from 1, not 0")
-            }
+            Self::RegexCaptureZero => write!(formatter, "Regex capture groups start from 1, not 0"),
             Self::SubstituteWithoutValue(Char::Raw(value)) => write!(
                 formatter,
                 "Substitution is missing value after separator '{}'",
