@@ -19,9 +19,14 @@ impl<'a> Paths<'a> {
 
     pub fn write(&mut self, path: &str) -> Result<()> {
         if let Some(delimiter) = self.delimiter {
-            write!(self.lock, "{}{}", path, delimiter)
+            write!(self.lock, "{}{}", path, delimiter)?;
+            if delimiter != '\n' {
+                self.lock.flush()?;
+            }
+            Ok(())
         } else {
-            write!(self.lock, "{}", path)
+            write!(self.lock, "{}", path)?;
+            self.lock.flush()
         }
     }
 }
@@ -76,7 +81,8 @@ impl<'a> Actions<'a> {
         self.lock.set_color(&spec_color(Color::Blue))?;
         write!(self.lock, "{}", target.to_string_lossy())?;
         self.lock.reset()?;
-        write!(self.lock, "' ... ")
+        write!(self.lock, "' ... ")?;
+        self.lock.flush()
     }
 
     pub fn write_success(&mut self) -> Result<()> {
