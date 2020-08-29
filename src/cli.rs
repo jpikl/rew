@@ -31,19 +31,23 @@ pub struct Cli {
     pub read_raw: bool,
 
     /// Print paths delimited by NUL, not newline
-    #[structopt(short = "Z", long = "print-0", conflicts_with_all = &["print-raw", "move", "copy"])]
+    #[structopt(short = "Z", long = "print-0", conflicts_with_all = &["print-raw", "print-pretty", "move", "copy"])]
     pub print_nul: bool,
 
     /// Print paths without any delimiter
-    #[structopt(short = "B", long, conflicts_with_all = &["print-null", "move", "copy"])]
+    #[structopt(short = "B", long, conflicts_with_all = &["print-null", "print-pretty", "move", "copy"])]
     pub print_raw: bool,
 
+    /// Pretty print transformation of each path
+    #[structopt(short = "P", long, conflicts_with_all = &["print-null", "print-raw", "move", "copy"])]
+    pub print_pretty: bool,
+
     /// Move paths instead of printing
-    #[structopt(short = "m", long = "move", conflicts_with_all = &["print-nul", "print-raw", "copy"])]
+    #[structopt(short = "m", long = "move", conflicts_with_all = &["print-nul", "print-raw", "print-pretty", "copy"])]
     pub rename_or_move: bool,
 
     /// Copy paths instead of printing
-    #[structopt(short = "c", long, conflicts_with_all = &["print-nul", "print-raw", "move"])]
+    #[structopt(short = "c", long, conflicts_with_all = &["print-nul", "print-raw", "print-pretty", "move"])]
     pub copy: bool,
 
     /// Overwrite existing files when moving/copying

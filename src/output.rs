@@ -26,6 +26,28 @@ impl<'a> Paths<'a> {
     }
 }
 
+pub struct PrettyPaths<'a> {
+    lock: StandardStreamLock<'a>,
+}
+
+impl<'a> PrettyPaths<'a> {
+    pub fn new(stream: &'a mut StandardStream) -> Self {
+        Self {
+            lock: stream.lock(),
+        }
+    }
+
+    pub fn write(&mut self, source: &Path, target: &str) -> Result<()> {
+        self.lock.set_color(&spec_color(Color::Blue))?;
+        write!(self.lock, "{}", source.to_string_lossy())?;
+        self.lock.reset()?;
+        write!(self.lock, " -> ")?;
+        self.lock.set_color(&spec_color(Color::Green))?;
+        writeln!(self.lock, "{}", target)?;
+        self.lock.reset()
+    }
+}
+
 pub struct Actions<'a> {
     lock: StandardStreamLock<'a>,
 }

@@ -16,6 +16,9 @@ pub enum Action<'a> {
     Print {
         output: output::Paths<'a>,
     },
+    PrettyPrint {
+        output: output::PrettyPaths<'a>,
+    },
     Move {
         fs: fs::Operations,
         output: output::Actions<'a>,
@@ -30,6 +33,12 @@ impl<'a> Action<'a> {
     pub fn print_paths(stream: &'a mut StandardStream, delimiter: Option<char>) -> Self {
         Self::Print {
             output: output::Paths::new(stream, delimiter),
+        }
+    }
+
+    pub fn pretty_print_paths(stream: &'a mut StandardStream) -> Self {
+        Self::PrettyPrint {
+            output: output::PrettyPaths::new(stream),
         }
     }
 
@@ -50,6 +59,7 @@ impl<'a> Action<'a> {
     pub fn exec(&mut self, source: &Path, target: &str) -> Result {
         match self {
             Self::Print { output } => output.write(target).map_err(Error::Io),
+            Self::PrettyPrint { output } => output.write(source, target).map_err(Error::Io),
             Self::Move { fs, output } => {
                 let target = Path::new(&target);
                 output.write_moving(source, target).map_err(Error::Io)?;

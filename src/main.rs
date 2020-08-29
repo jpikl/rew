@@ -108,6 +108,8 @@ fn run(
         Action::move_paths(stdout, cli.overwrite, cli.recursive)
     } else if cli.copy {
         Action::copy_paths(stdout, cli.overwrite, cli.recursive)
+    } else if cli.print_pretty {
+        Action::pretty_print_paths(stdout)
     } else {
         let output_delimiter = if cli.print_raw {
             None
