@@ -22,47 +22,35 @@ pub struct Cli {
     #[structopt(value_name = "path")]
     pub paths: Vec<PathBuf>,
 
-    /// Read paths delimited by NUL, not newline
-    #[structopt(short = "z", long = "read-0")]
+    /// Reads paths delimited by NUL, not newline
+    #[structopt(short = "z", long, conflicts_with = "read-raw")]
     pub read_nul: bool,
 
-    /// Read the whole input as a path
-    #[structopt(short = "b", long, conflicts_with = "read-nul")]
+    /// Reads the whole input as a single path
+    #[structopt(short = "r", long, conflicts_with = "read-nul")]
     pub read_raw: bool,
 
-    /// Print paths delimited by NUL, not newline
-    #[structopt(short = "Z", long = "print-0", conflicts_with_all = &["print-raw", "print-pretty", "move", "copy"])]
+    /// Prints results delimited by NUL, not newline
+    #[structopt(short = "Z", long, conflicts_with = "print-raw")]
     pub print_nul: bool,
 
-    /// Print paths without any delimiter
-    #[structopt(short = "B", long, conflicts_with_all = &["print-null", "print-pretty", "move", "copy"])]
+    /// Prints results without any delimiter
+    #[structopt(short = "R", long, conflicts_with = "print-null")]
     pub print_raw: bool,
 
-    /// Pretty print transformation of each path
-    #[structopt(short = "P", long, conflicts_with_all = &["print-null", "print-raw", "move", "copy"])]
-    pub print_pretty: bool,
+    /// Prints machine-readable transformations as a results
+    #[structopt(short = "b", long, conflicts_with = "pretty")]
+    pub batch: bool,
 
-    /// Move paths instead of printing
-    #[structopt(short = "m", long = "move", conflicts_with_all = &["print-nul", "print-raw", "print-pretty", "copy"])]
-    pub rename_or_move: bool,
+    /// Prints human-readable transformations as a results
+    #[structopt(short = "p", long, conflicts_with = "batch")]
+    pub pretty: bool,
 
-    /// Copy paths instead of printing
-    #[structopt(short = "c", long, conflicts_with_all = &["print-nul", "print-raw", "print-pretty", "move"])]
-    pub copy: bool,
-
-    /// Overwrite existing files when moving/copying
-    #[structopt(short = "f", long)]
-    pub overwrite: bool,
-
-    /// Copy directories recursively
-    #[structopt(short = "r", long)]
-    pub recursive: bool,
-
-    /// Continue after a path processing error, fail at end.
+    /// Continues after a path processing error, fails at end
     #[structopt(short = "s", long)]
     pub fail_at_end: bool,
 
-    /// Print explanation of a given pattern
+    /// Prints explanation of a given pattern
     #[structopt(long)]
     pub explain: bool,
 

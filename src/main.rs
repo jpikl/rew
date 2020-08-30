@@ -1,4 +1,3 @@
-use crate::action::Action;
 use crate::cli::Cli;
 use crate::pattern::{eval, Pattern};
 use std::io::Stdin;
@@ -6,10 +5,8 @@ use std::{env, io, process};
 use structopt::StructOpt;
 use termcolor::{ColorChoice, StandardStream};
 
-mod action;
 mod cli;
 mod counter;
-mod fs;
 mod input;
 mod output;
 mod pattern;
@@ -19,7 +16,6 @@ mod utils;
 const ERR_IO: i32 = 2;
 const ERR_PARSE: i32 = 3;
 const ERR_EVAL: i32 = 4;
-const ERR_FS: i32 = 5;
 
 fn main() {
     // Explicit variable type, because IDE is unable to detect it.
@@ -102,14 +98,9 @@ fn run(
 
     let current_dir_buf = env::current_dir()?;
     let current_dir = current_dir_buf.as_path();
-    let mut exit_code = 0;
 
-    let mut action = if cli.rename_or_move {
-        Action::move_paths(stdout, cli.overwrite, cli.recursive)
-    } else if cli.copy {
-        Action::copy_paths(stdout, cli.overwrite, cli.recursive)
-    } else if cli.print_pretty {
-        Action::pretty_print_paths(stdout)
+    let output_path_mode = if cli.pretty {
+        output::PathMode::InOutPretty
     } else {
         let output_delimiter = if cli.print_raw {
             None
@@ -118,8 +109,15 @@ fn run(
         } else {
             Some('\n')
         };
-        Action::print_paths(stdout, output_delimiter)
+        if cli.batch {
+            output::PathMode::InOut(output_delimiter)
+        } else {
+            output::PathMode::Out(output_delimiter)
+        }
     };
+
+    let mut output_paths = output::Paths::new(stdout, output_path_mode);
+    let mut exit_code = 0;
 
     while let Some(path) = input_paths.next()? {
         let global_counter = if global_counter_used {
@@ -172,19 +170,7 @@ fn run(
             }
         };
 
-        match action.exec(path, &output_path) {
-            Ok(()) => {}
-            Err(action::Error::Fs(error)) => {
-                output_errors.write(&error)?;
-                if cli.fail_at_end {
-                    exit_code = ERR_FS;
-                    continue;
-                } else {
-                    process::exit(ERR_FS);
-                }
-            }
-            Err(action::Error::Io(error)) => return Err(error),
-        }
+        output_paths.write(path, &output_path)?;
     }
 
     process::exit(exit_code);

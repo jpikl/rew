@@ -4,97 +4,72 @@ use std::io::{Result, Write};
 use std::path::Path;
 use termcolor::{Color, StandardStream, StandardStreamLock, WriteColor};
 
+pub enum PathMode {
+    Out(Option<char>),
+    InOut(Option<char>),
+    InOutPretty,
+}
+
 pub struct Paths<'a> {
     lock: StandardStreamLock<'a>,
-    delimiter: Option<char>,
+    mode: PathMode,
 }
 
 impl<'a> Paths<'a> {
-    pub fn new(stream: &'a mut StandardStream, delimiter: Option<char>) -> Self {
+    pub fn new(stream: &'a mut StandardStream, mode: PathMode) -> Self {
         Self {
             lock: stream.lock(),
-            delimiter,
+            mode,
         }
     }
 
-    pub fn write(&mut self, path: &str) -> Result<()> {
-        if let Some(delimiter) = self.delimiter {
-            write!(self.lock, "{}{}", path, delimiter)?;
-            if delimiter != '\n' {
-                self.lock.flush()?;
+    pub fn write(&mut self, input_path: &Path, output_path: &str) -> Result<()> {
+        match self.mode {
+            PathMode::Out(Some(delimiter)) => {
+                write!(self.lock, "{}{}", output_path, delimiter)?;
+                if delimiter != '\n' {
+                    self.lock.flush()
+                } else {
+                    Ok(())
+                }
             }
-            Ok(())
-        } else {
-            write!(self.lock, "{}", path)?;
-            self.lock.flush()
+            PathMode::Out(None) => {
+                write!(self.lock, "{}", output_path)?;
+                self.lock.flush()
+            }
+            PathMode::InOut(Some(delimiter)) => {
+                write!(
+                    self.lock,
+                    "<{}{}>{}{}",
+                    input_path.to_string_lossy(),
+                    delimiter,
+                    output_path,
+                    delimiter
+                )?;
+                if delimiter != '\n' {
+                    self.lock.flush()
+                } else {
+                    Ok(())
+                }
+            }
+            PathMode::InOut(None) => {
+                write!(
+                    self.lock,
+                    "<{}>{}",
+                    input_path.to_string_lossy(),
+                    output_path
+                )?;
+                self.lock.flush()
+            }
+            PathMode::InOutPretty => {
+                self.lock.set_color(&spec_color(Color::Blue))?;
+                write!(self.lock, "{}", input_path.to_string_lossy())?;
+                self.lock.reset()?;
+                write!(self.lock, " -> ")?;
+                self.lock.set_color(&spec_color(Color::Green))?;
+                writeln!(self.lock, "{}", output_path)
+            }
         }
-    }
-}
-
-pub struct PrettyPaths<'a> {
-    lock: StandardStreamLock<'a>,
-}
-
-impl<'a> PrettyPaths<'a> {
-    pub fn new(stream: &'a mut StandardStream) -> Self {
-        Self {
-            lock: stream.lock(),
-        }
-    }
-
-    pub fn write(&mut self, source: &Path, target: &str) -> Result<()> {
-        self.lock.set_color(&spec_color(Color::Blue))?;
-        write!(self.lock, "{}", source.to_string_lossy())?;
-        self.lock.reset()?;
-        write!(self.lock, " -> ")?;
-        self.lock.set_color(&spec_color(Color::Green))?;
-        writeln!(self.lock, "{}", target)?;
-        self.lock.reset()
-    }
-}
-
-pub struct Actions<'a> {
-    lock: StandardStreamLock<'a>,
-}
-
-impl<'a> Actions<'a> {
-    pub fn new(stream: &'a mut StandardStream) -> Self {
-        Self {
-            lock: stream.lock(),
-        }
-    }
-
-    pub fn write_moving(&mut self, source: &Path, target: &Path) -> Result<()> {
-        self.write("Moving", source, target)
-    }
-
-    pub fn write_copying(&mut self, source: &Path, target: &Path) -> Result<()> {
-        self.write("Copying", source, target)
-    }
-
-    fn write(&mut self, action: &str, source: &Path, target: &Path) -> Result<()> {
-        write!(self.lock, "{} '", action)?;
-        self.lock.set_color(&spec_color(Color::Blue))?;
-        write!(self.lock, "{}", source.to_string_lossy())?;
-        self.lock.reset()?;
-        write!(self.lock, "' to '")?;
-        self.lock.set_color(&spec_color(Color::Blue))?;
-        write!(self.lock, "{}", target.to_string_lossy())?;
-        self.lock.reset()?;
-        write!(self.lock, "' ... ")?;
-        self.lock.flush()
-    }
-
-    pub fn write_success(&mut self) -> Result<()> {
-        self.lock.set_color(&spec_color(Color::Green))?;
-        writeln!(self.lock, "OK")?;
-        self.lock.reset()
-    }
-
-    pub fn write_failure(&mut self) -> Result<()> {
-        self.lock.set_color(&spec_color(Color::Red))?;
-        writeln!(self.lock, "FAILED")?;
-        self.lock.reset()
     }
 }
 
