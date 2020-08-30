@@ -104,19 +104,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3728d817d99e5ac407411fa471ff9800a778d88a24685968b36824eaf4bee400"
 
 [[package]]
-name = "mw"
-version = "0.1.0"
-dependencies = [
- "atty",
- "lazy_static",
- "regex",
- "structopt",
- "termcolor",
- "unidecode",
- "uuid",
-]
-
-[[package]]
 name = "ppv-lite86"
 version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -224,6 +211,19 @@ name = "regex-syntax"
 version = "0.6.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7fe5bd57d1d7414c6b5ed48563a2c855d995ff777729dcd91c369ec7fea395ae"
+
+[[package]]
+name = "rew"
+version = "0.1.0"
+dependencies = [
+ "atty",
+ "lazy_static",
+ "regex",
+ "structopt",
+ "termcolor",
+ "unidecode",
+ "uuid",
+]
 
 [[package]]
 name = "strsim"

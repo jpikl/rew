@@ -1,7 +1,7 @@
-# mw
+# rew
 
-A path processing tool with move/copy capabilities.
+Rew is a CLI tool that rewrites FS paths according to a pattern.
 
-![Build status](https://travis-ci.com/jpikl/mw.svg?branch=master)
+![Build status](https://travis-ci.com/jpikl/rew.svg?branch=master)
 
 Work in progress...
