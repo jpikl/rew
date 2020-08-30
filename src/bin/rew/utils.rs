@@ -1,8 +1,9 @@
+use common::spec_bold_color;
 use std::fmt;
 use std::fmt::Debug;
 use std::io::{Result, Write};
 use std::ops::Range;
-use termcolor::{Color, ColorSpec, WriteColor};
+use termcolor::{Color, WriteColor};
 
 #[derive(Debug, Clone)]
 pub struct AnyString(pub String);
@@ -19,18 +20,6 @@ impl fmt::Display for AnyString {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         write!(formatter, "{}", self.0)
     }
-}
-
-pub fn spec_color(color: Color) -> ColorSpec {
-    let mut spec = ColorSpec::new();
-    spec.set_fg(Some(color));
-    spec
-}
-
-pub fn spec_bold_color(color: Color) -> ColorSpec {
-    let mut spec = spec_color(color);
-    spec.set_bold(true);
-    spec
 }
 
 pub trait HasRange {

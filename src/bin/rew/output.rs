@@ -1,4 +1,5 @@
-use crate::utils::{highlight_range, spec_color, HasRange};
+use crate::utils::{highlight_range, HasRange};
+use common::{spec_color, write_error};
 use std::error::Error;
 use std::io::{Result, Write};
 use std::path::Path;
@@ -73,32 +74,13 @@ impl<'a> Paths<'a> {
     }
 }
 
-pub struct Errors<'a> {
-    lock: StandardStreamLock<'a>,
-}
-
-impl<'a> Errors<'a> {
-    pub fn new(stream: &'a mut StandardStream) -> Self {
-        Self {
-            lock: stream.lock(),
-        }
-    }
-
-    pub fn write<T: Error>(&mut self, error: &T) -> Result<()> {
-        self.lock.set_color(&spec_color(Color::Red))?;
-        write!(self.lock, "error:")?;
-        self.lock.reset()?;
-        writeln!(self.lock, " {}", error)
-    }
-
-    pub fn write_with_highlight<T: Error + HasRange>(
-        &mut self,
-        error: &T,
-        raw_pattern: &str,
-    ) -> Result<()> {
-        self.write(error)?;
-        writeln!(self.lock)?;
-        highlight_range(&mut self.lock, raw_pattern, error.range(), Color::Red)?;
-        self.lock.reset()
-    }
+pub fn write_pattern_error<S: Write + WriteColor, E: Error + HasRange>(
+    stream: &mut S,
+    error: &E,
+    raw_pattern: &str,
+) -> Result<()> {
+    write_error(stream, error)?;
+    writeln!(stream)?;
+    highlight_range(stream, raw_pattern, error.range(), Color::Red)?;
+    stream.reset()
 }

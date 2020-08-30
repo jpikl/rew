@@ -1,9 +1,11 @@
 use crate::cli::Cli;
+use crate::output::write_pattern_error;
 use crate::pattern::{eval, Pattern};
+use common::{detect_color, write_error};
 use std::io::Stdin;
 use std::{env, io, process};
 use structopt::StructOpt;
-use termcolor::{ColorChoice, StandardStream};
+use termcolor::StandardStream;
 
 mod cli;
 mod counter;
@@ -18,28 +20,15 @@ const ERR_PARSE: i32 = 3;
 const ERR_EVAL: i32 = 4;
 
 fn main() {
-    // Explicit variable type, because IDE is unable to detect it.
-    let cli: Cli = Cli::from_args();
-
-    let color = match cli.color {
-        Some(ColorChoice::Auto) | None => {
-            if atty::is(atty::Stream::Stdout) {
-                ColorChoice::Auto
-            } else {
-                ColorChoice::Never
-            }
-        }
-        Some(other) => other,
-    };
+    let cli: Cli = Cli::from_args(); // Explicit variable type, because IDE is unable to detect it.
+    let color = detect_color(cli.color);
 
     let mut stdin = io::stdin();
     let mut stdout = StandardStream::stdout(color);
     let mut stderr = StandardStream::stderr(color);
 
     if let Some(io_error) = run(&cli, &mut stdin, &mut stdout, &mut stderr).err() {
-        output::Errors::new(&mut stderr)
-            .write(&io_error)
-            .expect("Failed to write to stderr!");
+        write_error(&mut stderr.lock(), &io_error).expect("Failed to write to stderr!");
         process::exit(ERR_IO);
     }
 }
@@ -50,12 +39,10 @@ fn run(
     stdout: &mut StandardStream,
     stderr: &mut StandardStream,
 ) -> Result<(), io::Error> {
-    let mut output_errors = output::Errors::new(stderr);
-
     let pattern = match Pattern::parse(&cli.pattern, cli.escape) {
         Ok(pattern) => pattern,
         Err(error) => {
-            output_errors.write_with_highlight(&error, &cli.pattern)?;
+            write_pattern_error(&mut stderr.lock(), &error, &cli.pattern)?;
             process::exit(ERR_PARSE);
         }
     };
@@ -136,7 +123,7 @@ fn run(
             match regex_solver.eval(path) {
                 Ok(captures) => captures,
                 Err(error) => {
-                    output_errors.write(&error)?;
+                    write_error(&mut stderr.lock(), &error)?;
                     if cli.fail_at_end {
                         exit_code = ERR_EVAL;
                         continue;
@@ -160,7 +147,7 @@ fn run(
         let output_path = match pattern.eval(&context) {
             Ok(path) => path,
             Err(error) => {
-                output_errors.write_with_highlight(&error, &cli.pattern)?;
+                write_pattern_error(&mut stderr.lock(), &error, &cli.pattern)?;
                 if cli.fail_at_end {
                     exit_code = ERR_EVAL;
                     continue;

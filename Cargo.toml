@@ -13,3 +13,18 @@ structopt = "0.3.14"
 termcolor = "1.1.0"
 unidecode = "0.3.0"
 uuid = { version = "0.8", features = ["v4"] }
+
+[[bin]]
+name = "rew"
+path = "src/bin/rew/main.rs"
+
+[[bin]]
+name = "bmv"
+path = "src/bin/bmv/main.rs"
+
+[[bin]]
+name = "bcp"
+path = "src/bin/bcp/main.rs"
+
+[lib]
+name = "common"

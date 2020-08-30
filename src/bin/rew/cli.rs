@@ -1,12 +1,8 @@
+use common::{parse_color, COLOR_VALUES};
 use regex::Regex;
 use std::path::PathBuf;
 use structopt::{clap::AppSettings, StructOpt};
 use termcolor::ColorChoice;
-
-const COLOR_ALWAYS: &str = "always";
-const COLOR_ANSI: &str = "ansi";
-const COLOR_AUTO: &str = "auto";
-const COLOR_NEVER: &str = "never";
 
 #[derive(Debug, StructOpt)]
 #[structopt(
@@ -86,37 +82,8 @@ pub struct Cli {
     #[structopt(
         long,
         value_name = "when",
-        possible_values = &[COLOR_AUTO, COLOR_ALWAYS, COLOR_NEVER, COLOR_ANSI],
+        possible_values = COLOR_VALUES,
         parse(try_from_str = parse_color),
     )]
     pub color: Option<ColorChoice>,
-}
-
-fn parse_color(string: &str) -> Result<ColorChoice, &'static str> {
-    match string {
-        COLOR_ALWAYS => Ok(ColorChoice::Always),
-        COLOR_ANSI => Ok(ColorChoice::AlwaysAnsi),
-        COLOR_AUTO => Ok(ColorChoice::Auto),
-        COLOR_NEVER => Ok(ColorChoice::Never),
-        _ => Err("invalid value"),
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn parse_color_ok() {
-        assert_eq!(parse_color(COLOR_ALWAYS), Ok(ColorChoice::Always));
-        assert_eq!(parse_color(COLOR_ANSI), Ok(ColorChoice::AlwaysAnsi));
-        assert_eq!(parse_color(COLOR_AUTO), Ok(ColorChoice::Auto));
-        assert_eq!(parse_color(COLOR_NEVER), Ok(ColorChoice::Never));
-    }
-
-    #[test]
-    fn parse_color_err() {
-        assert_eq!(parse_color(""), Err("invalid value"));
-        assert_eq!(parse_color("x"), Err("invalid value"));
-    }
 }
