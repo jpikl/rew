@@ -2,6 +2,8 @@ use std::error::Error;
 use std::io::{self, Write};
 use termcolor::{Color, ColorChoice, ColorSpec, WriteColor};
 
+pub mod input;
+
 pub const COLOR_VALUES: &[&str] = &[COLOR_AUTO, COLOR_ALWAYS, COLOR_NEVER, COLOR_ANSI];
 
 const COLOR_ALWAYS: &str = "always";

@@ -14,7 +14,7 @@ pub struct Cli {
     /// Output pattern
     pub pattern: String,
 
-    /// Paths to process (read from stdin by default)
+    /// Paths to rewrite (read from stdin by default)
     #[structopt(value_name = "path")]
     pub paths: Vec<PathBuf>,
 

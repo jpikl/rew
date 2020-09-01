@@ -1,7 +1,7 @@
 use crate::cli::Cli;
 use crate::output::write_pattern_error;
 use crate::pattern::{eval, Pattern};
-use common::{detect_color, write_error};
+use common::{detect_color, input::Delimiter as InputDelimiter, write_error};
 use std::io::Stdin;
 use std::{env, io, process};
 use structopt::StructOpt;
@@ -72,11 +72,11 @@ fn run(
 
     let mut input_paths = if cli.paths.is_empty() {
         let input_delimiter = if cli.read_raw {
-            None
+            InputDelimiter::None
         } else if cli.read_nul {
-            Some(0)
+            InputDelimiter::Nul
         } else {
-            Some(b'\n')
+            InputDelimiter::Newline
         };
         input::Paths::from_stdin(stdin, input_delimiter)
     } else {
