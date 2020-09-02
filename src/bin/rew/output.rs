@@ -1,5 +1,6 @@
 use crate::utils::{highlight_range, HasRange};
-use common::{spec_color, write_error};
+use common::color::spec_color;
+use common::output::write_error;
 use std::error::Error;
 use std::io::{Result, Write};
 use std::path::Path;

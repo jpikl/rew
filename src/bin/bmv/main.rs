@@ -1,5 +1,6 @@
 use crate::cli::Cli;
-use common::{detect_color, write_error};
+use common::color::detect_color;
+use common::output::write_error;
 use std::io::{self, Stdin};
 use std::process;
 use structopt::StructOpt;

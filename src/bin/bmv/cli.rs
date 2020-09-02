@@ -1,4 +1,4 @@
-use common::{parse_color, COLOR_VALUES};
+use common::color::{parse_color, COLOR_VALUES};
 use structopt::{clap::AppSettings, StructOpt};
 use termcolor::ColorChoice;
 

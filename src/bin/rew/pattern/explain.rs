@@ -2,7 +2,7 @@ use crate::pattern::parse::Output;
 use crate::pattern::parser::Item;
 use crate::pattern::Pattern;
 use crate::utils::highlight_range;
-use common::spec_color;
+use common::color::spec_color;
 use std::fmt::Display;
 use std::io::{Result, Write};
 use termcolor::{Color, WriteColor};

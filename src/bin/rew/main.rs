@@ -1,7 +1,9 @@
 use crate::cli::Cli;
 use crate::output::write_pattern_error;
 use crate::pattern::{eval, Pattern};
-use common::{detect_color, input::Delimiter as InputDelimiter, write_error};
+use common::color::detect_color;
+use common::input::Delimiter as InputDelimiter;
+use common::output::write_error;
 use std::io::Stdin;
 use std::{env, io, process};
 use structopt::StructOpt;

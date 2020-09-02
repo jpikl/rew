@@ -1,4 +1,4 @@
-use common::spec_bold_color;
+use common::color::spec_bold_color;
 use std::fmt;
 use std::fmt::Debug;
 use std::io::{Result, Write};
