@@ -1,11 +1,11 @@
 use crate::cli::Cli;
 use crate::output::write_pattern_error;
 use crate::pattern::{eval, Pattern};
-use common::color::detect_color;
 use common::input::Delimiter as InputDelimiter;
 use common::output::write_error;
+use common::run::{exec_run, Result};
 use std::io::Stdin;
-use std::{env, io, process};
+use std::{env, process};
 use structopt::StructOpt;
 use termcolor::StandardStream;
 
@@ -17,30 +17,19 @@ mod pattern;
 mod regex;
 mod utils;
 
-const ERR_IO: i32 = 2;
 const ERR_PARSE: i32 = 3;
 const ERR_EVAL: i32 = 4;
 
 fn main() {
-    let cli: Cli = Cli::from_args(); // Explicit variable type, because IDE is unable to detect it.
-    let color = detect_color(cli.color);
-
-    let mut stdin = io::stdin();
-    let mut stdout = StandardStream::stdout(color);
-    let mut stderr = StandardStream::stderr(color);
-
-    if let Some(io_error) = run(&cli, &mut stdin, &mut stdout, &mut stderr).err() {
-        write_error(&mut stderr.lock(), &io_error).expect("Failed to write to stderr!");
-        process::exit(ERR_IO);
-    }
+    exec_run(run, Cli::from_args());
 }
 
 fn run(
-    cli: &Cli,
+    cli: Cli,
     stdin: &mut Stdin,
     stdout: &mut StandardStream,
     stderr: &mut StandardStream,
-) -> Result<(), io::Error> {
+) -> Result {
     let pattern = match Pattern::parse(&cli.pattern, cli.escape) {
         Ok(pattern) => pattern,
         Err(error) => {
@@ -50,7 +39,7 @@ fn run(
     };
 
     if cli.explain {
-        pattern.explain(stdout)?;
+        pattern.explain(&mut stdout.lock())?;
         process::exit(0);
     }
 
@@ -80,13 +69,10 @@ fn run(
         } else {
             InputDelimiter::Newline
         };
-        input::Paths::from_stdin(stdin, input_delimiter)
+        input::Paths::from_stdin(stdin.lock(), input_delimiter)
     } else {
         input::Paths::from_args(cli.paths.as_slice())
     };
-
-    let current_dir_buf = env::current_dir()?;
-    let current_dir = current_dir_buf.as_path();
 
     let output_path_mode = if cli.pretty {
         output::PathMode::InOutPretty
@@ -105,8 +91,11 @@ fn run(
         }
     };
 
-    let mut output_paths = output::Paths::new(stdout, output_path_mode);
+    let mut output_paths = output::Paths::new(stdout.lock(), output_path_mode);
     let mut exit_code = 0;
+
+    let current_dir_buf = env::current_dir()?;
+    let current_dir = current_dir_buf.as_path();
 
     while let Some(path) = input_paths.next()? {
         let global_counter = if global_counter_used {

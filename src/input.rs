@@ -6,13 +6,13 @@ pub enum Delimiter {
     None,
 }
 
-pub struct Reader<T: BufRead> {
+pub struct Splitter<T: BufRead> {
     reader: T,
     delimiter: Delimiter,
     buffer: Vec<u8>,
 }
 
-impl<T: BufRead> Reader<T> {
+impl<T: BufRead> Splitter<T> {
     pub fn new(reader: T, delimiter: Delimiter) -> Self {
         Self {
             reader,
