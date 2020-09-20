@@ -1,21 +1,21 @@
 use common::input::{Delimiter, Splitter};
-use std::io::{Result, StdinLock};
+use std::io::{BufRead, Result};
 use std::path::{Path, PathBuf};
 use std::slice::Iter;
 
-pub enum Paths<'a> {
+pub enum Paths<'a, T: BufRead> {
     Args { iter: Iter<'a, PathBuf> },
-    Stdin { splitter: Splitter<StdinLock<'a>> },
+    Stdin { splitter: Splitter<T> },
 }
 
-impl<'a> Paths<'a> {
+impl<'a, T: BufRead> Paths<'a, T> {
     pub fn from_args(values: &'a [PathBuf]) -> Self {
         Paths::Args {
             iter: values.iter(),
         }
     }
 
-    pub fn from_stdin(stdin: StdinLock<'a>, delimiter: Delimiter) -> Self {
+    pub fn from_stdin(stdin: T, delimiter: Delimiter) -> Self {
         Paths::Stdin {
             splitter: Splitter::new(stdin, delimiter),
         }
