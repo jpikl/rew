@@ -94,15 +94,13 @@ mod tests {
     #[test]
     fn error_fmt() {
         assert_eq!(
-            format!(
-                "{}",
-                Error {
-                    kind: ErrorKind::InputNotUtf8,
-                    cause: ErrorCause::Variable(&Variable::Path),
-                    value: String::from("abc"),
-                    range: &(1..2)
-                }
-            ),
+            Error {
+                kind: ErrorKind::InputNotUtf8,
+                cause: ErrorCause::Variable(&Variable::Path),
+                value: String::from("abc"),
+                range: &(1..2)
+            }
+            .to_string(),
             "`Path` variable evaluation failed for value 'abc': Input does not have UTF-8 encoding"
         );
     }
@@ -110,11 +108,11 @@ mod tests {
     #[test]
     fn error_cause_fmt() {
         assert_eq!(
-            format!("{}", ErrorCause::Variable(&Variable::Path)),
+            ErrorCause::Variable(&Variable::Path).to_string(),
             "`Path` variable"
         );
         assert_eq!(
-            format!("{}", ErrorCause::Filter(&Filter::ToLowercase)),
+            ErrorCause::Filter(&Filter::ToLowercase).to_string(),
             "`To lowercase` filter"
         );
     }
@@ -122,14 +120,11 @@ mod tests {
     #[test]
     fn error_kind_fmt() {
         assert_eq!(
-            format!("{}", ErrorKind::InputNotUtf8),
+            ErrorKind::InputNotUtf8.to_string(),
             "Input does not have UTF-8 encoding"
         );
         assert_eq!(
-            format!(
-                "{}",
-                ErrorKind::CanonicalizationFailed(AnyString(String::from("abc")))
-            ),
+            ErrorKind::CanonicalizationFailed(AnyString(String::from("abc"))).to_string(),
             "Path canonicalization failed: abc"
         );
     }

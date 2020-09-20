@@ -18,7 +18,7 @@ impl PartialEq for AnyString {
 
 impl fmt::Display for AnyString {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(formatter, "{}", self.0)
+        fmt::Display::fmt(&self.0, formatter)
     }
 }
 

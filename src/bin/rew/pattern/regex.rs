@@ -49,7 +49,7 @@ mod tests {
     #[test]
     fn regex_holder_fmt() {
         assert_eq!(
-            format!("{}", RegexHolder(Regex::new("[a-z]+").unwrap())),
+            RegexHolder(Regex::new("[a-z]+").unwrap()).to_string(),
             String::from("[a-z]+")
         );
     }

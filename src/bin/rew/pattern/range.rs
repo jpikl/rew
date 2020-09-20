@@ -272,8 +272,8 @@ mod tests {
     fn fmt() {
         // For users, indices start from 1, end is inclusive.
         // Internally, indices start from 0, end is exclusive.
-        assert_eq!(format!("{}", Range::From(1)), "from 2 to end");
-        assert_eq!(format!("{}", Range::FromTo(1, 3)), "from 2 to 3");
-        assert_eq!(format!("{}", Range::To(3)), "from start to 3");
+        assert_eq!(Range::From(1).to_string(), "from 2 to end");
+        assert_eq!(Range::FromTo(1, 3).to_string(), "from 2 to 3");
+        assert_eq!(Range::To(3).to_string(), "from start to 3");
     }
 }

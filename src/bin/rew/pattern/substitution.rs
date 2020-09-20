@@ -236,23 +236,19 @@ mod tests {
     #[test]
     fn fmt() {
         assert_eq!(
-            format!(
-                "{}",
-                Substitution {
-                    value: String::from("abc"),
-                    replacement: String::from("def")
-                }
-            ),
+            Substitution {
+                value: String::from("abc"),
+                replacement: String::from("def")
+            }
+            .to_string(),
             "'abc' by 'def'"
         );
         assert_eq!(
-            format!(
-                "{}",
-                Substitution {
-                    value: Regex::new("([a-z]+)").unwrap(),
-                    replacement: String::from("_$1_")
-                }
-            ),
+            Substitution {
+                value: Regex::new("([a-z]+)").unwrap(),
+                replacement: String::from("_$1_")
+            }
+            .to_string(),
             "'([a-z]+)' by '_$1_'"
         );
     }
