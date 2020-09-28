@@ -43,6 +43,8 @@ pub fn highlight_range<S: Write + WriteColor>(
 
     stream.set_color(&spec_bold_color(color))?;
     write!(stream, "{}", " ".repeat(spaces_count))?;
-    writeln!(stream, "{}", "^".repeat(markers_count))?;
-    stream.reset()
+    write!(stream, "{}", "^".repeat(markers_count))?;
+    stream.reset()?;
+
+    writeln!(stream)
 }

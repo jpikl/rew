@@ -1,8 +1,9 @@
 use crate::color::{spec_bold_color, spec_color};
+use std::fmt;
 use std::io::{Result, Write};
 use termcolor::{Color, ColorSpec, WriteColor};
 
-#[derive(Debug, PartialEq)]
+#[derive(PartialEq)]
 pub struct ColoredChunk {
     pub spec: ColorSpec,
     pub value: String,
@@ -31,6 +32,20 @@ impl ColoredChunk {
     }
 }
 
+impl fmt::Debug for ColoredChunk {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(fmt, "ColoredChunk::")?;
+
+        match (self.spec.fg(), self.spec.bold()) {
+            (None, _) => write!(fmt, "plain(")?,
+            (Some(color), true) => write!(fmt, "bold_color(Color::{:?}, ", color)?,
+            (Some(color), false) => write!(fmt, "color(Color::{:?}, ", color)?,
+        }
+
+        write!(fmt, "{:?})", self.value.replace("\n", "\\n"))
+    }
+}
+
 #[derive(Default)]
 pub struct ColoredBuffer {
     spec: ColorSpec,
@@ -49,8 +64,9 @@ impl ColoredBuffer {
 
 impl Write for ColoredBuffer {
     fn write(&mut self, buf: &[u8]) -> Result<usize> {
-        let value = std::str::from_utf8(buf).unwrap();
         let spec = &self.spec;
+        let value = std::str::from_utf8(buf).unwrap();
+
         if let Some(chunk) = self.chunks.last_mut().filter(|chunk| &chunk.spec == spec) {
             chunk.value += value;
         } else {
@@ -59,6 +75,7 @@ impl Write for ColoredBuffer {
                 value: String::from(value),
             })
         }
+
         Ok(buf.len())
     }
 
