@@ -9,7 +9,13 @@ export RUSTDOCFLAGS="-Cpanic=abort"
 cargo +nightly build
 cargo +nightly test
 
-grcov ./target/debug/ -s . -t html --llvm --branch --ignore-not-existing -o ./target/debug/coverage/
+grcov ./target/debug/ \
+  --source-dir . \
+  --output-type html \
+  --llvm \
+  --branch \
+  --ignore-not-existing \
+  --output-path ./target/debug/coverage/
 
 open() {
    if [[ -x "$(command -v xdg-open)" ]]; then
@@ -21,4 +27,4 @@ open() {
    fi
 }
 
-open target/debug/coverage/index.html
+open ./target/debug/coverage/index.html
