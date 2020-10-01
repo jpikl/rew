@@ -206,12 +206,51 @@ mod tests {
     use crate::pattern::substitution::Substitution;
 
     #[test]
-    fn empty() {
+    fn item_fmt() {
+        assert_eq!(
+            Item::Constant(String::from("abc")).to_string(),
+            "Constant 'abc'"
+        );
+
+        assert_eq!(
+            (Item::Expression {
+                variable: output(Variable::Path),
+                filters: Vec::new()
+            })
+            .to_string(),
+            "Expression with a variable"
+        );
+
+        assert_eq!(
+            (Item::Expression {
+                variable: output(Variable::Path),
+                filters: vec![output(Filter::ToUppercase)]
+            })
+            .to_string(),
+            "Expression with a variable and a filter"
+        );
+
+        assert_eq!(
+            (Item::Expression {
+                variable: output(Variable::Path),
+                filters: vec![output(Filter::ToUppercase), output(Filter::Trim)]
+            })
+            .to_string(),
+            "Expression with a variable and 2 filters"
+        );
+    }
+
+    fn output<T>(value: T) -> Output<T> {
+        Output { value, range: 0..0 }
+    }
+
+    #[test]
+    fn parse_empty() {
         assert_eq!(Parser::from("").parse_items(), Ok(Vec::new()));
     }
 
     #[test]
-    fn constant() {
+    fn parse_constant() {
         assert_eq!(
             Parser::from("a").parse_items(),
             Ok(vec![Output {
@@ -222,7 +261,7 @@ mod tests {
     }
 
     #[test]
-    fn expected_variable_but_end_error() {
+    fn parse_expected_variable_but_end_error() {
         assert_eq!(
             Parser::from("{").parse_items(),
             Err(Error {
@@ -233,7 +272,7 @@ mod tests {
     }
 
     #[test]
-    fn expected_variable_but_pipe_error() {
+    fn parse_expected_variable_but_pipe_error() {
         assert_eq!(
             Parser::from("{|").parse_items(),
             Err(Error {
@@ -244,7 +283,7 @@ mod tests {
     }
 
     #[test]
-    fn pipe_outside_expr_error() {
+    fn parse_pipe_outside_expr_error() {
         assert_eq!(
             Parser::from("|").parse_items(),
             Err(Error {
@@ -255,7 +294,7 @@ mod tests {
     }
 
     #[test]
-    fn expected_variable_but_expr_end_error() {
+    fn parse_expected_variable_but_expr_end_error() {
         assert_eq!(
             Parser::from("{}").parse_items(),
             Err(Error {
@@ -266,7 +305,7 @@ mod tests {
     }
 
     #[test]
-    fn unmatched_expr_end_error() {
+    fn parse_unmatched_expr_end_error() {
         assert_eq!(
             Parser::from("}").parse_items(),
             Err(Error {
@@ -277,7 +316,7 @@ mod tests {
     }
 
     #[test]
-    fn unterminated_expr_start_after_variable_error() {
+    fn parse_unterminated_expr_start_after_variable_error() {
         assert_eq!(
             Parser::from("{f").parse_items(),
             Err(Error {
@@ -288,7 +327,7 @@ mod tests {
     }
 
     #[test]
-    fn variable() {
+    fn parse_variable() {
         assert_eq!(
             Parser::from("{f}").parse_items(),
             Ok(vec![Output {
@@ -305,7 +344,7 @@ mod tests {
     }
 
     #[test]
-    fn unknown_variable_error() {
+    fn parse_unknown_variable_error() {
         assert_eq!(
             Parser::from("{x}").parse_items(),
             Err(Error {
@@ -316,7 +355,7 @@ mod tests {
     }
 
     #[test]
-    fn expr_start_inside_expr_error() {
+    fn parse_expr_start_inside_expr_error() {
         assert_eq!(
             Parser::from("{f{").parse_items(),
             Err(Error {
@@ -327,7 +366,7 @@ mod tests {
     }
 
     #[test]
-    fn expected_pipe_or_expr_end_after_variable_error() {
+    fn parse_expected_pipe_or_expr_end_after_variable_error() {
         assert_eq!(
             Parser::from("{fg").parse_items(),
             Err(Error {
@@ -338,7 +377,7 @@ mod tests {
     }
 
     #[test]
-    fn expected_filter_but_end_error() {
+    fn parse_expected_filter_but_end_error() {
         assert_eq!(
             Parser::from("{f|").parse_items(),
             Err(Error {
@@ -349,7 +388,7 @@ mod tests {
     }
 
     #[test]
-    fn expected_filter_but_pipe_error() {
+    fn parse_expected_filter_but_pipe_error() {
         assert_eq!(
             Parser::from("{f||").parse_items(),
             Err(Error {
@@ -360,7 +399,7 @@ mod tests {
     }
 
     #[test]
-    fn expected_filter_but_expr_end_error() {
+    fn parse_expected_filter_but_expr_end_error() {
         assert_eq!(
             Parser::from("{f|}").parse_items(),
             Err(Error {
@@ -371,7 +410,7 @@ mod tests {
     }
 
     #[test]
-    fn unternimeted_expr_start_after_filter_error() {
+    fn parse_unternimeted_expr_start_after_filter_error() {
         assert_eq!(
             Parser::from("{f|l").parse_items(),
             Err(Error {
@@ -382,7 +421,7 @@ mod tests {
     }
 
     #[test]
-    fn expected_pipe_or_expr_end_after_filter_error() {
+    fn parse_expected_pipe_or_expr_end_after_filter_error() {
         assert_eq!(
             Parser::from("{f|ll").parse_items(),
             Err(Error {
@@ -393,7 +432,7 @@ mod tests {
     }
 
     #[test]
-    fn variable_single_filter() {
+    fn parse_variable_single_filter() {
         assert_eq!(
             Parser::from("{b|l}").parse_items(),
             Ok(vec![Output {
@@ -413,7 +452,7 @@ mod tests {
     }
 
     #[test]
-    fn variable_multiple_filters() {
+    fn parse_variable_multiple_filters() {
         assert_eq!(
             Parser::from("{e|t|n1-3}").parse_items(),
             Ok(vec![Output {
@@ -439,7 +478,7 @@ mod tests {
     }
 
     #[test]
-    fn invalid_filter_error() {
+    fn parse_invalid_filter_error() {
         assert_eq!(
             Parser::from("{f|n2-1}").parse_items(),
             Err(Error {
@@ -450,7 +489,7 @@ mod tests {
     }
 
     #[test]
-    fn complex_input() {
+    fn parse_complex_input() {
         assert_eq!(
             Parser::from("image_{c|<000}.{e|l|r_e}2").parse_items(),
             Ok(vec![

@@ -233,6 +233,17 @@ mod tests {
     }
 
     #[test]
+    fn parse_regex_capture_zero_error() {
+        assert_eq!(
+            parse("0"),
+            Err(parse::Error {
+                kind: parse::ErrorKind::RegexCaptureZero,
+                range: 0..1,
+            }),
+        );
+    }
+
+    #[test]
     fn parse_uuid() {
         assert_eq!(parse("u"), Ok(Variable::Uuid));
     }
@@ -436,6 +447,56 @@ mod tests {
             Regex::new("^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$")
                 .unwrap();
         assert!(uuid_regex.is_match(&uuid), format!("{} is UUID v4", uuid));
+    }
+
+    #[test]
+    fn eval_input_not_utf8() {
+        let mut context = make_context();
+        context.path = Path::new(make_non_utf8_os_str());
+        assert_eq!(
+            Variable::Path.eval(&context),
+            Err(eval::ErrorKind::InputNotUtf8)
+        );
+    }
+
+    #[test]
+    fn eval_canonicalization_failed() {
+        assert_eq!(
+            Variable::CanonicalPath.eval(&make_context()),
+            Err(eval::ErrorKind::CanonicalizationFailed(AnyString(
+                String::from("This string is not compared by assertion")
+            )))
+        );
+    }
+
+    #[test]
+    fn fmt() {
+        assert_eq!(Variable::Path.to_string(), "Path");
+        assert_eq!(Variable::AbsolutePath.to_string(), "Absolute path");
+        assert_eq!(Variable::CanonicalPath.to_string(), "Canonical path");
+        assert_eq!(Variable::FileName.to_string(), "File name");
+        assert_eq!(Variable::BaseName.to_string(), "Base name");
+        assert_eq!(Variable::Extension.to_string(), "Extension");
+        assert_eq!(Variable::ExtensionWithDot.to_string(), "Extension with dot");
+        assert_eq!(Variable::Parent.to_string(), "Parent");
+        assert_eq!(Variable::ParentFileName.to_string(), "Parent file name");
+        assert_eq!(Variable::LocalCounter.to_string(), "Local counter");
+        assert_eq!(Variable::GlobalCounter.to_string(), "Global counter");
+        assert_eq!(Variable::RegexCapture(1).to_string(), "Regex capture (1)");
+        assert_eq!(Variable::Uuid.to_string(), "UUID");
+    }
+
+    #[cfg(any(unix))]
+    fn make_non_utf8_os_str<'a>() -> &'a OsStr {
+        use std::os::unix::ffi::OsStrExt;
+        OsStr::from_bytes(&[0x66, 0x6f, 0x80, 0x6f][..])
+    }
+
+    #[cfg(windows)]
+    fn make_non_utf8_os_str<'a>() -> &'a OsStr {
+        use std::ffi::OsString;
+        use std::os::windows::prelude::*;
+        OsString::from_wide(&[0x0066, 0x006f, 0xD800, 0x006f][..]).as_os_str()
     }
 
     fn make_context<'a>() -> eval::Context<'a> {

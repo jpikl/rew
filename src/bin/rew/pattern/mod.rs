@@ -112,6 +112,7 @@ mod tests {
     use crate::pattern::parse::Output;
     use crate::pattern::range::Range;
     use crate::pattern::substitution::Substitution;
+    use crate::utils::AnyString;
     use ::regex::Regex;
     use std::path::Path;
 
@@ -196,10 +197,13 @@ mod tests {
     fn uses_none() {
         let pattern = Pattern {
             source: String::new(),
-            items: vec![output(Item::Expression {
-                variable: output(Variable::FileName),
-                filters: Vec::new(),
-            })],
+            items: vec![
+                output(Item::Constant(String::from("a"))),
+                output(Item::Expression {
+                    variable: output(Variable::FileName),
+                    filters: Vec::new(),
+                }),
+            ],
         };
         assert_eq!(pattern.uses_local_counter(), false);
         assert_eq!(pattern.uses_global_counter(), false);
@@ -331,6 +335,31 @@ mod tests {
         assert_eq!(
             pattern.eval(&make_context()),
             Ok(String::from("prefix_fil_abc_1_2.ET"))
+        );
+    }
+
+    #[test]
+    fn eval_variable_error() {
+        let pattern = Pattern {
+            source: String::new(),
+            items: vec![output(Item::Expression {
+                variable: Output {
+                    value: Variable::CanonicalPath,
+                    range: 1..2,
+                },
+                filters: Vec::new(),
+            })],
+        };
+        assert_eq!(
+            pattern.eval(&make_context()),
+            Err(eval::Error {
+                kind: eval::ErrorKind::CanonicalizationFailed(AnyString(String::from(
+                    "This string is not compared by assertion"
+                ))),
+                cause: eval::ErrorCause::Variable(&Variable::CanonicalPath),
+                value: String::from("root/parent/file.ext"),
+                range: &(1..2usize),
+            })
         );
     }
 

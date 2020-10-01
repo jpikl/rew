@@ -858,4 +858,65 @@ mod tests {
             Ok(String::from("abcd"))
         );
     }
+
+    #[test]
+    fn fmt() {
+        assert_eq!(
+            Filter::Substring(Range::FromTo(1, 3)).to_string(),
+            "Substring from 2 to 3"
+        );
+        assert_eq!(
+            Filter::SubstringReverse(Range::FromTo(1, 3)).to_string(),
+            "Substring (reverse) from 2 to 3"
+        );
+        assert_eq!(
+            Filter::ReplaceFirst(Substitution {
+                value: String::from("a"),
+                replacement: String::from("b")
+            })
+            .to_string(),
+            "Replace first 'a' by 'b'"
+        );
+        assert_eq!(
+            Filter::ReplaceAll(Substitution {
+                value: String::from("a"),
+                replacement: String::from("b")
+            })
+            .to_string(),
+            "Replace all 'a' by 'b'"
+        );
+        assert_eq!(
+            Filter::RegexReplaceFirst(Substitution {
+                value: RegexHolder(Regex::new("a+").unwrap()),
+                replacement: String::from("b")
+            })
+            .to_string(),
+            "Replace first regular expression 'a+' by 'b'"
+        );
+        assert_eq!(
+            Filter::RegexReplaceAll(Substitution {
+                value: RegexHolder(Regex::new("a+").unwrap()),
+                replacement: String::from("b")
+            })
+            .to_string(),
+            "Replace all regular expressions 'a+' by 'b'"
+        );
+        assert_eq!(Filter::Trim.to_string(), "Trim");
+        assert_eq!(Filter::ToLowercase.to_string(), "To lowercase");
+        assert_eq!(Filter::ToUppercase.to_string(), "To uppercase");
+        assert_eq!(Filter::ToAscii.to_string(), "To ASCII");
+        assert_eq!(Filter::RemoveNonAscii.to_string(), "Remove non-ASCII");
+        assert_eq!(
+            Filter::LeftPad(String::from("abc")).to_string(),
+            "Left pad with 'abc'"
+        );
+        assert_eq!(
+            Filter::RightPad(String::from("abc")).to_string(),
+            "Right pad with 'abc'"
+        );
+        assert_eq!(
+            Filter::Default(String::from("abc")).to_string(),
+            "Use 'abc' as default"
+        );
+    }
 }
