@@ -297,10 +297,21 @@ mod tests {
     }
 
     #[test]
-    fn eval_absolute_path() {
+    fn eval_absolute_path_from_relative() {
         assert_eq!(
             Variable::AbsolutePath.eval(&make_context()),
             Ok(String::from("current_dir/root/parent/file.ext"))
+        );
+    }
+
+    #[test]
+    fn eval_absolute_path_from_absolute() {
+        let mut context = make_context();
+        context.path = Path::new(make_absolute_path_str());
+
+        assert_eq!(
+            Variable::AbsolutePath.eval(&context),
+            Ok(String::from(make_absolute_path_str()))
         );
     }
 
@@ -507,5 +518,15 @@ mod tests {
             global_counter: 2,
             regex_captures: Regex::new("(.*)").unwrap().captures("abc"),
         }
+    }
+
+    #[cfg(any(unix))]
+    fn make_absolute_path_str() -> &'static str {
+        "/root/parent/file.ext"
+    }
+
+    #[cfg(windows)]
+    fn make_absolute_path_str() -> &'static str {
+        "C:/parent/file.ext"
     }
 }

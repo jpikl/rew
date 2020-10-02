@@ -645,8 +645,13 @@ mod tests {
 
     #[test]
     fn eval_substring_reverse_from_over_to_over() {
+        // Each assert covers different evaluation branch
         assert_eq!(
             Filter::SubstringReverse(Range::FromTo(4, 5)).eval(String::from("ábčd")),
+            Ok(String::from(""))
+        );
+        assert_eq!(
+            Filter::SubstringReverse(Range::FromTo(5, 6)).eval(String::from("ábčd")),
             Ok(String::from(""))
         );
     }
