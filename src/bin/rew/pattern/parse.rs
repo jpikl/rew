@@ -135,3 +135,126 @@ impl fmt::Display for ErrorKind {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn error_range() {
+        assert_eq!(
+            Error {
+                kind: ErrorKind::ExpectedNumber,
+                range: 1..2
+            }
+            .range(),
+            &(1..2)
+        )
+    }
+
+    #[test]
+    fn error_fmt() {
+        assert_eq!(
+            Error {
+                kind: ErrorKind::ExpectedNumber,
+                range: 1..2
+            }
+            .to_string(),
+            "Invalid pattern: Expected number"
+        );
+    }
+
+    #[test]
+    fn error_kind_fmt() {
+        assert_eq!(
+            ErrorKind::ExpectedFilter.to_string(),
+            "Expected filter after '|'"
+        );
+        assert_eq!(ErrorKind::ExpectedNumber.to_string(), "Expected number");
+        assert_eq!(
+            ErrorKind::ExpectedPipeOrExprEnd.to_string(),
+            "Expected '|' or closing '}'"
+        );
+        assert_eq!(
+            ErrorKind::ExpectedRange.to_string(),
+            "Filter requires range as a parameter"
+        );
+        assert_eq!(
+            ErrorKind::ExpectedSubstitution.to_string(),
+            "Filter requires substitution as a parameter"
+        );
+        assert_eq!(
+            ErrorKind::ExpectedVariable.to_string(),
+            "Expected variable after '{'"
+        );
+        assert_eq!(
+            ErrorKind::ExprStartInsideExpr.to_string(),
+            "Unescaped '{' inside expression"
+        );
+        assert_eq!(
+            ErrorKind::PipeOutsideExpr.to_string(),
+            "Unescaped '|' outside expression"
+        );
+        assert_eq!(
+            ErrorKind::RangeIndexZero.to_string(),
+            "Range indices start from 1, not 0"
+        );
+        assert_eq!(
+            ErrorKind::RangeInvalid(String::from("abc")).to_string(),
+            "Invalid range 'abc'"
+        );
+        assert_eq!(ErrorKind::RangeUnbounded.to_string(), "Unbounded range");
+        assert_eq!(
+            ErrorKind::RangeStartOverEnd(2, 1).to_string(),
+            "Range start (2) is bigger than end (1)"
+        );
+        assert_eq!(
+            ErrorKind::RegexCaptureZero.to_string(),
+            "Regex capture groups start from 1, not 0"
+        );
+        assert_eq!(
+            ErrorKind::SubstituteWithoutValue(Char::Raw('_')).to_string(),
+            "Substitution is missing value after separator '_'"
+        );
+        assert_eq!(
+            ErrorKind::SubstituteWithoutValue(Char::Escaped('|', ['#', '|'])).to_string(),
+            "Substitution is missing value after separator '#|' (escape sequence)"
+        );
+        assert_eq!(
+            ErrorKind::SubstituteRegexInvalid(AnyString(String::from("abc"))).to_string(),
+            "Invalid regular expression in substitution: abc"
+        );
+        assert_eq!(
+            ErrorKind::UnknownEscapeSequence(['#', 'x']).to_string(),
+            "Unknown escape sequence '#x'"
+        );
+        assert_eq!(
+            ErrorKind::UnknownFilter(Char::Raw('x')).to_string(),
+            "Unknown filter 'x'"
+        );
+        assert_eq!(
+            ErrorKind::UnknownFilter(Char::Escaped('x', ['#', 'y'])).to_string(),
+            "Unknown filter 'x' written as escape sequence '#y'"
+        );
+        assert_eq!(
+            ErrorKind::UnknownVariable(Char::Raw('x')).to_string(),
+            "Unknown variable 'x'"
+        );
+        assert_eq!(
+            ErrorKind::UnknownVariable(Char::Escaped('x', ['#', 'y'])).to_string(),
+            "Unknown variable 'x' written as escape sequence '#y'"
+        );
+        assert_eq!(
+            ErrorKind::UnmatchedExprEnd.to_string(),
+            "No matching '{' before expression end"
+        );
+        assert_eq!(
+            ErrorKind::UnmatchedExprStart.to_string(),
+            "No matching '}' after expression start"
+        );
+        assert_eq!(
+            ErrorKind::UnterminatedEscapeSequence('#').to_string(),
+            "Unterminated escape sequence '#'"
+        );
+    }
+}
