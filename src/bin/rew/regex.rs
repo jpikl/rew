@@ -46,6 +46,14 @@ mod tests {
     use regex::Match;
 
     #[test]
+    fn utf8_error_fmt() {
+        assert_eq!(
+            Utf8Error {}.to_string(),
+            "Input does not have UTF-8 encoding"
+        );
+    }
+
+    #[test]
     fn file_name() {
         let regex = Regex::new("([a-z]+)_([A-Z]+)").unwrap();
         let captures = eval(Solver::FileName(&regex)).unwrap();
@@ -53,6 +61,15 @@ mod tests {
         assert_eq!(captures.len(), 3);
         assert_eq!(captures.get(1).as_ref().map(Match::as_str), Some("file"));
         assert_eq!(captures.get(2).as_ref().map(Match::as_str), Some("FILE"));
+    }
+
+    #[test]
+    fn file_name_missing() {
+        let regex = Regex::new("([a-z]+)_([A-Z]+)").unwrap();
+        assert!(Solver::FileName(&regex)
+            .eval(&Path::new("/"))
+            .unwrap()
+            .is_none());
     }
 
     #[test]
