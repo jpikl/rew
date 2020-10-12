@@ -1,4 +1,5 @@
-use common::color::{parse_color, HasColor, COLOR_VALUES};
+use common::color::{parse_color, COLOR_VALUES};
+use common::run;
 use regex::Regex;
 use std::path::PathBuf;
 use structopt::{clap::AppSettings, StructOpt};
@@ -88,7 +89,11 @@ pub struct Cli {
     pub color: Option<ColorChoice>,
 }
 
-impl HasColor for Cli {
+impl run::Cli for Cli {
+    fn new() -> Self {
+        Self::from_args()
+    }
+
     fn color(&self) -> Option<ColorChoice> {
         self.color
     }

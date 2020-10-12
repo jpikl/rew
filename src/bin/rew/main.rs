@@ -6,7 +6,6 @@ use common::output::write_error;
 use common::run::{exec_run, Result};
 use std::io::Stdin;
 use std::{env, process};
-use structopt::StructOpt;
 use termcolor::StandardStream;
 
 mod cli;
@@ -21,7 +20,7 @@ const ERR_PARSE: i32 = 3;
 const ERR_EVAL: i32 = 4;
 
 fn main() {
-    exec_run(run, Cli::from_args());
+    exec_run(run);
 }
 
 fn run(

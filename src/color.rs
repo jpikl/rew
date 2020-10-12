@@ -7,10 +7,6 @@ const COLOR_ANSI: &str = "ansi";
 const COLOR_AUTO: &str = "auto";
 const COLOR_NEVER: &str = "never";
 
-pub trait HasColor {
-    fn color(&self) -> Option<ColorChoice>;
-}
-
 pub fn parse_color(string: &str) -> Result<ColorChoice, &'static str> {
     match string {
         COLOR_ALWAYS => Ok(ColorChoice::Always),

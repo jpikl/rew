@@ -1,18 +1,24 @@
-use crate::color::{detect_color, HasColor};
+use crate::color::detect_color;
 use crate::output::write_error;
 use std::io::{self, Stdin};
 use std::process;
-use termcolor::StandardStream;
+use termcolor::{ColorChoice, StandardStream};
 
 pub const ERR_IO: i32 = 2;
 
 pub type Result = std::io::Result<()>;
 
-pub fn exec_run<R, C>(run: R, cli: C)
+pub trait Cli {
+    fn new() -> Self;
+    fn color(&self) -> Option<ColorChoice>;
+}
+
+pub fn exec_run<R, C>(run: R)
 where
     R: FnOnce(C, &mut Stdin, &mut StandardStream, &mut StandardStream) -> Result,
-    C: HasColor,
+    C: Cli,
 {
+    let cli = C::new();
     let color = detect_color(cli.color());
 
     let mut stdin = io::stdin();
