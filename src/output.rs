@@ -13,22 +13,22 @@ pub fn write_error<S: Write + WriteColor, E: Error>(stream: &mut S, error: &E) -
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::output_testing::{ColoredBuffer, ColoredChunk};
+    use crate::io::mem::{MemoryOutput, OutputChunk};
     use std::io::{self, ErrorKind};
 
     #[test]
     fn write_error_ok() {
-        let mut buffer = ColoredBuffer::new();
+        let mut output = MemoryOutput::new();
         write_error(
-            &mut buffer,
+            &mut output,
             &io::Error::new(ErrorKind::InvalidData, "message"),
         )
         .unwrap();
         assert_eq!(
-            buffer.chunks(),
-            vec![
-                ColoredChunk::color(Color::Red, "error:"),
-                ColoredChunk::plain(" message\n")
+            output.chunks(),
+            &[
+                OutputChunk::color(Color::Red, "error:"),
+                OutputChunk::plain(" message\n")
             ]
         );
     }

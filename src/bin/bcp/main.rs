@@ -1,19 +1,13 @@
 use crate::cli::Cli;
-use common::run::{exec_run, Result};
-use std::io::Stdin;
-use termcolor::StandardStream;
+use common::io::Io;
+use common::run::{Result, Runner};
 
 mod cli;
 
 fn main() {
-    exec_run(run);
+    Runner::new().exec(run)
 }
 
-fn run(
-    _cli: Cli,
-    _stdin: &mut Stdin,
-    _stdout: &mut StandardStream,
-    _stderr: &mut StandardStream,
-) -> Result {
+fn run<'a, IO: Io<'a>>(_cli: &'a Cli, _io: &'a IO) -> Result {
     unimplemented!()
 }

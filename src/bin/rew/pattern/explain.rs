@@ -46,7 +46,7 @@ mod tests {
     use crate::pattern::filter::Filter;
     use crate::pattern::parse::Output;
     use crate::pattern::variable::Variable;
-    use common::output_testing::{ColoredBuffer, ColoredChunk};
+    use common::io::mem::{MemoryOutput, OutputChunk};
 
     #[test]
     fn explain_empty() {
@@ -55,10 +55,10 @@ mod tests {
             items: Vec::new(),
         };
 
-        let mut buffer = ColoredBuffer::new();
-        pattern.explain(&mut buffer).unwrap();
+        let mut output = MemoryOutput::new();
+        pattern.explain(&mut output).unwrap();
 
-        assert_eq!(buffer.chunks(), vec![]);
+        assert_eq!(output.chunks(), &vec![]);
     }
 
     #[test]
@@ -92,42 +92,42 @@ mod tests {
             ],
         };
 
-        let mut buffer = ColoredBuffer::new();
-        pattern.explain(&mut buffer).unwrap();
+        let mut output = MemoryOutput::new();
+        pattern.explain(&mut output).unwrap();
 
         assert_eq!(
-            buffer.chunks(),
-            vec![
-                ColoredChunk::bold_color(Color::Green, "_"),
-                ColoredChunk::plain("{f|t|u}\n"),
-                ColoredChunk::bold_color(Color::Green, "^"),
-                ColoredChunk::plain("\n\n"),
-                ColoredChunk::color(Color::Green, "Constant '_'"),
-                ColoredChunk::plain("\n_"),
-                ColoredChunk::bold_color(Color::Yellow, "{f|t|u}"),
-                ColoredChunk::plain("\n"),
-                ColoredChunk::bold_color(Color::Yellow, " ^^^^^^^"),
-                ColoredChunk::plain("\n\n"),
-                ColoredChunk::color(Color::Yellow, "Expression with a variable and 2 filters"),
-                ColoredChunk::plain("\n_{"),
-                ColoredChunk::bold_color(Color::Blue, "f"),
-                ColoredChunk::plain("|t|u}\n"),
-                ColoredChunk::bold_color(Color::Blue, "  ^"),
-                ColoredChunk::plain("\n\n"),
-                ColoredChunk::color(Color::Blue, "File name"),
-                ColoredChunk::plain("\n_{f|"),
-                ColoredChunk::bold_color(Color::Magenta, "t"),
-                ColoredChunk::plain("|u}\n"),
-                ColoredChunk::bold_color(Color::Magenta, "    ^"),
-                ColoredChunk::plain("\n\n"),
-                ColoredChunk::color(Color::Magenta, "Trim"),
-                ColoredChunk::plain("\n_{f|t|"),
-                ColoredChunk::bold_color(Color::Magenta, "u"),
-                ColoredChunk::plain("}\n"),
-                ColoredChunk::bold_color(Color::Magenta, "      ^"),
-                ColoredChunk::plain("\n\n"),
-                ColoredChunk::color(Color::Magenta, "To uppercase"),
-                ColoredChunk::plain("\n")
+            output.chunks(),
+            &vec![
+                OutputChunk::bold_color(Color::Green, "_"),
+                OutputChunk::plain("{f|t|u}\n"),
+                OutputChunk::bold_color(Color::Green, "^"),
+                OutputChunk::plain("\n\n"),
+                OutputChunk::color(Color::Green, "Constant '_'"),
+                OutputChunk::plain("\n_"),
+                OutputChunk::bold_color(Color::Yellow, "{f|t|u}"),
+                OutputChunk::plain("\n"),
+                OutputChunk::bold_color(Color::Yellow, " ^^^^^^^"),
+                OutputChunk::plain("\n\n"),
+                OutputChunk::color(Color::Yellow, "Expression with a variable and 2 filters"),
+                OutputChunk::plain("\n_{"),
+                OutputChunk::bold_color(Color::Blue, "f"),
+                OutputChunk::plain("|t|u}\n"),
+                OutputChunk::bold_color(Color::Blue, "  ^"),
+                OutputChunk::plain("\n\n"),
+                OutputChunk::color(Color::Blue, "File name"),
+                OutputChunk::plain("\n_{f|"),
+                OutputChunk::bold_color(Color::Magenta, "t"),
+                OutputChunk::plain("|u}\n"),
+                OutputChunk::bold_color(Color::Magenta, "    ^"),
+                OutputChunk::plain("\n\n"),
+                OutputChunk::color(Color::Magenta, "Trim"),
+                OutputChunk::plain("\n_{f|t|"),
+                OutputChunk::bold_color(Color::Magenta, "u"),
+                OutputChunk::plain("}\n"),
+                OutputChunk::bold_color(Color::Magenta, "      ^"),
+                OutputChunk::plain("\n\n"),
+                OutputChunk::color(Color::Magenta, "To uppercase"),
+                OutputChunk::plain("\n")
             ]
         );
     }

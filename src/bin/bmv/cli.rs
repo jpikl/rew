@@ -21,10 +21,6 @@ pub struct Cli {
 }
 
 impl run::Cli for Cli {
-    fn new() -> Self {
-        Self::from_args()
-    }
-
     fn color(&self) -> Option<ColorChoice> {
         self.color
     }
