@@ -1,4 +1,4 @@
-use crate::pattern::parse::Output;
+use crate::pattern::parse::Parsed;
 use crate::pattern::parser::Item;
 use crate::pattern::Pattern;
 use crate::utils::highlight_range;
@@ -28,7 +28,7 @@ impl Pattern {
     fn explain_part<S: Write + WriteColor, T: Display>(
         &self,
         stream: &mut S,
-        part: &Output<T>,
+        part: &Parsed<T>,
         color: Color,
     ) -> Result<()> {
         highlight_range(stream, &self.source, &part.range, color)?;
@@ -44,7 +44,7 @@ impl Pattern {
 mod tests {
     use super::*;
     use crate::pattern::filter::Filter;
-    use crate::pattern::parse::Output;
+    use crate::pattern::parse::Parsed;
     use crate::pattern::variable::Variable;
     use common::io::mem::{MemoryOutput, OutputChunk};
 
@@ -66,22 +66,22 @@ mod tests {
         let pattern = Pattern {
             source: String::from("_{f|t|u}"),
             items: vec![
-                Output {
+                Parsed {
                     value: Item::Constant(String::from("_")),
                     range: 0..1,
                 },
-                Output {
+                Parsed {
                     value: Item::Expression {
-                        variable: Output {
+                        variable: Parsed {
                             value: Variable::FileName,
                             range: 2..3,
                         },
                         filters: vec![
-                            Output {
+                            Parsed {
                                 value: Filter::Trim,
                                 range: 4..5,
                             },
-                            Output {
+                            Parsed {
                                 value: Filter::ToUppercase,
                                 range: 6..7,
                             },

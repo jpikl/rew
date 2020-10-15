@@ -1,7 +1,7 @@
 use crate::pattern::char::{AsChar, Char};
 use crate::pattern::filter::Filter;
 use crate::pattern::lexer::{Lexer, Token};
-use crate::pattern::parse::{Error, ErrorKind, Output, Result};
+use crate::pattern::parse::{Error, ErrorKind, Parsed, Result};
 use crate::pattern::reader::Reader;
 use crate::pattern::variable::Variable;
 use std::fmt;
@@ -11,8 +11,8 @@ use std::ops::Range;
 pub enum Item {
     Constant(String),
     Expression {
-        variable: Output<Variable>,
-        filters: Vec<Output<Filter>>,
+        variable: Parsed<Variable>,
+        filters: Vec<Parsed<Filter>>,
     },
 }
 
@@ -37,7 +37,7 @@ impl fmt::Display for Item {
 
 pub struct Parser {
     lexer: Lexer,
-    token: Option<Output<Token>>,
+    token: Option<Parsed<Token>>,
 }
 
 impl From<&str> for Parser {
@@ -51,7 +51,7 @@ impl Parser {
         Self { lexer, token: None }
     }
 
-    pub fn parse_items(&mut self) -> Result<Vec<Output<Item>>> {
+    pub fn parse_items(&mut self) -> Result<Vec<Parsed<Item>>> {
         let mut items = Vec::new();
 
         while let Some(item) = self.parse_item()? {
@@ -61,10 +61,10 @@ impl Parser {
         Ok(items)
     }
 
-    fn parse_item(&mut self) -> Result<Option<Output<Item>>> {
+    fn parse_item(&mut self) -> Result<Option<Parsed<Item>>> {
         if let Some(token) = self.fetch_token()? {
             match &token.value {
-                Token::Raw(raw) => Ok(Some(Output {
+                Token::Raw(raw) => Ok(Some(Parsed {
                     value: Item::Constant(Char::join(raw)),
                     range: token.range.clone(),
                 })),
@@ -95,24 +95,24 @@ impl Parser {
         }
     }
 
-    fn parse_expression(&mut self) -> Result<Option<Output<Item>>> {
+    fn parse_expression(&mut self) -> Result<Option<Parsed<Item>>> {
         let start = self.token_range().start;
         let variable = self.parse_variable()?;
         let filters = self.parse_filters()?;
         let end = self.token_range().end;
 
-        Ok(Some(Output {
+        Ok(Some(Parsed {
             value: Item::Expression { variable, filters },
             range: start..end,
         }))
     }
 
-    fn parse_variable(&mut self) -> Result<Output<Variable>> {
+    fn parse_variable(&mut self) -> Result<Parsed<Variable>> {
         self.parse_expression_member(Variable::parse, ErrorKind::ExpectedVariable)
     }
 
-    fn parse_filters(&mut self) -> Result<Vec<Output<Filter>>> {
-        let mut filters: Vec<Output<Filter>> = Vec::new();
+    fn parse_filters(&mut self) -> Result<Vec<Parsed<Filter>>> {
+        let mut filters: Vec<Parsed<Filter>> = Vec::new();
 
         while let Some(token) = self.fetch_token()? {
             match token.value {
@@ -137,7 +137,7 @@ impl Parser {
         Ok(filters)
     }
 
-    fn parse_filter(&mut self) -> Result<Output<Filter>> {
+    fn parse_filter(&mut self) -> Result<Parsed<Filter>> {
         self.parse_expression_member(Filter::parse, ErrorKind::ExpectedFilter)
     }
 
@@ -145,7 +145,7 @@ impl Parser {
         &mut self,
         parse: F,
         error_kind: ErrorKind,
-    ) -> Result<Output<T>> {
+    ) -> Result<Parsed<T>> {
         let position = self.token_range().end;
         let token = self.fetch_token()?.ok_or_else(|| Error {
             kind: error_kind.clone(),
@@ -172,7 +172,7 @@ impl Parser {
                     range: start..end,
                 })
             } else {
-                Ok(Output {
+                Ok(Parsed {
                     value,
                     range: token.range.clone(),
                 })
@@ -185,7 +185,7 @@ impl Parser {
         }
     }
 
-    fn fetch_token(&mut self) -> Result<Option<&Output<Token>>> {
+    fn fetch_token(&mut self) -> Result<Option<&Parsed<Token>>> {
         self.token = self.lexer.read_token()?;
         Ok(self.token.as_ref())
     }
@@ -214,7 +214,7 @@ mod tests {
 
         assert_eq!(
             (Item::Expression {
-                variable: output(Variable::Path),
+                variable: parsed(Variable::Path),
                 filters: Vec::new()
             })
             .to_string(),
@@ -223,8 +223,8 @@ mod tests {
 
         assert_eq!(
             (Item::Expression {
-                variable: output(Variable::Path),
-                filters: vec![output(Filter::ToUppercase)]
+                variable: parsed(Variable::Path),
+                filters: vec![parsed(Filter::ToUppercase)]
             })
             .to_string(),
             "Expression with a variable and a filter"
@@ -232,16 +232,16 @@ mod tests {
 
         assert_eq!(
             (Item::Expression {
-                variable: output(Variable::Path),
-                filters: vec![output(Filter::ToUppercase), output(Filter::Trim)]
+                variable: parsed(Variable::Path),
+                filters: vec![parsed(Filter::ToUppercase), parsed(Filter::Trim)]
             })
             .to_string(),
             "Expression with a variable and 2 filters"
         );
     }
 
-    fn output<T>(value: T) -> Output<T> {
-        Output { value, range: 0..0 }
+    fn parsed<T>(value: T) -> Parsed<T> {
+        Parsed { value, range: 0..0 }
     }
 
     #[test]
@@ -253,7 +253,7 @@ mod tests {
     fn parse_constant() {
         assert_eq!(
             Parser::from("a").parse_items(),
-            Ok(vec![Output {
+            Ok(vec![Parsed {
                 value: Item::Constant(String::from("a")),
                 range: 0..1,
             }])
@@ -330,9 +330,9 @@ mod tests {
     fn parse_variable() {
         assert_eq!(
             Parser::from("{f}").parse_items(),
-            Ok(vec![Output {
+            Ok(vec![Parsed {
                 value: Item::Expression {
-                    variable: Output {
+                    variable: Parsed {
                         value: Variable::FileName,
                         range: 1..2,
                     },
@@ -435,13 +435,13 @@ mod tests {
     fn parse_variable_single_filter() {
         assert_eq!(
             Parser::from("{b|l}").parse_items(),
-            Ok(vec![Output {
+            Ok(vec![Parsed {
                 value: Item::Expression {
-                    variable: Output {
+                    variable: Parsed {
                         value: Variable::BaseName,
                         range: 1..2,
                     },
-                    filters: vec![Output {
+                    filters: vec![Parsed {
                         value: Filter::ToLowercase,
                         range: 3..4,
                     }],
@@ -455,18 +455,18 @@ mod tests {
     fn parse_variable_multiple_filters() {
         assert_eq!(
             Parser::from("{e|t|n1-3}").parse_items(),
-            Ok(vec![Output {
+            Ok(vec![Parsed {
                 value: Item::Expression {
-                    variable: Output {
+                    variable: Parsed {
                         value: Variable::Extension,
                         range: 1..2,
                     },
                     filters: vec![
-                        Output {
+                        Parsed {
                             value: Filter::Trim,
                             range: 3..4,
                         },
-                        Output {
+                        Parsed {
                             value: Filter::Substring(Range::FromTo(0, 3)),
                             range: 5..9,
                         },
@@ -493,39 +493,39 @@ mod tests {
         assert_eq!(
             Parser::from("image_{c|<000}.{e|l|r_e}2").parse_items(),
             Ok(vec![
-                Output {
+                Parsed {
                     value: Item::Constant(String::from("image_")),
                     range: 0..6,
                 },
-                Output {
+                Parsed {
                     value: Item::Expression {
-                        variable: Output {
+                        variable: Parsed {
                             value: Variable::LocalCounter,
                             range: 7..8,
                         },
-                        filters: vec![Output {
+                        filters: vec![Parsed {
                             value: Filter::LeftPad(String::from("000")),
                             range: 9..13,
                         }],
                     },
                     range: 6..14,
                 },
-                Output {
+                Parsed {
                     value: Item::Constant(String::from(".")),
                     range: 14..15,
                 },
-                Output {
+                Parsed {
                     value: Item::Expression {
-                        variable: Output {
+                        variable: Parsed {
                             value: Variable::Extension,
                             range: 16..17,
                         },
                         filters: vec![
-                            Output {
+                            Parsed {
                                 value: Filter::ToLowercase,
                                 range: 18..19,
                             },
-                            Output {
+                            Parsed {
                                 value: Filter::ReplaceFirst(Substitution {
                                     value: 'e'.to_string(),
                                     replacement: String::new(),
@@ -536,7 +536,7 @@ mod tests {
                     },
                     range: 15..24,
                 },
-                Output {
+                Parsed {
                     value: Item::Constant(String::from("2")),
                     range: 24..25,
                 },

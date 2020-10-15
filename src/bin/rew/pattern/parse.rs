@@ -5,7 +5,7 @@ use std::ops::Range;
 use std::{error, fmt, result};
 
 #[derive(Debug, PartialEq)]
-pub struct Output<T> {
+pub struct Parsed<T> {
     pub value: T,
     pub range: Range<usize>,
 }
