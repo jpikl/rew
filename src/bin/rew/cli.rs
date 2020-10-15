@@ -94,3 +94,19 @@ impl run::Cli for Cli {
         self.color
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn init() {
+        assert!(Cli::from_iter_safe(&["cmd", "pattern"]).is_ok());
+    }
+
+    #[test]
+    fn color() {
+        let cli = Cli::from_iter_safe(&["cmd", "pattern", "--color=always"]).unwrap();
+        assert_eq!(run::Cli::color(&cli), Some(ColorChoice::Always));
+    }
+}
