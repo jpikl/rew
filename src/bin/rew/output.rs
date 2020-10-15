@@ -189,8 +189,8 @@ mod tests {
                 OutputChunk::color(Color::Red, "error:"),
                 OutputChunk::plain(" msg\n\na"),
                 OutputChunk::bold_color(Color::Red, "bc"),
-                OutputChunk::plain("d\n"),
-                OutputChunk::bold_color(Color::Red, " ^^"),
+                OutputChunk::plain("d\n "),
+                OutputChunk::bold_color(Color::Red, "^^"),
                 OutputChunk::plain("\n")
             ]
         );

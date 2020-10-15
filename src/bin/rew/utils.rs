@@ -42,10 +42,44 @@ pub fn highlight_range<O: Output>(
     let spaces_count = string[..range.start].chars().count();
     let markers_count = string[range.start..range.end].chars().count().max(1);
 
-    output.set_color(&spec_bold_color(color))?;
     write!(output, "{}", " ".repeat(spaces_count))?;
+    output.set_color(&spec_bold_color(color))?;
     write!(output, "{}", "^".repeat(markers_count))?;
     output.reset()?;
 
     writeln!(output)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use common::io::mem::{MemoryOutput, OutputChunk};
+
+    #[test]
+    fn any_string_eq() {
+        assert_eq!(AnyString(String::from("a")), AnyString(String::from("a")));
+        assert_eq!(AnyString(String::from("a")), AnyString(String::from("b")));
+    }
+
+    #[test]
+    fn any_string_fmt() {
+        assert_eq!(AnyString(String::from("abc")).to_string(), "abc");
+    }
+
+    #[test]
+    fn highlights_range() {
+        let mut output = MemoryOutput::new();
+        highlight_range(&mut output, "abcde", &(1..4), Color::Green).unwrap();
+
+        assert_eq!(
+            output.chunks(),
+            &[
+                OutputChunk::plain("a"),
+                OutputChunk::bold_color(Color::Green, "bcd"),
+                OutputChunk::plain("e\n "),
+                OutputChunk::bold_color(Color::Green, "^^^"),
+                OutputChunk::plain("\n")
+            ]
+        );
+    }
 }

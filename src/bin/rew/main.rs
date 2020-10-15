@@ -163,8 +163,8 @@ mod tests {
             runner.stderr(),
             &[
                 OutputChunk::color(Color::Red, "error:"),
-                OutputChunk::plain(" Invalid pattern: Expected variable after \'{\'\n\n{\n"),
-                OutputChunk::bold_color(Color::Red, " ^"),
+                OutputChunk::plain(" Invalid pattern: Expected variable after \'{\'\n\n{\n "),
+                OutputChunk::bold_color(Color::Red, "^"),
                 OutputChunk::plain("\n"),
             ]
         );
