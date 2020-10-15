@@ -158,10 +158,10 @@ mod tests {
     fn returns_parse_error_code() {
         let runner = TestRunner::new(&["{"], &[]).unwrap();
         assert_eq!(runner.exec(run), EXIT_CODE_PARSE_ERROR);
-        assert_eq!(runner.stdout(), vec![]);
+        assert_eq!(runner.stdout(), &[]);
         assert_eq!(
             runner.stderr(),
-            vec![
+            &[
                 OutputChunk::color(Color::Red, "error:"),
                 OutputChunk::plain(" Invalid pattern: Expected variable after \'{\'\n\n{\n"),
                 OutputChunk::bold_color(Color::Red, " ^"),
@@ -176,7 +176,7 @@ mod tests {
         assert_eq!(runner.exec(run), EXIT_CODE_OK);
         assert_eq!(
             runner.stdout(),
-            vec![
+            &[
                 OutputChunk::bold_color(Color::Green, "_"),
                 OutputChunk::plain("\n"),
                 OutputChunk::bold_color(Color::Green, "^"),
@@ -185,53 +185,47 @@ mod tests {
                 OutputChunk::plain("\n")
             ]
         );
-        assert_eq!(runner.stderr(), vec![]);
+        assert_eq!(runner.stderr(), &[]);
     }
 
     #[test]
     fn uses_paths_from_args_over_stdin() {
         let runner = TestRunner::new(&["_{p}_", "123", "456"], &b"abc\ndef"[..]).unwrap();
         assert_eq!(runner.exec(run), EXIT_CODE_OK);
-        assert_eq!(runner.stdout(), vec![OutputChunk::plain("_123_\n_456_\n")]);
-        assert_eq!(runner.stderr(), vec![]);
+        assert_eq!(runner.stdout(), &[OutputChunk::plain("_123_\n_456_\n")]);
+        assert_eq!(runner.stderr(), &[]);
     }
 
     #[test]
     fn reads_prints_lines() {
         let runner = TestRunner::new(&["_{p}_"], &b"abc\n\0def"[..]).unwrap();
         assert_eq!(runner.exec(run), EXIT_CODE_OK);
-        assert_eq!(
-            runner.stdout(),
-            vec![OutputChunk::plain("_abc_\n_\0def_\n")]
-        );
-        assert_eq!(runner.stderr(), vec![]);
+        assert_eq!(runner.stdout(), &[OutputChunk::plain("_abc_\n_\0def_\n")]);
+        assert_eq!(runner.stderr(), &[]);
     }
 
     #[test]
     fn reads_prints_nulls() {
         let runner = TestRunner::new(&["-z", "-Z", "_{p}_"], &b"abc\n\0def"[..]).unwrap();
         assert_eq!(runner.exec(run), EXIT_CODE_OK);
-        assert_eq!(
-            runner.stdout(),
-            vec![OutputChunk::plain("_abc\n_\0_def_\0")]
-        );
-        assert_eq!(runner.stderr(), vec![]);
+        assert_eq!(runner.stdout(), &[OutputChunk::plain("_abc\n_\0_def_\0")]);
+        assert_eq!(runner.stderr(), &[]);
     }
 
     #[test]
     fn reads_prints_raw() {
         let runner = TestRunner::new(&["-r", "-R", "_{p}_"], &b"abc\n\0def"[..]).unwrap();
         assert_eq!(runner.exec(run), EXIT_CODE_OK);
-        assert_eq!(runner.stdout(), vec![OutputChunk::plain("_abc\n\0def_")]);
-        assert_eq!(runner.stderr(), vec![]);
+        assert_eq!(runner.stdout(), &[OutputChunk::plain("_abc\n\0def_")]);
+        assert_eq!(runner.stderr(), &[]);
     }
 
     #[test]
     fn reads_prints_batch() {
         let runner = TestRunner::new(&["-b", "_{p}_"], &b"abc"[..]).unwrap();
         assert_eq!(runner.exec(run), EXIT_CODE_OK);
-        assert_eq!(runner.stdout(), vec![OutputChunk::plain("<abc\n>_abc_\n")]);
-        assert_eq!(runner.stderr(), vec![]);
+        assert_eq!(runner.stdout(), &[OutputChunk::plain("<abc\n>_abc_\n")]);
+        assert_eq!(runner.stderr(), &[]);
     }
 
     #[test]
@@ -240,29 +234,29 @@ mod tests {
         assert_eq!(runner.exec(run), EXIT_CODE_OK);
         assert_eq!(
             runner.stdout(),
-            vec![
+            &[
                 OutputChunk::color(Color::Blue, "abc"),
                 OutputChunk::plain(" -> "),
                 OutputChunk::color(Color::Green, "_abc_\n")
             ]
         );
-        assert_eq!(runner.stderr(), vec![]);
+        assert_eq!(runner.stderr(), &[]);
     }
 
     #[test]
     fn uses_file_name_regex() {
         let runner = TestRunner::new(&["-e", "([0-9]+)", "{1}"], &b"dir01/file02"[..]).unwrap();
         assert_eq!(runner.exec(run), EXIT_CODE_OK);
-        assert_eq!(runner.stdout(), vec![OutputChunk::plain("02\n")]);
-        assert_eq!(runner.stderr(), vec![]);
+        assert_eq!(runner.stdout(), &[OutputChunk::plain("02\n")]);
+        assert_eq!(runner.stderr(), &[]);
     }
 
     #[test]
     fn uses_path_regex() {
         let runner = TestRunner::new(&["-E", "([0-9]+)", "{1}"], &b"dir01/file02"[..]).unwrap();
         assert_eq!(runner.exec(run), EXIT_CODE_OK);
-        assert_eq!(runner.stdout(), vec![OutputChunk::plain("01\n")]);
-        assert_eq!(runner.stderr(), vec![]);
+        assert_eq!(runner.stdout(), &[OutputChunk::plain("01\n")]);
+        assert_eq!(runner.stderr(), &[]);
     }
 
     #[test]
@@ -275,9 +269,9 @@ mod tests {
         assert_eq!(runner.exec(run), EXIT_CODE_OK);
         assert_eq!(
             runner.stdout(),
-            vec![OutputChunk::plain("a/a.2\na/b.5\nb/a.2\nb/b.5\n")]
+            &[OutputChunk::plain("a/a.2\na/b.5\nb/a.2\nb/b.5\n")]
         );
-        assert_eq!(runner.stderr(), vec![]);
+        assert_eq!(runner.stderr(), &[]);
     }
 
     #[test]
@@ -290,8 +284,8 @@ mod tests {
         assert_eq!(runner.exec(run), EXIT_CODE_OK);
         assert_eq!(
             runner.stdout(),
-            vec![OutputChunk::plain("a/a.2\na/b.5\nb/a.8\nb/b.11\n")]
+            &[OutputChunk::plain("a/a.2\na/b.5\nb/a.8\nb/b.11\n")]
         );
-        assert_eq!(runner.stderr(), vec![]);
+        assert_eq!(runner.stderr(), &[]);
     }
 }

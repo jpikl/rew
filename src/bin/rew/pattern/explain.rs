@@ -59,7 +59,7 @@ mod tests {
         let mut output = MemoryOutput::new();
         pattern.explain(&mut output).unwrap();
 
-        assert_eq!(output.chunks(), &vec![]);
+        assert_eq!(output.chunks(), &[]);
     }
 
     #[test]
@@ -98,7 +98,7 @@ mod tests {
 
         assert_eq!(
             output.chunks(),
-            &vec![
+            &[
                 OutputChunk::bold_color(Color::Green, "_"),
                 OutputChunk::plain("{f|t|u}\n"),
                 OutputChunk::bold_color(Color::Green, "^"),
