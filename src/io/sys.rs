@@ -36,3 +36,27 @@ impl<'a> Io<'a> for SystemIo {
         self.stderr.lock()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::{Read, Write};
+
+    #[test]
+    fn io_stdin() {
+        let io = SystemIo::new(ColorChoice::Never);
+        assert!(io.stdin().read_exact(&mut []).is_ok());
+    }
+
+    #[test]
+    fn io_stdout() {
+        let io = SystemIo::new(ColorChoice::Never);
+        assert!(io.stdout().flush().is_ok());
+    }
+
+    #[test]
+    fn io_stderr() {
+        let io = SystemIo::new(ColorChoice::Never);
+        assert!(io.stderr().flush().is_ok());
+    }
+}

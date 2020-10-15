@@ -6,6 +6,7 @@ use std::sync::{Arc, Mutex, MutexGuard};
 use termcolor::{Color, ColorSpec, WriteColor};
 
 pub struct MemoryIo {
+    // Should use ReentrantMutex as std::io but this is enough for testing purposes.
     stdin: Arc<Mutex<MemoryInput>>,
     stdout: Arc<Mutex<MemoryOutput>>,
     stderr: Arc<Mutex<MemoryOutput>>,
@@ -218,5 +219,158 @@ impl fmt::Debug for OutputChunk {
         }
 
         write!(fmt, "{:?})", self.value.replace("\n", "\\n"))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::io::{Input, Output};
+    use std::io::Result;
+
+    #[test]
+    fn io_init() {
+        let io = MemoryIo::new(&[]);
+        assert_eq!(io.stdout_chunks(), &[]);
+        assert_eq!(io.stderr_chunks(), &[]);
+    }
+
+    #[test]
+    fn io_stdin_read() {
+        let io = MemoryIo::new(b"abc");
+        assert_read(&mut io.stdin(), b"abc");
+        assert_eq!(io.stdout_chunks(), &[]);
+        assert_eq!(io.stderr_chunks(), &[]);
+    }
+
+    #[test]
+    fn io_stdin_buf_read() {
+        let io = MemoryIo::new(b"abc");
+        assert_buf_read(&mut io.stdin(), b"abc");
+        assert_eq!(io.stdout_chunks(), &[]);
+        assert_eq!(io.stderr_chunks(), &[]);
+    }
+
+    #[test]
+    fn io_stdout_supports_color() {
+        assert_eq!(MemoryIo::new(&[]).stdout().supports_color(), true);
+    }
+
+    #[test]
+    fn io_stdout_write() {
+        let io = MemoryIo::new(&[]);
+        write_output(&mut io.stdout()).unwrap();
+        assert_output(&io.stdout_chunks());
+        assert_eq!(io.stderr_chunks(), &[]);
+    }
+
+    #[test]
+    fn io_stderr_supports_color() {
+        assert_eq!(MemoryIo::new(&[]).stderr().supports_color(), true);
+    }
+
+    #[test]
+    fn io_stderr_write() {
+        let io = MemoryIo::new(&[]);
+        write_output(&mut io.stderr()).unwrap();
+        assert_output(&io.stderr_chunks());
+        assert_eq!(io.stdout_chunks(), &[]);
+    }
+
+    #[test]
+    fn input_read() {
+        assert_read(&mut MemoryInput::new(b"abc"), b"abc");
+    }
+
+    #[test]
+    fn input_buf_read() {
+        assert_buf_read(&mut MemoryInput::new(b"abc"), b"abc");
+    }
+
+    #[test]
+    fn output_supports_color() {
+        assert_eq!(MemoryOutput::new().supports_color(), true);
+    }
+
+    #[test]
+    fn output_write() {
+        let mut output = MemoryOutput::new();
+        write_output(&mut output).unwrap();
+        assert_output(output.chunks());
+        assert_eq!(output.supports_color(), true);
+    }
+
+    #[test]
+    fn output_chunk_plain() {
+        let chunk = OutputChunk::plain("ab");
+        assert_eq!(chunk.spec, ColorSpec::new());
+        assert_eq!(chunk.value, "ab");
+    }
+
+    #[test]
+    fn output_chunk_color() {
+        let chunk = OutputChunk::color(Color::Red, "cd");
+        assert_eq!(chunk.spec, spec_color(Color::Red));
+        assert_eq!(chunk.value, "cd");
+    }
+
+    #[test]
+    fn output_chunk_bold_color() {
+        let chunk = OutputChunk::bold_color(Color::Blue, "ef");
+        assert_eq!(chunk.spec, spec_bold_color(Color::Blue));
+        assert_eq!(chunk.value, "ef");
+    }
+
+    #[test]
+    fn output_chunk_fmt() {
+        assert_eq!(
+            format!("{:?}", OutputChunk::plain("a\nb")),
+            r#"OutputChunk::plain("a\\nb")"#
+        );
+        assert_eq!(
+            format!("{:?}", OutputChunk::color(Color::Red, "c\nd")),
+            r#"OutputChunk::color(Color::Red, "c\\nd")"#
+        );
+        assert_eq!(
+            format!("{:?}", OutputChunk::bold_color(Color::Blue, "e\nf")),
+            r#"OutputChunk::bold_color(Color::Blue, "e\\nf")"#
+        );
+    }
+
+    fn assert_read<I: Input>(input: &mut I, expected_data: &[u8]) {
+        let mut data = Vec::new();
+        input.read_to_end(&mut data).unwrap();
+        assert_eq!(data, expected_data);
+    }
+
+    fn assert_buf_read<I: Input>(input: &mut I, expected_data: &[u8]) {
+        input.consume(0);
+        assert_eq!(input.fill_buf().unwrap(), expected_data);
+    }
+
+    fn write_output<O: Output>(output: &mut O) -> Result<()> {
+        write!(output, "a")?;
+        write!(output, "b")?;
+        output.set_color(&spec_color(Color::Red))?;
+        write!(output, "c")?;
+        write!(output, "d")?;
+        output.set_color(&spec_bold_color(Color::Blue))?;
+        write!(output, "e")?;
+        write!(output, "f")?;
+        output.reset()?;
+        write!(output, "g")?;
+        output.flush()
+    }
+
+    fn assert_output(chunks: &[OutputChunk]) {
+        assert_eq!(
+            chunks,
+            &[
+                OutputChunk::plain("ab"),
+                OutputChunk::color(Color::Red, "cd"),
+                OutputChunk::bold_color(Color::Blue, "ef"),
+                OutputChunk::plain("g"),
+            ]
+        );
     }
 }
