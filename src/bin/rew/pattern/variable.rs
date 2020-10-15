@@ -160,6 +160,7 @@ impl fmt::Display for Variable {
 mod tests {
     use super::*;
     use crate::pattern::char::Char;
+    use crate::utils::make_non_utf8_os_str;
     use regex::Regex;
     use std::path::Path;
 
@@ -495,19 +496,6 @@ mod tests {
         assert_eq!(Variable::GlobalCounter.to_string(), "Global counter");
         assert_eq!(Variable::RegexCapture(1).to_string(), "Regex capture (1)");
         assert_eq!(Variable::Uuid.to_string(), "UUID");
-    }
-
-    #[cfg(any(unix))]
-    fn make_non_utf8_os_str<'a>() -> &'a OsStr {
-        use std::os::unix::ffi::OsStrExt;
-        OsStr::from_bytes(&[0x66, 0x6f, 0x80, 0x6f][..])
-    }
-
-    #[cfg(windows)]
-    fn make_non_utf8_os_str<'a>() -> &'a OsStr {
-        use std::ffi::OsString;
-        use std::os::windows::prelude::*;
-        OsString::from_wide(&[0x0066, 0x006f, 0xD800, 0x006f][..]).as_os_str()
     }
 
     fn make_context<'a>() -> eval::Context<'a> {

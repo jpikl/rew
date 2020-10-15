@@ -1,5 +1,7 @@
 use common::color::spec_bold_color;
 use common::io::Output;
+#[cfg(test)]
+use std::ffi::OsStr;
 use std::fmt;
 use std::fmt::Debug;
 use std::io::Result;
@@ -48,6 +50,19 @@ pub fn highlight_range<O: Output>(
     output.reset()?;
 
     writeln!(output)
+}
+
+#[cfg(all(test, any(unix)))]
+pub fn make_non_utf8_os_str<'a>() -> &'a OsStr {
+    use std::os::unix::ffi::OsStrExt;
+    OsStr::from_bytes(&[0x66, 0x6f, 0x80, 0x6f][..])
+}
+
+#[cfg(all(test, any(windows)))]
+pub fn make_non_utf8_os_str<'a>() -> &'a OsStr {
+    use std::ffi::OsString;
+    use std::os::windows::prelude::*;
+    OsString::from_wide(&[0x0066, 0x006f, 0xD800, 0x006f][..]).as_os_str()
 }
 
 #[cfg(test)]

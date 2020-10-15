@@ -3,7 +3,7 @@ use std::ffi::OsStr;
 use std::path::Path;
 use std::{error, fmt};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Utf8Error {}
 
 impl error::Error for Utf8Error {}
@@ -43,6 +43,7 @@ fn to_str<S: AsRef<OsStr> + ?Sized>(value: &S) -> Result<&str, Utf8Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::utils::make_non_utf8_os_str;
     use regex::Match;
 
     #[test]
@@ -51,6 +52,15 @@ mod tests {
             Utf8Error {}.to_string(),
             "Input does not have UTF-8 encoding"
         );
+    }
+
+    #[test]
+    fn utf8_error() {
+        let regex = Regex::new("([a-z]+)_([A-Z]+)").unwrap();
+        let result = Solver::FileName(&regex)
+            .eval(&Path::new(make_non_utf8_os_str()))
+            .err();
+        assert_eq!(result, Some(Utf8Error {}));
     }
 
     #[test]
