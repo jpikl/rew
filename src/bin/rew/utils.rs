@@ -1,9 +1,10 @@
 use common::color::spec_bold_color;
+use common::io::Output;
 use std::fmt;
 use std::fmt::Debug;
-use std::io::{Result, Write};
+use std::io::Result;
 use std::ops::Range;
-use termcolor::{Color, WriteColor};
+use termcolor::Color;
 
 #[derive(Debug, Clone)]
 pub struct AnyString(pub String);
@@ -26,25 +27,25 @@ pub trait HasRange {
     fn range(&self) -> &Range<usize>;
 }
 
-pub fn highlight_range<S: Write + WriteColor>(
-    stream: &mut S,
+pub fn highlight_range<O: Output>(
+    output: &mut O,
     string: &str,
     range: &Range<usize>,
     color: Color,
 ) -> Result<()> {
-    write!(stream, "{}", &string[..range.start])?;
-    stream.set_color(&spec_bold_color(color))?;
-    write!(stream, "{}", &string[range.start..range.end])?;
-    stream.reset()?;
-    writeln!(stream, "{}", &string[range.end..])?;
+    write!(output, "{}", &string[..range.start])?;
+    output.set_color(&spec_bold_color(color))?;
+    write!(output, "{}", &string[range.start..range.end])?;
+    output.reset()?;
+    writeln!(output, "{}", &string[range.end..])?;
 
     let spaces_count = string[..range.start].chars().count();
     let markers_count = string[range.start..range.end].chars().count().max(1);
 
-    stream.set_color(&spec_bold_color(color))?;
-    write!(stream, "{}", " ".repeat(spaces_count))?;
-    write!(stream, "{}", "^".repeat(markers_count))?;
-    stream.reset()?;
+    output.set_color(&spec_bold_color(color))?;
+    write!(output, "{}", " ".repeat(spaces_count))?;
+    write!(output, "{}", "^".repeat(markers_count))?;
+    output.reset()?;
 
-    writeln!(stream)
+    writeln!(output)
 }

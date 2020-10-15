@@ -1,4 +1,5 @@
-use std::io::{BufRead, Error, ErrorKind, Result};
+use crate::io::Input;
+use std::io::{Error, ErrorKind, Result};
 
 pub enum Delimiter {
     Newline,
@@ -6,16 +7,16 @@ pub enum Delimiter {
     None,
 }
 
-pub struct Splitter<T: BufRead> {
-    reader: T,
+pub struct Splitter<I: Input> {
+    input: I,
     delimiter: Delimiter,
     buffer: Vec<u8>,
 }
 
-impl<T: BufRead> Splitter<T> {
-    pub fn new(reader: T, delimiter: Delimiter) -> Self {
+impl<I: Input> Splitter<I> {
+    pub fn new(input: I, delimiter: Delimiter) -> Self {
         Self {
-            reader,
+            input,
             delimiter,
             buffer: Vec::new(),
         }
@@ -25,9 +26,9 @@ impl<T: BufRead> Splitter<T> {
         self.buffer.clear();
 
         let result = match self.delimiter {
-            Delimiter::Newline => self.reader.read_until(b'\n', &mut self.buffer),
-            Delimiter::Nul => self.reader.read_until(0, &mut self.buffer),
-            Delimiter::None => self.reader.read_to_end(&mut self.buffer),
+            Delimiter::Newline => self.input.read_until(b'\n', &mut self.buffer),
+            Delimiter::Nul => self.input.read_until(0, &mut self.buffer),
+            Delimiter::None => self.input.read_to_end(&mut self.buffer),
         };
 
         match result {

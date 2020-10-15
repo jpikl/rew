@@ -1,13 +1,14 @@
 use crate::color::spec_color;
+use crate::io::Output;
 use std::error::Error;
-use std::io::{Result, Write};
-use termcolor::{Color, WriteColor};
+use std::io::Result;
+use termcolor::Color;
 
-pub fn write_error<S: Write + WriteColor, E: Error>(stream: &mut S, error: &E) -> Result<()> {
-    stream.set_color(&spec_color(Color::Red))?;
-    write!(stream, "error:")?;
-    stream.reset()?;
-    writeln!(stream, " {}", error)
+pub fn write_error<O: Output, E: Error>(output: &mut O, error: &E) -> Result<()> {
+    output.set_color(&spec_color(Color::Red))?;
+    write!(output, "error:")?;
+    output.reset()?;
+    writeln!(output, " {}", error)
 }
 
 #[cfg(test)]

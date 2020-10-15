@@ -1,10 +1,11 @@
 use crate::utils::{highlight_range, HasRange};
 use common::color::spec_color;
+use common::io::Output;
 use common::output::write_error;
 use std::error::Error;
-use std::io::{Result, Write};
+use std::io::Result;
 use std::path::Path;
-use termcolor::{Color, WriteColor};
+use termcolor::Color;
 
 pub enum PathMode {
     Out(Option<char>),
@@ -12,33 +13,33 @@ pub enum PathMode {
     InOutPretty,
 }
 
-pub struct Paths<S: Write + WriteColor> {
-    stream: S,
+pub struct Paths<O: Output> {
+    output: O,
     mode: PathMode,
 }
 
-impl<S: Write + WriteColor> Paths<S> {
-    pub fn new(stream: S, mode: PathMode) -> Self {
-        Self { stream, mode }
+impl<O: Output> Paths<O> {
+    pub fn new(output: O, mode: PathMode) -> Self {
+        Self { output, mode }
     }
 
     pub fn write(&mut self, input_path: &Path, output_path: &str) -> Result<()> {
         match self.mode {
             PathMode::Out(Some(delimiter)) => {
-                write!(self.stream, "{}{}", output_path, delimiter)?;
+                write!(self.output, "{}{}", output_path, delimiter)?;
                 if delimiter != '\n' {
-                    self.stream.flush()
+                    self.output.flush()
                 } else {
                     Ok(())
                 }
             }
             PathMode::Out(None) => {
-                write!(self.stream, "{}", output_path)?;
-                self.stream.flush()
+                write!(self.output, "{}", output_path)?;
+                self.output.flush()
             }
             PathMode::InOut(Some(delimiter)) => {
                 write!(
-                    self.stream,
+                    self.output,
                     "<{}{}>{}{}",
                     input_path.to_string_lossy(),
                     delimiter,
@@ -46,39 +47,39 @@ impl<S: Write + WriteColor> Paths<S> {
                     delimiter
                 )?;
                 if delimiter != '\n' {
-                    self.stream.flush()
+                    self.output.flush()
                 } else {
                     Ok(())
                 }
             }
             PathMode::InOut(None) => {
                 write!(
-                    self.stream,
+                    self.output,
                     "<{}>{}",
                     input_path.to_string_lossy(),
                     output_path
                 )?;
-                self.stream.flush()
+                self.output.flush()
             }
             PathMode::InOutPretty => {
-                self.stream.set_color(&spec_color(Color::Blue))?;
-                write!(self.stream, "{}", input_path.to_string_lossy())?;
-                self.stream.reset()?;
-                write!(self.stream, " -> ")?;
-                self.stream.set_color(&spec_color(Color::Green))?;
-                writeln!(self.stream, "{}", output_path)
+                self.output.set_color(&spec_color(Color::Blue))?;
+                write!(self.output, "{}", input_path.to_string_lossy())?;
+                self.output.reset()?;
+                write!(self.output, " -> ")?;
+                self.output.set_color(&spec_color(Color::Green))?;
+                writeln!(self.output, "{}", output_path)
             }
         }
     }
 }
 
-pub fn write_pattern_error<S: Write + WriteColor, E: Error + HasRange>(
-    stream: &mut S,
+pub fn write_pattern_error<O: Output, E: Error + HasRange>(
+    output: &mut O,
     error: &E,
     raw_pattern: &str,
 ) -> Result<()> {
-    write_error(stream, error)?;
-    writeln!(stream)?;
-    highlight_range(stream, raw_pattern, error.range(), Color::Red)?;
-    stream.reset()
+    write_error(output, error)?;
+    writeln!(output)?;
+    highlight_range(output, raw_pattern, error.range(), Color::Red)?;
+    output.reset()
 }
