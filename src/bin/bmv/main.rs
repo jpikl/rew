@@ -1,13 +1,12 @@
 use crate::cli::Cli;
-use common::io::Io;
-use common::run::{Result, Runner, EXIT_CODE_OK};
+use common::run::{exec_run, Io, Result, EXIT_CODE_OK};
 
 mod cli;
 
 fn main() {
-    Runner::new().exec(run);
+    exec_run(run);
 }
 
-fn run<'a, IO: Io<'a>>(_cli: &'a Cli, _io: &'a IO) -> Result {
+fn run(_cli: &Cli, _io: &Io) -> Result {
     Ok(EXIT_CODE_OK)
 }

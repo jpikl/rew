@@ -3,13 +3,12 @@ use crate::pattern::parser::Item;
 use crate::pattern::Pattern;
 use crate::utils::highlight_range;
 use common::color::spec_color;
-use common::io::Output;
 use std::fmt::Display;
-use std::io::Result;
-use termcolor::Color;
+use std::io::{Result, Write};
+use termcolor::{Color, WriteColor};
 
 impl Pattern {
-    pub fn explain<O: Output>(&self, output: &mut O) -> Result<()> {
+    pub fn explain<O: Write + WriteColor>(&self, output: &mut O) -> Result<()> {
         for item in &self.items {
             match &item.value {
                 Item::Constant(_) => self.explain_part(output, &item, Color::Green),
@@ -26,7 +25,7 @@ impl Pattern {
         Ok(())
     }
 
-    fn explain_part<O: Output, T: Display>(
+    fn explain_part<O: Write + WriteColor, T: Display>(
         &self,
         output: &mut O,
         part: &Parsed<T>,
@@ -47,7 +46,7 @@ mod tests {
     use crate::pattern::filter::Filter;
     use crate::pattern::parse::Parsed;
     use crate::pattern::variable::Variable;
-    use common::io::mem::{MemoryOutput, OutputChunk};
+    use common::mock::{ColoredOuput, OutputChunk};
 
     #[test]
     fn explain_empty() {
@@ -56,7 +55,7 @@ mod tests {
             items: Vec::new(),
         };
 
-        let mut output = MemoryOutput::new();
+        let mut output = ColoredOuput::new();
         pattern.explain(&mut output).unwrap();
 
         assert_eq!(output.chunks(), &[]);
@@ -93,7 +92,7 @@ mod tests {
             ],
         };
 
-        let mut output = MemoryOutput::new();
+        let mut output = ColoredOuput::new();
         pattern.explain(&mut output).unwrap();
 
         assert_eq!(

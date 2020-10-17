@@ -1,12 +1,11 @@
 use common::color::spec_bold_color;
-use common::io::Output;
 #[cfg(test)]
 use std::ffi::OsStr;
 use std::fmt;
 use std::fmt::Debug;
-use std::io::Result;
+use std::io::{Result, Write};
 use std::ops::Range;
-use termcolor::Color;
+use termcolor::{Color, WriteColor};
 
 #[derive(Debug, Clone)]
 pub struct AnyString(pub String);
@@ -29,7 +28,7 @@ pub trait HasRange {
     fn range(&self) -> &Range<usize>;
 }
 
-pub fn highlight_range<O: Output>(
+pub fn highlight_range<O: Write + WriteColor>(
     output: &mut O,
     string: &str,
     range: &Range<usize>,
@@ -68,7 +67,7 @@ pub fn make_non_utf8_os_str<'a>() -> &'a OsStr {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use common::io::mem::{MemoryOutput, OutputChunk};
+    use common::mock::{ColoredOuput, OutputChunk};
 
     #[test]
     fn any_string_eq() {
@@ -83,7 +82,7 @@ mod tests {
 
     #[test]
     fn highlights_range() {
-        let mut output = MemoryOutput::new();
+        let mut output = ColoredOuput::new();
         highlight_range(&mut output, "abcde", &(1..4), Color::Green).unwrap();
 
         assert_eq!(

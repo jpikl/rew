@@ -2,9 +2,9 @@ use assert_cmd::Command;
 
 #[test]
 fn no_args() {
-    cmd().assert().success();
+    command().assert().success();
 }
 
-fn cmd() -> Command {
+fn command() -> Command {
     Command::cargo_bin("bmv").unwrap()
 }

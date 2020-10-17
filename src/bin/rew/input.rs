@@ -1,15 +1,14 @@
 use common::input::{Delimiter, Splitter};
-use common::io::Input;
-use std::io::Result;
+use std::io::{BufRead, Result};
 use std::path::{Path, PathBuf};
 use std::slice::Iter;
 
-pub enum Paths<'a, I: Input> {
+pub enum Paths<'a, I: BufRead> {
     Args { iter: Iter<'a, PathBuf> },
     Stdin { splitter: Splitter<I> },
 }
 
-impl<'a, I: Input> Paths<'a, I> {
+impl<'a, I: BufRead> Paths<'a, I> {
     pub fn from_args(values: &'a [PathBuf]) -> Self {
         Paths::Args {
             iter: values.iter(),
@@ -33,7 +32,6 @@ impl<'a, I: Input> Paths<'a, I> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use common::io::mem::MemoryInput;
     use std::io::{Error, ErrorKind};
 
     #[test]
@@ -42,7 +40,7 @@ mod tests {
             PathBuf::from(String::from("a")),
             PathBuf::from(String::from("b")),
         ];
-        let mut paths: Paths<MemoryInput> = Paths::from_args(&args);
+        let mut paths: Paths<&[u8]> = Paths::from_args(&args);
         assert_eq!(paths.next().map_err(map_err), Ok(Some(Path::new("a"))));
         assert_eq!(paths.next().map_err(map_err), Ok(Some(Path::new("b"))));
         assert_eq!(paths.next().map_err(map_err), Ok(None));
@@ -50,8 +48,7 @@ mod tests {
 
     #[test]
     fn paths_from_stdin() {
-        let stdin = MemoryInput::new(&b"a\nb"[..]);
-        let mut paths: Paths<MemoryInput> = Paths::from_stdin(stdin, Delimiter::Newline);
+        let mut paths = Paths::from_stdin(&b"a\nb"[..], Delimiter::Newline);
         assert_eq!(paths.next().map_err(map_err), Ok(Some(Path::new("a"))));
         assert_eq!(paths.next().map_err(map_err), Ok(Some(Path::new("b"))));
         assert_eq!(paths.next().map_err(map_err), Ok(None));

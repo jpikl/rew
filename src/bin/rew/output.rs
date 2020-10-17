@@ -1,11 +1,10 @@
 use crate::utils::{highlight_range, HasRange};
 use common::color::spec_color;
-use common::io::Output;
 use common::output::write_error;
 use std::error::Error;
-use std::io::Result;
+use std::io::{Result, Write};
 use std::path::Path;
-use termcolor::Color;
+use termcolor::{Color, WriteColor};
 
 pub enum PathMode {
     Out(Option<char>),
@@ -13,12 +12,12 @@ pub enum PathMode {
     InOutPretty,
 }
 
-pub struct Paths<O: Output> {
+pub struct Paths<O: Write + WriteColor> {
     output: O,
     mode: PathMode,
 }
 
-impl<O: Output> Paths<O> {
+impl<O: Write + WriteColor> Paths<O> {
     pub fn new(output: O, mode: PathMode) -> Self {
         Self { output, mode }
     }
@@ -73,7 +72,7 @@ impl<O: Output> Paths<O> {
     }
 }
 
-pub fn write_pattern_error<O: Output, E: Error + HasRange>(
+pub fn write_pattern_error<O: Write + WriteColor, E: Error + HasRange>(
     output: &mut O,
     error: &E,
     raw_pattern: &str,
@@ -87,13 +86,13 @@ pub fn write_pattern_error<O: Output, E: Error + HasRange>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use common::io::mem::{MemoryOutput, OutputChunk};
+    use common::mock::{ColoredOuput, OutputChunk};
     use std::fmt;
     use std::ops::Range;
 
     #[test]
     fn paths_out_no_separator() {
-        let mut output = MemoryOutput::new();
+        let mut output = ColoredOuput::new();
         let mut paths = Paths::new(&mut output, PathMode::Out(None));
         write_paths(&mut paths);
         assert_eq!(output.chunks(), &[OutputChunk::plain("bd")])
@@ -101,7 +100,7 @@ mod tests {
 
     #[test]
     fn paths_out_newline_separator() {
-        let mut output = MemoryOutput::new();
+        let mut output = ColoredOuput::new();
         let mut paths = Paths::new(&mut output, PathMode::Out(Some('\n')));
         write_paths(&mut paths);
         assert_eq!(output.chunks(), &[OutputChunk::plain("b\nd\n")])
@@ -109,7 +108,7 @@ mod tests {
 
     #[test]
     fn paths_out_null_separator() {
-        let mut output = MemoryOutput::new();
+        let mut output = ColoredOuput::new();
         let mut paths = Paths::new(&mut output, PathMode::Out(Some('\0')));
         write_paths(&mut paths);
         assert_eq!(output.chunks(), &[OutputChunk::plain("b\0d\0")])
@@ -117,7 +116,7 @@ mod tests {
 
     #[test]
     fn paths_in_out_no_separator() {
-        let mut output = MemoryOutput::new();
+        let mut output = ColoredOuput::new();
         let mut paths = Paths::new(&mut output, PathMode::InOut(None));
         write_paths(&mut paths);
         assert_eq!(output.chunks(), &[OutputChunk::plain("<a>b<c>d")])
@@ -125,7 +124,7 @@ mod tests {
 
     #[test]
     fn paths_in_out_newline_separator() {
-        let mut output = MemoryOutput::new();
+        let mut output = ColoredOuput::new();
         let mut paths = Paths::new(&mut output, PathMode::InOut(Some('\n')));
         write_paths(&mut paths);
         assert_eq!(output.chunks(), &[OutputChunk::plain("<a\n>b\n<c\n>d\n")])
@@ -133,7 +132,7 @@ mod tests {
 
     #[test]
     fn paths_in_out_null_separator() {
-        let mut output = MemoryOutput::new();
+        let mut output = ColoredOuput::new();
         let mut paths = Paths::new(&mut output, PathMode::InOut(Some('\0')));
         write_paths(&mut paths);
         assert_eq!(output.chunks(), &[OutputChunk::plain("<a\0>b\0<c\0>d\0")])
@@ -141,7 +140,7 @@ mod tests {
 
     #[test]
     fn paths_in_out_pretty() {
-        let mut output = MemoryOutput::new();
+        let mut output = ColoredOuput::new();
         let mut paths = Paths::new(&mut output, PathMode::InOutPretty);
         write_paths(&mut paths);
         assert_eq!(
@@ -157,7 +156,7 @@ mod tests {
         )
     }
 
-    fn write_paths(paths: &mut Paths<&mut MemoryOutput>) {
+    fn write_paths(paths: &mut Paths<&mut ColoredOuput>) {
         paths.write(&Path::new("a"), "b").unwrap();
         paths.write(&Path::new("c"), "d").unwrap();
     }
@@ -180,7 +179,7 @@ mod tests {
             }
         }
 
-        let mut output = MemoryOutput::new();
+        let mut output = ColoredOuput::new();
         write_pattern_error(&mut output, &CustomError {}, "abcd").unwrap();
 
         assert_eq!(

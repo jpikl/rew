@@ -2,9 +2,8 @@ use crate::cli::Cli;
 use crate::output::write_pattern_error;
 use crate::pattern::{eval, Pattern};
 use common::input::Delimiter as InputDelimiter;
-use common::io::Io;
 use common::output::write_error;
-use common::run::{Result, Runner, EXIT_CODE_OK};
+use common::run::{exec_run, Io, Result, EXIT_CODE_OK};
 use std::env;
 
 mod cli;
@@ -15,19 +14,20 @@ mod pattern;
 mod regex;
 mod utils;
 
-const EXIT_CODE_PARSE_ERROR: i32 = 3;
-const EXIT_CODE_EVAL_ERROR: i32 = 4;
+const EXIT_CODE_PATTERN_PARSE_ERROR: i32 = 3;
+const EXIT_CODE_PATTERN_EVAL_ERROR: i32 = 4;
+const EXIT_CODE_REGEX_EVAL_ERROR: i32 = 5;
 
 fn main() {
-    Runner::new().exec(run);
+    exec_run(run);
 }
 
-fn run<'a, IO: Io<'a>>(cli: &'a Cli, io: &'a IO) -> Result {
+fn run(cli: &Cli, io: &Io) -> Result {
     let pattern = match Pattern::parse(&cli.pattern, cli.escape) {
         Ok(pattern) => pattern,
         Err(error) => {
             write_pattern_error(&mut io.stderr(), &error, &cli.pattern)?;
-            return Ok(EXIT_CODE_PARSE_ERROR);
+            return Ok(EXIT_CODE_PATTERN_PARSE_ERROR);
         }
     };
 
@@ -109,10 +109,10 @@ fn run<'a, IO: Io<'a>>(cli: &'a Cli, io: &'a IO) -> Result {
                 Err(error) => {
                     write_error(&mut io.stderr(), &error)?;
                     if cli.fail_at_end {
-                        exit_code = EXIT_CODE_EVAL_ERROR;
+                        exit_code = EXIT_CODE_REGEX_EVAL_ERROR;
                         continue;
                     } else {
-                        return Ok(EXIT_CODE_EVAL_ERROR);
+                        return Ok(EXIT_CODE_REGEX_EVAL_ERROR);
                     }
                 }
             }
@@ -133,10 +133,10 @@ fn run<'a, IO: Io<'a>>(cli: &'a Cli, io: &'a IO) -> Result {
             Err(error) => {
                 write_pattern_error(&mut io.stderr(), &error, &cli.pattern)?;
                 if cli.fail_at_end {
-                    exit_code = EXIT_CODE_EVAL_ERROR;
+                    exit_code = EXIT_CODE_PATTERN_EVAL_ERROR;
                     continue;
                 } else {
-                    return Ok(EXIT_CODE_EVAL_ERROR);
+                    return Ok(EXIT_CODE_PATTERN_EVAL_ERROR);
                 }
             }
         };
@@ -145,147 +145,4 @@ fn run<'a, IO: Io<'a>>(cli: &'a Cli, io: &'a IO) -> Result {
     }
 
     Ok(exit_code)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use common::io::mem::OutputChunk;
-    use common::run::TestRunner;
-    use termcolor::Color;
-
-    #[test]
-    fn returns_parse_error_code() {
-        let runner = TestRunner::new(&["{"], &[]).unwrap();
-        assert_eq!(runner.exec(run), EXIT_CODE_PARSE_ERROR);
-        assert_eq!(runner.stdout(), &[]);
-        assert_eq!(
-            runner.stderr(),
-            &[
-                OutputChunk::color(Color::Red, "error:"),
-                OutputChunk::plain(" Invalid pattern: Expected variable after \'{\'\n\n{\n "),
-                OutputChunk::bold_color(Color::Red, "^"),
-                OutputChunk::plain("\n"),
-            ]
-        );
-    }
-
-    #[test]
-    fn prints_explanation() {
-        let runner = TestRunner::new(&["--explain", "_"], &[]).unwrap();
-        assert_eq!(runner.exec(run), EXIT_CODE_OK);
-        assert_eq!(
-            runner.stdout(),
-            &[
-                OutputChunk::bold_color(Color::Green, "_"),
-                OutputChunk::plain("\n"),
-                OutputChunk::bold_color(Color::Green, "^"),
-                OutputChunk::plain("\n\n"),
-                OutputChunk::color(Color::Green, "Constant \'_\'"),
-                OutputChunk::plain("\n")
-            ]
-        );
-        assert_eq!(runner.stderr(), &[]);
-    }
-
-    #[test]
-    fn uses_paths_from_args_over_stdin() {
-        let runner = TestRunner::new(&["_{p}_", "123", "456"], &b"abc\ndef"[..]).unwrap();
-        assert_eq!(runner.exec(run), EXIT_CODE_OK);
-        assert_eq!(runner.stdout(), &[OutputChunk::plain("_123_\n_456_\n")]);
-        assert_eq!(runner.stderr(), &[]);
-    }
-
-    #[test]
-    fn reads_prints_lines() {
-        let runner = TestRunner::new(&["_{p}_"], &b"abc\n\0def"[..]).unwrap();
-        assert_eq!(runner.exec(run), EXIT_CODE_OK);
-        assert_eq!(runner.stdout(), &[OutputChunk::plain("_abc_\n_\0def_\n")]);
-        assert_eq!(runner.stderr(), &[]);
-    }
-
-    #[test]
-    fn reads_prints_nulls() {
-        let runner = TestRunner::new(&["-z", "-Z", "_{p}_"], &b"abc\n\0def"[..]).unwrap();
-        assert_eq!(runner.exec(run), EXIT_CODE_OK);
-        assert_eq!(runner.stdout(), &[OutputChunk::plain("_abc\n_\0_def_\0")]);
-        assert_eq!(runner.stderr(), &[]);
-    }
-
-    #[test]
-    fn reads_prints_raw() {
-        let runner = TestRunner::new(&["-r", "-R", "_{p}_"], &b"abc\n\0def"[..]).unwrap();
-        assert_eq!(runner.exec(run), EXIT_CODE_OK);
-        assert_eq!(runner.stdout(), &[OutputChunk::plain("_abc\n\0def_")]);
-        assert_eq!(runner.stderr(), &[]);
-    }
-
-    #[test]
-    fn reads_prints_batch() {
-        let runner = TestRunner::new(&["-b", "_{p}_"], &b"abc"[..]).unwrap();
-        assert_eq!(runner.exec(run), EXIT_CODE_OK);
-        assert_eq!(runner.stdout(), &[OutputChunk::plain("<abc\n>_abc_\n")]);
-        assert_eq!(runner.stderr(), &[]);
-    }
-
-    #[test]
-    fn reads_prints_pretty() {
-        let runner = TestRunner::new(&["-p", "_{p}_"], &b"abc"[..]).unwrap();
-        assert_eq!(runner.exec(run), EXIT_CODE_OK);
-        assert_eq!(
-            runner.stdout(),
-            &[
-                OutputChunk::color(Color::Blue, "abc"),
-                OutputChunk::plain(" -> "),
-                OutputChunk::color(Color::Green, "_abc_\n")
-            ]
-        );
-        assert_eq!(runner.stderr(), &[]);
-    }
-
-    #[test]
-    fn uses_file_name_regex() {
-        let runner = TestRunner::new(&["-e", "([0-9]+)", "{1}"], &b"dir01/file02"[..]).unwrap();
-        assert_eq!(runner.exec(run), EXIT_CODE_OK);
-        assert_eq!(runner.stdout(), &[OutputChunk::plain("02\n")]);
-        assert_eq!(runner.stderr(), &[]);
-    }
-
-    #[test]
-    fn uses_path_regex() {
-        let runner = TestRunner::new(&["-E", "([0-9]+)", "{1}"], &b"dir01/file02"[..]).unwrap();
-        assert_eq!(runner.exec(run), EXIT_CODE_OK);
-        assert_eq!(runner.stdout(), &[OutputChunk::plain("01\n")]);
-        assert_eq!(runner.stderr(), &[]);
-    }
-
-    #[test]
-    fn uses_local_counter() {
-        let runner = TestRunner::new(
-            &["--lc-init=2", "--lc-step=3", "{p}.{c}"],
-            &b"a/a\na/b\nb/a\nb/b"[..],
-        )
-        .unwrap();
-        assert_eq!(runner.exec(run), EXIT_CODE_OK);
-        assert_eq!(
-            runner.stdout(),
-            &[OutputChunk::plain("a/a.2\na/b.5\nb/a.2\nb/b.5\n")]
-        );
-        assert_eq!(runner.stderr(), &[]);
-    }
-
-    #[test]
-    fn uses_global_counter() {
-        let runner = TestRunner::new(
-            &["--gc-init=2", "--gc-step=3", "{p}.{C}"],
-            &b"a/a\na/b\nb/a\nb/b"[..],
-        )
-        .unwrap();
-        assert_eq!(runner.exec(run), EXIT_CODE_OK);
-        assert_eq!(
-            runner.stdout(),
-            &[OutputChunk::plain("a/a.2\na/b.5\nb/a.8\nb/b.11\n")]
-        );
-        assert_eq!(runner.stderr(), &[]);
-    }
 }

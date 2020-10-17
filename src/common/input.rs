@@ -1,5 +1,4 @@
-use crate::io::Input;
-use std::io::{Error, ErrorKind, Result};
+use std::io::{BufRead, Error, ErrorKind, Result};
 
 pub enum Delimiter {
     Newline,
@@ -7,13 +6,13 @@ pub enum Delimiter {
     None,
 }
 
-pub struct Splitter<I: Input> {
+pub struct Splitter<I: BufRead> {
     input: I,
     delimiter: Delimiter,
     buffer: Vec<u8>,
 }
 
-impl<I: Input> Splitter<I> {
+impl<I: BufRead> Splitter<I> {
     pub fn new(input: I, delimiter: Delimiter) -> Self {
         Self {
             input,
