@@ -6,5 +6,5 @@ fn no_args() {
 }
 
 fn command() -> Command {
-    Command::cargo_bin("bmv").unwrap()
+    Command::cargo_bin("cpb").unwrap()
 }

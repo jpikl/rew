@@ -24,12 +24,12 @@ name = "rew"
 path = "src/bin/rew/main.rs"
 
 [[bin]]
-name = "bmv"
-path = "src/bin/bmv/main.rs"
+name = "mvb"
+path = "src/bin/mvb/main.rs"
 
 [[bin]]
-name = "bcp"
-path = "src/bin/bcp/main.rs"
+name = "cpb"
+path = "src/bin/cpb/main.rs"
 
 [lib]
 name = "common"
