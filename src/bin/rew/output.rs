@@ -8,8 +8,8 @@ use termcolor::{Color, WriteColor};
 
 pub enum PathMode {
     Out(Option<char>),
-    InOut(Option<char>),
-    InOutPretty,
+    Diff(Option<char>),
+    Pretty,
 }
 
 pub struct Paths<O: Write + WriteColor> {
@@ -36,7 +36,7 @@ impl<O: Write + WriteColor> Paths<O> {
                 write!(self.output, "{}", output_path)?;
                 self.output.flush()
             }
-            PathMode::InOut(Some(delimiter)) => {
+            PathMode::Diff(Some(delimiter)) => {
                 write!(
                     self.output,
                     "<{}{}>{}{}",
@@ -51,7 +51,7 @@ impl<O: Write + WriteColor> Paths<O> {
                     Ok(())
                 }
             }
-            PathMode::InOut(None) => {
+            PathMode::Diff(None) => {
                 write!(
                     self.output,
                     "<{}>{}",
@@ -60,7 +60,7 @@ impl<O: Write + WriteColor> Paths<O> {
                 )?;
                 self.output.flush()
             }
-            PathMode::InOutPretty => {
+            PathMode::Pretty => {
                 self.output.set_color(&spec_color(Color::Blue))?;
                 write!(self.output, "{}", input_path.to_string_lossy())?;
                 self.output.reset()?;
@@ -115,33 +115,33 @@ mod tests {
     }
 
     #[test]
-    fn paths_in_out_no_separator() {
+    fn paths_diff_no_separator() {
         let mut output = ColoredOuput::new();
-        let mut paths = Paths::new(&mut output, PathMode::InOut(None));
+        let mut paths = Paths::new(&mut output, PathMode::Diff(None));
         write_paths(&mut paths);
         assert_eq!(output.chunks(), &[OutputChunk::plain("<a>b<c>d")])
     }
 
     #[test]
-    fn paths_in_out_newline_separator() {
+    fn paths_diff_newline_separator() {
         let mut output = ColoredOuput::new();
-        let mut paths = Paths::new(&mut output, PathMode::InOut(Some('\n')));
+        let mut paths = Paths::new(&mut output, PathMode::Diff(Some('\n')));
         write_paths(&mut paths);
         assert_eq!(output.chunks(), &[OutputChunk::plain("<a\n>b\n<c\n>d\n")])
     }
 
     #[test]
-    fn paths_in_out_null_separator() {
+    fn paths_diff_null_separator() {
         let mut output = ColoredOuput::new();
-        let mut paths = Paths::new(&mut output, PathMode::InOut(Some('\0')));
+        let mut paths = Paths::new(&mut output, PathMode::Diff(Some('\0')));
         write_paths(&mut paths);
         assert_eq!(output.chunks(), &[OutputChunk::plain("<a\0>b\0<c\0>d\0")])
     }
 
     #[test]
-    fn paths_in_out_pretty() {
+    fn paths_pretty() {
         let mut output = ColoredOuput::new();
-        let mut paths = Paths::new(&mut output, PathMode::InOutPretty);
+        let mut paths = Paths::new(&mut output, PathMode::Pretty);
         write_paths(&mut paths);
         assert_eq!(
             output.chunks(),

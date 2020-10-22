@@ -70,7 +70,7 @@ fn run(cli: &Cli, io: &Io) -> Result {
     };
 
     let output_path_mode = if cli.pretty {
-        output::PathMode::InOutPretty
+        output::PathMode::Pretty
     } else {
         let output_delimiter = if cli.print_raw {
             None
@@ -80,7 +80,7 @@ fn run(cli: &Cli, io: &Io) -> Result {
             Some('\n')
         };
         if cli.batch {
-            output::PathMode::InOut(output_delimiter)
+            output::PathMode::Diff(output_delimiter)
         } else {
             output::PathMode::Out(output_delimiter)
         }
