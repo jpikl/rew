@@ -7,9 +7,13 @@ use termcolor::ColorChoice;
 #[structopt(
     setting(AppSettings::ColoredHelp),
     setting(AppSettings::DeriveDisplayOrder),
-    about = "Batch copy files and directories"
+    about = "Bulk copy files and directories"
 )]
 pub struct Cli {
+    /// Reads items delimited by NUL, not newline
+    #[structopt(short = "z", long)]
+    pub read_nul: bool,
+
     /// When to use colors
     #[structopt(
         long,

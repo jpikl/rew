@@ -1,11 +1,14 @@
-use assert_cmd::Command;
+#[path = "utils.rs"]
+mod utils;
+
 use indoc::indoc;
 use predicates::str::starts_with;
 use std::path::Path;
+use utils::rew;
 
 #[test]
 fn no_args() {
-    command()
+    rew()
         .assert()
         .failure()
         .code(1)
@@ -14,12 +17,12 @@ fn no_args() {
 
 #[test]
 fn no_paths() {
-    command().arg("_").assert().success().stdout("").stderr("");
+    rew().arg("_").assert().success().stdout("").stderr("");
 }
 
 #[test]
 fn explanation() {
-    command()
+    rew()
         .arg("--explain")
         .arg("_")
         .assert()
@@ -35,7 +38,7 @@ fn explanation() {
 
 #[test]
 fn paths_from_args() {
-    command()
+    rew()
         .arg("_{p}_")
         .arg("a")
         .arg("b")
@@ -47,7 +50,7 @@ fn paths_from_args() {
 
 #[test]
 fn paths_from_args_over_stdin() {
-    command()
+    rew()
         .arg("_{p}_")
         .arg("a")
         .arg("b")
@@ -60,7 +63,7 @@ fn paths_from_args_over_stdin() {
 
 #[test]
 fn paths_from_stdin() {
-    command()
+    rew()
         .arg("_{p}_")
         .write_stdin("a\n\0b")
         .assert()
@@ -71,7 +74,7 @@ fn paths_from_stdin() {
 
 #[test]
 fn nul_input_separator() {
-    command()
+    rew()
         .arg("--read-nul")
         .arg("_{p}_")
         .write_stdin("a\n\0b")
@@ -83,7 +86,7 @@ fn nul_input_separator() {
 
 #[test]
 fn nul_output_separator() {
-    command()
+    rew()
         .arg("--print-nul")
         .arg("_{p}_")
         .write_stdin("a\n\0b")
@@ -95,7 +98,7 @@ fn nul_output_separator() {
 
 #[test]
 fn no_input_separator() {
-    command()
+    rew()
         .arg("--read-raw")
         .arg("_{p}_")
         .write_stdin("a\n\0b")
@@ -107,7 +110,7 @@ fn no_input_separator() {
 
 #[test]
 fn no_output_separator() {
-    command()
+    rew()
         .arg("--print-raw")
         .arg("_{p}_")
         .write_stdin("a\n\0b")
@@ -119,7 +122,7 @@ fn no_output_separator() {
 
 #[test]
 fn batch_output() {
-    command()
+    rew()
         .arg("--batch")
         .arg("_{p}_")
         .write_stdin("a\n\0b")
@@ -136,7 +139,7 @@ fn batch_output() {
 
 #[test]
 fn pretty_output() {
-    command()
+    rew()
         .arg("--pretty")
         .arg("_{p}_")
         .write_stdin("a\n\0b")
@@ -151,7 +154,7 @@ fn pretty_output() {
 
 #[test]
 fn file_name_regex() {
-    command()
+    rew()
         .arg("--regex=([0-9]+)")
         .arg("{1}")
         .write_stdin("dir01/file02")
@@ -163,7 +166,7 @@ fn file_name_regex() {
 
 #[test]
 fn path_regex() {
-    command()
+    rew()
         .arg("--regex-full=([0-9]+)")
         .arg("{1}")
         .write_stdin("dir01/file02")
@@ -175,7 +178,7 @@ fn path_regex() {
 
 #[test]
 fn local_counter() {
-    command()
+    rew()
         .arg("--lc-init=2")
         .arg("--lc-step=3")
         .arg("{p}.{c}.{C}")
@@ -198,7 +201,7 @@ fn local_counter() {
 
 #[test]
 fn global_counter() {
-    command()
+    rew()
         .arg("--gc-init=2")
         .arg("--gc-step=3")
         .arg("{p}.{c}.{C}")
@@ -221,7 +224,7 @@ fn global_counter() {
 
 #[test]
 fn pattern_parse_error() {
-    command()
+    rew()
         .arg("{")
         .assert()
         .failure()
@@ -237,7 +240,7 @@ fn pattern_parse_error() {
 
 #[test]
 fn pattern_eval_error() {
-    command()
+    rew()
         .arg("{A}")
         .write_stdin(indoc! {"
             non-existent
@@ -254,7 +257,7 @@ fn pattern_eval_error() {
 
 #[test]
 fn pattern_eval_error_at_end() {
-    command()
+    rew()
         .arg("--fail-at-end")
         .arg("{A}")
         .write_stdin(indoc! {"
@@ -274,8 +277,4 @@ fn pattern_eval_error_at_end() {
         .stderr(starts_with(
             "error: `Canonical path` variable evaluation failed for value 'non-existent':",
         ));
-}
-
-fn command() -> Command {
-    Command::cargo_bin("rew").unwrap()
 }

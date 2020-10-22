@@ -1,6 +1,7 @@
 use crate::utils::{highlight_range, HasRange};
 use common::color::spec_color;
 use common::output::write_error;
+use common::symbols::{DIFF_IN, DIFF_OUT};
 use std::error::Error;
 use std::io::{Result, Write};
 use std::path::Path;
@@ -26,11 +27,7 @@ impl<O: Write + WriteColor> Paths<O> {
         match self.mode {
             PathMode::Out(Some(delimiter)) => {
                 write!(self.output, "{}{}", output_path, delimiter)?;
-                if delimiter != '\n' {
-                    self.output.flush()
-                } else {
-                    Ok(())
-                }
+                self.flush_if_needed(delimiter)
             }
             PathMode::Out(None) => {
                 write!(self.output, "{}", output_path)?;
@@ -39,23 +36,23 @@ impl<O: Write + WriteColor> Paths<O> {
             PathMode::Diff(Some(delimiter)) => {
                 write!(
                     self.output,
-                    "<{}{}>{}{}",
+                    "{}{}{}{}{}{}",
+                    DIFF_IN,
                     input_path.to_string_lossy(),
                     delimiter,
+                    DIFF_OUT,
                     output_path,
                     delimiter
                 )?;
-                if delimiter != '\n' {
-                    self.output.flush()
-                } else {
-                    Ok(())
-                }
+                self.flush_if_needed(delimiter)
             }
             PathMode::Diff(None) => {
                 write!(
                     self.output,
-                    "<{}>{}",
+                    "{}{}{}{}",
+                    DIFF_IN,
                     input_path.to_string_lossy(),
+                    DIFF_OUT,
                     output_path
                 )?;
                 self.output.flush()
@@ -68,6 +65,14 @@ impl<O: Write + WriteColor> Paths<O> {
                 self.output.set_color(&spec_color(Color::Green))?;
                 writeln!(self.output, "{}", output_path)
             }
+        }
+    }
+
+    fn flush_if_needed(&mut self, delimiter: char) -> Result<()> {
+        if delimiter != '\n' {
+            self.output.flush()
+        } else {
+            Ok(())
         }
     }
 }
