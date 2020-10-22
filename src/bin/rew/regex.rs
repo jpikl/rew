@@ -43,7 +43,7 @@ fn to_str<S: AsRef<OsStr> + ?Sized>(value: &S) -> Result<&str, Utf8Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils::make_non_utf8_os_str;
+    use crate::testing::make_non_utf8_os_str;
     use regex::Match;
 
     #[test]

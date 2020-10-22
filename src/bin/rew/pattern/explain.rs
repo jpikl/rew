@@ -46,7 +46,7 @@ mod tests {
     use crate::pattern::filter::Filter;
     use crate::pattern::parse::Parsed;
     use crate::pattern::variable::Variable;
-    use common::mock::{ColoredOuput, OutputChunk};
+    use common::testing::{ColoredOuput, OutputChunk};
 
     #[test]
     fn explain_empty() {

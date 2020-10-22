@@ -13,7 +13,7 @@ pub fn write_error<O: Write + WriteColor, E: Error>(output: &mut O, error: &E) -
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::mock::{ColoredOuput, OutputChunk};
+    use crate::testing::{ColoredOuput, OutputChunk};
     use std::io::{self, ErrorKind};
 
     #[test]

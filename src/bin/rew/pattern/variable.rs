@@ -160,7 +160,8 @@ impl fmt::Display for Variable {
 mod tests {
     use super::*;
     use crate::pattern::char::Char;
-    use crate::utils::make_non_utf8_os_str;
+    use crate::pattern::testing::make_eval_context;
+    use crate::testing::make_non_utf8_os_str;
     use regex::Regex;
     use std::path::Path;
 
@@ -292,7 +293,7 @@ mod tests {
     #[test]
     fn eval_path() {
         assert_eq!(
-            Variable::Path.eval(&make_context()),
+            Variable::Path.eval(&make_eval_context()),
             Ok(String::from("root/parent/file.ext"))
         );
     }
@@ -300,14 +301,14 @@ mod tests {
     #[test]
     fn eval_absolute_path_from_relative() {
         assert_eq!(
-            Variable::AbsolutePath.eval(&make_context()),
+            Variable::AbsolutePath.eval(&make_eval_context()),
             Ok(String::from("current_dir/root/parent/file.ext"))
         );
     }
 
     #[test]
     fn eval_absolute_path_from_absolute() {
-        let mut context = make_context();
+        let mut context = make_eval_context();
         context.path = Path::new(make_absolute_path_str());
 
         assert_eq!(
@@ -321,7 +322,7 @@ mod tests {
         let current_dir = std::env::current_dir().unwrap();
         let file_name = Path::new("Cargo.toml");
 
-        let mut context = make_context();
+        let mut context = make_eval_context();
         context.current_dir = &current_dir;
         context.path = Path::new("Cargo.toml");
 
@@ -334,7 +335,7 @@ mod tests {
     #[test]
     fn eval_canonical_path_error() {
         assert_eq!(
-            Variable::CanonicalPath.eval(&make_context()),
+            Variable::CanonicalPath.eval(&make_eval_context()),
             Err(eval::ErrorKind::CanonicalizationFailed(AnyString(
                 String::from("This string is not compared by assertion")
             )))
@@ -344,7 +345,7 @@ mod tests {
     #[test]
     fn eval_file_name() {
         assert_eq!(
-            Variable::FileName.eval(&make_context()),
+            Variable::FileName.eval(&make_eval_context()),
             Ok(String::from("file.ext"))
         );
     }
@@ -352,7 +353,7 @@ mod tests {
     #[test]
     fn eval_base_name() {
         assert_eq!(
-            Variable::BaseName.eval(&make_context()),
+            Variable::BaseName.eval(&make_eval_context()),
             Ok(String::from("file"))
         );
     }
@@ -360,14 +361,14 @@ mod tests {
     #[test]
     fn eval_extension() {
         assert_eq!(
-            Variable::Extension.eval(&make_context()),
+            Variable::Extension.eval(&make_eval_context()),
             Ok(String::from("ext"))
         );
     }
 
     #[test]
     fn eval_extension_missing() {
-        let mut context = make_context();
+        let mut context = make_eval_context();
         context.path = Path::new("root/parent/file");
         assert_eq!(Variable::Extension.eval(&context), Ok(String::from("")));
     }
@@ -375,14 +376,14 @@ mod tests {
     #[test]
     fn eval_extension_with_dot() {
         assert_eq!(
-            Variable::ExtensionWithDot.eval(&make_context()),
+            Variable::ExtensionWithDot.eval(&make_eval_context()),
             Ok(String::from(".ext"))
         );
     }
 
     #[test]
     fn eval_extension_with_dot_missing() {
-        let mut context = make_context();
+        let mut context = make_eval_context();
         context.path = Path::new("root/parent/file");
         assert_eq!(
             Variable::ExtensionWithDot.eval(&context),
@@ -393,14 +394,14 @@ mod tests {
     #[test]
     fn eval_parent() {
         assert_eq!(
-            Variable::Parent.eval(&make_context()),
+            Variable::Parent.eval(&make_eval_context()),
             Ok(String::from("root/parent"))
         );
     }
 
     #[test]
     fn eval_parent_missing() {
-        let mut context = make_context();
+        let mut context = make_eval_context();
         context.path = Path::new("file.ext");
         assert_eq!(Variable::Parent.eval(&context), Ok(String::new()));
     }
@@ -408,14 +409,14 @@ mod tests {
     #[test]
     fn eval_parent_file_name() {
         assert_eq!(
-            Variable::ParentFileName.eval(&make_context()),
+            Variable::ParentFileName.eval(&make_eval_context()),
             Ok(String::from("parent"))
         );
     }
 
     #[test]
     fn eval_parent_file_name_missing() {
-        let mut context = make_context();
+        let mut context = make_eval_context();
         context.path = Path::new("file.ext");
         assert_eq!(Variable::ParentFileName.eval(&context), Ok(String::new()));
     }
@@ -423,7 +424,7 @@ mod tests {
     #[test]
     fn eval_local_counter() {
         assert_eq!(
-            Variable::LocalCounter.eval(&make_context()),
+            Variable::LocalCounter.eval(&make_eval_context()),
             Ok(String::from("1"))
         );
     }
@@ -431,7 +432,7 @@ mod tests {
     #[test]
     fn eval_global_counter() {
         assert_eq!(
-            Variable::GlobalCounter.eval(&make_context()),
+            Variable::GlobalCounter.eval(&make_eval_context()),
             Ok(String::from("2"))
         );
     }
@@ -439,7 +440,7 @@ mod tests {
     #[test]
     fn eval_regex_capture() {
         assert_eq!(
-            Variable::RegexCapture(1).eval(&make_context()),
+            Variable::RegexCapture(1).eval(&make_eval_context()),
             Ok(String::from("abc"))
         );
     }
@@ -447,14 +448,14 @@ mod tests {
     #[test]
     fn eval_regex_capture_overflow() {
         assert_eq!(
-            Variable::RegexCapture(2).eval(&make_context()),
+            Variable::RegexCapture(2).eval(&make_eval_context()),
             Ok(String::new())
         );
     }
 
     #[test]
     fn eval_uuid() {
-        let uuid = Variable::Uuid.eval(&make_context()).unwrap();
+        let uuid = Variable::Uuid.eval(&make_eval_context()).unwrap();
         let uuid_regex =
             Regex::new("^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$")
                 .unwrap();
@@ -463,7 +464,7 @@ mod tests {
 
     #[test]
     fn eval_input_not_utf8() {
-        let mut context = make_context();
+        let mut context = make_eval_context();
         context.path = Path::new(make_non_utf8_os_str());
         assert_eq!(
             Variable::Path.eval(&context),
@@ -474,7 +475,7 @@ mod tests {
     #[test]
     fn eval_canonicalization_failed() {
         assert_eq!(
-            Variable::CanonicalPath.eval(&make_context()),
+            Variable::CanonicalPath.eval(&make_eval_context()),
             Err(eval::ErrorKind::CanonicalizationFailed(AnyString(
                 String::from("This string is not compared by assertion")
             )))
@@ -496,16 +497,6 @@ mod tests {
         assert_eq!(Variable::GlobalCounter.to_string(), "Global counter");
         assert_eq!(Variable::RegexCapture(1).to_string(), "Regex capture (1)");
         assert_eq!(Variable::Uuid.to_string(), "UUID");
-    }
-
-    fn make_context<'a>() -> eval::Context<'a> {
-        eval::Context {
-            path: Path::new("root/parent/file.ext"),
-            current_dir: Path::new("current_dir"),
-            local_counter: 1,
-            global_counter: 2,
-            regex_captures: Regex::new("(.*)").unwrap().captures("abc"),
-        }
     }
 
     #[cfg(any(unix))]

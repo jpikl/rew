@@ -32,7 +32,7 @@ impl<'a, I: BufRead> Paths<'a, I> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::{Error, ErrorKind};
+    use common::testing::unpack_io_error;
 
     #[test]
     fn paths_from_args() {
@@ -41,20 +41,28 @@ mod tests {
             PathBuf::from(String::from("b")),
         ];
         let mut paths: Paths<&[u8]> = Paths::from_args(&args);
-        assert_eq!(paths.next().map_err(map_err), Ok(Some(Path::new("a"))));
-        assert_eq!(paths.next().map_err(map_err), Ok(Some(Path::new("b"))));
-        assert_eq!(paths.next().map_err(map_err), Ok(None));
+        assert_eq!(
+            paths.next().map_err(unpack_io_error),
+            Ok(Some(Path::new("a")))
+        );
+        assert_eq!(
+            paths.next().map_err(unpack_io_error),
+            Ok(Some(Path::new("b")))
+        );
+        assert_eq!(paths.next().map_err(unpack_io_error), Ok(None));
     }
 
     #[test]
     fn paths_from_stdin() {
         let mut paths = Paths::from_stdin(&b"a\nb"[..], Delimiter::Newline);
-        assert_eq!(paths.next().map_err(map_err), Ok(Some(Path::new("a"))));
-        assert_eq!(paths.next().map_err(map_err), Ok(Some(Path::new("b"))));
-        assert_eq!(paths.next().map_err(map_err), Ok(None));
-    }
-
-    fn map_err(error: Error) -> (ErrorKind, String) {
-        (error.kind(), error.to_string())
+        assert_eq!(
+            paths.next().map_err(unpack_io_error),
+            Ok(Some(Path::new("a")))
+        );
+        assert_eq!(
+            paths.next().map_err(unpack_io_error),
+            Ok(Some(Path::new("b")))
+        );
+        assert_eq!(paths.next().map_err(unpack_io_error), Ok(None));
     }
 }

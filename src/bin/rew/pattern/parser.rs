@@ -204,6 +204,7 @@ mod tests {
     use super::*;
     use crate::pattern::range::Range;
     use crate::pattern::substitution::Substitution;
+    use crate::pattern::testing::make_parsed;
 
     #[test]
     fn item_fmt() {
@@ -214,7 +215,7 @@ mod tests {
 
         assert_eq!(
             (Item::Expression {
-                variable: parsed(Variable::Path),
+                variable: make_parsed(Variable::Path),
                 filters: Vec::new()
             })
             .to_string(),
@@ -223,8 +224,8 @@ mod tests {
 
         assert_eq!(
             (Item::Expression {
-                variable: parsed(Variable::Path),
-                filters: vec![parsed(Filter::ToUppercase)]
+                variable: make_parsed(Variable::Path),
+                filters: vec![make_parsed(Filter::ToUppercase)]
             })
             .to_string(),
             "Expression with a variable and a filter"
@@ -232,16 +233,12 @@ mod tests {
 
         assert_eq!(
             (Item::Expression {
-                variable: parsed(Variable::Path),
-                filters: vec![parsed(Filter::ToUppercase), parsed(Filter::Trim)]
+                variable: make_parsed(Variable::Path),
+                filters: vec![make_parsed(Filter::ToUppercase), make_parsed(Filter::Trim)]
             })
             .to_string(),
             "Expression with a variable and 2 filters"
         );
-    }
-
-    fn parsed<T>(value: T) -> Parsed<T> {
-        Parsed { value, range: 0..0 }
     }
 
     #[test]

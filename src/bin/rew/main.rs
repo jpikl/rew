@@ -12,6 +12,8 @@ mod input;
 mod output;
 mod pattern;
 mod regex;
+#[cfg(test)]
+mod testing;
 mod utils;
 
 const EXIT_CODE_PATTERN_PARSE_ERROR: i32 = 3;

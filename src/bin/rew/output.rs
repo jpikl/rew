@@ -86,7 +86,7 @@ pub fn write_pattern_error<O: Write + WriteColor, E: Error + HasRange>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use common::mock::{ColoredOuput, OutputChunk};
+    use common::testing::{ColoredOuput, OutputChunk};
     use std::fmt;
     use std::ops::Range;
 

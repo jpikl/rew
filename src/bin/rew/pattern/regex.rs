@@ -55,14 +55,11 @@ mod tests {
     }
 
     #[test]
-    fn add_capture_group_brackets() {
-        assert_eq!(super::add_capture_group_brackets("ab"), String::from("ab"));
+    fn adds_capture_group_brackets() {
+        assert_eq!(add_capture_group_brackets("ab"), String::from("ab"));
+        assert_eq!(add_capture_group_brackets("a$1b"), String::from("a${1}b"));
         assert_eq!(
-            super::add_capture_group_brackets("a$1b"),
-            String::from("a${1}b")
-        );
-        assert_eq!(
-            super::add_capture_group_brackets("$1a$12b$123"),
+            add_capture_group_brackets("$1a$12b$123"),
             String::from("${1}a${12}b${123}")
         );
     }

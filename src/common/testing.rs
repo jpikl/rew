@@ -1,7 +1,11 @@
 use crate::color::{spec_bold_color, spec_color};
 use std::fmt;
-use std::io::{Result, Write};
+use std::io::{Error, ErrorKind, Result, Write};
 use termcolor::{Color, ColorSpec, WriteColor};
+
+pub fn unpack_io_error(error: Error) -> (ErrorKind, String) {
+    (error.kind(), error.to_string())
+}
 
 #[derive(Default)]
 pub struct ColoredOuput {
@@ -105,8 +109,16 @@ mod tests {
     use super::*;
 
     #[test]
+    fn unpacks_io_error() {
+        assert_eq!(
+            unpack_io_error(Error::new(ErrorKind::Other, "test")),
+            (ErrorKind::Other, String::from("test"))
+        );
+    }
+
+    #[test]
     fn output_supports_color() {
-        assert_eq!(ColoredOuput::new().supports_color(), true);
+        assert!(ColoredOuput::new().supports_color());
     }
 
     #[test]
