@@ -14,6 +14,10 @@ pub struct Cli {
     #[structopt(short = "z", long)]
     pub read_nul: bool,
 
+    // Explains what is being done
+    #[structopt(short = "v", long)]
+    pub verbose: bool,
+
     /// When to use colors
     #[structopt(
         long,

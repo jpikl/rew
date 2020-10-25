@@ -1,7 +1,7 @@
 use crate::cli::Cli;
 use common::input::{Delimiter, PathDiff};
+use common::output::Log;
 use common::run::{exec_run, Io, Result, EXIT_CODE_OK};
-use std::io::Write;
 
 mod cli;
 
@@ -17,14 +17,13 @@ fn run(cli: &Cli, io: &Io) -> Result {
     };
 
     let mut path_diff = PathDiff::new(io.stdin(), delimiter);
+    let mut log = Log::new(io.stdout());
 
-    while let Some((in_path, out_path)) = path_diff.read()? {
-        writeln!(
-            &mut io.stdout(),
-            "Moving '{}' to '{}'",
-            in_path.to_string_lossy(),
-            out_path.to_string_lossy()
-        )?;
+    while let Some((src_path, dst_path)) = path_diff.read()? {
+        if cli.verbose {
+            log.begin_move(&src_path, &dst_path)?;
+            log.end_with_success()?;
+        }
     }
 
     Ok(EXIT_CODE_OK)

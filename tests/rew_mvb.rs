@@ -14,11 +14,12 @@ fn test() {
         .unwrap();
 
     mvb()
+        .arg("--verbose")
         .write_stdin(rew.stdout)
         .assert()
         .stdout(indoc! {"
-            Moving 'abc' to 'abc.bak'
-            Moving 'def' to 'def.bak'
+            Moving 'abc' to 'abc.bak' ... OK
+            Moving 'def' to 'def.bak' ... OK
         "})
         .stderr("");
 }

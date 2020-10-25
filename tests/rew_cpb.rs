@@ -14,11 +14,12 @@ fn test() {
         .unwrap();
 
     cpb()
+        .arg("--verbose")
         .write_stdin(rew.stdout)
         .assert()
         .stdout(indoc! {"
-            Copying 'abc' to 'abc.bak'
-            Copying 'def' to 'def.bak'
+            Copying 'abc' to 'abc.bak' ... OK
+            Copying 'def' to 'def.bak' ... OK
         "})
         .stderr("");
 }

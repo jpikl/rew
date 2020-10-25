@@ -47,7 +47,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn parse_color_ok() {
+    fn parses_color() {
         assert_eq!(parse_color(COLOR_ALWAYS), Ok(ColorChoice::Always));
         assert_eq!(parse_color(COLOR_ANSI), Ok(ColorChoice::AlwaysAnsi));
         assert_eq!(parse_color(COLOR_AUTO), Ok(ColorChoice::Auto));
@@ -55,13 +55,13 @@ mod tests {
     }
 
     #[test]
-    fn parse_color_err() {
+    fn parses_color_error() {
         assert_eq!(parse_color(""), Err("invalid value"));
         assert_eq!(parse_color("x"), Err("invalid value"));
     }
 
     #[test]
-    fn detect_color_ok() {
+    fn detects_color() {
         let auto_color = if atty::is(atty::Stream::Stdout) {
             ColorChoice::Auto
         } else {
@@ -78,7 +78,7 @@ mod tests {
     }
 
     #[test]
-    fn spec_color_ok() {
+    fn specs_color() {
         assert_eq!(
             &spec_color(Color::Red),
             ColorSpec::new().set_fg(Some(Color::Red))
@@ -86,7 +86,7 @@ mod tests {
     }
 
     #[test]
-    fn spec_bold_color_ok() {
+    fn specs_bold_color() {
         assert_eq!(
             &spec_bold_color(Color::Red),
             ColorSpec::new().set_fg(Some(Color::Red)).set_bold(true)

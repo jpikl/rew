@@ -1,6 +1,7 @@
 #[path = "utils.rs"]
 mod utils;
 
+use indoc::indoc;
 use utils::mvb;
 
 #[test]
@@ -14,7 +15,7 @@ fn line_input_separator() {
         .write_stdin("<abc\n>def")
         .assert()
         .success()
-        .stdout("Moving 'abc' to 'def'\n")
+        .stdout("")
         .stderr("");
 }
 
@@ -25,6 +26,25 @@ fn nul_input_separator() {
         .write_stdin("<abc\0>def")
         .assert()
         .success()
-        .stdout("Moving 'abc' to 'def'\n")
+        .stdout("")
+        .stderr("");
+}
+
+#[test]
+fn verbose_output() {
+    mvb()
+        .arg("--verbose")
+        .write_stdin(indoc! {"
+            <abc
+            >def
+            <ghi
+            >jkl
+        "})
+        .assert()
+        .success()
+        .stdout(indoc! {"
+            Moving 'abc' to 'def' ... OK
+            Moving 'ghi' to 'jkl' ... OK
+        "})
         .stderr("");
 }
