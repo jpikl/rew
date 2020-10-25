@@ -14,7 +14,23 @@ pub struct Cli {
     #[structopt(short = "z", long)]
     pub read_nul: bool,
 
-    // Explains what is being done
+    /// Overrides existing files
+    #[structopt(short = "f", long, conflicts_with = "no-clobber")]
+    pub force: bool,
+
+    /// Does not override existing files
+    #[structopt(short = "n", long, conflicts_with = "force")]
+    pub no_clobber: bool,
+
+    /// Makes parent directories as needed
+    #[structopt(short = "p", long)]
+    pub parents: bool,
+
+    /// Continues after an error, fails at end
+    #[structopt(short = "s", long)]
+    pub fail_at_end: bool,
+
+    /// Explains what is being done
     #[structopt(short = "v", long)]
     pub verbose: bool,
 
