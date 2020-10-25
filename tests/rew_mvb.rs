@@ -7,7 +7,7 @@ use utils::{mvb, rew};
 #[test]
 fn test() {
     let rew = rew()
-        .arg("--batch")
+        .arg("--bulk")
         .arg("{f}.bak")
         .write_stdin("abc\ndef")
         .output()

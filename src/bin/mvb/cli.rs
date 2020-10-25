@@ -7,8 +7,28 @@ use termcolor::ColorChoice;
 #[structopt(
     setting(AppSettings::ColoredHelp),
     setting(AppSettings::DeriveDisplayOrder),
-    about = "Bulk move (rename) files and directories"
+    verbatim_doc_comment
 )]
+/// Bulk move (rename) files and directories.
+///
+/// `mvb` reads instructions from standard input in the following format:
+///
+/// <src_path_1
+/// >dst_path_1
+/// <src_path_2
+/// >dst_path_2
+/// ...
+/// <src_path_N
+/// >dst_path_N
+///
+/// Such input can be generated using accompanying `rew` utility and its `-b, --bulk` flag:
+///
+///   $ find -name '*.txt' | rew -b '{p}.bak' | mvb
+///
+/// By default:
+/// - Attempt to overwrite an existing file will result in error unless `-f, --force` or `n, --no-clobber` flag is used.
+/// - Attempt to move a file to a non-existent directory will result in error unless `-p, --parents` flag is used.
+/// - Attempt to move a non-empty directory between different filesystems will result in error unless `-r, --recursive` flag is used.
 pub struct Cli {
     /// Reads items delimited by NUL, not newline
     #[structopt(short = "z", long)]
@@ -25,6 +45,10 @@ pub struct Cli {
     /// Makes parent directories as needed
     #[structopt(short = "p", long)]
     pub parents: bool,
+
+    /// Move directories recursively between different filesystems
+    #[structopt(short = "r", long)]
+    pub recursive: bool,
 
     /// Continues after an error, fails at end
     #[structopt(short = "s", long)]

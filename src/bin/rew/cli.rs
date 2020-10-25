@@ -9,8 +9,13 @@ use termcolor::ColorChoice;
 #[structopt(
     setting(AppSettings::ColoredHelp),
     setting(AppSettings::DeriveDisplayOrder),
-    about = env!("CARGO_PKG_DESCRIPTION")
+    verbatim_doc_comment
 )]
+/// Rewrite FS paths using a pattern.
+///
+/// Accompanying utilities `mvb` and `cpb` can be used to move/copy files based on `rew` output:
+///
+///   $ find -name '*.txt' | rew -b '{p}.bak' | cpb
 pub struct Cli {
     /// Output pattern
     pub pattern: String,
@@ -37,10 +42,10 @@ pub struct Cli {
 
     /// Prints machine-readable transformations as a results
     #[structopt(short = "b", long, conflicts_with = "pretty")]
-    pub batch: bool,
+    pub bulk: bool,
 
     /// Prints human-readable transformations as a results
-    #[structopt(short = "p", long, conflicts_with = "batch")]
+    #[structopt(short = "p", long, conflicts_with = "bulk")]
     pub pretty: bool,
 
     /// Continues after a path processing error, fails at end

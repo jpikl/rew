@@ -79,7 +79,7 @@ fn run(cli: &Cli, io: &Io) -> Result {
         } else {
             Some('\n')
         };
-        if cli.batch {
+        if cli.bulk {
             output::PathMode::Diff(output_delimiter)
         } else {
             output::PathMode::Out(output_delimiter)

@@ -121,9 +121,9 @@ fn no_output_separator() {
 }
 
 #[test]
-fn batch_output() {
+fn bulk_output() {
     rew()
-        .arg("--batch")
+        .arg("--bulk")
         .arg("_{p}_")
         .write_stdin("a\n\0b")
         .assert()

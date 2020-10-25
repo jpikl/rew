@@ -49,6 +49,10 @@ impl<O: Write + WriteColor> Log<O> {
         self.end_action(Color::Red, "FAILED")
     }
 
+    pub fn end_with_skip(&mut self) -> Result<()> {
+        self.end_action(Color::Yellow, "SKIPPED")
+    }
+
     pub fn end_action(&mut self, color: Color, result: &str) -> Result<()> {
         self.output.set_color(&spec_color(color))?;
         write!(self.output, "{}", result)?;
@@ -137,6 +141,19 @@ pub mod tests {
             output.chunks(),
             &[
                 OutputChunk::color(Color::Red, "FAILED"),
+                OutputChunk::plain("\n")
+            ]
+        );
+    }
+
+    #[test]
+    fn log_ends_with_skip() {
+        let mut output = ColoredOuput::new();
+        Log::new(&mut output).end_with_skip().unwrap();
+        assert_eq!(
+            output.chunks(),
+            &[
+                OutputChunk::color(Color::Yellow, "SKIPPED"),
                 OutputChunk::plain("\n")
             ]
         );
