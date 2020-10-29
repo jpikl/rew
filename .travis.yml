@@ -1,7 +1,8 @@
 language: rust
 
 before_install:
-  - curl -L https://github.com/mozilla/grcov/releases/latest/download/grcov-linux-x86_64.tar.bz2 | tar jxf -
+  - curl -L https://github.com/mozilla/grcov/releases/latest/download/grcov-linux-x86_64.tar.bz2 | tar -jxf -
+  - curl -L https://github.com/Kogia-sima/rust-covfix/releases/download/v0.2.1/rust-covfix-linux-x86_64.tar.xz | tar -Jxf - rust-covfix-linux-x86_64/rust-covfix --strip-components=1
 
 matrix:
   include:
@@ -9,14 +10,4 @@ matrix:
       rust: nightly
 
 script:
-  - export CARGO_INCREMENTAL=0
-  - export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort"
-  - export RUSTDOCFLAGS="-Cpanic=abort"
-  - cargo build --verbose $CARGO_OPTIONS
-  - cargo test --verbose $CARGO_OPTIONS
-  - |
-    zip -0 ccov.zip `find . \( -name "rew*.gc*" \) -print`;
-    ./grcov ccov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore "/*" --excl-br-line "^\s*((debug_)?assert(_eq|_ne)?!|#\[derive\()" -o lcov.info;
-    bash <(curl -s https://codecov.io/bash) -f lcov.info;
-
-
+  - ./ccov.sh ci
