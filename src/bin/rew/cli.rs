@@ -24,35 +24,35 @@ pub struct Cli {
     #[clap(value_name = "path")]
     pub paths: Vec<PathBuf>,
 
-    /// Reads paths delimited by NUL, not newline
+    /// Read paths delimited by NUL, not newline
     #[clap(short = 'z', long, conflicts_with = "read-raw")]
     pub read_nul: bool,
 
-    /// Reads the whole input as a single path
+    /// Read the whole input as a single path
     #[clap(short = 'r', long, conflicts_with = "read-nul")]
     pub read_raw: bool,
 
-    /// Prints results delimited by NUL, not newline
+    /// Print results delimited by NUL, not newline
     #[clap(short = 'Z', long, conflicts_with = "print-raw")]
     pub print_nul: bool,
 
-    /// Prints results without any delimiter
+    /// Print results without any delimiter
     #[clap(short = 'R', long, conflicts_with = "print-nul")]
     pub print_raw: bool,
 
-    /// Prints machine-readable transformations as a results
+    /// Print machine-readable transformations as a results
     #[clap(short = 'b', long, conflicts_with = "pretty")]
     pub bulk: bool,
 
-    /// Prints human-readable transformations as a results
+    /// Print human-readable transformations as a results
     #[clap(short = 'p', long, conflicts_with = "bulk")]
     pub pretty: bool,
 
-    /// Continues after a path processing error, fails at end
+    /// Continue after a path processing error, fail at end
     #[clap(short = 's', long)]
     pub fail_at_end: bool,
 
-    /// Prints explanation of a given pattern
+    /// Print explanation of a given pattern
     #[clap(long)]
     pub explain: bool,
 

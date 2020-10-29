@@ -35,31 +35,31 @@ use termcolor::ColorChoice;
 ///
 /// Attempt to copy a non-empty directory will result in error unless `-r, --recursive` flag is used.
 pub struct Cli {
-    /// Reads instructions delimited by NUL, not newline
+    /// Read instructions delimited by NUL, not newline
     #[clap(short = 'z', long)]
     pub read_nul: bool,
 
-    /// Overrides existing files
+    /// Override existing files
     #[clap(short = 'f', long, conflicts_with = "no-clobber")]
     pub force: bool,
 
-    /// Does not override existing files
+    /// Do not override existing files
     #[clap(short = 'n', long, conflicts_with = "force")]
     pub no_clobber: bool,
 
-    /// Makes parent directories as needed
+    /// Make parent directories as needed
     #[clap(short = 'p', long)]
     pub parents: bool,
 
-    /// Copies directories recursively
+    /// Copy directories recursively
     #[clap(short = 'r', long)]
     pub recursive: bool,
 
-    /// Continues after an error, fails at end
+    /// Continue after an error, fail at end
     #[clap(short = 's', long)]
     pub fail_at_end: bool,
 
-    /// Explains what is being done
+    /// Explain what is being done
     #[clap(short = 'v', long)]
     pub verbose: bool,
 
