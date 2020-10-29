@@ -1,17 +1,17 @@
 use crate::color::detect_color;
 use crate::output::write_error;
+use clap::Clap;
 use std::io::{Stdin, StdinLock};
 use std::{io, process};
-use structopt::StructOpt;
 use termcolor::{ColorChoice, StandardStream, StandardStreamLock};
 
 pub const EXIT_CODE_OK: i32 = 0;
-pub const EXIT_CODE_CLI_ERROR: i32 = 1;
-pub const EXIT_CODE_IO_ERROR: i32 = 2;
+pub const EXIT_CODE_IO_ERROR: i32 = 1;
+pub const EXIT_CODE_CLI_ERROR: i32 = 2;
 
 pub type Result = io::Result<i32>;
 
-pub trait Cli: StructOpt {
+pub trait Cli: Clap {
     fn color(&self) -> Option<ColorChoice>;
 }
 
@@ -48,7 +48,7 @@ where
     C: Cli,
     R: FnOnce(&C, &Io) -> Result,
 {
-    let cli = C::from_args();
+    let cli = C::parse();
     let color = detect_color(cli.color());
     let io = Io::new(color);
 

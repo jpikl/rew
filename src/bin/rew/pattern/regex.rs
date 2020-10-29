@@ -24,7 +24,7 @@ impl fmt::Display for RegexHolder {
 
 pub fn add_capture_group_brackets(string: &str) -> Cow<str> {
     if string.contains('$') {
-        CAPTURE_GROUP_VAR_REGEX.replace_all(string, r"${${1}}")
+        CAPTURE_GROUP_VAR_REGEX.replace_all(string, r"$${${1}}")
     } else {
         Cow::Borrowed(string)
     }

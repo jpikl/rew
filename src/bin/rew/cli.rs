@@ -1,12 +1,12 @@
+use clap::{AppSettings, Clap};
 use common::color::{parse_color, COLOR_VALUES};
 use common::run;
 use regex::Regex;
 use std::path::PathBuf;
-use structopt::{clap::AppSettings, StructOpt};
 use termcolor::ColorChoice;
 
-#[derive(Debug, StructOpt)]
-#[structopt(
+#[derive(Debug, Clap)]
+#[clap(
     setting(AppSettings::ColoredHelp),
     setting(AppSettings::DeriveDisplayOrder),
     verbatim_doc_comment
@@ -21,71 +21,71 @@ pub struct Cli {
     pub pattern: String,
 
     /// Paths to rewrite (read from stdin by default)
-    #[structopt(value_name = "path")]
+    #[clap(value_name = "path")]
     pub paths: Vec<PathBuf>,
 
     /// Reads paths delimited by NUL, not newline
-    #[structopt(short = "z", long, conflicts_with = "read-raw")]
+    #[clap(short = 'z', long, conflicts_with = "read-raw")]
     pub read_nul: bool,
 
     /// Reads the whole input as a single path
-    #[structopt(short = "r", long, conflicts_with = "read-nul")]
+    #[clap(short = 'r', long, conflicts_with = "read-nul")]
     pub read_raw: bool,
 
     /// Prints results delimited by NUL, not newline
-    #[structopt(short = "Z", long, conflicts_with = "print-raw")]
+    #[clap(short = 'Z', long, conflicts_with = "print-raw")]
     pub print_nul: bool,
 
     /// Prints results without any delimiter
-    #[structopt(short = "R", long, conflicts_with = "print-null")]
+    #[clap(short = 'R', long, conflicts_with = "print-nul")]
     pub print_raw: bool,
 
     /// Prints machine-readable transformations as a results
-    #[structopt(short = "b", long, conflicts_with = "pretty")]
+    #[clap(short = 'b', long, conflicts_with = "pretty")]
     pub bulk: bool,
 
     /// Prints human-readable transformations as a results
-    #[structopt(short = "p", long, conflicts_with = "bulk")]
+    #[clap(short = 'p', long, conflicts_with = "bulk")]
     pub pretty: bool,
 
     /// Continues after a path processing error, fails at end
-    #[structopt(short = "s", long)]
+    #[clap(short = 's', long)]
     pub fail_at_end: bool,
 
     /// Prints explanation of a given pattern
-    #[structopt(long)]
+    #[clap(long)]
     pub explain: bool,
 
     /// Regular expression matched against file name
-    #[structopt(short = "e", long)]
+    #[clap(short = 'e', long)]
     pub regex: Option<Regex>,
 
     /// Regular expression matched against path
-    #[structopt(short = "E", long, value_name = "regex")]
+    #[clap(short = 'E', long, value_name = "regex")]
     pub regex_full: Option<Regex>,
 
     /// Global counter initial value
-    #[structopt(long, value_name = "number")]
+    #[clap(long, value_name = "number")]
     pub gc_init: Option<u32>,
 
     /// Global counter step
-    #[structopt(long, value_name = "number")]
+    #[clap(long, value_name = "number")]
     pub gc_step: Option<u32>,
 
     /// Local counter initial value
-    #[structopt(long, value_name = "number")]
+    #[clap(long, value_name = "number")]
     pub lc_init: Option<u32>,
 
     /// Local counter step
-    #[structopt(long, value_name = "number")]
+    #[clap(long, value_name = "number")]
     pub lc_step: Option<u32>,
 
     /// Custom escape character to use in pattern
-    #[structopt(long, value_name = "char")]
+    #[clap(long, value_name = "char")]
     pub escape: Option<char>,
 
     /// When to use colors
-    #[structopt(
+    #[clap(
         long,
         value_name = "when",
         possible_values = COLOR_VALUES,
@@ -106,12 +106,12 @@ mod tests {
 
     #[test]
     fn init() {
-        assert!(Cli::from_iter_safe(&["cmd", "pattern"]).is_ok());
+        assert!(Cli::try_parse_from(&["cmd", "pattern"]).is_ok());
     }
 
     #[test]
     fn color() {
-        let cli = Cli::from_iter_safe(&["cmd", "pattern", "--color=always"]).unwrap();
+        let cli = Cli::try_parse_from(&["cmd", "pattern", "--color=always"]).unwrap();
         assert_eq!(run::Cli::color(&cli), Some(ColorChoice::Always));
     }
 }

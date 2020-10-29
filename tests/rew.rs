@@ -11,7 +11,7 @@ fn no_args() {
     rew()
         .assert()
         .failure()
-        .code(1)
+        .code(2)
         .stderr(starts_with("error:"));
 }
 
