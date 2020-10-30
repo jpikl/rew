@@ -17,7 +17,7 @@ main() {
 setup_environment() {
   print_header "SETING UP ENVIRONMENT"
 
-  readonly MODE=${1-}
+  readonly MODE=${1-dev}
 
   readonly GRCOV=$(detect_binary grcov)
   readonly RUST_COVFIX=$(detect_binary rust-covfix)
@@ -36,24 +36,27 @@ setup_environment() {
 
   print_var MODE
   echo
-
   print_var GRCOV
   print_var RUST_COVFIX
   echo
-
   print_var SOURCE_DIR
   print_var TARGET_DIR
   echo
-
   print_var COV_DIR
   print_var COV_INPUT
   print_var COV_OUTPUT
   print_var COV_REPORT_DIR
   echo
-
   print_var CARGO_INCREMENTAL
   print_var RUSTFLAGS
   print_var RUSTDOCFLAGS
+
+  print_header "TOOL VERSIONS"
+
+  cargo +nightly --version
+  $GRCOV --version
+  printf "rust-covfix "
+  $RUST_COVFIX --version
 }
 
 detect_binary() {
@@ -67,25 +70,20 @@ detect_binary() {
 }
 
 build_and_test() {
-  if [[ $MODE == ci ]]; then
-    local options=(--verbose)
-  else
-    local options=()
-  fi
-
   print_header "CARGO CLEAN"
-  cargo +nightly clean "${options[@]}"
+  cargo +nightly clean
 
   print_header "CARGO BUILD"
-  cargo +nightly build "${options[@]}"
+  cargo +nightly build
 
   print_header "CARGO TEST"
-  cargo +nightly test "${options[@]}"
+  cargo +nightly test
 }
 
 generate_coverage() {
   print_header "PREPARING COVERAGE INPUT"
 
+  rm -rf $COV_DIR
   mkdir -p $COV_DIR
   zip -0 $COV_INPUT $TARGET_DIR/deps/{rew,cpb,mvb}*.{gcda,gcno}
 
@@ -98,12 +96,11 @@ generate_coverage() {
   --ignore-not-existing \
   --ignore "/*" \
   --ignore "tests/*" \
-  --output-type lcov \
   --output-path $COV_OUTPUT
 
   print_header "FIXING COVERAGE OUTPUT"
 
-  $RUST_COVFIX --output $COV_OUTPUT $COV_OUTPUT
+  $RUST_COVFIX --verbose --output $COV_OUTPUT $COV_OUTPUT
 }
 
 upload_coverage() {
@@ -118,6 +115,7 @@ report_coverage() {
     --legend \
     --highlight \
     --show-details \
+    --prefix "$(realpath src)" \
     --ignore-errors source \
     --output-directory $COV_REPORT_DIR
 
