@@ -30,12 +30,6 @@ setup_environment() {
   readonly COV_OUTPUT=$COV_DIR/cov.info
   readonly COV_REPORT_DIR=$COV_DIR/report
 
-  if [[ $MODE == ci ]]; then
-    CARGO_OPTIONS="${CARGO_OPTIONS} --verbose"
-  else
-    CARGO_OPTIONS=""
-  fi
-
   export CARGO_INCREMENTAL=0
   export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort"
   export RUSTDOCFLAGS="-Cpanic=abort"
@@ -57,7 +51,6 @@ setup_environment() {
   print_var COV_REPORT_DIR
   echo
 
-  print_var CARGO_OPTIONS
   print_var CARGO_INCREMENTAL
   print_var RUSTFLAGS
   print_var RUSTDOCFLAGS
@@ -74,17 +67,20 @@ detect_binary() {
 }
 
 build_and_test() {
+  if [[ $MODE == ci ]]; then
+    local options=(--verbose)
+  else
+    local options=()
+  fi
+
   print_header "CARGO CLEAN"
-  # shellcheck disable=SC2086
-  cargo +nightly clean $CARGO_OPTIONS
+  cargo +nightly clean "${options[@]}"
 
   print_header "CARGO BUILD"
-  # shellcheck disable=SC2086
-  cargo +nightly build $CARGO_OPTIONS
+  cargo +nightly build "${options[@]}"
 
   print_header "CARGO TEST"
-  # shellcheck disable=SC2086
-  cargo +nightly test $CARGO_OPTIONS
+  cargo +nightly test "${options[@]}"
 }
 
 generate_coverage() {
