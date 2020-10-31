@@ -1,6 +1,7 @@
 use clap::{AppSettings, Clap};
 use common::color::{parse_color, COLOR_VALUES};
-use common::run;
+use common::run::Options;
+use common::transfer::TransferOptions;
 use termcolor::ColorChoice;
 
 #[derive(Debug, Clap)]
@@ -55,9 +56,23 @@ pub struct Cli {
     pub color: Option<ColorChoice>,
 }
 
-impl run::Cli for Cli {
+impl Options for Cli {
     fn color(&self) -> Option<ColorChoice> {
         self.color
+    }
+}
+
+impl TransferOptions for Cli {
+    fn read_nul(&self) -> bool {
+        self.read_nul
+    }
+
+    fn verbose(&self) -> bool {
+        self.verbose
+    }
+
+    fn fail_at_end(&self) -> bool {
+        self.fail_at_end
     }
 }
 
@@ -67,12 +82,12 @@ mod tests {
 
     #[test]
     fn init() {
-        assert!(Cli::try_parse_from(&["cmd"]).is_ok());
+        assert!(Cli::try_parse_from(&["cpb"]).is_ok());
     }
 
     #[test]
     fn color() {
-        let cli = Cli::try_parse_from(&["cmd", "--color=always"]).unwrap();
-        assert_eq!(run::Cli::color(&cli), Some(ColorChoice::Always));
+        let cli = Cli::try_parse_from(&["cpb", "--color=always"]).unwrap();
+        assert_eq!(Options::color(&cli), Some(ColorChoice::Always));
     }
 }

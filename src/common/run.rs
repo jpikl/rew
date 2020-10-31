@@ -11,7 +11,7 @@ pub const EXIT_CODE_CLI_ERROR: i32 = 2;
 
 pub type Result = io::Result<i32>;
 
-pub trait Cli: Clap {
+pub trait Options: Clap {
     fn color(&self) -> Option<ColorChoice>;
 }
 
@@ -43,16 +43,16 @@ impl Io {
     }
 }
 
-pub fn exec_run<C, R>(run: R)
+pub fn exec_run<O, R>(run: R)
 where
-    C: Cli,
-    R: FnOnce(&C, &Io) -> Result,
+    O: Options,
+    R: FnOnce(&O, &Io) -> Result,
 {
-    let cli = C::parse();
-    let color = detect_color(cli.color());
+    let options = O::parse();
+    let color = detect_color(options.color());
     let io = Io::new(color);
 
-    let exit_code = match run(&cli, &io) {
+    let exit_code = match run(&options, &io) {
         Ok(exit_code) => exit_code,
         Err(io_error) => {
             write_error(&mut io.stderr(), &io_error).expect("Failed to write to stderr!");

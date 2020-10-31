@@ -1,6 +1,6 @@
 use clap::{AppSettings, Clap};
 use common::color::{parse_color, COLOR_VALUES};
-use common::run;
+use common::run::Options;
 use regex::Regex;
 use std::path::PathBuf;
 use termcolor::ColorChoice;
@@ -94,7 +94,7 @@ pub struct Cli {
     pub color: Option<ColorChoice>,
 }
 
-impl run::Cli for Cli {
+impl Options for Cli {
     fn color(&self) -> Option<ColorChoice> {
         self.color
     }
@@ -106,12 +106,12 @@ mod tests {
 
     #[test]
     fn init() {
-        assert!(Cli::try_parse_from(&["cmd", "pattern"]).is_ok());
+        assert!(Cli::try_parse_from(&["rew", "pattern"]).is_ok());
     }
 
     #[test]
     fn color() {
-        let cli = Cli::try_parse_from(&["cmd", "pattern", "--color=always"]).unwrap();
-        assert_eq!(run::Cli::color(&cli), Some(ColorChoice::Always));
+        let cli = Cli::try_parse_from(&["rew", "pattern", "--color=always"]).unwrap();
+        assert_eq!(Options::color(&cli), Some(ColorChoice::Always));
     }
 }
