@@ -1,10 +1,20 @@
 use crate::color::{spec_bold_color, spec_color};
+use fs_extra::error as fse;
 use std::fmt;
 use std::io::{Error, ErrorKind, Result, Write};
 use termcolor::{Color, ColorSpec, WriteColor};
 
 pub fn unpack_io_error(error: Error) -> (ErrorKind, String) {
     (error.kind(), error.to_string())
+}
+
+pub fn unpack_fse_error(error: fse::Error) -> (String, String) {
+    let message = error.to_string();
+    (debug_fse_error_kind(error.kind), message)
+}
+
+pub fn debug_fse_error_kind(error_kind: fse::ErrorKind) -> String {
+    format!("ErrorKind::{:?}", error_kind)
 }
 
 #[derive(Default)]

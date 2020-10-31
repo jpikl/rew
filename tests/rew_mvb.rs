@@ -4,7 +4,7 @@ mod utils;
 use indoc::indoc;
 use utils::{mvb, rew};
 
-#[test]
+//TODO #[test]
 fn test() {
     let rew = rew()
         .arg("--bulk")
