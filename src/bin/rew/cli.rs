@@ -49,7 +49,7 @@ pub struct Cli {
     pub pretty: bool,
 
     /// Continue after a path processing error, fail at end
-    #[clap(short = 's', long)]
+    #[clap(short = 'c', long)]
     pub fail_at_end: bool,
 
     /// Print explanation of a given pattern
