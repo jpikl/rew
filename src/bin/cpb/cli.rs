@@ -90,4 +90,22 @@ mod tests {
         let cli = Cli::try_parse_from(&["cpb", "--color=always"]).unwrap();
         assert_eq!(Options::color(&cli), Some(ColorChoice::Always));
     }
+
+    #[test]
+    fn read_nul() {
+        let cli = Cli::try_parse_from(&["cpb", "--read-nul"]).unwrap();
+        assert_eq!(TransferOptions::read_nul(&cli), true);
+    }
+
+    #[test]
+    fn verbose() {
+        let cli = Cli::try_parse_from(&["cpb", "--verbose"]).unwrap();
+        assert_eq!(TransferOptions::verbose(&cli), true);
+    }
+
+    #[test]
+    fn fail_at_end() {
+        let cli = Cli::try_parse_from(&["cpb", "--fail-at-end"]).unwrap();
+        assert_eq!(TransferOptions::fail_at_end(&cli), true);
+    }
 }
