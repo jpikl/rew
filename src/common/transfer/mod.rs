@@ -5,3 +5,5 @@ mod fs;
 mod input;
 mod output;
 mod run;
+#[cfg(test)]
+mod testing;

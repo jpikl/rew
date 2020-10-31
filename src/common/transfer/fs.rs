@@ -96,13 +96,13 @@ fn get_dir_copy_options() -> dir::CopyOptions {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::testing::{debug_fse_error_kind, unpack_fse_error};
+    use crate::transfer::testing::{debug_fse_error_kind, unpack_fse_error};
     use assert_fs::prelude::*;
     use assert_fs::{NamedTempFile, TempDir};
     use fs_extra::error::ErrorKind;
 
     #[test]
-    fn dir_and_file_have_same_copy_options() {
+    fn same_dir_and_file_copy_options() {
         assert_eq!(DIR_COPY_OPTIONS.overwrite, FILE_COPY_OPTIONS.overwrite);
         assert_eq!(DIR_COPY_OPTIONS.skip_exist, FILE_COPY_OPTIONS.skip_exist);
         assert_eq!(DIR_COPY_OPTIONS.buffer_size, FILE_COPY_OPTIONS.buffer_size);
