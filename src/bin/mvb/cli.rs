@@ -28,35 +28,15 @@ use common::run;
 ///
 /// Each pair of source and destination path must be either both files or both directories. Mixing these types will result in error.
 ///
-/// Source path must always exist, destination path may not. Using non-existent source path will result in error.
+/// Source path must exist. Using non-existent source path will result in error.
 ///
-/// Attempt to overwrite an existing file will result in error unless `-f, --force` or `n, --no-clobber` flag is used.
+/// Destination path may exist. Existing destination file will be overwritten. Existing destination directory will have its contents merged with contents of source directory.
 ///
-/// Attempt to use a non-existent parent directory in destination path will result in error unless `-p, --parents` flag is used.
-///
-/// Attempt to move a non-empty directory between different filesystems will result in error unless `-r, --recursive` flag is used.
-///
-/// Attempt to merge two different non-empty directories will result in error unless `-r, --recursive` flag is used.
+/// Missing parent directories in destination path will be created as needed.
 pub struct Cli {
     /// Read instructions delimited by NUL, not newline
     #[clap(short = 'z', long)]
     pub read_nul: bool,
-
-    /// Override existing files
-    #[clap(short = 'f', long, conflicts_with = "no-clobber")]
-    pub force: bool,
-
-    /// Do not override existing files
-    #[clap(short = 'n', long, conflicts_with = "force")]
-    pub no_clobber: bool,
-
-    /// Make parent directories as needed
-    #[clap(short = 'p', long)]
-    pub parents: bool,
-
-    /// Move directories between different filesystems / merge non-empty directories
-    #[clap(short = 'r', long)]
-    pub recursive: bool,
 
     /// Continue after an error, fail at end
     #[clap(short = 's', long)]
