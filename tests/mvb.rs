@@ -26,7 +26,6 @@ fn line_input_separator() {
         .stderr("");
 
     src_file.assert(predicates::path::missing());
-    dst_file.assert(predicates::path::is_file());
     dst_file.assert("1");
 }
 
@@ -47,12 +46,60 @@ fn nul_input_separator() {
         .stderr("");
 
     src_file.assert(predicates::path::missing());
-    dst_file.assert(predicates::path::is_file());
     dst_file.assert("1");
 }
 
 #[test]
-fn verbose_output_success() {
+fn fail_immediately() {
+    let dir = TempDir::new().unwrap();
+    let src_file_1 = dir.child("a1");
+    let src_file_2 = dir.child("a2");
+    src_file_2.write_str("2").unwrap();
+    let dst_file_1 = dir.child("b1");
+    let dst_file_2 = dir.child("b2");
+
+    mvb()
+        .current_dir(dir.path())
+        .write_stdin("<a1\n>b1\n<a2\n>b2")
+        .assert()
+        .failure()
+        .code(1)
+        .stdout("")
+        .stderr("error: Path 'a1' not found or user lacks permission\n");
+
+    src_file_1.assert(predicates::path::missing());
+    src_file_2.assert("2");
+    dst_file_1.assert(predicates::path::missing());
+    dst_file_2.assert(predicates::path::missing());
+}
+
+#[test]
+fn fail_at_end() {
+    let dir = TempDir::new().unwrap();
+    let src_file_1 = dir.child("a1");
+    let src_file_2 = dir.child("a2");
+    src_file_2.write_str("2").unwrap();
+    let dst_file_1 = dir.child("b1");
+    let dst_file_2 = dir.child("b2");
+
+    mvb()
+        .current_dir(dir.path())
+        .arg("--fail-at-end")
+        .write_stdin("<a1\n>b1\n<a2\n>b2")
+        .assert()
+        .failure()
+        .code(1)
+        .stdout("")
+        .stderr("error: Path 'a1' not found or user lacks permission\n");
+
+    src_file_1.assert(predicates::path::missing());
+    src_file_2.assert(predicates::path::missing());
+    dst_file_1.assert(predicates::path::missing());
+    dst_file_2.assert("2");
+}
+
+#[test]
+fn verbose_output() {
     let dir = TempDir::new().unwrap();
     let src_file = dir.child("a");
     src_file.write_str("1").unwrap();
@@ -68,7 +115,6 @@ fn verbose_output_success() {
         .stderr("");
 
     src_file.assert(predicates::path::missing());
-    dst_file.assert(predicates::path::is_file());
     dst_file.assert("1");
 }
 
@@ -90,4 +136,55 @@ fn verbose_output_error() {
 
     src_file.assert(predicates::path::missing());
     dst_file.assert(predicates::path::missing());
+}
+
+#[test]
+fn verbose_output_fail_immediately() {
+    let dir = TempDir::new().unwrap();
+    let src_file_1 = dir.child("a1");
+    let src_file_2 = dir.child("a2");
+    src_file_2.write_str("2").unwrap();
+    let dst_file_1 = dir.child("b1");
+    let dst_file_2 = dir.child("b2");
+
+    mvb()
+        .current_dir(dir.path())
+        .arg("--verbose")
+        .write_stdin("<a1\n>b1\n<a2\n>b2")
+        .assert()
+        .failure()
+        .code(1)
+        .stdout("Moving 'a1' to 'b1' ... FAILED\n")
+        .stderr("error: Path 'a1' not found or user lacks permission\n");
+
+    src_file_1.assert(predicates::path::missing());
+    src_file_2.assert("2");
+    dst_file_1.assert(predicates::path::missing());
+    dst_file_2.assert(predicates::path::missing());
+}
+
+#[test]
+fn verbose_output_fail_at_end() {
+    let dir = TempDir::new().unwrap();
+    let src_file_1 = dir.child("a1");
+    let src_file_2 = dir.child("a2");
+    src_file_2.write_str("2").unwrap();
+    let dst_file_1 = dir.child("b1");
+    let dst_file_2 = dir.child("b2");
+
+    mvb()
+        .current_dir(dir.path())
+        .arg("--verbose")
+        .arg("--fail-at-end")
+        .write_stdin("<a1\n>b1\n<a2\n>b2")
+        .assert()
+        .failure()
+        .code(1)
+        .stdout("Moving 'a1' to 'b1' ... FAILED\nMoving 'a2' to 'b2' ... OK\n")
+        .stderr("error: Path 'a1' not found or user lacks permission\n");
+
+    src_file_1.assert(predicates::path::missing());
+    src_file_2.assert(predicates::path::missing());
+    dst_file_1.assert(predicates::path::missing());
+    dst_file_2.assert("2");
 }

@@ -27,8 +27,6 @@ fn test() {
         .stdout("Copying 'a' to 'b' ... OK\n")
         .stderr("");
 
-    src_file.assert(predicates::path::is_file());
     src_file.assert("1");
-    dst_file.assert(predicates::path::is_file());
     dst_file.assert("1");
 }

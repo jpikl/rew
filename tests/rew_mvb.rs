@@ -28,6 +28,5 @@ fn test() {
         .stderr("");
 
     src_file.assert(predicates::path::missing());
-    dst_file.assert(predicates::path::is_file());
     dst_file.assert("1");
 }
