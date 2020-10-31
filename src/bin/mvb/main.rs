@@ -9,5 +9,5 @@ fn main() {
 }
 
 fn run(cli: &Cli, io: &Io) -> Result {
-    run_transfer(cli, io, TransferMode::Copy)
+    run_transfer(cli, io, TransferMode::Move)
 }

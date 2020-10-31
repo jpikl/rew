@@ -30,7 +30,7 @@ where
             log.begin_transfer(mode, &src_path, &dst_path)?;
         }
 
-        match transfer_path(&src_path, &dst_path, TransferMode::Move) {
+        match transfer_path(&src_path, &dst_path, mode) {
             Ok(()) => {
                 if options.verbose() {
                     log.end_with_success()?;

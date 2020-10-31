@@ -1,7 +1,8 @@
 #[path = "utils.rs"]
 mod utils;
 
-use indoc::indoc;
+use assert_fs::prelude::*;
+use assert_fs::TempDir;
 use utils::cpb;
 
 #[test]
@@ -9,42 +10,87 @@ fn no_args() {
     cpb().assert().success();
 }
 
-//TODO #[test]
+#[test]
 fn line_input_separator() {
+    let dir = TempDir::new().unwrap();
+    let src_file = dir.child("a");
+    src_file.write_str("1").unwrap();
+    let dst_file = dir.child("b");
+
     cpb()
-        .write_stdin("<abc\n>def")
+        .current_dir(dir.path())
+        .write_stdin("<a\n>b")
         .assert()
         .success()
         .stdout("")
         .stderr("");
+
+    src_file.assert(predicates::path::is_file());
+    src_file.assert("1");
+    dst_file.assert(predicates::path::is_file());
+    dst_file.assert("1");
 }
 
-//TODO #[test]
+#[test]
 fn nul_input_separator() {
+    let dir = TempDir::new().unwrap();
+    let src_file = dir.child("a");
+    src_file.write_str("1").unwrap();
+    let dst_file = dir.child("b");
+
     cpb()
+        .current_dir(dir.path())
         .arg("--read-nul")
-        .write_stdin("<abc\0>def")
+        .write_stdin("<a\0>b")
         .assert()
         .success()
         .stdout("")
         .stderr("");
+
+    src_file.assert(predicates::path::is_file());
+    src_file.assert("1");
+    dst_file.assert(predicates::path::is_file());
+    dst_file.assert("1");
 }
 
-//TODO #[test]
-fn verbose_output() {
+#[test]
+fn verbose_output_success() {
+    let dir = TempDir::new().unwrap();
+    let src_file = dir.child("a");
+    src_file.write_str("1").unwrap();
+    let dst_file = dir.child("b");
+
     cpb()
+        .current_dir(dir.path())
         .arg("--verbose")
-        .write_stdin(indoc! {"
-            <abc
-            >def
-            <ghi
-            >jkl
-        "})
+        .write_stdin("<a\n>b")
         .assert()
         .success()
-        .stdout(indoc! {"
-            Copying 'abc' to 'def' ... OK
-            Copying 'ghi' to 'jkl' ... OK
-        "})
+        .stdout("Copying 'a' to 'b' ... OK\n")
         .stderr("");
+
+    src_file.assert(predicates::path::is_file());
+    src_file.assert("1");
+    dst_file.assert(predicates::path::is_file());
+    dst_file.assert("1");
+}
+
+#[test]
+fn verbose_output_error() {
+    let dir = TempDir::new().unwrap();
+    let src_file = dir.child("a");
+    let dst_file = dir.child("b");
+
+    cpb()
+        .current_dir(dir.path())
+        .arg("--verbose")
+        .write_stdin("<a\n>b")
+        .assert()
+        .failure()
+        .code(1)
+        .stdout("Copying 'a' to 'b' ... FAILED\n")
+        .stderr("error: Path 'a' not found or user lacks permission\n");
+
+    src_file.assert(predicates::path::missing());
+    dst_file.assert(predicates::path::missing());
 }
