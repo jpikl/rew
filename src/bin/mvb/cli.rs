@@ -15,17 +15,17 @@ use common::transfer::TransferOptions;
 ///
 /// `mvb` reads instructions from standard input in the following format:
 ///
-/// <src_path_1
-/// >dst_path_1
-/// <src_path_2
-/// >dst_path_2
-/// ...
-/// <src_path_N
-/// >dst_path_N
+///     <src_path_1
+///     >dst_path_1
+///     <src_path_2
+///     >dst_path_2
+///     ...
+///     <src_path_N
+///     >dst_path_N
 ///
 /// Such input can be generated using accompanying `rew` utility and its `-b, --bulk` flag:
 ///
-///   $ find -name '*.txt' | rew -b '{p}.bak' | mvb
+///     $ find -name '*.txt' | rew -b '{p}.bak' | mvb
 ///
 /// Each pair of source and destination path must be either both files or both directories. Mixing these types will result in error.
 ///
