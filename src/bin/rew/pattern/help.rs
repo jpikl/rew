@@ -1,11 +1,15 @@
 use indoc::indoc;
 use std::io::{Result, Write};
 
-const PATTERN_HELP: &str = indoc! {"
+const PATTERN_HELP: &str = indoc! {r#"
 PATTERN SYNTAX
 ==============
 
 Pattern is a string describing how to generate output from an input.
+
+Use `--explain` flag to print detailed explanation what a certain pattern does.
+
+    $ rew --explain 'file_{c|<000}.{e}'
 
 By default, pattern characters are directly copied to output.
 
@@ -27,7 +31,7 @@ Expression `{v|f1|f2|...}` is made of a variable `v` and zero or more filters `f
     
 Use `--help-vars` flag to print variable reference.
 Use `--help-filters` flag to print filter reference.
-
+    
 Character `#` starts an escape sequence.
 
     SEQUENCE    DESCRIPTION
@@ -39,9 +43,12 @@ Character `#` starts an escape sequence.
     #|          Escaped `|`
     #}          Escaped `{`
     ##          Escaped `#`
+    
+Use `--escape` option to set a different escape character.
 
-Use `--escape <char>` option to set a different escape character.
-"};
+    $ rew '{p|r:#t: }'
+    $ rew '{p|r:\t: }' --escape='\'
+"#};
 
 const VARIABLES_HELP: &str = indoc! {"
 VARIABLE REFERENCE
@@ -102,8 +109,8 @@ Local counter `c` is incremented per directory.
     b/2                 2
     a/2                 2
     
-Option `-e, --regex <regex>` matches regular expression against filename.
-Option `-E, --regex-full <regex>` matches regular expression against whole path.
+Use `-e, --regex` option to match regular expression against filename.
+Use `-E, --regex-full` option to match regular expression against whole path.
 The matched capture groups can be referenced using `1`, `2`, ...
 
     INPUT      OPTION             PATTERN    OUTPUT
