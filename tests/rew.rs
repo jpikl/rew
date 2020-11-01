@@ -32,6 +32,7 @@ fn explanation() {
             ^
             
             Constant '_'
+            
         "})
         .stderr("");
 }

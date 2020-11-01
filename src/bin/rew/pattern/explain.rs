@@ -36,7 +36,7 @@ impl Pattern {
         output.set_color(&spec_color(color))?;
         write!(output, "{}", part.value)?;
         output.reset()?;
-        writeln!(output)
+        write!(output, "\n\n")
     }
 }
 
@@ -103,31 +103,31 @@ mod tests {
                 OutputChunk::bold_color(Color::Green, "^"),
                 OutputChunk::plain("\n\n"),
                 OutputChunk::color(Color::Green, "Constant '_'"),
-                OutputChunk::plain("\n_"),
+                OutputChunk::plain("\n\n_"),
                 OutputChunk::bold_color(Color::Yellow, "{f|t|u}"),
                 OutputChunk::plain("\n "),
                 OutputChunk::bold_color(Color::Yellow, "^^^^^^^"),
                 OutputChunk::plain("\n\n"),
                 OutputChunk::color(Color::Yellow, "Expression with a variable and 2 filters"),
-                OutputChunk::plain("\n_{"),
+                OutputChunk::plain("\n\n_{"),
                 OutputChunk::bold_color(Color::Blue, "f"),
                 OutputChunk::plain("|t|u}\n  "),
                 OutputChunk::bold_color(Color::Blue, "^"),
                 OutputChunk::plain("\n\n"),
                 OutputChunk::color(Color::Blue, "File name"),
-                OutputChunk::plain("\n_{f|"),
+                OutputChunk::plain("\n\n_{f|"),
                 OutputChunk::bold_color(Color::Magenta, "t"),
                 OutputChunk::plain("|u}\n    "),
                 OutputChunk::bold_color(Color::Magenta, "^"),
                 OutputChunk::plain("\n\n"),
                 OutputChunk::color(Color::Magenta, "Trim"),
-                OutputChunk::plain("\n_{f|t|"),
+                OutputChunk::plain("\n\n_{f|t|"),
                 OutputChunk::bold_color(Color::Magenta, "u"),
                 OutputChunk::plain("}\n      "),
                 OutputChunk::bold_color(Color::Magenta, "^"),
                 OutputChunk::plain("\n\n"),
                 OutputChunk::color(Color::Magenta, "To uppercase"),
-                OutputChunk::plain("\n")
+                OutputChunk::plain("\n\n")
             ]
         );
     }
