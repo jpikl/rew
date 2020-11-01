@@ -18,7 +18,7 @@ pub enum Variable {
     BaseName,
     Extension,
     ExtensionWithDot,
-    Parent,
+    ParentPath,
     ParentFileName,
     LocalCounter,
     GlobalCounter,
@@ -49,7 +49,7 @@ impl Variable {
                 'b' => Ok(Variable::BaseName),
                 'e' => Ok(Variable::Extension),
                 'E' => Ok(Variable::ExtensionWithDot),
-                'd' => Ok(Variable::Parent),
+                'd' => Ok(Variable::ParentPath),
                 'D' => Ok(Variable::ParentFileName),
                 'c' => Ok(Variable::LocalCounter),
                 'C' => Ok(Variable::GlobalCounter),
@@ -89,7 +89,7 @@ impl Variable {
                 Ok(string)
             }
 
-            Self::Parent => opt_to_string(context.path.parent()),
+            Self::ParentPath => opt_to_string(context.path.parent()),
             Self::ParentFileName => opt_to_string(context.path.parent().and_then(Path::file_name)),
             Self::LocalCounter => Ok(context.local_counter.to_string()),
             Self::GlobalCounter => Ok(context.global_counter.to_string()),
@@ -146,7 +146,7 @@ impl fmt::Display for Variable {
             Self::BaseName => write!(formatter, "Base name"),
             Self::Extension => write!(formatter, "Extension"),
             Self::ExtensionWithDot => write!(formatter, "Extension with dot"),
-            Self::Parent => write!(formatter, "Parent"),
+            Self::ParentPath => write!(formatter, "Parent path"),
             Self::ParentFileName => write!(formatter, "Parent file name"),
             Self::LocalCounter => write!(formatter, "Local counter"),
             Self::GlobalCounter => write!(formatter, "Global counter"),
@@ -202,7 +202,7 @@ mod tests {
 
     #[test]
     fn parse_parent() {
-        assert_eq!(parse("d"), Ok(Variable::Parent));
+        assert_eq!(parse("d"), Ok(Variable::ParentPath));
     }
 
     #[test]
@@ -392,18 +392,18 @@ mod tests {
     }
 
     #[test]
-    fn eval_parent() {
+    fn eval_parent_path() {
         assert_eq!(
-            Variable::Parent.eval(&make_eval_context()),
+            Variable::ParentPath.eval(&make_eval_context()),
             Ok(String::from("root/parent"))
         );
     }
 
     #[test]
-    fn eval_parent_missing() {
+    fn eval_parent_path_missing() {
         let mut context = make_eval_context();
         context.path = Path::new("file.ext");
-        assert_eq!(Variable::Parent.eval(&context), Ok(String::new()));
+        assert_eq!(Variable::ParentPath.eval(&context), Ok(String::new()));
     }
 
     #[test]
@@ -491,7 +491,7 @@ mod tests {
         assert_eq!(Variable::BaseName.to_string(), "Base name");
         assert_eq!(Variable::Extension.to_string(), "Extension");
         assert_eq!(Variable::ExtensionWithDot.to_string(), "Extension with dot");
-        assert_eq!(Variable::Parent.to_string(), "Parent");
+        assert_eq!(Variable::ParentPath.to_string(), "Parent path");
         assert_eq!(Variable::ParentFileName.to_string(), "Parent file name");
         assert_eq!(Variable::LocalCounter.to_string(), "Local counter");
         assert_eq!(Variable::GlobalCounter.to_string(), "Global counter");
