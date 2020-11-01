@@ -13,6 +13,39 @@ use termcolor::ColorChoice;
 )]
 /// Rewrite FS paths using a pattern.
 ///
+/// Pattern is a string describing how to generate output from an input.
+///
+/// By default, characters from pattern are directly copied to output.
+///
+///     INPUT    PATTERN    OUTPUT
+///     *        abc        abc
+///
+/// Characters between '{' and '}' form an expresion which it is evaluated against input.
+///
+///     INPUT       PATTERN    OUTPUT
+///     file.txt    {b}        file       # Basename
+///     file.txt    new.{e}    new.txt    # Extension
+///
+/// Expression '{v|f1|f2|...}' is made of a variable 'v' and zero or more filters f1, f2, ..., separated by '|'.
+///
+///     INPUT       PATTERN          OUTPUT
+///     img.JPEG    new.{b}          new.JPEG    # Basename
+///     img.JPEG    new.{b|l}        new.jpeg    # Basename + Lowercase
+///     img.JPEG    new.{b|l|r:e}    new.jpg     # Basename + Lowercase + Remove 'e'
+///
+/// Characters '{', '|', '}' can be escaped using '#'.
+///
+///     INPUT         PATTERN                 OUTPUT
+///     file.txt    #{not_expression#}.{b}    {not_expression}.txt
+///
+/// Variable reference:
+///
+///     TODO
+///
+/// Filter reference:
+///
+///     TODO
+///
 /// Accompanying utilities `mvb` and `cpb` can be used to move/copy files based on `rew` output:
 ///
 ///   $ find -name '*.txt' | rew -b '{p}.bak' | cpb
