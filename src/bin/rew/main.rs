@@ -1,6 +1,6 @@
 use crate::cli::Cli;
 use crate::output::write_pattern_error;
-use crate::pattern::{eval, Pattern};
+use crate::pattern::{eval, help, Pattern};
 use common::input::Delimiter as InputDelimiter;
 use common::output::write_error;
 use common::run::{exec_run, Io, Result, EXIT_CODE_OK};
@@ -25,17 +25,32 @@ fn main() {
 }
 
 fn run(cli: &Cli, io: &Io) -> Result {
-    let pattern = match Pattern::parse(&cli.pattern, cli.escape) {
+    if cli.help_pattern {
+        help::write_pattern_help(&mut io.stdout())?;
+        return Ok(EXIT_CODE_OK);
+    }
+
+    if cli.help_vars {
+        help::write_variables_help(&mut io.stdout())?;
+        return Ok(EXIT_CODE_OK);
+    }
+
+    if cli.help_filters {
+        help::write_filters_help(&mut io.stdout())?;
+        return Ok(EXIT_CODE_OK);
+    }
+
+    let pattern = match Pattern::parse(cli.pattern(), cli.escape) {
         Ok(pattern) => pattern,
         Err(error) => {
-            write_pattern_error(&mut io.stderr(), &error, &cli.pattern)?;
+            write_pattern_error(&mut io.stderr(), &error, cli.pattern())?;
             return Ok(EXIT_CODE_PATTERN_PARSE_ERROR);
         }
     };
 
     if cli.explain {
         pattern.explain(&mut io.stdout())?;
-        return Ok(0);
+        return Ok(EXIT_CODE_OK);
     }
 
     let global_counter_used = pattern.uses_global_counter();
@@ -133,7 +148,7 @@ fn run(cli: &Cli, io: &Io) -> Result {
         let output_path = match pattern.eval(&context) {
             Ok(path) => path,
             Err(error) => {
-                write_pattern_error(&mut io.stderr(), &error, &cli.pattern)?;
+                write_pattern_error(&mut io.stderr(), &error, cli.pattern())?;
                 if cli.fail_at_end {
                     exit_code = EXIT_CODE_PATTERN_EVAL_ERROR;
                     continue;

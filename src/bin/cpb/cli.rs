@@ -10,7 +10,7 @@ use termcolor::ColorChoice;
     setting(AppSettings::DeriveDisplayOrder),
     verbatim_doc_comment
 )]
-/// Bulk copy files and directories.
+/// Bulk copy files and directories
 ///
 /// `cpb` reads instructions from standard input in the following format:
 ///
@@ -45,6 +45,14 @@ pub struct Cli {
     /// Explain what is being done
     #[clap(short = 'v', long)]
     pub verbose: bool,
+
+    /// Print help information
+    #[clap(short = 'h', long)]
+    pub help: bool,
+
+    /// Print version information
+    #[clap(long)]
+    pub version: bool,
 
     /// When to use colors
     #[clap(
