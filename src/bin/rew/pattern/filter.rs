@@ -25,11 +25,12 @@ pub enum Filter {
     RightPad(String),
     Default(String),
     // TODO ExternalCommand
-    //  - Passed through cli option: `--extern='realpath {}' --extern='tr a b'`
-    //  - Filter references its number: `{p|e1|e2}`.
+    //  - Passed through `-x, --exec <command>` cli option.
+    //  - Filter references its number `{p|x1|x2}`.
+    //  - Number in filter can be omitted, `x` is same as `x1`,
     //  - Modes:
-    //    a) Spawn for every path, pass value as its argument: `realpath {}`.
-    //    b) Spawn once, values paths separated by LF or NUL through its stdin/stdout: `tr a b`.
+    //    a) Spawn for every path, pass value as its argument: `-x 'realpath {}'`.
+    //    b) Spawn once, values paths separated by LF or NUL through its stdin/stdout: `-x 'tr a b'`.
     //  - Mode a) is chosen over b) when `{}` value placeholder is used within command.
 }
 
