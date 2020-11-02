@@ -81,19 +81,19 @@ Use `-Z, --print-nul` flag to print results separated by NUL character.
 rew -Z '{f}' | xargs -0 echo # When paths contain newlines
 ```
 
-Use `-R, --print-raw` to print results without any delimiter.
+Use `-R, --print-raw` flag to print results without any delimiter.
 
 ```bash
 rew -r '{f};' # Use semicolon as our own delimiter
 ```
 
-Use `-p, --pretty` to print nicely formatted transformations.
+Use `-p, --pretty` flag to print nicely formatted transformations.
 
 ```bash
-rew -p '{f}' # Formatted as "src_path -> dst_path"
+rew -p '{f}' # Output formatted as "src_path -> dst_path"
 ```
 
-Use `-b, --bulk` to print transformations in the following format.
+Use `-b, --bulk` flag to print transformations in the following format.
 
 ```text
 <src_path_1
@@ -111,7 +111,13 @@ Such output can be processed by accompanying `mvb`  and `cpb` utilities to perfo
 rew -b '{p}.bak' | cpb # Make backup copy of each file
 ```
 
-The previous example can be also achieved using standard `cp` command in less efficient way.
+The `-b, --bulk` flag can be combined with `-Z, --print-nul` or `-R, --print-raw`.
+
+```bash
+rew -bZ '{p}.bak' | cpb -z # When paths contain newlines
+```
+
+Bulk copy can be also achieved using standard `cp` command in less efficient way.
 
 ```bash
 rew 'cp "{p}" "{p}.bak"' | sh # Generate code and execute it
