@@ -16,7 +16,7 @@ By default, pattern characters are directly copied to output.
     INPUT    PATTERN    OUTPUT
     *        abc        abc
 
-Characters between `{` and `}` form an expresion which it is evaluated against input.
+Characters between `{` and `}` form an expression which it is evaluated against input.
 
     INPUT       PATTERN    OUTPUT     EXPRESSION DESCRIPTION
     file.txt    {b}        file       Base name
@@ -28,10 +28,10 @@ Expression `{v|f1|f2|...}` is made of a variable `v` and zero or more filters `f
     img.JPEG    new.{e}          new.JPEG    Extension
     img.JPEG    new.{e|l}        new.jpeg    Extension + Lowercase
     img.JPEG    new.{e|l|r:e}    new.jpg     Extension + Lowercase + Remove `e`
-    
+
 Use `--help-vars` flag to print variable reference.
 Use `--help-filters` flag to print filter reference.
-    
+
 Character `#` starts an escape sequence.
 
     SEQUENCE    DESCRIPTION
@@ -43,11 +43,11 @@ Character `#` starts an escape sequence.
     #|          Escaped `|`
     #}          Escaped `{`
     ##          Escaped `#`
-    
+
 Use `--escape` option to set a different escape character.
 
-    $ rew '{p|r:#t: }'
-    $ rew '{p|r:\t: }' --escape='\'
+    $ rew '{p|R:#t: }'              # Replace tabs by spaces in path
+    $ rew '{p|R:\t: }' --escape='\' # Same thing, different escape character
 "#};
 
 const VARIABLES_HELP: &str = indoc! {"
@@ -66,8 +66,8 @@ VARIABLE REFERENCE
     D           Parent file name.
     c           Local counter.
     C           Global counter.
-    1, 2, ...   Regex capture group N.
     u           Randomly generated UUID (v4).
+    1, 2, ...   Regex capture group N.
 
 EXAMPLES
 ========
@@ -81,7 +81,7 @@ Let us assume the following directory structure:
         │       └── notes.txt
         |
         └── bob <-- current working directory
-       
+
     INPUT                      PATTERN    OUTPUT
     ../alice/docs/notes.txt    {p}        ../alice/dir/notes.txt
     ../alice/docs/notes.txt    {a}        /home/bob/../alice/dir/notes.txt
@@ -95,27 +95,18 @@ Let us assume the following directory structure:
 
 Global counter `C` is incremented for every input.
 
-    INPUT    PATTERN    OUTPUT
-    a/1      {C}        1
-    b/1                 2
-    b/2                 3
-    a/2                 4
+    INPUT    GLOBAL    LOCAL
+    a/x      1         1
+    a/y      2         2
+    b/x      3         1
+    b/y      4         2
 
-Local counter `c` is incremented per directory.
-
-    INPUT    PATTERN    OUTPUT
-    a/1      {c}        1
-    b/1                 1
-    b/2                 2
-    a/2                 2
-    
 Use `-e, --regex` option to match regular expression against filename.
 Use `-E, --regex-full` option to match regular expression against whole path.
 The matched capture groups can be referenced using `1`, `2`, ...
 
-    INPUT      OPTION             PATTERN    OUTPUT
-    a/b/c.d    -e '^(.).*(.)$'    {1}_{2}    c_d
-    a/b/c.d    -E '^(.).*(.)$'    {1}_{2}    a_d
+    $ rew -e '([0-9]+)' '{1}' # Print the first number in filename
+    $ rew -E '([0-9]+)' '{1}' # Print the first number in whole path
 "};
 
 const FILTERS_HELP: &str = indoc! {"
@@ -126,7 +117,7 @@ FILTER REFERENCE
     nA-B      Substring from index A to B.
               Indices start from 1 and are both inclusive.
     nA-       Substring from index A to end.
-    n-B       Substring from start index B.     
+    n-B       Substring from start index B.
     N         Same as `n` but we are indexing from end to start.
     r:X       Remove first occurrence of X.
     r:X:Y     Replace first occurrence of X by Y.
@@ -143,7 +134,7 @@ FILTER REFERENCE
     <M        Left pad with mask M.
     >M        Right pad with mask M.
     ?D        Replace empty input by D.
-    
+
 EXAMPLES
 ========
 

@@ -12,6 +12,8 @@ Rew is a CLI tool that rewrites FS paths according to a pattern.
 - [:bulb: What rew does](#bulb-what-rew-does)
 - [:inbox_tray: Input](#inbox_tray-input)
 - [:pencil: Pattern](#pencil-pattern)
+  - [Variables](#variables)
+  - [Filters](#filters)
 - [:outbox_tray: Output](#outbox_tray-output)
 
 ## :bulb: What rew does
@@ -64,6 +66,146 @@ rew '{f}' *.txt # Wildcard expansion done by shell
 ```
 
 ## :pencil: Pattern
+
+Pattern is a string describing how to generate output from an input.
+
+Use `--explain` flag to print detailed explanation what a certain pattern does.
+
+```bash
+rew --explain 'file_{c|<000}.{e}'
+```
+
+By default, pattern characters are directly copied to output.
+
+| Input | Pattern | Output |
+| ----- | ------- | ------ |
+| *     | `abc`   | `abc`  |
+
+Characters between `{` and `}` form an expression which it is evaluated against input.
+
+| Input      | Pattern   | Output    | Expression description |
+| ---------- | --------- | --------- | ---------------------- |
+| `file.txt` | `{b}`     | `file`    | Base name              |
+| `file.txt` | `new.{e}` | `new.txt` | Extension              |
+
+Expression `{v|f1|f2|...}` is made of a variable `v` and zero or more filters `f1`, `f2`, ..., separated by `|`.
+
+| Input      | Pattern         | Output     | Expression description             |
+| ---------- | --------------- | ---------- | ---------------------------------- |
+| `img.JPEG` | `new.{e}`       | `new.JPEG` | Extension                          |
+| `img.JPEG` | `new.{e|l}`     | `new.jpeg` | Extension + Lowercase              |
+| `img.JPEG` | `new.{e|l|r:e}` | `new.jpg`  | Extension + Lowercase + Remove `e` |
+
+Character `#` starts an escape sequence.
+
+| Sequence | Description     |
+| -------- |---------------  |
+| `#n`     | New line        |
+| `#r`     | Carriage return |
+| `#t`     | Horizontal tab  |
+| `#0`     | Null            |
+| `#{`     | Escaped `{`     |
+| `#|`     | Escaped `|`     |
+| `#}`     | Escaped `{`     |
+| `##`     | Escaped `#`     |
+
+Use `--escape` option to set a different escape character.
+
+```bash
+rew '{p|R:#t: }'              # Replace tabs by spaces in path
+rew '{p|R:\t: }' --escape='\' # Same thing, different escape character
+```
+
+### Variables
+
+| Variable      | Description                   |
+| ------------- | ----------------------------- |
+| `p`           | Path (equal to input value).  |
+| `a`           | Absolute path.                |
+| `A`           | Canonical path.               |
+| `f`           | File name.                    |
+| `b`           | Base name.                    |
+| `e`           | Extension.                    |
+| `E`           | Extension with dot.           |
+| `d`           | Parent path.                  |
+| `D`           | Parent file name.             |
+| `c`           | Local counter.                |
+| `C`           | Global counter.               |
+| `u`           | Randomly generated UUID (v4). |
+| `1`, `2`, ... | Regex capture group N.        |
+
+#### Examples
+
+Let us assume the following directory structure:
+
+```text
+/
+└── home
+    ├── alice
+    │   └── docs
+    │       └── notes.txt
+    |
+    └── bob <-- current working directory
+```
+
+| Input                     | Pattern | Output                             |
+| ------------------------- | ------- | ---------------------------------- |
+| `../alice/docs/notes.txt` | `{p}`   | `../alice/dir/notes.txt`           |
+| `../alice/docs/notes.txt` | `{a}`   | `/home/bob/../alice/dir/notes.txt` |
+| `../alice/docs/notes.txt` | `{A}`   | `/home/alice/dir/notes.txt`        |
+| `../alice/docs/notes.txt` | `{f}`   | `notes.txt`                        |
+| `../alice/docs/notes.txt` | `{b}`   | `notes`                            |
+| `../alice/docs/notes.txt` | `{e}`   | `txt`                              |
+| `../alice/docs/notes.txt` | `{E}`   | `.txt`                             |
+| `../alice/docs/notes.txt` | `{d}`   | `../alice/docs`                    |
+| `../alice/docs/notes.txt` | `{D}`   | `docs`                             |
+
+#### Counters
+
+- Global counter `C` is incremented for every input.
+- Local counter `c` is incremented per directory.
+
+| Input | Global counter | Local counter |
+| ----- | -------------- | ------------- |
+| `a/x` | 1              | 1             |
+| `a/y` | 2              | 2             |
+| `b/x` | 3              | 1             |
+| `b/y` | 4              | 2             |
+
+#### Regular expressions
+
+- Use `-e, --regex` option to match regular expression against filename.
+- Use `-E, --regex-full` option to match regular expression against whole path.
+- The matched capture groups can be referenced using `1`, `2`, ...
+
+```bash
+rew -e '([0-9]+)' '{1}' # Print the first number in filename
+rew -E '([0-9]+)' '{1}' # Print the first number in whole path
+```
+
+### Filters
+
+| Filter     | Description |
+| ---------- | ----------- |
+| `nA-B`     | Substring from index `A` to `B`.<br/>Indices start from 1 and are both inclusive. |
+| `nA-`      | Substring from index `A` to end. |
+| `n-B`      | Substring from start index `B`. |
+| `N`        | Same as `n` but we are indexing from end to start. |
+| `r:X`      | Remove first occurrence of `X`. |
+| `r:X:Y` | Replace first occurrence of `X` by `Y`.<br/>Any other character than `:` can be also used as a separator. |
+| `R`        | Same as `r` but removes/replaces all occurrences. |
+| `s`        |Same as `r` but `X` is an regular expression.<br/>`Y` can reference capture groups from `X` using `$1`, `$2`, ... |
+| `S`        | Same as `s` but removes/replaces all occurrences. |
+| `t`        | Trim white-spaces from bother sides. |
+| `u`        | To uppercase. |
+| `l`        | To lowercase. |
+| `a`        | Convert non-ASCII characters ASCII. |
+| `A`        | Remove non-ASCII characters. |
+| `<M`       | Left pad with mask M. |
+| `>M`       | Right pad with mask M. |
+| `?D`       | Replace empty input by D. |
+
+#### Examples
 
 TODO
 
