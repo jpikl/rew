@@ -119,8 +119,8 @@ FILTER REFERENCE
     nA-       Substring from index A to end.
     n-B       Substring from start index B.
     N         Same as `n` but we are indexing from end to start.
-    r:X       Remove first occurrence of X.
     r:X:Y     Replace first occurrence of X by Y.
+    r:X       Remove first occurrence of X.
               Any other character than `:` can be also used as a separator.
     R         Same as `r` but removes/replaces all occurrences.
     s         Same as `r` but X is an regular expression.

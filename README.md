@@ -90,11 +90,11 @@ Characters between `{` and `}` form an expression which it is evaluated against 
 
 Expression `{v|f1|f2|...}` is made of a variable `v` and zero or more filters `f1`, `f2`, ..., separated by `|`.
 
-| Input      | Pattern         | Output     | Expression description             |
-| ---------- | --------------- | ---------- | ---------------------------------- |
-| `img.JPEG` | `new.{e}`       | `new.JPEG` | Extension                          |
-| `img.JPEG` | `new.{e|l}`     | `new.jpeg` | Extension + Lowercase              |
-| `img.JPEG` | `new.{e|l|r:e}` | `new.jpg`  | Extension + Lowercase + Remove `e` |
+| Input      | Pattern           | Output     | Expression description             |
+| ---------- | ----------------- | ---------- | ---------------------------------- |
+| `img.JPEG` | `new.{e}`         | `new.JPEG` | Extension                          |
+| `img.JPEG` | `new.{e\|l}`      | `new.jpeg` | Extension + Lowercase              |
+| `img.JPEG` | `new.{e\|l\|r:e}` | `new.jpg`  | Extension + Lowercase + Remove `e` |
 
 Character `#` starts an escape sequence.
 
@@ -105,7 +105,7 @@ Character `#` starts an escape sequence.
 | `#t`     | Horizontal tab  |
 | `#0`     | Null            |
 | `#{`     | Escaped `{`     |
-| `#|`     | Escaped `|`     |
+| `#\|`    | Escaped `\|`    |
 | `#}`     | Escaped `{`     |
 | `##`     | Escaped `#`     |
 
@@ -191,8 +191,8 @@ rew -E '([0-9]+)' '{1}' # Print the first number in whole path
 | `nA-`      | Substring from index `A` to end. |
 | `n-B`      | Substring from start index `B`. |
 | `N`        | Same as `n` but we are indexing from end to start. |
-| `r:X`      | Remove first occurrence of `X`. |
 | `r:X:Y` | Replace first occurrence of `X` by `Y`.<br/>Any other character than `:` can be also used as a separator. |
+| `r:X`      | Remove first occurrence of `X`. |
 | `R`        | Same as `r` but removes/replaces all occurrences. |
 | `s`        |Same as `r` but `X` is an regular expression.<br/>`Y` can reference capture groups from `X` using `$1`, `$2`, ... |
 | `S`        | Same as `s` but removes/replaces all occurrences. |
