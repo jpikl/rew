@@ -112,7 +112,7 @@ mod tests {
     }
 
     #[test]
-    fn paths_out_null_separator() {
+    fn paths_out_nul_separator() {
         let mut output = ColoredOuput::new();
         let mut paths = Paths::new(&mut output, PathMode::Out(Some('\0')));
         write_paths(&mut paths);
