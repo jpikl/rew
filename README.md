@@ -53,10 +53,10 @@ Use `-z, --read-nul` flag to read paths separated by NUL character.
 find -print0 | rew -z '{f}' # When paths contain newlines
 ```
 
-Use `-r, --read-raw` flag to read whole input as a single value.
+Use `-r, --read-raw` flag to read whole input into memory as a single path.
 
 ```bash
-rew -r '{f}' < data.bin # Process file content as a whole
+rew -r '{f}' < data.txt # Process file content as a whole
 ```
 
 Input paths can be also provided as additional arguments.

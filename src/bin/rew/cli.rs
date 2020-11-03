@@ -28,7 +28,7 @@ pub struct Cli {
     #[clap(short = 'z', long, conflicts_with = "read-raw")]
     pub read_nul: bool,
 
-    /// Read the whole input as a single path
+    /// Read the whole input into memory as a single path
     #[clap(short = 'r', long, conflicts_with = "read-nul")]
     pub read_raw: bool,
 
