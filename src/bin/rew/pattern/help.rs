@@ -116,11 +116,11 @@ Use `--lc-init, --lc-step` options to set initial/step value for local counter.
     $ rew --lc-init=1 --lc-step=3 '{c}' # Start from 1, increment by 3
 
 Use `-e, --regex` option to match regular expression against filename.
-Use `-E, --regex-full` option to match regular expression against whole path.
+Use `-E, --regex-full` option to match regular expression against path.
 The matched capture groups can be referenced using 1, 2, ...
 
-    $ rew -e '([0-9]+)' '{1}' # Print the first number in filename
-    $ rew -E '([0-9]+)' '{1}' # Print the first number in whole path
+    $ echo 'a/b/c.d' | rew -e '([a-z])' '{1}' # Will print 'c'
+    $ echo 'a/b/c.d' | rew -E '([a-z])' '{1}' # Will print 'a'
 "};
 
 const FILTERS_HELP: &str = indoc! {"
