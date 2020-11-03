@@ -24,20 +24,7 @@ Rew is a CLI tool that rewrites FS paths according to a pattern.
 
 Input values are assumed to be FS paths, however, `rew` is able to process any UTF-8 encoded text.
 
-```text
-+------------+       +-------------------+       +-----------+
-| STDIN      |  -->  | PATTERN           |  -->  | STDOUT    |
-+------------+       +-------------------+       +-----------+
-| photo.PNG  |       | img_{C}.{e|l|r:e} |       | img_1.png |
-| image.jpeg |       +-------------------+       | img_2.jpg |
-| logo.gif   |                                   | img_3.gif |
-+------------+                                   +-----------+
-```
-
-[build]: https://travis-ci.com/github/jpikl/rew
-[build-img]: https://travis-ci.com/jpikl/rew.svg?branch=master
-[coverage]: https://codecov.io/gh/jpikl/rew
-[coverage-img]: https://codecov.io/gh/jpikl/rew/branch/master/graph/badge.svg
+![What rew does](images/diagram.png)
 
 ## :keyboard: Input
 
@@ -322,3 +309,8 @@ Bulk copy can be also achieved using standard `cp` command in less efficient way
 ```bash
 rew 'cp "{p}" "{p}.bak"' | sh # Generate code and execute it
 ```
+
+[build]: https://travis-ci.com/github/jpikl/rew
+[build-img]: https://travis-ci.com/jpikl/rew.svg?branch=master
+[coverage]: https://codecov.io/gh/jpikl/rew
+[coverage-img]: https://codecov.io/gh/jpikl/rew/branch/master/graph/badge.svg
