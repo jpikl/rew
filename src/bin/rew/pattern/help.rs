@@ -14,17 +14,20 @@ Use `--explain` flag to print detailed explanation what a certain pattern does.
 By default, pattern characters are directly copied to output.
 
     INPUT    PATTERN    OUTPUT
+    --------------------------
     *        abc        abc
 
 Characters between `{` and `}` form an expression which it is evaluated against input.
 
     INPUT       PATTERN    OUTPUT     EXPRESSION DESCRIPTION
+    --------------------------------------------------------
     file.txt    {b}        file       Base name
     file.txt    new.{e}    new.txt    Extension
 
 Expression `{v|f1|f2|...}` is made of a variable `v` and zero or more filters `f1`, `f2`, ..., separated by `|`.
 
     INPUT       PATTERN          OUTPUT      EXPRESSION DESCRIPTION
+    ---------------------------------------------------------------------------
     img.JPEG    new.{e}          new.JPEG    Extension
     img.JPEG    new.{e|l}        new.jpeg    Extension + Lowercase
     img.JPEG    new.{e|l|r:e}    new.jpg     Extension + Lowercase + Remove `e`
@@ -35,14 +38,15 @@ Use `--help-filters` flag to print filter reference.
 Character `#` starts an escape sequence.
 
     SEQUENCE    DESCRIPTION
+    ---------------------------
     #n          New line
     #r          Carriage return
     #t          Horizontal tab
     #0          Null
-    #{          Escaped `{`
-    #|          Escaped `|`
-    #}          Escaped `{`
-    ##          Escaped `#`
+    #{          Escaped {
+    #|          Escaped |
+    #}          Escaped {
+    ##          Escaped #
 
 Use `--escape` option to set a different escape character.
 
@@ -55,22 +59,20 @@ VARIABLE REFERENCE
 ==================
 
     VARIABLE    DESCRIPTION
-    p           Path (equal to input value).
-    a           Absolute path.
-    A           Canonical path.
-    f           File name.
-    b           Base name.
-    e           Extension.
-    E           Extension with dot.
-    d           Parent path.
-    D           Parent file name.
-    c           Local counter.
-    C           Global counter.
-    u           Randomly generated UUID (v4).
-    1, 2, ...   Regex capture group N.
-
-EXAMPLES
-========
+    ---------------------------------------
+    p           Path (equal to input value)
+    a           Absolute path
+    A           Canonical path
+    f           File name
+    b           Base name
+    e           Extension
+    E           Extension with dot
+    d           Parent path
+    D           Parent file name
+    c           Local counter
+    C           Global counter
+    u           Randomly generated UUID v4
+    1, 2, ...   Regex capture group N
 
 Let us assume the following directory structure:
 
@@ -80,22 +82,28 @@ Let us assume the following directory structure:
         │   └── docs
         │       └── notes.txt
         |
-        └── bob <-- current working directory
+        └── bob
 
-    INPUT                      PATTERN    OUTPUT
-    ../alice/docs/notes.txt    {p}        ../alice/dir/notes.txt
-    ../alice/docs/notes.txt    {a}        /home/bob/../alice/dir/notes.txt
-    ../alice/docs/notes.txt    {A}        /home/alice/dir/notes.txt
-    ../alice/docs/notes.txt    {f}        notes.txt
-    ../alice/docs/notes.txt    {b}        notes
-    ../alice/docs/notes.txt    {e}        txt
-    ../alice/docs/notes.txt    {E}        .txt
-    ../alice/docs/notes.txt    {d}        ../alice/docs
-    ../alice/docs/notes.txt    {D}        docs
+For working directory `/home/bob` and input `../alice/docs/notes.txt`
+variables would be evaluated as:
+
+    VARIABLE    OUTPUT
+    --------------------------------------------
+    p           ../alice/dir/notes.txt
+    a           /home/bob/../alice/dir/notes.txt
+    A           /home/alice/dir/notes.txt
+    f           notes.txt
+    b           notes
+    e           txt
+    E           .txt
+    d           ../alice/docs
+    D           docs
 
 Global counter `C` is incremented for every input.
+Local counter `c` is incremented per directory.
 
     INPUT    GLOBAL    LOCAL
+    ------------------------
     a/x      1         1
     a/y      2         2
     b/x      3         1
@@ -103,7 +111,7 @@ Global counter `C` is incremented for every input.
 
 Use `-e, --regex` option to match regular expression against filename.
 Use `-E, --regex-full` option to match regular expression against whole path.
-The matched capture groups can be referenced using `1`, `2`, ...
+The matched capture groups can be referenced using 1, 2, ...
 
     $ rew -e '([0-9]+)' '{1}' # Print the first number in filename
     $ rew -E '([0-9]+)' '{1}' # Print the first number in whole path
@@ -113,32 +121,81 @@ const FILTERS_HELP: &str = indoc! {"
 FILTER REFERENCE
 ================
 
+Substring filters
+
     FILTER    DESCRIPTION
+    ------------------------------------------------------------
     nA-B      Substring from index A to B.
               Indices start from 1 and are both inclusive.
     nA-       Substring from index A to end.
-    n-B       Substring from start index B.
+    n-B       Substring from start to index B.
+    nA        Character at index A (equivalent to `nA-A`)
     N         Same as `n` but we are indexing from end to start.
-    r:X:Y     Replace first occurrence of X by Y.
-    r:X       Remove first occurrence of X.
-              Any other character than `:` can be also used as a separator.
-    R         Same as `r` but removes/replaces all occurrences.
-    s         Same as `r` but X is an regular expression.
-              Y can reference capture groups from X using $1, $2, ...
-    S         Same as `s` but removes/replaces all occurrences.
-    t         Trim whitespaces from bother sides.
-    u         To uppercase.
-    l         To lowercase.
+
+Examples of substring filters
+
+    INPUT    FILTER    OUTPUT
+    -------------------------
+    abcde    n2-3      bc
+    abcde    N2-3      cd
+    abcde    n2-       bcde
+    abcde    N2-       abcd
+    abcde    n-2       ab
+    abcde    N-2       de
+    abcde    n2        b
+    abcde    N2        d
+
+Replace filters
+
+    FILTER   DESCRIPTION
+    ----------------------------------------------------------------------
+    r:X:Y    Replace first occurrence of X by Y.
+             Any other character than `:` can be also used as a separator.
+    r:X      Remove first occurrence of X.
+    s        Same as `r` but X is an regular expression.
+             Y can reference capture groups from X using $1, $2, ...
+    R        Same as `r` but removes/replaces all occurrences.
+    S        Same as `s` but removes/replaces all occurrences.
+    ?D       Replace empty input with D.
+
+Examples of replace filters
+
+    INPUT      FILTER                   OUTPUT
+    ------------------------------------------
+    ab_ab      r:ab:xy                  xy_ab
+    ab_ab      R:ab:xy                  xy_xy
+    ab_ab      r:ab                     _ab
+    ab_ab      R:ab                     _
+    12_34      s:[0-9]:x                xx_34
+    12_34      S:[0-9]:x                xx_xx
+    12_34      s:([0-9])([0-9]):$2$1    21_34
+    12_34      S:([0-9])([0-9]):$2$1    21_43
+    abc        ?def                     abc
+    (empty)    ?def                     def
+
+Other filters
+
+    FILTER    DESCRIPTION
+    ----------------------------------------------
+    t         Trim white-spaces from bother sides.
+    u         Convert to uppercase.
+    l         Convert to lowercase.
     a         Convert non-ASCII characters ASCII.
     A         Remove non-ASCII characters.
     <M        Left pad with mask M.
     >M        Right pad with mask M.
-    ?D        Replace empty input by D.
 
-EXAMPLES
-========
+Examples of other filters
 
-TODO
+    INPUT       FILTER    OUTPUT
+    ----------------------------
+    ..a..b..    t         a..b    (dots are white-spaces)
+    aBčĎ        u         ABČĎ
+    aBčĎ        l         abčď
+    aBčĎ        a         aBcD
+    aBčĎ        A         aB
+    abc         <12345    12abc
+    abc         >12345    abc45
 "};
 
 pub fn write_pattern_help<O: Write>(output: &mut O) -> Result<()> {

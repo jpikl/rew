@@ -118,23 +118,21 @@ rew '{p|R:\t: }' --escape='\' # Same thing, different escape character
 
 ### Variables
 
-| Variable      | Description                   |
-| ------------- | ----------------------------- |
-| `p`           | Path (equal to input value).  |
-| `a`           | Absolute path.                |
-| `A`           | Canonical path.               |
-| `f`           | File name.                    |
-| `b`           | Base name.                    |
-| `e`           | Extension.                    |
-| `E`           | Extension with dot.           |
-| `d`           | Parent path.                  |
-| `D`           | Parent file name.             |
-| `c`           | Local counter.                |
-| `C`           | Global counter.               |
-| `u`           | Randomly generated UUID (v4). |
-| `1`, `2`, ... | Regex capture group N.        |
-
-#### Examples
+| Variable      | Description                  |
+| ------------- | ---------------------------- |
+| `p`           | Path (equal to input value)  |
+| `a`           | Absolute path                |
+| `A`           | Canonical path               |
+| `f`           | File name                    |
+| `b`           | Base name                    |
+| `e`           | Extension                    |
+| `E`           | Extension with dot           |
+| `d`           | Parent path                  |
+| `D`           | Parent file name             |
+| `c`           | Local counter                |
+| `C`           | Global counter               |
+| `u`           | Randomly generated UUID v4   |
+| `1`, `2`, ... | Regex capture group N        |
 
 Let us assume the following directory structure:
 
@@ -145,20 +143,23 @@ Let us assume the following directory structure:
     │   └── docs
     │       └── notes.txt
     |
-    └── bob <-- current working directory
+    └── bob
 ```
 
-| Input                     | Pattern | Output                             |
-| ------------------------- | ------- | ---------------------------------- |
-| `../alice/docs/notes.txt` | `{p}`   | `../alice/dir/notes.txt`           |
-| `../alice/docs/notes.txt` | `{a}`   | `/home/bob/../alice/dir/notes.txt` |
-| `../alice/docs/notes.txt` | `{A}`   | `/home/alice/dir/notes.txt`        |
-| `../alice/docs/notes.txt` | `{f}`   | `notes.txt`                        |
-| `../alice/docs/notes.txt` | `{b}`   | `notes`                            |
-| `../alice/docs/notes.txt` | `{e}`   | `txt`                              |
-| `../alice/docs/notes.txt` | `{E}`   | `.txt`                             |
-| `../alice/docs/notes.txt` | `{d}`   | `../alice/docs`                    |
-| `../alice/docs/notes.txt` | `{D}`   | `docs`                             |
+For working directory `/home/bob` and input `../alice/docs/notes.txt`
+variables would be evaluated as:
+
+| Variable | Output                             |
+| -------- | ---------------------------------- |
+| `p`      | `../alice/dir/notes.txt`           |
+| `a`      | `/home/bob/../alice/dir/notes.txt` |
+| `A`      | `/home/alice/dir/notes.txt`        |
+| `f`      | `notes.txt`                        |
+| `b`      | `notes`                            |
+| `e`      | `txt`                              |
+| `E`      | `.txt`                             |
+| `d`      | `../alice/docs`                    |
+| `D`      | `docs`                             |
 
 #### Counters
 
@@ -185,29 +186,78 @@ rew -E '([0-9]+)' '{1}' # Print the first number in whole path
 
 ### Filters
 
-| Filter     | Description |
-| ---------- | ----------- |
+#### Substring filters
+
+| Filter     | Description                                        |
+| ---------- | -------------------------------------------------- |
 | `nA-B`     | Substring from index `A` to `B`.<br/>Indices start from 1 and are both inclusive. |
-| `nA-`      | Substring from index `A` to end. |
-| `n-B`      | Substring from start index `B`. |
+| `nA-`      | Substring from index `A` to end.                   |
+| `n-B`      | Substring from start to index `B`.                 |
+| `nA`       | Character at index `A` (equivalent to `nA-A`)      |
 | `N`        | Same as `n` but we are indexing from end to start. |
-| `r:X:Y` | Replace first occurrence of `X` by `Y`.<br/>Any other character than `:` can be also used as a separator. |
-| `r:X`      | Remove first occurrence of `X`. |
+
+#### Examples of substring filters
+
+| Input   |  Filter                  | Output  |
+| ------- | ------------------------ | ------- |
+| `abcde` |  `n2-3`                  | `bc`    |
+| `abcde` |  `N2-3`                  | `cd`    |
+| `abcde` |  `n2-`                   | `bcde`  |
+| `abcde` |  `N2-`                   | `abcd`  |
+| `abcde` |  `n-2`                   | `ab`    |
+| `abcde` |  `N-2`                   | `de`    |
+| `abcde` |  `n2`                    | `b`     |
+| `abcde` |  `N2`                    | `d`     |
+
+#### Replace filters
+
+| Filter     | Description                                       |
+| ---------- | ------------------------------------------------- |
+| `r:X:Y`    | Replace first occurrence of `X` by `Y`.<br/>Any other character than `:` can be also used as a separator. |
+| `r:X`      | Remove first occurrence of `X`.                   |
+| `s`        | Same as `r` but `X` is an regular expression.<br/>`Y` can reference capture groups from `X` using `$1`, `$2`, ... |
 | `R`        | Same as `r` but removes/replaces all occurrences. |
-| `s`        |Same as `r` but `X` is an regular expression.<br/>`Y` can reference capture groups from `X` using `$1`, `$2`, ... |
 | `S`        | Same as `s` but removes/replaces all occurrences. |
+| `?D`       | Replace empty input with D.                       |
+
+#### Examples of replace filters
+
+| Input     |  Filter                  | Output  |
+| --------- | ------------------------ | ------- |
+| `ab_ab`   |  `r:ab:xy`               | `xy_ab` |
+| `ab_ab`   |  `R:ab:xy`               | `xy_xy` |
+| `ab_ab`   |  `r:ab`                  | `_ab`   |
+| `ab_ab`   |  `R:ab`                  | `_`     |
+| `12_34`   |  `s:[0-9]:x`             | `xx_34` |
+| `12_34`   |  `S:[0-9]:x`             | `xx_xx` |
+| `12_34`   |  `s:([0-9])([0-9]):$2$1` | `21_34` |
+| `12_34`   |  `S:([0-9])([0-9]):$2$1` | `21_43` |
+| `abc`     |  `?def`                  | `abc`   |
+| *(empty)* |  `?def`                  | `def`   |
+
+#### Other filters
+
+| Filter     | Description                          |
+| ---------- | ------------------------------------ |
 | `t`        | Trim white-spaces from bother sides. |
-| `u`        | To uppercase. |
-| `l`        | To lowercase. |
-| `a`        | Convert non-ASCII characters ASCII. |
-| `A`        | Remove non-ASCII characters. |
-| `<M`       | Left pad with mask M. |
-| `>M`       | Right pad with mask M. |
-| `?D`       | Replace empty input by D. |
+| `u`        | Convert to uppercase.                |
+| `l`        | Convert to lowercase.                |
+| `a`        | Convert non-ASCII characters ASCII.  |
+| `A`        | Remove non-ASCII characters.         |
+| `<M`       | Left pad with mask M.                |
+| `>M`       | Right pad with mask M.               |
 
-#### Examples
+#### Examples of other filters
 
-TODO
+| Input      |  Filter  | Output  |
+| ---------- | -------- | ------- |
+| `..a..b..` | `t`      | `a..b` *(dots are white-spaces)* |
+| `aBčĎ`     | `u`      | `ABČĎ`  |
+| `aBčĎ`     | `l`      | `abčď`  |
+| `aBčĎ`     | `a`      | `aBcD`  |
+| `aBčĎ`     | `A`      | `aB`    |
+| `abc`      | `<12345` | `12abc` |
+| `abc`      | `>12345` | `abc45` |
 
 ## :outbox_tray: Output
 
