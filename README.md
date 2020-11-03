@@ -70,18 +70,18 @@ By default, pattern characters are directly copied to output.
 
 Characters between `{` and `}` form an expression which it is evaluated against input.
 
-| Input      | Pattern   | Output    | Expression description |
-| ---------- | --------- | --------- | ---------------------- |
-| `file.txt` | `{b}`     | `file`    | Base name              |
-| `file.txt` | `new.{e}` | `new.txt` | Extension              |
+| Input     | Pattern   | Output    | Expression description |
+| --------- | --------- | --------- | ---------------------- |
+| `old.txt` | `{b}`     | `old`     | Base name              |
+| `old.txt` | `new.{e}` | `new.txt` | Extension              |
 
 Expression `{v|f1|f2|...}` is made of a variable `v` and zero or more filters `f1`, `f2`, ..., separated by `|`.
 
 | Input      | Pattern           | Output     | Expression description             |
 | ---------- | ----------------- | ---------- | ---------------------------------- |
-| `img.JPEG` | `new.{e}`         | `new.JPEG` | Extension                          |
-| `img.JPEG` | `new.{e\|l}`      | `new.jpeg` | Extension + Lowercase              |
-| `img.JPEG` | `new.{e\|l\|r:e}` | `new.jpg`  | Extension + Lowercase + Remove `e` |
+| `old.JPEG` | `new.{e}`         | `new.JPEG` | Extension                          |
+| `old.JPEG` | `new.{e\|l}`      | `new.jpeg` | Extension + Lowercase              |
+| `old.JPEG` | `new.{e\|l\|r:e}` | `new.jpg`  | Extension + Lowercase + Remove `e` |
 
 Character `#` starts an escape sequence.
 
