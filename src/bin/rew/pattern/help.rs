@@ -84,14 +84,14 @@ Let us assume the following directory structure:
         |
         └── bob
 
-For working directory `/home/bob` and input `../alice/docs/notes.txt`
+For working directory `/home/bob` and input `../alice/docs/notes.txt`,
 variables would be evaluated as:
 
     VARIABLE    OUTPUT
-    --------------------------------------------
-    p           ../alice/dir/notes.txt
-    a           /home/bob/../alice/dir/notes.txt
-    A           /home/alice/dir/notes.txt
+    ---------------------------------------------
+    p           ../alice/docs/notes.txt
+    a           /home/bob/../alice/docs/notes.txt
+    A           /home/alice/docs/notes.txt
     f           notes.txt
     b           notes
     e           txt
