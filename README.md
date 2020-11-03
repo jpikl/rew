@@ -10,11 +10,11 @@ Rew is a CLI tool that rewrites FS paths according to a pattern.
 ## Contents
 
 - [:bulb: What rew does](#bulb-what-rew-does)
-- [:inbox_tray: Input](#inbox_tray-input)
+- [:keyboard: Input](#keyboard-input)
 - [:pencil: Pattern](#pencil-pattern)
-  - [Variables](#variables)
-  - [Filters](#filters)
-- [:outbox_tray: Output](#outbox_tray-output)
+  - [:heavy_dollar_sign: Variables](#heavy_dollar_sign-variables)
+  - [:clamp: Filters](#clamp-filters)
+- [:speech_balloon: Output](#speech_balloon-output)
 
 ## :bulb: What rew does
 
@@ -39,7 +39,7 @@ Input values are assumed to be FS paths, however, `rew` is able to process any U
 [coverage]: https://codecov.io/gh/jpikl/rew
 [coverage-img]: https://codecov.io/gh/jpikl/rew/branch/master/graph/badge.svg
 
-## :inbox_tray: Input
+## :keyboard: Input
 
 By default, paths are read as lines from standard input.
 
@@ -116,7 +116,7 @@ rew '{p|R:#t: }'              # Replace tabs by spaces in path
 rew '{p|R:\t: }' --escape='\' # Same thing, different escape character
 ```
 
-### Variables
+### :heavy_dollar_sign: Variables
 
 | Variable      | Description                  |
 | ------------- | ---------------------------- |
@@ -192,7 +192,7 @@ rew -e '([0-9]+)' '{1}' # Print the first number in filename
 rew -E '([0-9]+)' '{1}' # Print the first number in whole path
 ```
 
-### Filters
+### :clamp: Filters
 
 #### Substring filters
 
@@ -245,15 +245,15 @@ rew -E '([0-9]+)' '{1}' # Print the first number in whole path
 
 #### Other filters
 
-| Filter     | Description                          |
-| ---------- | ------------------------------------ |
-| `t`        | Trim white-spaces from bother sides. |
-| `u`        | Convert to uppercase.                |
-| `l`        | Convert to lowercase.                |
-| `a`        | Convert non-ASCII characters ASCII.  |
-| `A`        | Remove non-ASCII characters.         |
-| `<M`       | Left pad with mask M.                |
-| `>M`       | Right pad with mask M.               |
+| Filter     | Description                            |
+| ---------- | -------------------------------------- |
+| `t`        | Trim white-spaces from bother sides.   |
+| `u`        | Convert to uppercase.                  |
+| `l`        | Convert to lowercase.                  |
+| `a`        | Convert non-ASCII characters to ASCII. |
+| `A`        | Remove non-ASCII characters.           |
+| `<M`       | Left pad with mask M.                  |
+| `>M`       | Right pad with mask M.                 |
 
 #### Examples of other filters
 
@@ -267,7 +267,7 @@ rew -E '([0-9]+)' '{1}' # Print the first number in whole path
 | `abc`      | `<12345` | `12abc` |
 | `abc`      | `>12345` | `abc45` |
 
-## :outbox_tray: Output
+## :speech_balloon: Output
 
 By default, results are printed as lines to standard output.
 

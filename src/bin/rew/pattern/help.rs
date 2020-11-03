@@ -182,11 +182,11 @@ Examples of replace filters
 Other filters
 
     FILTER    DESCRIPTION
-    ----------------------------------------------
+    ------------------------------------------------
     t         Trim white-spaces from bother sides.
     u         Convert to uppercase.
     l         Convert to lowercase.
-    a         Convert non-ASCII characters ASCII.
+    a         Convert non-ASCII characters to ASCII.
     A         Remove non-ASCII characters.
     <M        Left pad with mask M.
     >M        Right pad with mask M.
