@@ -11,7 +11,7 @@ use uuid::Uuid;
 
 #[derive(Debug, PartialEq)]
 pub enum Variable {
-    Path,
+    InputPath,
     AbsolutePath,
     CanonicalPath,
     FileName,
@@ -42,7 +42,7 @@ impl Variable {
             }
         } else if let Some(char) = reader.read() {
             match char.as_char() {
-                'p' => Ok(Variable::Path),
+                'p' => Ok(Variable::InputPath),
                 'a' => Ok(Variable::AbsolutePath),
                 'A' => Ok(Variable::CanonicalPath),
                 'f' => Ok(Variable::FileName),
@@ -69,7 +69,7 @@ impl Variable {
 
     pub fn eval(&self, context: &eval::Context) -> Result<String, eval::ErrorKind> {
         match self {
-            Self::Path => to_string(context.path),
+            Self::InputPath => to_string(context.path),
             Self::AbsolutePath => to_string(&get_absolute_path(context)),
             Self::CanonicalPath => match fs::canonicalize(&get_absolute_path(context)) {
                 Ok(path) => to_string(&path),
@@ -139,7 +139,7 @@ pub fn to_string<S: AsRef<OsStr> + ?Sized>(value: &S) -> Result<String, eval::Er
 impl fmt::Display for Variable {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::Path => write!(formatter, "Path"),
+            Self::InputPath => write!(formatter, "Input path"),
             Self::AbsolutePath => write!(formatter, "Absolute path"),
             Self::CanonicalPath => write!(formatter, "Canonical path"),
             Self::FileName => write!(formatter, "File name"),
@@ -150,7 +150,7 @@ impl fmt::Display for Variable {
             Self::ParentFileName => write!(formatter, "Parent file name"),
             Self::LocalCounter => write!(formatter, "Local counter"),
             Self::GlobalCounter => write!(formatter, "Global counter"),
-            Self::RegexCapture(index) => write!(formatter, "Regex capture ({})", index),
+            Self::RegexCapture(index) => write!(formatter, "Regex capture #{}", index),
             Self::Uuid => write!(formatter, "UUID"),
         }
     }
@@ -166,8 +166,8 @@ mod tests {
     use std::path::Path;
 
     #[test]
-    fn parse_path() {
-        assert_eq!(parse("p"), Ok(Variable::Path));
+    fn parse_input_path() {
+        assert_eq!(parse("p"), Ok(Variable::InputPath));
     }
 
     #[test]
@@ -293,7 +293,7 @@ mod tests {
     #[test]
     fn eval_path() {
         assert_eq!(
-            Variable::Path.eval(&make_eval_context()),
+            Variable::InputPath.eval(&make_eval_context()),
             Ok(String::from("root/parent/file.ext"))
         );
     }
@@ -467,7 +467,7 @@ mod tests {
         let mut context = make_eval_context();
         context.path = Path::new(make_non_utf8_os_str());
         assert_eq!(
-            Variable::Path.eval(&context),
+            Variable::InputPath.eval(&context),
             Err(eval::ErrorKind::InputNotUtf8)
         );
     }
@@ -484,7 +484,7 @@ mod tests {
 
     #[test]
     fn fmt() {
-        assert_eq!(Variable::Path.to_string(), "Path");
+        assert_eq!(Variable::InputPath.to_string(), "Input path");
         assert_eq!(Variable::AbsolutePath.to_string(), "Absolute path");
         assert_eq!(Variable::CanonicalPath.to_string(), "Canonical path");
         assert_eq!(Variable::FileName.to_string(), "File name");
@@ -495,7 +495,7 @@ mod tests {
         assert_eq!(Variable::ParentFileName.to_string(), "Parent file name");
         assert_eq!(Variable::LocalCounter.to_string(), "Local counter");
         assert_eq!(Variable::GlobalCounter.to_string(), "Global counter");
-        assert_eq!(Variable::RegexCapture(1).to_string(), "Regex capture (1)");
+        assert_eq!(Variable::RegexCapture(1).to_string(), "Regex capture #1");
         assert_eq!(Variable::Uuid.to_string(), "UUID");
     }
 

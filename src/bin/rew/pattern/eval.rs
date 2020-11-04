@@ -82,7 +82,7 @@ mod tests {
         assert_eq!(
             Error {
                 kind: ErrorKind::InputNotUtf8,
-                cause: ErrorCause::Variable(&Variable::Path),
+                cause: ErrorCause::Variable(&Variable::InputPath),
                 value: String::from("abc"),
                 range: &(1..2)
             }
@@ -96,20 +96,20 @@ mod tests {
         assert_eq!(
             Error {
                 kind: ErrorKind::InputNotUtf8,
-                cause: ErrorCause::Variable(&Variable::Path),
+                cause: ErrorCause::Variable(&Variable::InputPath),
                 value: String::from("abc"),
                 range: &(1..2)
             }
             .to_string(),
-            "`Path` variable evaluation failed for value 'abc': Input does not have UTF-8 encoding"
+            "`Input path` variable evaluation failed for value 'abc': Input does not have UTF-8 encoding"
         );
     }
 
     #[test]
     fn error_cause_fmt() {
         assert_eq!(
-            ErrorCause::Variable(&Variable::Path).to_string(),
-            "`Path` variable"
+            ErrorCause::Variable(&Variable::InputPath).to_string(),
+            "`Input path` variable"
         );
         assert_eq!(
             ErrorCause::Filter(&Filter::ToLowercase).to_string(),

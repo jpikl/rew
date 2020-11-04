@@ -215,7 +215,7 @@ mod tests {
 
         assert_eq!(
             (Item::Expression {
-                variable: make_parsed(Variable::Path),
+                variable: make_parsed(Variable::InputPath),
                 filters: Vec::new()
             })
             .to_string(),
@@ -224,7 +224,7 @@ mod tests {
 
         assert_eq!(
             (Item::Expression {
-                variable: make_parsed(Variable::Path),
+                variable: make_parsed(Variable::InputPath),
                 filters: vec![make_parsed(Filter::ToUppercase)]
             })
             .to_string(),
@@ -233,7 +233,7 @@ mod tests {
 
         assert_eq!(
             (Item::Expression {
-                variable: make_parsed(Variable::Path),
+                variable: make_parsed(Variable::InputPath),
                 filters: vec![make_parsed(Filter::ToUppercase), make_parsed(Filter::Trim)]
             })
             .to_string(),

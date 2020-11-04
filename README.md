@@ -105,21 +105,21 @@ rew '{p|R:\t: }' --escape='\' # Same thing, different escape character
 
 ### :heavy_dollar_sign: Variables
 
-| Variable      | Description                  |
-| ------------- | ---------------------------- |
-| `p`           | Path (equal to input value)  |
-| `a`           | Absolute path                |
-| `A`           | Canonical path               |
-| `f`           | File name                    |
-| `b`           | Base name                    |
-| `e`           | Extension                    |
-| `E`           | Extension with dot           |
-| `d`           | Parent path                  |
-| `D`           | Parent file name             |
-| `c`           | Local counter                |
-| `C`           | Global counter               |
-| `u`           | Randomly generated UUID v4   |
-| `1`, `2`, ... | Regex capture group N        |
+| Variable      | Description             |
+| ------------- | ----------------------- |
+| `p`           | Input path              |
+| `a`           | Absolute path           |
+| `A`           | Canonical path          |
+| `f`           | File name               |
+| `b`           | Base name               |
+| `e`           | Extension               |
+| `E`           | Extension with dot      |
+| `d`           | Parent path             |
+| `D`           | Parent file name        |
+| `c`           | Local counter           |
+| `C`           | Global counter          |
+| `u`           | Randomly generated UUID |
+| `1`, `2`, ... | Regex capture group N   |
 
 Let us assume the following directory structure:
 

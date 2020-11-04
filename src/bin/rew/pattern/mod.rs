@@ -132,7 +132,7 @@ mod tests {
                     Parsed {
                         value: Item::Expression {
                             variable: Parsed {
-                                value: Variable::Path,
+                                value: Variable::InputPath,
                                 range: 4..5,
                             },
                             filters: vec![Parsed {
@@ -165,7 +165,7 @@ mod tests {
                     Parsed {
                         value: Item::Expression {
                             variable: Parsed {
-                                value: Variable::Path,
+                                value: Variable::InputPath,
                                 range: 4..5,
                             },
                             filters: vec![Parsed {
