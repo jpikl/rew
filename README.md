@@ -110,6 +110,12 @@ rew '{p|R:#t: }'              # Replace tabs by spaces in path
 rew '{p|R:\t: }' --escape='\' # Same thing, different escape character
 ```
 
+If no pattern is provided, input paths are directly copied to output.
+
+```bash
+printf 'a\0b' | rew -z # Convert NUL delimiters to newlines
+```
+
 ### :heavy_dollar_sign: Variables
 
 | Variable      | Description             |

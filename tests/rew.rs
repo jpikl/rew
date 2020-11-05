@@ -7,34 +7,23 @@ use std::path::Path;
 use utils::rew;
 
 #[test]
-fn no_args() {
-    rew()
-        .assert()
-        .failure()
-        .code(2)
-        .stderr(starts_with("error:"));
+fn no_pattern_no_paths() {
+    rew().assert().success().stdout("").stderr("");
 }
 
 #[test]
-fn no_paths() {
-    rew().arg("_").assert().success().stdout("").stderr("");
-}
-
-#[test]
-fn explanation() {
+fn no_pattern_some_paths() {
     rew()
-        .arg("--explain")
-        .arg("_")
+        .write_stdin("a\nb")
         .assert()
         .success()
-        .stdout(indoc! {"
-            _
-            ^
-            
-            Constant '_'
-            
-        "})
+        .stdout("a\nb\n")
         .stderr("");
+}
+
+#[test]
+fn some_pattern_no_paths() {
+    rew().arg("_").assert().success().stdout("").stderr("");
 }
 
 #[test]
@@ -290,4 +279,21 @@ fn pattern_eval_error_at_end() {
         .stderr(starts_with(
             "error: `Canonical path` variable evaluation failed for value 'non-existent':",
         ));
+}
+
+#[test]
+fn explanation() {
+    rew()
+        .arg("--explain")
+        .arg("_")
+        .assert()
+        .success()
+        .stdout(indoc! {"
+            _
+            ^
+            
+            Constant '_'
+            
+        "})
+        .stderr("");
 }

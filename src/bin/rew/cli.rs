@@ -14,13 +14,15 @@ use termcolor::ColorChoice;
 pub struct Cli {
     /// Output pattern
     ///
+    /// If not provided, input paths are directly copied to stdout.
+    ///
     /// Use `--help-pattern` flag to print description of patter syntax.
     /// Use `--help-vars` flag to print variable reference.
     /// Use `--help-filters` flag to print filter reference.
-    #[clap(required_unless_present_any = &["help-pattern", "help-vars", "help-filters"], verbatim_doc_comment)]
+    #[clap(verbatim_doc_comment)]
     pub pattern: Option<String>,
 
-    /// Paths to rewrite (read from stdin by default)
+    /// Input paths (read from stdin by default)
     #[clap(value_name = "path")]
     pub paths: Vec<PathBuf>,
 
@@ -35,6 +37,7 @@ pub struct Cli {
     /// Read paths delimited by a specific character, not newline
     #[clap(
         long,
+        value_name = "char",
         conflicts_with_all = &["read-nul", "read-raw"],
         parse(try_from_str = parse_single_byte_char)
     )]
@@ -63,7 +66,7 @@ pub struct Cli {
     pub fail_at_end: bool,
 
     /// Print explanation of a given pattern
-    #[clap(long)]
+    #[clap(long, requires = "pattern")]
     pub explain: bool,
 
     /// Print help information
@@ -122,14 +125,6 @@ pub struct Cli {
         parse(try_from_str = parse_color),
     )]
     pub color: Option<ColorChoice>,
-}
-
-impl Cli {
-    pub fn pattern(&self) -> &str {
-        self.pattern
-            .as_ref()
-            .expect("Failed to provide required <pattern> argument!")
-    }
 }
 
 impl Options for Cli {
