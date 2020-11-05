@@ -30,7 +30,7 @@ pub enum Filter {
     //  - Number in filter can be omitted, `x` is same as `x1`,
     //  - Modes:
     //    a) Spawn for every path, pass value as its argument: `-x 'realpath {}'`.
-    //    b) Spawn once, values paths separated by LF or NUL through its stdin/stdout: `-x 'tr a b'`.
+    //    b) Spawn once, values paths delimited by LF or NUL through its stdin/stdout: `-x 'tr a b'`.
     //  - Mode a) is chosen over b) when `{}` value placeholder is used within command.
 }
 

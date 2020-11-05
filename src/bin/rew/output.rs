@@ -96,7 +96,7 @@ mod tests {
     use std::ops::Range;
 
     #[test]
-    fn paths_out_no_separator() {
+    fn paths_out_no_delimiter() {
         let mut output = ColoredOuput::new();
         let mut paths = Paths::new(&mut output, PathMode::Out(None));
         write_paths(&mut paths);
@@ -104,7 +104,7 @@ mod tests {
     }
 
     #[test]
-    fn paths_out_newline_separator() {
+    fn paths_out_newline_delimiter() {
         let mut output = ColoredOuput::new();
         let mut paths = Paths::new(&mut output, PathMode::Out(Some('\n')));
         write_paths(&mut paths);
@@ -112,7 +112,7 @@ mod tests {
     }
 
     #[test]
-    fn paths_out_nul_separator() {
+    fn paths_out_nul_delimiter() {
         let mut output = ColoredOuput::new();
         let mut paths = Paths::new(&mut output, PathMode::Out(Some('\0')));
         write_paths(&mut paths);
@@ -120,7 +120,7 @@ mod tests {
     }
 
     #[test]
-    fn paths_diff_no_separator() {
+    fn paths_diff_no_delimiter() {
         let mut output = ColoredOuput::new();
         let mut paths = Paths::new(&mut output, PathMode::Diff(None));
         write_paths(&mut paths);
@@ -128,7 +128,7 @@ mod tests {
     }
 
     #[test]
-    fn paths_diff_newline_separator() {
+    fn paths_diff_newline_delimiter() {
         let mut output = ColoredOuput::new();
         let mut paths = Paths::new(&mut output, PathMode::Diff(Some('\n')));
         write_paths(&mut paths);
@@ -136,7 +136,7 @@ mod tests {
     }
 
     #[test]
-    fn paths_diff_null_separator() {
+    fn paths_diff_null_delimiter() {
         let mut output = ColoredOuput::new();
         let mut paths = Paths::new(&mut output, PathMode::Diff(Some('\0')));
         write_paths(&mut paths);

@@ -16,7 +16,7 @@ where
     O: Options + TransferOptions,
 {
     let delimiter = if options.read_nul() {
-        Delimiter::Nul
+        Delimiter::Byte(0)
     } else {
         Delimiter::Newline
     };

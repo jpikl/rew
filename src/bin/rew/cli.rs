@@ -25,12 +25,20 @@ pub struct Cli {
     pub paths: Vec<PathBuf>,
 
     /// Read paths delimited by NUL, not newline
-    #[clap(short = 'z', long, conflicts_with = "read-raw")]
+    #[clap(short = 'z', long, conflicts_with_all = &["read-raw", "read"])]
     pub read_nul: bool,
 
     /// Read the whole input into memory as a single path
-    #[clap(short = 'r', long, conflicts_with = "read-nul")]
+    #[clap(short = 'r', long, conflicts_with_all = &["read-nul", "read"])]
     pub read_raw: bool,
+
+    /// Read paths delimited by a specific character, not newline
+    #[clap(
+        long,
+        conflicts_with_all = &["read-nul", "read-raw"],
+        parse(try_from_str = parse_single_byte_char)
+    )]
+    pub read: Option<u8>,
 
     /// Print results delimited by NUL, not newline
     #[clap(short = 'Z', long, conflicts_with = "print-raw")]
@@ -130,6 +138,16 @@ impl Options for Cli {
     }
 }
 
+pub fn parse_single_byte_char(string: &str) -> Result<u8, &'static str> {
+    if string.chars().count() != 1 {
+        Err("value must be a single character")
+    } else if string.len() != 1 {
+        Err("multi-byte characters are not supported")
+    } else {
+        Ok(string.as_bytes()[0])
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -143,5 +161,18 @@ mod tests {
     fn color() {
         let cli = Cli::try_parse_from(&["rew", "pattern", "--color=always"]).unwrap();
         assert_eq!(Options::color(&cli), Some(ColorChoice::Always));
+    }
+
+    #[test]
+    fn parses_single_byte_char() {
+        assert_eq!(parse_single_byte_char("a"), Ok(b'a'));
+        assert_eq!(
+            parse_single_byte_char("á"),
+            Err("multi-byte characters are not supported",)
+        );
+        assert_eq!(
+            parse_single_byte_char("aa"),
+            Err("value must be a single character")
+        );
     }
 }

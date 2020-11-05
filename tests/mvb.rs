@@ -11,7 +11,7 @@ fn no_args() {
 }
 
 #[test]
-fn line_input_separator() {
+fn line_input_delimiter() {
     let dir = TempDir::new().unwrap();
     let src_file = dir.child("a");
     src_file.write_str("1").unwrap();
@@ -30,7 +30,7 @@ fn line_input_separator() {
 }
 
 #[test]
-fn nul_input_separator() {
+fn nul_input_delimiter() {
     let dir = TempDir::new().unwrap();
     let src_file = dir.child("a");
     src_file.write_str("1").unwrap();

@@ -39,13 +39,13 @@ impl Substitution<RegexHolder> {
 pub fn parse_value_and_replacement(
     reader: &mut Reader<Char>,
 ) -> Result<(String, Range<usize>, String)> {
-    if let Some(separator) = reader.read().cloned() {
+    if let Some(delimiter) = reader.read().cloned() {
         let mut value = String::new();
         let value_start = reader.position();
         let mut value_end = value_start;
 
         while let Some(ch) = reader.read_char() {
-            if ch == separator.as_char() {
+            if ch == delimiter.as_char() {
                 break;
             } else {
                 value.push(ch);
@@ -55,7 +55,7 @@ pub fn parse_value_and_replacement(
 
         if value.is_empty() {
             return Err(Error {
-                kind: ErrorKind::SubstituteWithoutValue(separator),
+                kind: ErrorKind::SubstituteWithoutValue(delimiter),
                 range: value_start..value_end,
             });
         }
@@ -183,7 +183,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_value_replacement_with_redundant_separators() {
+    fn parse_value_replacement_with_redundant_delimiters() {
         let mut reader = Reader::from("/abc/d//e/");
         assert_eq!(
             parse_value_and_replacement(&mut reader),

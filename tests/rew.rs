@@ -74,7 +74,7 @@ fn paths_from_stdin() {
 }
 
 #[test]
-fn nul_input_separator() {
+fn nul_input_delimiter() {
     rew()
         .arg("--read-nul")
         .arg("_{p}_")
@@ -86,7 +86,7 @@ fn nul_input_separator() {
 }
 
 #[test]
-fn nul_output_separator() {
+fn nul_output_delimiter() {
     rew()
         .arg("--print-nul")
         .arg("_{p}_")
@@ -98,7 +98,7 @@ fn nul_output_separator() {
 }
 
 #[test]
-fn no_input_separator() {
+fn no_input_delimiter() {
     rew()
         .arg("--read-raw")
         .arg("_{p}_")
@@ -110,7 +110,7 @@ fn no_input_separator() {
 }
 
 #[test]
-fn no_output_separator() {
+fn no_output_delimiter() {
     rew()
         .arg("--print-raw")
         .arg("_{p}_")
@@ -118,6 +118,18 @@ fn no_output_separator() {
         .assert()
         .success()
         .stdout("_a__\0b_")
+        .stderr("");
+}
+
+#[test]
+fn custom_input_delimiter() {
+    rew()
+        .arg("--read=;")
+        .arg("_{p}_")
+        .write_stdin("a;b")
+        .assert()
+        .success()
+        .stdout("_a_\n_b_\n")
         .stderr("");
 }
 

@@ -72,10 +72,12 @@ fn run(cli: &Cli, io: &Io) -> Result {
     };
 
     let mut input_paths = if cli.paths.is_empty() {
-        let input_delimiter = if cli.read_raw {
-            InputDelimiter::None
+        let input_delimiter = if let Some(byte) = cli.read {
+            InputDelimiter::Byte(byte)
         } else if cli.read_nul {
-            InputDelimiter::Nul
+            InputDelimiter::Byte(0)
+        } else if cli.read_raw {
+            InputDelimiter::None
         } else {
             InputDelimiter::Newline
         };

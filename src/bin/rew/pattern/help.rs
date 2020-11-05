@@ -24,7 +24,7 @@ Characters between `{` and `}` form an expression which it is evaluated against 
     file.txt    {b}        file       Base name
     file.txt    new.{e}    new.txt    Extension
 
-Expression `{v|f1|f2|...}` is made of a variable `v` and zero or more filters `f1`, `f2`, ..., separated by `|`.
+Expression `{v|f1|f2|...}` is made of a variable `v` and zero or more filters `f1`, `f2`, ..., delimited by `|`.
 
     INPUT       PATTERN          OUTPUT      EXPRESSION DESCRIPTION
     ---------------------------------------------------------------------------
@@ -156,7 +156,7 @@ Replace filters
     FILTER   DESCRIPTION
     ----------------------------------------------------------------------
     r:X:Y    Replace first occurrence of X by Y.
-             Any other character than `:` can be also used as a separator.
+             Any other character than `:` can be also used as a delimiter.
     r:X      Remove first occurrence of X.
     s        Same as `r` but X is an regular expression.
              Y can reference capture groups from X using $1, $2, ...
