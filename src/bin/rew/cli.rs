@@ -36,6 +36,7 @@ pub struct Cli {
 
     /// Read paths delimited by a specific character, not newline
     #[clap(
+        short = 'd',
         long,
         value_name = "char",
         conflicts_with_all = &["read-nul", "read-raw"],

@@ -41,10 +41,10 @@ Use `-z, --read-nul` flag to read paths delimited by NUL character.
 find -print0 | rew -z '{f}' # Paths may contain newlines
 ```
 
-Use `--read` option to read paths delimited by a specific character.
+Use `-d, --read` option to read paths delimited by a specific character.
 
 ```bash
-echo "$PATH" | rew --read=':' '{f}' # Process paths delimited by colon
+echo "$PATH" | rew -d ':' '{f}' # Process paths delimited by colon
 ```
 
 Use `-r, --read-raw` flag to read whole input into memory as a single path.
