@@ -24,7 +24,11 @@ impl<'a, I: BufRead> Paths<'a, I> {
     pub fn next(&mut self) -> Result<Option<&Path>> {
         match self {
             Self::Args { iter } => Ok(iter.next().map(PathBuf::as_path)),
-            Self::Stdin { splitter: reader } => reader.read().map(|opt_str| opt_str.map(Path::new)),
+            Self::Stdin { splitter: reader } => match reader.read() {
+                Ok(Some((value, _))) => Ok(Some(Path::new(value))),
+                Ok(None) => Ok(None),
+                Err(error) => Err(error),
+            },
         }
     }
 }
