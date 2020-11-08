@@ -236,8 +236,8 @@ echo 'a/b/c.d' | rew -E '([a-z])' '{1}' # Will print 'a'
 | `ab_ab`   |  `R:ab:xy`               | `xy_xy` |
 | `ab_ab`   |  `r:ab`                  | `_ab`   |
 | `ab_ab`   |  `R:ab`                  | `_`     |
-| `12_34`   |  `s:[0-9]+:x`            | `xx_34` |
-| `12_34`   |  `S:[0-9]+:x`            | `xx_xx` |
+| `12_34`   |  `s:[0-9]:x`             | `x2_34` |
+| `12_34`   |  `S:[0-9]:x`             | `xx_xx` |
 | `12_34`   |  `s:([0-9])([0-9]):$2$1` | `21_34` |
 | `12_34`   |  `S:([0-9])([0-9]):$2$1` | `21_43` |
 | `abc`     |  `?def`                  | `abc`   |
@@ -247,7 +247,7 @@ echo 'a/b/c.d' | rew -E '([a-z])' '{1}' # Will print 'a'
 
 | Filter     | Description                            |
 | ---------- | -------------------------------------- |
-| `t`        | Trim white-spaces from bother sides.   |
+| `t`        | Trim white-spaces from both sides.     |
 | `u`        | Convert to uppercase.                  |
 | `l`        | Convert to lowercase.                  |
 | `a`        | Convert non-ASCII characters to ASCII. |
