@@ -115,8 +115,8 @@ Use `--lc-init, --lc-step` options to set initial/step value for local counter.
     $ rew --gc-init=0 --gc-step=2 '{C}' # Start from 0, increment by 2
     $ rew --lc-init=1 --lc-step=3 '{c}' # Start from 1, increment by 3
 
-Use `-e, --regex` option to match regular expression against filename.
-Use `-E, --regex-full` option to match regular expression against path.
+Use `-e, --regex` option to match regular expression against a file name.
+Use `-E, --regex-full` option to match regular expression against a path.
 The matched capture groups can be referenced using 1, 2, ...
 
     $ echo 'a/b/c.d' | rew -e '([a-z])' '{1}' # Will print 'c'
