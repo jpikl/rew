@@ -1,4 +1,4 @@
-use clap::{AppSettings, Clap};
+use clap::{crate_version, AppSettings, Clap};
 use common::color::{parse_color, COLOR_VALUES};
 use common::run::Options;
 use common::transfer::TransferOptions;
@@ -6,9 +6,14 @@ use termcolor::ColorChoice;
 
 #[derive(Debug, Clap)]
 #[clap(
+    name = "cbp",
+    version = crate_version!(),
+    after_help = "Use `-h` for short descriptions and `--help` for more details.",
     setting(AppSettings::ColoredHelp),
     setting(AppSettings::DeriveDisplayOrder),
-    verbatim_doc_comment
+    setting(AppSettings::UnifiedHelpMessage),
+    setting(AppSettings::DontCollapseArgsInUsage),
+    verbatim_doc_comment,
 )]
 /// Bulk copy files and directories
 ///
@@ -24,7 +29,7 @@ use termcolor::ColorChoice;
 ///
 /// Such input can be generated using accompanying `rew` utility and its `-b, --bulk` flag:
 ///
-///     $ find -name '*.txt' | rew -b '{p}.bak' | cpb
+///     $ find -name '*.txt' | rew -b '{p}.bak' | cpb # Make backup copy of each *.txt file
 ///
 /// Each pair of source and destination path must be either both files or both directories. Mixing these types will result in error.
 ///
@@ -46,6 +51,15 @@ pub struct Cli {
     #[clap(short = 'v', long)]
     pub verbose: bool,
 
+    /// When to use colors
+    #[clap(
+    long,
+    value_name = "when",
+    possible_values = COLOR_VALUES,
+    parse(try_from_str = parse_color),
+    )]
+    pub color: Option<ColorChoice>,
+
     /// Print help information
     #[clap(short = 'h', long)]
     pub help: bool,
@@ -53,15 +67,6 @@ pub struct Cli {
     /// Print version information
     #[clap(long)]
     pub version: bool,
-
-    /// When to use colors
-    #[clap(
-        long,
-        value_name = "when",
-        possible_values = COLOR_VALUES,
-        parse(try_from_str = parse_color),
-    )]
-    pub color: Option<ColorChoice>,
 }
 
 impl Options for Cli {

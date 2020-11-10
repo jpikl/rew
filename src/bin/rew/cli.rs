@@ -1,4 +1,4 @@
-use clap::{AppSettings, Clap};
+use clap::{crate_name, crate_version, AppSettings, Clap};
 use common::color::{parse_color, COLOR_VALUES};
 use common::run::Options;
 use regex::Regex;
@@ -7,15 +7,21 @@ use termcolor::ColorChoice;
 
 #[derive(Debug, Clap)]
 #[clap(
+    name = crate_name!(),
+    version = crate_version!(),
+    after_help = "Use `-h` for short descriptions and `--help` for more details.",
     setting(AppSettings::ColoredHelp),
-    setting(AppSettings::DeriveDisplayOrder)
+    setting(AppSettings::DeriveDisplayOrder),
+    setting(AppSettings::UnifiedHelpMessage),
+    setting(AppSettings::DontCollapseArgsInUsage),
 )]
-/// Rewrite FS paths using a pattern
+/// Rewrite FS paths according to a pattern
 pub struct Cli {
     /// Output pattern
     ///
     /// If not provided, input paths are directly copied to stdout.
     ///
+    /// Use `--explain` flag to print explanation of a given pattern.
     /// Use `--help-pattern` flag to print description of patter syntax.
     /// Use `--help-vars` flag to print variable reference.
     /// Use `--help-filters` flag to print filter reference.
@@ -26,6 +32,16 @@ pub struct Cli {
     #[clap(value_name = "path")]
     pub paths: Vec<PathBuf>,
 
+    /// Read paths delimited by a specific character, not newline
+    #[clap(
+    short = 'd',
+    long,
+    value_name = "char",
+    conflicts_with_all = &["read-nul", "read-raw"],
+    parse(try_from_str = parse_single_byte_char)
+    )]
+    pub read: Option<u8>,
+
     /// Read paths delimited by NUL, not newline
     #[clap(short = 'z', long, conflicts_with_all = &["read-raw", "read"])]
     pub read_nul: bool,
@@ -33,16 +49,6 @@ pub struct Cli {
     /// Read the whole input into memory as a single path
     #[clap(short = 'r', long, conflicts_with_all = &["read-nul", "read"])]
     pub read_raw: bool,
-
-    /// Read paths delimited by a specific character, not newline
-    #[clap(
-        short = 'd',
-        long,
-        value_name = "char",
-        conflicts_with_all = &["read-nul", "read-raw"],
-        parse(try_from_str = parse_single_byte_char)
-    )]
-    pub read: Option<u8>,
 
     /// Print results delimited by NUL, not newline
     #[clap(short = 'Z', long, conflicts_with = "print-raw")]
@@ -62,33 +68,18 @@ pub struct Cli {
     #[clap(short = 'p', long, conflicts_with = "bulk")]
     pub pretty: bool,
 
+    /// When to use colors
+    #[clap(
+    long,
+    value_name = "when",
+    possible_values = COLOR_VALUES,
+    parse(try_from_str = parse_color),
+    )]
+    pub color: Option<ColorChoice>,
+
     /// Continue after a path processing error, fail at end
     #[clap(short = 'c', long)]
     pub fail_at_end: bool,
-
-    /// Print explanation of a given pattern
-    #[clap(long, requires = "pattern")]
-    pub explain: bool,
-
-    /// Print help information
-    #[clap(short = 'h', long)]
-    pub help: bool,
-
-    /// Print description of pattern syntax
-    #[clap(long)]
-    pub help_pattern: bool,
-
-    /// Print variable reference
-    #[clap(long)]
-    pub help_vars: bool,
-
-    /// Print filter reference
-    #[clap(long)]
-    pub help_filters: bool,
-
-    /// Print version information
-    #[clap(long)]
-    pub version: bool,
 
     /// Regular expression matched against file name
     #[clap(short = 'e', long)]
@@ -118,14 +109,29 @@ pub struct Cli {
     #[clap(long, value_name = "char")]
     pub escape: Option<char>,
 
-    /// When to use colors
-    #[clap(
-        long,
-        value_name = "when",
-        possible_values = COLOR_VALUES,
-        parse(try_from_str = parse_color),
-    )]
-    pub color: Option<ColorChoice>,
+    /// Print explanation of a given pattern
+    #[clap(long, requires = "pattern")]
+    pub explain: bool,
+
+    /// Print help information
+    #[clap(short = 'h', long)]
+    pub help: bool,
+
+    /// Print description of pattern syntax
+    #[clap(long)]
+    pub help_pattern: bool,
+
+    /// Print variable reference
+    #[clap(long)]
+    pub help_vars: bool,
+
+    /// Print filter reference
+    #[clap(long)]
+    pub help_filters: bool,
+
+    /// Print version information
+    #[clap(long)]
+    pub version: bool,
 }
 
 impl Options for Cli {
