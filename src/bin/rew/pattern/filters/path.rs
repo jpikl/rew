@@ -1,10 +1,9 @@
 use crate::pattern::eval::ErrorKind;
+use crate::pattern::filters::error::Result;
 use crate::utils::AnyString;
 use normpath::PathExt;
 use std::ffi::OsStr;
 use std::path::Path;
-
-type Result = std::result::Result<String, ErrorKind>;
 
 pub fn get_absolute(value: String, current_dir: &Path) -> Result {
     if value.is_empty() {

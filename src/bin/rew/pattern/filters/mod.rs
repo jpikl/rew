@@ -6,7 +6,9 @@ use crate::pattern::substitution::Substitution;
 use crate::pattern::{eval, parse};
 use std::fmt;
 
+mod error;
 mod path;
+mod substr;
 
 #[derive(Debug, PartialEq)]
 pub enum Filter {
@@ -18,7 +20,7 @@ pub enum Filter {
     Extension,
     ExtensionWithDot,
     Substring(Range),
-    SubstringReverse(Range),
+    SubstringBackward(Range),
     ReplaceEmpty(String),
     ReplaceFirst(Substitution<String>),
     ReplaceAll(Substitution<String>),
@@ -51,7 +53,7 @@ impl Filter {
                 'e' => Ok(Filter::Extension),
                 'E' => Ok(Filter::ExtensionWithDot),
                 'n' => Ok(Filter::Substring(Range::parse(reader)?)),
-                'N' => Ok(Filter::SubstringReverse(Range::parse(reader)?)),
+                'N' => Ok(Filter::SubstringBackward(Range::parse(reader)?)),
                 '?' => Ok(Filter::ReplaceEmpty(Char::join(reader.read_to_end()))),
                 'r' => Ok(Filter::ReplaceFirst(Substitution::parse_string(reader)?)),
                 'R' => Ok(Filter::ReplaceAll(Substitution::parse_string(reader)?)),
@@ -96,8 +98,8 @@ impl Filter {
             Filter::BaseName => path::get_base_name(value),
             Filter::Extension => path::get_extension(value),
             Filter::ExtensionWithDot => path::get_extension_with_dot(value),
-            Filter::Substring(range) => unimplemented!(),
-            Filter::SubstringReverse(range) => unimplemented!(),
+            Filter::Substring(range) => substr::get_forward(value, &range),
+            Filter::SubstringBackward(range) => substr::get_backward(value, &range),
             Filter::ReplaceEmpty(value) => unimplemented!(),
             Filter::ReplaceFirst(substitution) => unimplemented!(),
             Filter::ReplaceAll(substitution) => unimplemented!(),
@@ -128,6 +130,8 @@ impl fmt::Display for Filter {
             Self::BaseName => write!(formatter, "Base name"),
             Self::Extension => write!(formatter, "Extension"),
             Self::ExtensionWithDot => write!(formatter, "Extension with dot"),
+            Self::Substring(range) => write!(formatter, "Substring {}", range),
+            Self::SubstringBackward(range) => write!(formatter, "Substring (backward) {}", range),
             _ => unimplemented!(),
         }
     }
@@ -175,6 +179,42 @@ mod tests {
     #[test]
     fn parse_extension_with_dot() {
         assert_eq!(parse("E"), Ok(Filter::ExtensionWithDot));
+    }
+
+    #[test]
+    fn parse_substring() {
+        assert_eq!(
+            parse("n"),
+            Err(parse::Error {
+                kind: parse::ErrorKind::ExpectedRange,
+                range: 1..1,
+            }),
+        );
+        assert_eq!(parse("n5"), Ok(Filter::Substring(Range::FromTo(4, 5))));
+        assert_eq!(parse("n2-10"), Ok(Filter::Substring(Range::FromTo(1, 10))));
+        assert_eq!(parse("n2-"), Ok(Filter::Substring(Range::From(1))));
+        assert_eq!(parse("n-10"), Ok(Filter::Substring(Range::To(10))));
+    }
+
+    #[test]
+    fn parse_substring_backward() {
+        assert_eq!(
+            parse("N"),
+            Err(parse::Error {
+                kind: parse::ErrorKind::ExpectedRange,
+                range: 1..1,
+            }),
+        );
+        assert_eq!(
+            parse("N5"),
+            Ok(Filter::SubstringBackward(Range::FromTo(4, 5)))
+        );
+        assert_eq!(
+            parse("N2-10"),
+            Ok(Filter::SubstringBackward(Range::FromTo(1, 10)))
+        );
+        assert_eq!(parse("N2-"), Ok(Filter::SubstringBackward(Range::From(1))));
+        assert_eq!(parse("N-10"), Ok(Filter::SubstringBackward(Range::To(10))));
     }
 
     fn parse(string: &str) -> parse::Result<Filter> {
@@ -235,6 +275,24 @@ mod tests {
     }
 
     #[test]
+    fn substring() {
+        assert_eq!(
+            Filter::Substring(Range::FromTo(1, 3))
+                .eval(String::from("abcde"), &make_eval_context()),
+            Ok(String::from("bc"))
+        );
+    }
+
+    #[test]
+    fn substring_backward() {
+        assert_eq!(
+            Filter::SubstringBackward(Range::FromTo(1, 3))
+                .eval(String::from("abcde"), &make_eval_context()),
+            Ok(String::from("cd"))
+        );
+    }
+
+    #[test]
     fn fmt() {
         assert_eq!(Filter::AbsolutePath.to_string(), "Absolute path");
         assert_eq!(Filter::CanonicalPath.to_string(), "Canonical path");
@@ -243,5 +301,13 @@ mod tests {
         assert_eq!(Filter::BaseName.to_string(), "Base name");
         assert_eq!(Filter::Extension.to_string(), "Extension");
         assert_eq!(Filter::ExtensionWithDot.to_string(), "Extension with dot");
+        assert_eq!(
+            Filter::Substring(Range::FromTo(1, 3)).to_string(),
+            "Substring from 2 to 3"
+        );
+        assert_eq!(
+            Filter::SubstringBackward(Range::FromTo(1, 3)).to_string(),
+            "Substring (backward) from 2 to 3"
+        );
     }
 }
