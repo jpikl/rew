@@ -33,6 +33,7 @@ pub enum ErrorKind {
     RangeUnbounded,
     RangeStartOverEnd(usize, usize),
     RegexCaptureZero,
+    RegexInvalid(AnyString),
     SubstituteWithoutValue(Char),
     SubstituteRegexInvalid(AnyString),
     UnknownEscapeSequence(EscapeSequence),
@@ -83,6 +84,7 @@ impl fmt::Display for ErrorKind {
                 start, end
             ),
             Self::RegexCaptureZero => write!(formatter, "Regex capture groups start from 1, not 0"),
+            Self::RegexInvalid(value) => write!(formatter, "Invalid regular expression: {}", value),
             Self::SubstituteWithoutValue(Char::Raw(value)) => write!(
                 formatter,
                 "Substitution is missing value after delimiter '{}'",
@@ -211,6 +213,10 @@ mod tests {
         assert_eq!(
             ErrorKind::RegexCaptureZero.to_string(),
             "Regex capture groups start from 1, not 0"
+        );
+        assert_eq!(
+            ErrorKind::RegexInvalid(AnyString(String::from("abc"))).to_string(),
+            "Invalid regular expression: abc"
         );
         assert_eq!(
             ErrorKind::SubstituteWithoutValue(Char::Raw('_')).to_string(),

@@ -21,6 +21,7 @@ mod symbols;
 #[cfg(test)]
 mod testing;
 mod variable;
+mod filters;
 
 #[derive(Debug, PartialEq)]
 pub struct Pattern {

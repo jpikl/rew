@@ -1,3 +1,7 @@
+use crate::pattern::char::Char;
+use crate::pattern::parse::{Error, ErrorKind, Result};
+use crate::pattern::reader::Reader;
+use crate::utils::AnyString;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::borrow::Cow;
@@ -9,6 +13,19 @@ lazy_static! {
 
 #[derive(Debug)]
 pub struct RegexHolder(pub Regex);
+
+impl RegexHolder {
+    pub fn parse(reader: &mut Reader<Char>) -> Result<Self> {
+        let position = reader.position();
+        match Regex::new(&Char::join(reader.read_to_end())) {
+            Ok(regex) => Ok(Self(regex)),
+            Err(error) => Err(Error {
+                kind: ErrorKind::RegexInvalid(AnyString(error.to_string())),
+                range: position..reader.position(),
+            }),
+        }
+    }
+}
 
 impl PartialEq for RegexHolder {
     fn eq(&self, other: &Self) -> bool {
@@ -33,6 +50,31 @@ pub fn add_capture_group_brackets(string: &str) -> Cow<str> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn regex_holder_parse() {
+        let mut reader = Reader::from("[0-9]+");
+        assert_eq!(
+            RegexHolder::parse(&mut reader),
+            Ok(RegexHolder(Regex::new("[0-9]+").unwrap()))
+        );
+        assert_eq!(reader.position(), 6);
+    }
+
+    #[test]
+    fn regex_holder_parse_error() {
+        let mut reader = Reader::from("[0-9");
+        assert_eq!(
+            RegexHolder::parse(&mut reader),
+            Err(Error {
+                kind: ErrorKind::RegexInvalid(AnyString(String::from(
+                    "This string is not compared by assertion"
+                ))),
+                range: 0..4,
+            })
+        );
+        assert_eq!(reader.position(), 4);
+    }
 
     #[test]
     fn regex_holder_eq() {
