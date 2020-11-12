@@ -7,10 +7,13 @@ use crate::pattern::{eval, parse};
 use std::fmt;
 
 mod error;
+mod generate;
 mod path;
 mod regex;
 mod string;
 mod substr;
+#[cfg(test)]
+mod testing;
 
 #[derive(Debug, PartialEq)]
 pub enum Filter {
@@ -153,9 +156,9 @@ impl Filter {
             }) => regex::replace_all(value, &regex, &replacement),
 
             // Generators
-            Self::LocalCounter => unimplemented!(),
-            Self::GlobalCounter => unimplemented!(),
-            Self::Uuid => unimplemented!(),
+            Self::LocalCounter => generate::counter(context.local_counter),
+            Self::GlobalCounter => generate::counter(context.global_counter),
+            Self::Uuid => generate::uuid(),
         }
     }
 }
@@ -206,8 +209,9 @@ impl fmt::Display for Filter {
             ),
 
             // Generators
-            // TODO
-            _ => unimplemented!(),
+            Self::LocalCounter => write!(formatter, "Local counter"),
+            Self::GlobalCounter => write!(formatter, "Global counter"),
+            Self::Uuid => write!(formatter, "UUID"),
         }
     }
 }
@@ -217,6 +221,7 @@ mod tests {
     use super::*;
     use crate::pattern::testing::make_eval_context;
     extern crate regex;
+    use crate::pattern::filters::testing::assert_ok_uuid;
     use crate::utils::AnyString;
     use regex::Regex;
 
@@ -491,21 +496,25 @@ mod tests {
     }
 
     #[test]
+    fn parse_local_counter() {
+        assert_eq!(parse("c"), Ok(Filter::LocalCounter));
+    }
+
+    #[test]
+    fn parse_global_counter() {
+        assert_eq!(parse("C"), Ok(Filter::GlobalCounter));
+    }
+
+    #[test]
+    fn parse_uuid() {
+        assert_eq!(parse("u"), Ok(Filter::Uuid));
+    }
+
+    #[test]
     fn parse_ignore_chars_after_filter() {
         let mut reader = Reader::from("a_");
         Filter::parse(&mut reader).unwrap();
         assert_eq!(reader.position(), 1);
-    }
-
-    #[test]
-    fn parse_empty_error() {
-        assert_eq!(
-            parse(""),
-            Err(parse::Error {
-                kind: parse::ErrorKind::ExpectedFilter,
-                range: 0..0,
-            }),
-        )
     }
 
     #[test]
@@ -517,6 +526,17 @@ mod tests {
                 range: 0..1,
             }),
         );
+    }
+
+    #[test]
+    fn parse_empty_error() {
+        assert_eq!(
+            parse(""),
+            Err(parse::Error {
+                kind: parse::ErrorKind::ExpectedFilter,
+                range: 0..0,
+            }),
+        )
     }
 
     fn parse(string: &str) -> parse::Result<Filter> {
@@ -704,6 +724,27 @@ mod tests {
             Filter::RightPad(String::from("0123")).eval(String::from("ab"), &make_eval_context()),
             Ok(String::from("ab23"))
         );
+    }
+
+    #[test]
+    fn eval_local_counter() {
+        assert_eq!(
+            Filter::LocalCounter.eval(String::new(), &make_eval_context()),
+            Ok(String::from("1"))
+        );
+    }
+
+    #[test]
+    fn eval_global_counter() {
+        assert_eq!(
+            Filter::GlobalCounter.eval(String::new(), &make_eval_context()),
+            Ok(String::from("2"))
+        );
+    }
+
+    #[test]
+    fn eval_uuid() {
+        assert_ok_uuid(Filter::Uuid.eval(String::new(), &make_eval_context()));
     }
 
     #[test]
