@@ -524,7 +524,7 @@ mod tests {
                             },
                             Parsed {
                                 value: Filter::ReplaceFirst(Substitution {
-                                    value: 'e'.to_string(),
+                                    target: 'e'.to_string(),
                                     replacement: String::new(),
                                 }),
                                 range: 20..23,

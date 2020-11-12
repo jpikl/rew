@@ -109,23 +109,25 @@ impl Filter {
                 Ok(string)
             }
 
-            Self::ReplaceFirst(Substitution { value, replacement }) => {
-                Ok(string.replacen(value, replacement, 1))
-            }
+            Self::ReplaceFirst(Substitution {
+                target,
+                replacement,
+            }) => Ok(string.replacen(target, replacement, 1)),
 
-            Self::ReplaceAll(Substitution { value, replacement }) => {
-                Ok(string.replace(value, replacement))
-            }
+            Self::ReplaceAll(Substitution {
+                target,
+                replacement,
+            }) => Ok(string.replace(target, replacement)),
 
             Self::RegexReplaceFirst(Substitution {
-                value: RegexHolder(regex),
+                target: RegexHolder(regex),
                 replacement,
             }) => Ok(regex
                 .replacen(&string, 1, add_capture_group_brackets(replacement).as_ref())
                 .to_string()),
 
             Self::RegexReplaceAll(Substitution {
-                value: RegexHolder(regex),
+                target: RegexHolder(regex),
                 replacement,
             }) => Ok(regex
                 .replace_all(&string, add_capture_group_brackets(replacement).as_ref())
@@ -250,14 +252,14 @@ mod tests {
         assert_eq!(
             parse("r/ab"),
             Ok(Filter::ReplaceFirst(Substitution {
-                value: String::from("ab"),
+                target: String::from("ab"),
                 replacement: String::from(""),
             })),
         );
         assert_eq!(
             parse("r/ab/cd"),
             Ok(Filter::ReplaceFirst(Substitution {
-                value: String::from("ab"),
+                target: String::from("ab"),
                 replacement: String::from("cd"),
             })),
         );
@@ -275,14 +277,14 @@ mod tests {
         assert_eq!(
             parse("R/ab"),
             Ok(Filter::ReplaceAll(Substitution {
-                value: String::from("ab"),
+                target: String::from("ab"),
                 replacement: String::from(""),
             })),
         );
         assert_eq!(
             parse("R/ab/cd"),
             Ok(Filter::ReplaceAll(Substitution {
-                value: String::from("ab"),
+                target: String::from("ab"),
                 replacement: String::from("cd"),
             })),
         );
@@ -300,14 +302,14 @@ mod tests {
         assert_eq!(
             parse("s/[0-9]+"),
             Ok(Filter::RegexReplaceFirst(Substitution {
-                value: RegexHolder(Regex::new("[0-9]+").unwrap()),
+                target: RegexHolder(Regex::new("[0-9]+").unwrap()),
                 replacement: String::from(""),
             })),
         );
         assert_eq!(
             parse("s/[0-9]+/cd"),
             Ok(Filter::RegexReplaceFirst(Substitution {
-                value: RegexHolder(Regex::new("[0-9]+").unwrap()),
+                target: RegexHolder(Regex::new("[0-9]+").unwrap()),
                 replacement: String::from("cd"),
             })),
         );
@@ -334,14 +336,14 @@ mod tests {
         assert_eq!(
             parse("S/[0-9]+"),
             Ok(Filter::RegexReplaceAll(Substitution {
-                value: RegexHolder(Regex::new("[0-9]+").unwrap()),
+                target: RegexHolder(Regex::new("[0-9]+").unwrap()),
                 replacement: String::from(""),
             })),
         );
         assert_eq!(
             parse("S/[0-9]+/cd"),
             Ok(Filter::RegexReplaceAll(Substitution {
-                value: RegexHolder(Regex::new("[0-9]+").unwrap()),
+                target: RegexHolder(Regex::new("[0-9]+").unwrap()),
                 replacement: String::from("cd"),
             })),
         );
@@ -661,7 +663,7 @@ mod tests {
     fn eval_replace_first() {
         assert_eq!(
             Filter::ReplaceFirst(Substitution {
-                value: String::from("ab"),
+                target: String::from("ab"),
                 replacement: String::from("x"),
             })
             .eval(String::from("abcd_abcd")),
@@ -673,7 +675,7 @@ mod tests {
     fn eval_replace_all() {
         assert_eq!(
             Filter::ReplaceAll(Substitution {
-                value: String::from("ab"),
+                target: String::from("ab"),
                 replacement: String::from("x"),
             })
             .eval(String::from("abcd_abcd")),
@@ -685,7 +687,7 @@ mod tests {
     fn eval_remove_first() {
         assert_eq!(
             Filter::ReplaceFirst(Substitution {
-                value: String::from("ab"),
+                target: String::from("ab"),
                 replacement: String::new(),
             })
             .eval(String::from("abcd_abcd")),
@@ -697,7 +699,7 @@ mod tests {
     fn eval_remove_all() {
         assert_eq!(
             Filter::ReplaceAll(Substitution {
-                value: String::from("ab"),
+                target: String::from("ab"),
                 replacement: String::new(),
             })
             .eval(String::from("abcd_abcd")),
@@ -709,7 +711,7 @@ mod tests {
     fn eval_regex_replace_first() {
         assert_eq!(
             Filter::RegexReplaceFirst(Substitution {
-                value: RegexHolder(Regex::new("([0-9])([0-9]+)").unwrap()),
+                target: RegexHolder(Regex::new("([0-9])([0-9]+)").unwrap()),
                 replacement: String::from("_$2$1_"),
             })
             .eval(String::from("abc123def456")),
@@ -721,7 +723,7 @@ mod tests {
     fn eval_regex_replace_all() {
         assert_eq!(
             Filter::RegexReplaceAll(Substitution {
-                value: RegexHolder(Regex::new("([0-9])([0-9]+)").unwrap()),
+                target: RegexHolder(Regex::new("([0-9])([0-9]+)").unwrap()),
                 replacement: String::from("_$2$1_"),
             })
             .eval(String::from("abc123def456")),
@@ -733,7 +735,7 @@ mod tests {
     fn eval_regex_remove_first() {
         assert_eq!(
             Filter::RegexReplaceFirst(Substitution {
-                value: RegexHolder(Regex::new("[0-9]+").unwrap()),
+                target: RegexHolder(Regex::new("[0-9]+").unwrap()),
                 replacement: String::new(),
             })
             .eval(String::from("abc123def456")),
@@ -745,7 +747,7 @@ mod tests {
     fn eval_regex_remove_all() {
         assert_eq!(
             Filter::RegexReplaceAll(Substitution {
-                value: RegexHolder(Regex::new("[0-9]+").unwrap()),
+                target: RegexHolder(Regex::new("[0-9]+").unwrap()),
                 replacement: String::new(),
             })
             .eval(String::from("abc123def456")),
@@ -877,7 +879,7 @@ mod tests {
         );
         assert_eq!(
             Filter::ReplaceFirst(Substitution {
-                value: String::from("a"),
+                target: String::from("a"),
                 replacement: String::from("b")
             })
             .to_string(),
@@ -885,7 +887,7 @@ mod tests {
         );
         assert_eq!(
             Filter::ReplaceAll(Substitution {
-                value: String::from("a"),
+                target: String::from("a"),
                 replacement: String::from("b")
             })
             .to_string(),
@@ -893,7 +895,7 @@ mod tests {
         );
         assert_eq!(
             Filter::RegexReplaceFirst(Substitution {
-                value: RegexHolder(Regex::new("a+").unwrap()),
+                target: RegexHolder(Regex::new("a+").unwrap()),
                 replacement: String::from("b")
             })
             .to_string(),
@@ -901,7 +903,7 @@ mod tests {
         );
         assert_eq!(
             Filter::RegexReplaceAll(Substitution {
-                value: RegexHolder(Regex::new("a+").unwrap()),
+                target: RegexHolder(Regex::new("a+").unwrap()),
                 replacement: String::from("b")
             })
             .to_string(),

@@ -9,60 +9,66 @@ use std::ops::Range;
 
 #[derive(Debug, PartialEq)]
 pub struct Substitution<T> {
-    pub value: T,
+    pub target: T,
     pub replacement: String,
 }
 
 impl Substitution<String> {
     pub fn parse_string(reader: &mut Reader<Char>) -> Result<Self> {
-        let (value, _, replacement) = parse_value_and_replacement(reader)?;
-        Ok(Self { value, replacement })
+        let (target, _, replacement) = parse_target_and_replacement(reader)?;
+        Ok(Self {
+            target,
+            replacement,
+        })
     }
 }
 
 impl Substitution<RegexHolder> {
     pub fn parse_regex(reader: &mut Reader<Char>) -> Result<Self> {
-        let (value, value_range, replacement) = parse_value_and_replacement(reader)?;
-        let value = match Regex::new(&value) {
+        let (target, target_range, replacement) = parse_target_and_replacement(reader)?;
+        let target = match Regex::new(&target) {
             Ok(regex) => RegexHolder(regex),
             Err(error) => {
                 return Err(Error {
                     kind: ErrorKind::SubstituteRegexInvalid(AnyString(error.to_string())),
-                    range: value_range,
+                    range: target_range,
                 })
             }
         };
-        Ok(Self { value, replacement })
+        Ok(Self {
+            target,
+            replacement,
+        })
     }
 }
 
-pub fn parse_value_and_replacement(
+pub fn parse_target_and_replacement(
     reader: &mut Reader<Char>,
 ) -> Result<(String, Range<usize>, String)> {
     if let Some(delimiter) = reader.read().cloned() {
-        let mut value = String::new();
-        let value_start = reader.position();
-        let mut value_end = value_start;
+        let mut target = String::new();
+        let target_start = reader.position();
+        let mut target_end = target_start;
 
         while let Some(ch) = reader.read_char() {
             if ch == delimiter.as_char() {
                 break;
             } else {
-                value.push(ch);
-                value_end = reader.position();
+                target.push(ch);
+                target_end = reader.position();
             }
         }
 
-        if value.is_empty() {
+        if target.is_empty() {
             return Err(Error {
-                kind: ErrorKind::SubstituteWithoutValue(delimiter),
-                range: value_start..value_end,
+                kind: ErrorKind::SubstituteWithoutTarget(delimiter),
+                range: target_start..target_end,
             });
         }
 
         Ok((
-            value,
-            value_start..value_end,
+            target,
+            target_start..target_end,
             Char::join(reader.read_to_end()),
         ))
     } else {
@@ -75,7 +81,7 @@ pub fn parse_value_and_replacement(
 
 impl<T: fmt::Display> fmt::Display for Substitution<T> {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(formatter, "'{}' by '{}'", self.value, self.replacement)
+        write!(formatter, "'{}' by '{}'", self.target, self.replacement)
     }
 }
 
@@ -87,7 +93,7 @@ mod tests {
     fn parse_empty_error() {
         let mut reader = Reader::from("");
         assert_eq!(
-            parse_value_and_replacement(&mut reader),
+            parse_target_and_replacement(&mut reader),
             Err(Error {
                 kind: ErrorKind::ExpectedSubstitution,
                 range: 0..0,
@@ -97,12 +103,12 @@ mod tests {
     }
 
     #[test]
-    fn parse_no_value_error() {
+    fn parse_no_target_error() {
         let mut reader = Reader::from("/");
         assert_eq!(
-            parse_value_and_replacement(&mut reader),
+            parse_target_and_replacement(&mut reader),
             Err(Error {
-                kind: ErrorKind::SubstituteWithoutValue(Char::Raw('/')),
+                kind: ErrorKind::SubstituteWithoutTarget(Char::Raw('/')),
                 range: 1..1,
             })
         );
@@ -110,12 +116,12 @@ mod tests {
     }
 
     #[test]
-    fn parse_empty_value_error() {
+    fn parse_empty_target_error() {
         let mut reader = Reader::from("//");
         assert_eq!(
-            parse_value_and_replacement(&mut reader),
+            parse_target_and_replacement(&mut reader),
             Err(Error {
-                kind: ErrorKind::SubstituteWithoutValue(Char::Raw('/')),
+                kind: ErrorKind::SubstituteWithoutTarget(Char::Raw('/')),
                 range: 1..1,
             })
         );
@@ -123,70 +129,70 @@ mod tests {
     }
 
     #[test]
-    fn parse_value_no_replacement() {
+    fn parse_target_no_replacement() {
         let mut reader = Reader::from("/a");
         assert_eq!(
-            parse_value_and_replacement(&mut reader),
+            parse_target_and_replacement(&mut reader),
             Ok((String::from("a"), 1..2, String::from("")))
         );
         assert_eq!(reader.position(), 2)
     }
 
     #[test]
-    fn parse_long_value_no_replacement() {
+    fn parse_long_target_no_replacement() {
         let mut reader = Reader::from("/abc");
         assert_eq!(
-            parse_value_and_replacement(&mut reader),
+            parse_target_and_replacement(&mut reader),
             Ok((String::from("abc"), 1..4, String::from("")))
         );
         assert_eq!(reader.position(), 4);
     }
 
     #[test]
-    fn parse_value_empty_replacement() {
+    fn parse_target_empty_replacement() {
         let mut reader = Reader::from("/a/");
         assert_eq!(
-            parse_value_and_replacement(&mut reader),
+            parse_target_and_replacement(&mut reader),
             Ok((String::from("a"), 1..2, String::from("")))
         );
         assert_eq!(reader.position(), 3);
     }
 
     #[test]
-    fn parse_long_value_empty_replacement() {
+    fn parse_long_target_empty_replacement() {
         let mut reader = Reader::from("/abc/");
         assert_eq!(
-            parse_value_and_replacement(&mut reader),
+            parse_target_and_replacement(&mut reader),
             Ok((String::from("abc"), 1..4, String::from("")))
         );
         assert_eq!(reader.position(), 5);
     }
 
     #[test]
-    fn parse_value_replacement() {
+    fn parse_target_replacement() {
         let mut reader = Reader::from("/a/d");
         assert_eq!(
-            parse_value_and_replacement(&mut reader),
+            parse_target_and_replacement(&mut reader),
             Ok((String::from("a"), 1..2, String::from("d")))
         );
         assert_eq!(reader.position(), 4);
     }
 
     #[test]
-    fn parse_long_value_replacement() {
+    fn parse_long_target_replacement() {
         let mut reader = Reader::from("/abc/def");
         assert_eq!(
-            parse_value_and_replacement(&mut reader),
+            parse_target_and_replacement(&mut reader),
             Ok((String::from("abc"), 1..4, String::from("def")))
         );
         assert_eq!(reader.position(), 8);
     }
 
     #[test]
-    fn parse_value_replacement_with_redundant_delimiters() {
+    fn parse_target_replacement_with_redundant_delimiters() {
         let mut reader = Reader::from("/abc/d//e/");
         assert_eq!(
-            parse_value_and_replacement(&mut reader),
+            parse_target_and_replacement(&mut reader),
             Ok((String::from("abc"), 1..4, String::from("d//e/")))
         );
         assert_eq!(reader.position(), 10);
@@ -198,7 +204,7 @@ mod tests {
         assert_eq!(
             Substitution::parse_string(&mut reader),
             Ok(Substitution {
-                value: String::from("abc"),
+                target: String::from("abc"),
                 replacement: String::from("def"),
             })
         );
@@ -211,7 +217,7 @@ mod tests {
         assert_eq!(
             Substitution::parse_regex(&mut reader),
             Ok(Substitution {
-                value: RegexHolder(Regex::new("[0-9]+").unwrap()),
+                target: RegexHolder(Regex::new("[0-9]+").unwrap()),
                 replacement: String::from("def"),
             })
         );
@@ -237,7 +243,7 @@ mod tests {
     fn fmt() {
         assert_eq!(
             Substitution {
-                value: String::from("abc"),
+                target: String::from("abc"),
                 replacement: String::from("def")
             }
             .to_string(),
@@ -245,7 +251,7 @@ mod tests {
         );
         assert_eq!(
             Substitution {
-                value: Regex::new("([a-z]+)").unwrap(),
+                target: Regex::new("([a-z]+)").unwrap(),
                 replacement: String::from("_$1_")
             }
             .to_string(),

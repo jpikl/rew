@@ -35,7 +35,7 @@ pub enum ErrorKind {
     RangeStartOverEnd(usize, usize),
     RegexCaptureZero,
     RegexInvalid(AnyString),
-    SubstituteWithoutValue(Char),
+    SubstituteWithoutTarget(Char),
     SubstituteRegexInvalid(AnyString),
     UnknownEscapeSequence(EscapeSequence),
     UnknownFilter(Char),
@@ -90,12 +90,12 @@ impl fmt::Display for ErrorKind {
             ),
             Self::RegexCaptureZero => write!(formatter, "Regex capture groups start from 1, not 0"),
             Self::RegexInvalid(value) => write!(formatter, "Invalid regular expression: {}", value),
-            Self::SubstituteWithoutValue(Char::Raw(value)) => write!(
+            Self::SubstituteWithoutTarget(Char::Raw(value)) => write!(
                 formatter,
                 "Substitution is missing value after delimiter '{}'",
                 value
             ),
-            Self::SubstituteWithoutValue(Char::Escaped(_, sequence)) => write!(
+            Self::SubstituteWithoutTarget(Char::Escaped(_, sequence)) => write!(
                 formatter,
                 "Substitution is missing value after delimiter '{}{}' (escape sequence)",
                 sequence[0], sequence[1]
@@ -228,11 +228,11 @@ mod tests {
             "Invalid regular expression: abc"
         );
         assert_eq!(
-            ErrorKind::SubstituteWithoutValue(Char::Raw('_')).to_string(),
+            ErrorKind::SubstituteWithoutTarget(Char::Raw('_')).to_string(),
             "Substitution is missing value after delimiter '_'"
         );
         assert_eq!(
-            ErrorKind::SubstituteWithoutValue(Char::Escaped('|', ['#', '|'])).to_string(),
+            ErrorKind::SubstituteWithoutTarget(Char::Escaped('|', ['#', '|'])).to_string(),
             "Substitution is missing value after delimiter '#|' (escape sequence)"
         );
         assert_eq!(

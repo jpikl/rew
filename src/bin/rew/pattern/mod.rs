@@ -8,6 +8,7 @@ mod char;
 pub mod eval;
 mod explain;
 mod filter;
+mod filters;
 pub mod help;
 mod lexer;
 mod number;
@@ -21,7 +22,6 @@ mod symbols;
 #[cfg(test)]
 mod testing;
 mod variable;
-mod filters;
 
 #[derive(Debug, PartialEq)]
 pub struct Pattern {
@@ -334,7 +334,7 @@ mod tests {
                     filters: vec![
                         make_parsed(Filter::ToUppercase),
                         make_parsed(Filter::ReplaceAll(Substitution {
-                            value: String::from("X"),
+                            target: String::from("X"),
                             replacement: String::from(""),
                         })),
                     ],

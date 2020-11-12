@@ -2,12 +2,12 @@ use crate::pattern::filters::error::Result;
 use crate::pattern::substitution::Substitution;
 use unidecode::unidecode;
 
-pub fn replace_first(mut value: String, subst: &Substitution<String>) -> Result {
-    Ok(value.replacen(&subst.value, &subst.replacement, 1))
+pub fn replace_first(value: String, target: &str, replacement: &str) -> Result {
+    Ok(value.replacen(target, replacement, 1))
 }
 
-pub fn replace_all(mut value: String, subst: &Substitution<String>) -> Result {
-    Ok(value.replace(&subst.value, &subst.replacement))
+pub fn replace_all(value: String, target: &str, replacement: &str) -> Result {
+    Ok(value.replace(target, replacement))
 }
 
 pub fn replace_empty(mut value: String, replacement: &str) -> Result {
@@ -17,19 +17,19 @@ pub fn replace_empty(mut value: String, replacement: &str) -> Result {
     Ok(value)
 }
 
-pub fn trim(mut value: String) -> Result {
+pub fn trim(value: String) -> Result {
     Ok(value.trim().to_string())
 }
 
-pub fn to_lowercase(mut value: String) -> Result {
+pub fn to_lowercase(value: String) -> Result {
     Ok(value.to_lowercase())
 }
 
-pub fn to_uppercase(mut value: String) -> Result {
+pub fn to_uppercase(value: String) -> Result {
     Ok(value.to_uppercase())
 }
 
-pub fn to_ascii(mut value: String) -> Result {
+pub fn to_ascii(value: String) -> Result {
     Ok(unidecode(&value))
 }
 
@@ -59,113 +59,53 @@ mod tests {
     #[test]
     fn replace_first_in_some() {
         assert_eq!(
-            replace_first(
-                String::from("abcd_abcd"),
-                &Substitution {
-                    value: String::from("ab"),
-                    replacement: String::from("x"),
-                }
-            ),
+            replace_first(String::from("abcd_abcd"), "ab", "x"),
             Ok(String::from("xcd_abcd"))
         );
     }
 
     #[test]
     fn replace_first_in_empty() {
-        assert_eq!(
-            replace_first(
-                String::new(),
-                &Substitution {
-                    value: String::from("ab"),
-                    replacement: String::from("x"),
-                }
-            ),
-            Ok(String::new())
-        );
+        assert_eq!(replace_first(String::new(), "ab", "x"), Ok(String::new()));
     }
 
     #[test]
     fn replace_all_in_some() {
         assert_eq!(
-            replace_all(
-                String::from("abcd_abcd"),
-                &Substitution {
-                    value: String::from("ab"),
-                    replacement: String::from("x"),
-                }
-            ),
+            replace_all(String::from("abcd_abcd"), "ab", "x"),
             Ok(String::from("xcd_xcd"))
         );
     }
 
     #[test]
     fn replace_all_in_empty() {
-        assert_eq!(
-            replace_all(
-                String::new(),
-                &Substitution {
-                    value: String::from("ab"),
-                    replacement: String::from("x"),
-                }
-            ),
-            Ok(String::new())
-        );
+        assert_eq!(replace_all(String::new(), "ab", "x"), Ok(String::new()));
     }
 
     #[test]
     fn remove_first_in_some() {
         assert_eq!(
-            replace_first(
-                String::from("abcd_abcd"),
-                &Substitution {
-                    value: String::from("ab"),
-                    replacement: String::new(),
-                }
-            ),
+            replace_first(String::from("abcd_abcd"), "ab", ""),
             Ok(String::from("cd_abcd"))
         );
     }
 
     #[test]
     fn remove_first_in_empty() {
-        assert_eq!(
-            replace_first(
-                String::new(),
-                &Substitution {
-                    value: String::from("ab"),
-                    replacement: String::new(),
-                }
-            ),
-            Ok(String::new())
-        );
+        assert_eq!(replace_first(String::new(), "ab", ""), Ok(String::new()));
     }
 
     #[test]
     fn remove_all_in_some() {
         assert_eq!(
-            replace_all(
-                String::from("abcd_abcd"),
-                &Substitution {
-                    value: String::from("ab"),
-                    replacement: String::new(),
-                }
-            ),
+            replace_all(String::from("abcd_abcd"), "ab", ""),
             Ok(String::from("cd_cd"))
         );
     }
 
     #[test]
     fn remove_all_in_empty() {
-        assert_eq!(
-            replace_all(
-                String::new(),
-                &Substitution {
-                    value: String::from("ab"),
-                    replacement: String::new(),
-                }
-            ),
-            Ok(String::new())
-        );
+        assert_eq!(replace_all(String::new(), "ab", ""), Ok(String::new()));
     }
 
     #[test]
