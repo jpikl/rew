@@ -4,7 +4,6 @@ use common::output::write_error;
 use common::symbols::{DIFF_IN, DIFF_OUT};
 use std::error::Error;
 use std::io::{Result, Write};
-use std::path::Path;
 use termcolor::{Color, WriteColor};
 
 pub enum PathMode {
@@ -23,31 +22,21 @@ impl<O: Write + WriteColor> Paths<O> {
         Self { output, mode }
     }
 
-    pub fn write(&mut self, input_path: &Path, output_path: &Path) -> Result<()> {
+    pub fn write(&mut self, input_path: &str, output_path: &str) -> Result<()> {
         match self.mode {
             PathMode::Out(Some(delimiter)) => {
-                write!(
-                    self.output,
-                    "{}{}",
-                    output_path.to_string_lossy(),
-                    delimiter
-                )?;
+                write!(self.output, "{}{}", output_path, delimiter)?;
                 self.flush_if_needed(delimiter)
             }
             PathMode::Out(None) => {
-                write!(self.output, "{}", output_path.to_string_lossy())?;
+                write!(self.output, "{}", output_path)?;
                 self.output.flush()
             }
             PathMode::Diff(Some(delimiter)) => {
                 write!(
                     self.output,
                     "{}{}{}{}{}{}",
-                    DIFF_IN,
-                    input_path.to_string_lossy(),
-                    delimiter,
-                    DIFF_OUT,
-                    output_path.to_string_lossy(),
-                    delimiter
+                    DIFF_IN, input_path, delimiter, DIFF_OUT, output_path, delimiter
                 )?;
                 self.flush_if_needed(delimiter)
             }
@@ -55,20 +44,17 @@ impl<O: Write + WriteColor> Paths<O> {
                 write!(
                     self.output,
                     "{}{}{}{}",
-                    DIFF_IN,
-                    input_path.to_string_lossy(),
-                    DIFF_OUT,
-                    output_path.to_string_lossy()
+                    DIFF_IN, input_path, DIFF_OUT, output_path
                 )?;
                 self.output.flush()
             }
             PathMode::Pretty => {
                 self.output.set_color(&spec_color(Color::Blue))?;
-                write!(self.output, "{}", input_path.to_string_lossy())?;
+                write!(self.output, "{}", input_path)?;
                 self.output.reset()?;
                 write!(self.output, " -> ")?;
                 self.output.set_color(&spec_color(Color::Green))?;
-                writeln!(self.output, "{}", output_path.to_string_lossy())
+                writeln!(self.output, "{}", output_path)
             }
         }
     }
@@ -167,8 +153,8 @@ mod tests {
     }
 
     fn write_paths(paths: &mut Paths<&mut ColoredOuput>) {
-        paths.write(&Path::new("a"), &Path::new("b")).unwrap();
-        paths.write(&Path::new("c"), &Path::new("d")).unwrap();
+        paths.write("a", "b").unwrap();
+        paths.write("c", "d").unwrap();
     }
 
     #[test]

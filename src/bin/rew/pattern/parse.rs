@@ -22,11 +22,11 @@ pub struct Error {
 pub enum ErrorKind {
     ExpectedFilter,
     ExpectedNumber,
+    ExpectedFilterOrExprEnd,
     ExpectedPipeOrExprEnd,
     ExpectedRange,
     ExpectedRegex,
     ExpectedSubstitution,
-    ExpectedVariable,
     ExprStartInsideExpr,
     PipeOutsideExpr,
     RangeIndexZero,
@@ -39,7 +39,6 @@ pub enum ErrorKind {
     SubstituteRegexInvalid(AnyString),
     UnknownEscapeSequence(EscapeSequence),
     UnknownFilter(Char),
-    UnknownVariable(Char),
     UnmatchedExprEnd,
     UnmatchedExprStart,
     UnterminatedEscapeSequence(char),
@@ -64,6 +63,9 @@ impl fmt::Display for ErrorKind {
         match self {
             Self::ExpectedFilter => write!(formatter, "Expected filter after '{}'", PIPE),
             Self::ExpectedNumber => write!(formatter, "Expected number"),
+            Self::ExpectedFilterOrExprEnd => {
+                write!(formatter, "Expected filter or closing '{}'", EXPR_END)
+            }
             Self::ExpectedPipeOrExprEnd => {
                 write!(formatter, "Expected '{}' or closing '{}'", PIPE, EXPR_END)
             }
@@ -75,7 +77,6 @@ impl fmt::Display for ErrorKind {
             Self::ExpectedSubstitution => {
                 write!(formatter, "Filter requires substitution as a parameter")
             }
-            Self::ExpectedVariable => write!(formatter, "Expected variable after '{}'", EXPR_START),
             Self::ExprStartInsideExpr => {
                 write!(formatter, "Unescaped '{}' inside expression", EXPR_START)
             }
@@ -117,14 +118,6 @@ impl fmt::Display for ErrorKind {
                 formatter,
                 "Unknown filter '{}' written as escape sequence '{}{}'",
                 value, sequence[0], sequence[1]
-            ),
-            Self::UnknownVariable(Char::Raw(char)) => {
-                write!(formatter, "Unknown variable '{}'", char)
-            }
-            Self::UnknownVariable(Char::Escaped(value, sequence)) => write!(
-                formatter,
-                "Unknown variable '{}' written as escape sequence '{}{}'",
-                value, sequence[0], sequence[1],
             ),
             Self::UnmatchedExprEnd => write!(
                 formatter,
@@ -179,6 +172,10 @@ mod tests {
         );
         assert_eq!(ErrorKind::ExpectedNumber.to_string(), "Expected number");
         assert_eq!(
+            ErrorKind::ExpectedFilterOrExprEnd.to_string(),
+            "Expected filter or closing '}'"
+        );
+        assert_eq!(
             ErrorKind::ExpectedPipeOrExprEnd.to_string(),
             "Expected '|' or closing '}'"
         );
@@ -193,10 +190,6 @@ mod tests {
         assert_eq!(
             ErrorKind::ExpectedSubstitution.to_string(),
             "Filter requires substitution as a parameter"
-        );
-        assert_eq!(
-            ErrorKind::ExpectedVariable.to_string(),
-            "Expected variable after '{'"
         );
         assert_eq!(
             ErrorKind::ExprStartInsideExpr.to_string(),
@@ -250,14 +243,6 @@ mod tests {
         assert_eq!(
             ErrorKind::UnknownFilter(Char::Escaped('x', ['#', 'y'])).to_string(),
             "Unknown filter 'x' written as escape sequence '#y'"
-        );
-        assert_eq!(
-            ErrorKind::UnknownVariable(Char::Raw('x')).to_string(),
-            "Unknown variable 'x'"
-        );
-        assert_eq!(
-            ErrorKind::UnknownVariable(Char::Escaped('x', ['#', 'y'])).to_string(),
-            "Unknown variable 'x' written as escape sequence '#y'"
         );
         assert_eq!(
             ErrorKind::UnmatchedExprEnd.to_string(),

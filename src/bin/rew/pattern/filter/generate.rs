@@ -1,4 +1,4 @@
-use crate::pattern::filters::error::Result;
+use crate::pattern::filter::error::Result;
 use uuid::Uuid;
 
 pub fn uuid() -> Result {
@@ -14,7 +14,7 @@ pub fn counter(value: u32) -> Result {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::pattern::filters::testing::assert_ok_uuid;
+    use crate::pattern::filter::testing::assert_ok_uuid;
 
     #[test]
     fn generates_uuid() {

@@ -1,4 +1,4 @@
-use crate::pattern::filters::error::Result;
+use crate::pattern::filter::error::Result;
 use crate::pattern::range::Range;
 
 pub fn get_forward(mut value: String, range: &Range) -> Result {

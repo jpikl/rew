@@ -1,16 +1,13 @@
 use crate::pattern::filter::Filter;
-use crate::pattern::variable::Variable;
 use crate::utils::{AnyString, HasRange};
 use std::ops::Range;
 use std::path::Path;
 use std::{error, fmt, result};
 
 pub struct Context<'a> {
-    pub path: &'a Path,
     pub current_dir: &'a Path,
     pub global_counter: u32,
     pub local_counter: u32,
-    pub regex_captures: Option<regex::Captures<'a>>,
 }
 
 pub type Result<'a, T> = result::Result<T, Error<'a>>;
@@ -18,8 +15,8 @@ pub type Result<'a, T> = result::Result<T, Error<'a>>;
 #[derive(Debug, PartialEq)]
 pub struct Error<'a> {
     pub kind: ErrorKind,
-    pub cause: ErrorCause<'a>,
     pub value: String,
+    pub cause: &'a Filter,
     pub range: &'a Range<usize>,
 }
 
@@ -27,12 +24,6 @@ pub struct Error<'a> {
 pub enum ErrorKind {
     InputNotUtf8,
     CanonicalizationFailed(AnyString),
-}
-
-#[derive(Debug, PartialEq)]
-pub enum ErrorCause<'a> {
-    Variable(&'a Variable),
-    Filter(&'a Filter),
 }
 
 impl<'a> error::Error for Error<'a> {}
@@ -47,7 +38,7 @@ impl<'a> fmt::Display for Error<'a> {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         write!(
             formatter,
-            "{} evaluation failed for value '{}': {}",
+            "'{}' evaluation failed for value '{}': {}",
             self.cause, self.value, self.kind
         )
     }
@@ -64,15 +55,6 @@ impl fmt::Display for ErrorKind {
     }
 }
 
-impl<'a> fmt::Display for ErrorCause<'a> {
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Self::Variable(variable) => write!(formatter, "`{}` variable", variable),
-            Self::Filter(filter) => write!(formatter, "`{}` filter", filter),
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -82,7 +64,7 @@ mod tests {
         assert_eq!(
             Error {
                 kind: ErrorKind::InputNotUtf8,
-                cause: ErrorCause::Variable(&Variable::InputPath),
+                cause: &Filter::AbsolutePath,
                 value: String::from("abc"),
                 range: &(1..2)
             }
@@ -96,24 +78,12 @@ mod tests {
         assert_eq!(
             Error {
                 kind: ErrorKind::InputNotUtf8,
-                cause: ErrorCause::Variable(&Variable::InputPath),
+                cause: &Filter::AbsolutePath,
                 value: String::from("abc"),
                 range: &(1..2)
             }
             .to_string(),
-            "`Input path` variable evaluation failed for value 'abc': Input does not have UTF-8 encoding"
-        );
-    }
-
-    #[test]
-    fn error_cause_fmt() {
-        assert_eq!(
-            ErrorCause::Variable(&Variable::InputPath).to_string(),
-            "`Input path` variable"
-        );
-        assert_eq!(
-            ErrorCause::Filter(&Filter::ToLowercase).to_string(),
-            "`To lowercase` filter"
+            "'Absolute path' evaluation failed for value 'abc': Input does not have UTF-8 encoding"
         );
     }
 

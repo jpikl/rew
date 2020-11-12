@@ -2,24 +2,20 @@ use crate::cli::Cli;
 use crate::output::write_pattern_error;
 use crate::pattern::{eval, help, Pattern};
 use common::input::Delimiter as InputDelimiter;
-use common::output::write_error;
 use common::run::{exec_run, Io, Result, EXIT_CODE_OK};
 use std::env;
-use std::path::Path;
 
 mod cli;
 mod counter;
 mod input;
 mod output;
 mod pattern;
-mod regex;
 #[cfg(test)]
 mod testing;
 mod utils;
 
 const EXIT_CODE_PATTERN_PARSE_ERROR: i32 = 3;
 const EXIT_CODE_PATTERN_EVAL_ERROR: i32 = 4;
-const EXIT_CODE_REGEX_EVAL_ERROR: i32 = 5;
 
 fn main() {
     exec_run(run);
@@ -92,21 +88,12 @@ fn run(cli: &Cli, io: &Io) -> Result {
 
         let global_counter_used = pattern.uses_global_counter();
         let local_counter_used = pattern.uses_local_counter();
-        let regex_captures_used = pattern.uses_regex_captures();
 
         let mut global_counter_generator =
             counter::GlobalGenerator::new(cli.gc_init.unwrap_or(1), cli.gc_step.unwrap_or(1));
 
         let mut local_counter_generator =
             counter::LocalGenerator::new(cli.lc_init.unwrap_or(1), cli.lc_step.unwrap_or(1));
-
-        let regex_solver = if let Some(regex) = &cli.regex {
-            regex::Solver::FileName(regex)
-        } else if let Some(regex) = &cli.regex_full {
-            regex::Solver::Path(regex)
-        } else {
-            regex::Solver::None
-        };
 
         let current_dir_buf = env::current_dir()?;
         let current_dir = current_dir_buf.as_path();
@@ -124,32 +111,13 @@ fn run(cli: &Cli, io: &Io) -> Result {
                 0
             };
 
-            let regex_captures = if regex_captures_used {
-                match regex_solver.eval(input_path) {
-                    Ok(captures) => captures,
-                    Err(error) => {
-                        write_error(&mut io.stderr(), &error)?;
-                        if cli.fail_at_end {
-                            exit_code = EXIT_CODE_REGEX_EVAL_ERROR;
-                            continue;
-                        } else {
-                            return Ok(EXIT_CODE_REGEX_EVAL_ERROR);
-                        }
-                    }
-                }
-            } else {
-                None
-            };
-
             let context = eval::Context {
-                path: input_path,
                 current_dir,
                 global_counter,
                 local_counter,
-                regex_captures,
             };
 
-            let output_value = match pattern.eval(&context) {
+            let output_path = match pattern.eval(input_path, &context) {
                 Ok(path) => path,
                 Err(error) => {
                     write_pattern_error(&mut io.stderr(), &error, raw_pattern)?;
@@ -162,8 +130,7 @@ fn run(cli: &Cli, io: &Io) -> Result {
                 }
             };
 
-            let output_path = Path::new(&output_value);
-            output_paths.write(input_path, output_path)?;
+            output_paths.write(input_path, &output_path)?;
         }
     } else {
         while let Some(path) = input_paths.next()? {

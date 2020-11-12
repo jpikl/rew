@@ -36,8 +36,8 @@ impl LocalGenerator {
         }
     }
 
-    pub fn next(&mut self, path: &Path) -> u32 {
-        let key = path.parent().map(Path::to_path_buf);
+    pub fn next(&mut self, path: &str) -> u32 {
+        let key = Path::new(path).parent().map(Path::to_path_buf);
         if let Some(value) = self.values.get_mut(&key) {
             *value += self.step;
             *value
@@ -70,9 +70,9 @@ mod tests {
 
     #[test]
     fn local_from_zero_per_one() {
-        let path_1 = Path::new("dir/subdir/file.ext");
-        let path_2 = path_1.parent().unwrap();
-        let path_3 = path_2.parent().unwrap();
+        let path_1 = "dir/subdir/file.ext";
+        let path_2 = "dir/subdir";
+        let path_3 = "dir";
         let mut counter = LocalGenerator::new(0, 1);
 
         assert_eq!(counter.next(path_1), 0);
@@ -91,9 +91,9 @@ mod tests {
 
     #[test]
     fn local_from_one_per_ten() {
-        let path_1 = Path::new("dir/subdir/file.ext");
-        let path_2 = path_1.parent().unwrap();
-        let path_3 = path_2.parent().unwrap();
+        let path_1 = "dir/subdir/file.ext";
+        let path_2 = "dir/subdir";
+        let path_3 = "dir";
         let mut counter = LocalGenerator::new(1, 10);
 
         assert_eq!(counter.next(path_1), 1);

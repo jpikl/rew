@@ -1,5 +1,5 @@
 use crate::pattern::eval::ErrorKind;
-use crate::pattern::filters::error::Result;
+use crate::pattern::filter::error::Result;
 use crate::utils::AnyString;
 use normpath::PathExt;
 use std::ffi::OsStr;

@@ -1,4 +1,4 @@
-use crate::pattern::filters::error::Result;
+use crate::pattern::filter::error::Result;
 use regex::Regex;
 
 pub fn assert_ok_uuid(result: Result) {

@@ -3,34 +3,28 @@ use crate::pattern::filter::Filter;
 use crate::pattern::lexer::{Lexer, Token};
 use crate::pattern::parse::{Error, ErrorKind, Parsed, Result};
 use crate::pattern::reader::Reader;
-use crate::pattern::variable::Variable;
 use std::fmt;
 use std::ops::Range;
 
 #[derive(Debug, PartialEq)]
 pub enum Item {
     Constant(String),
-    Expression {
-        variable: Parsed<Variable>,
-        filters: Vec<Parsed<Filter>>,
-    },
+    Expression(Vec<Parsed<Filter>>),
 }
 
 impl fmt::Display for Item {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::Constant(value) => write!(formatter, "Constant '{}'", value),
-            Self::Expression { filters, .. } if filters.is_empty() => {
-                write!(formatter, "Expression with a variable")
+            Self::Expression(filters) if filters.is_empty() => {
+                write!(formatter, "Empty expression")
             }
-            Self::Expression { filters, .. } if filters.len() == 1 => {
-                write!(formatter, "Expression with a variable and a filter")
+            Self::Expression(filters) if filters.len() == 1 => {
+                write!(formatter, "Expression with a filter")
             }
-            Self::Expression { filters, .. } => write!(
-                formatter,
-                "Expression with a variable and {} filters",
-                filters.len()
-            ),
+            Self::Expression(filters) => {
+                write!(formatter, "Expression with {} filters", filters.len())
+            }
         }
     }
 }
@@ -97,27 +91,47 @@ impl Parser {
 
     fn parse_expression(&mut self) -> Result<Option<Parsed<Item>>> {
         let start = self.token_range().start;
-        let variable = self.parse_variable()?;
         let filters = self.parse_filters()?;
         let end = self.token_range().end;
 
         Ok(Some(Parsed {
-            value: Item::Expression { variable, filters },
+            value: Item::Expression(filters),
             range: start..end,
         }))
-    }
-
-    fn parse_variable(&mut self) -> Result<Parsed<Variable>> {
-        self.parse_expression_member(Variable::parse, ErrorKind::ExpectedVariable)
     }
 
     fn parse_filters(&mut self) -> Result<Vec<Parsed<Filter>>> {
         let mut filters: Vec<Parsed<Filter>> = Vec::new();
 
         while let Some(token) = self.fetch_token()? {
-            match token.value {
+            match &token.value {
+                Token::Raw(raw) => {
+                    filters.push(Self::parse_filter(&raw, &token.range)?);
+                }
                 Token::Pipe => {
-                    filters.push(self.parse_filter()?);
+                    if filters.is_empty() {
+                        return Err(Error {
+                            kind: ErrorKind::ExpectedFilterOrExprEnd,
+                            range: token.range.clone(),
+                        });
+                    } else {
+                        let position = self.token_range().end;
+                        if let Some(token) = self.fetch_token()? {
+                            if let Token::Raw(raw) = &token.value {
+                                filters.push(Self::parse_filter(&raw, &token.range)?)
+                            } else {
+                                return Err(Error {
+                                    kind: ErrorKind::ExpectedFilter,
+                                    range: token.range.clone(),
+                                });
+                            }
+                        } else {
+                            return Err(Error {
+                                kind: ErrorKind::ExpectedFilter,
+                                range: position..position,
+                            });
+                        }
+                    }
                 }
                 Token::ExprStart => {
                     return Err(Error {
@@ -128,59 +142,36 @@ impl Parser {
                 Token::ExprEnd => {
                     break;
                 }
-                _ => {
-                    panic!("Unexpected token {:?}", token); // Raw or anything else should never appear here!
-                }
             }
         }
 
         Ok(filters)
     }
 
-    fn parse_filter(&mut self) -> Result<Parsed<Filter>> {
-        self.parse_expression_member(Filter::parse, ErrorKind::ExpectedFilter)
-    }
+    fn parse_filter(chars: &[Char], range: &Range<usize>) -> Result<Parsed<Filter>> {
+        let mut reader = Reader::new(Vec::from(chars));
 
-    fn parse_expression_member<T, F: FnOnce(&mut Reader<Char>) -> Result<T>>(
-        &mut self,
-        parse: F,
-        error_kind: ErrorKind,
-    ) -> Result<Parsed<T>> {
-        let position = self.token_range().end;
-        let token = self.fetch_token()?.ok_or_else(|| Error {
-            kind: error_kind.clone(),
-            range: position..position,
+        let filter = Filter::parse(&mut reader).map_err(|mut error| {
+            let start = range.start + error.range.start;
+            let end = range.start + error.range.end;
+
+            error.range = start..end;
+            error
         })?;
-        if let Token::Raw(raw) = &token.value {
-            let mut reader = Reader::new(raw.clone());
 
-            let value = parse(&mut reader).map_err(|mut error| {
-                let start = error.range.start + position;
-                let end = error.range.end + position;
+        if let Some(char) = reader.peek() {
+            // There should be no remaining characters
+            let start = range.start + reader.position();
+            let end = range.start + reader.position() + char.len_utf8();
 
-                error.range = start..end;
-                error
-            })?;
-
-            if let Some(char) = reader.peek() {
-                // There should be no remaining characters
-                let start = position + reader.position();
-                let end = position + reader.position() + char.len_utf8();
-
-                Err(Error {
-                    kind: ErrorKind::ExpectedPipeOrExprEnd,
-                    range: start..end,
-                })
-            } else {
-                Ok(Parsed {
-                    value,
-                    range: token.range.clone(),
-                })
-            }
-        } else {
             Err(Error {
-                kind: error_kind,
-                range: token.range.clone(),
+                kind: ErrorKind::ExpectedPipeOrExprEnd,
+                range: start..end,
+            })
+        } else {
+            Ok(Parsed {
+                value: filter,
+                range: range.clone(),
             })
         }
     }
@@ -213,31 +204,20 @@ mod tests {
             "Constant 'abc'"
         );
 
+        assert_eq!(Item::Expression(Vec::new()).to_string(), "Empty expression");
+
         assert_eq!(
-            (Item::Expression {
-                variable: make_parsed(Variable::InputPath),
-                filters: Vec::new()
-            })
-            .to_string(),
-            "Expression with a variable"
+            Item::Expression(vec![make_parsed(Filter::ToUppercase)]).to_string(),
+            "Expression with a filter"
         );
 
         assert_eq!(
-            (Item::Expression {
-                variable: make_parsed(Variable::InputPath),
-                filters: vec![make_parsed(Filter::ToUppercase)]
-            })
+            Item::Expression(vec![
+                make_parsed(Filter::ToUppercase),
+                make_parsed(Filter::Trim)
+            ])
             .to_string(),
-            "Expression with a variable and a filter"
-        );
-
-        assert_eq!(
-            (Item::Expression {
-                variable: make_parsed(Variable::InputPath),
-                filters: vec![make_parsed(Filter::ToUppercase), make_parsed(Filter::Trim)]
-            })
-            .to_string(),
-            "Expression with a variable and 2 filters"
+            "Expression with 2 filters"
         );
     }
 
@@ -258,22 +238,22 @@ mod tests {
     }
 
     #[test]
-    fn parse_expected_variable_but_end_error() {
+    fn parse_expected_filter_but_end_error() {
         assert_eq!(
             Parser::from("{").parse_items(),
             Err(Error {
-                kind: ErrorKind::ExpectedVariable,
-                range: 1..1,
+                kind: ErrorKind::UnmatchedExprStart,
+                range: 0..1,
             })
         );
     }
 
     #[test]
-    fn parse_expected_variable_but_pipe_error() {
+    fn parse_expected_filter_but_pipe_error() {
         assert_eq!(
             Parser::from("{|").parse_items(),
             Err(Error {
-                kind: ErrorKind::ExpectedVariable,
+                kind: ErrorKind::ExpectedFilterOrExprEnd,
                 range: 1..2,
             })
         );
@@ -291,17 +271,6 @@ mod tests {
     }
 
     #[test]
-    fn parse_expected_variable_but_expr_end_error() {
-        assert_eq!(
-            Parser::from("{}").parse_items(),
-            Err(Error {
-                kind: ErrorKind::ExpectedVariable,
-                range: 1..2,
-            })
-        );
-    }
-
-    #[test]
     fn parse_unmatched_expr_end_error() {
         assert_eq!(
             Parser::from("}").parse_items(),
@@ -313,7 +282,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_unterminated_expr_start_after_variable_error() {
+    fn parse_unterminated_expr_start_after_filter_error() {
         assert_eq!(
             Parser::from("{f").parse_items(),
             Err(Error {
@@ -324,30 +293,27 @@ mod tests {
     }
 
     #[test]
-    fn parse_variable() {
+    fn parse_empty_expr() {
         assert_eq!(
-            Parser::from("{f}").parse_items(),
+            Parser::from("{}").parse_items(),
             Ok(vec![Parsed {
-                value: Item::Expression {
-                    variable: Parsed {
-                        value: Variable::FileName,
-                        range: 1..2,
-                    },
-                    filters: Vec::new(),
-                },
-                range: 0..3,
+                value: Item::Expression(Vec::new()),
+                range: 0..2,
             }])
         );
     }
 
     #[test]
-    fn parse_unknown_variable_error() {
+    fn parse_filter() {
         assert_eq!(
-            Parser::from("{x}").parse_items(),
-            Err(Error {
-                kind: ErrorKind::UnknownVariable(Char::Raw('x')),
-                range: 1..2,
-            })
+            Parser::from("{f}").parse_items(),
+            Ok(vec![Parsed {
+                value: Item::Expression(vec![Parsed {
+                    value: Filter::FileName,
+                    range: 1..2,
+                }]),
+                range: 0..3,
+            }])
         );
     }
 
@@ -363,7 +329,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_expected_pipe_or_expr_end_after_variable_error() {
+    fn parse_expected_pipe_or_expr_end_after_filter_error() {
         assert_eq!(
             Parser::from("{fg").parse_items(),
             Err(Error {
@@ -374,7 +340,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_expected_filter_but_end_error() {
+    fn parse_expected_filter_after_pipe_but_end_error() {
         assert_eq!(
             Parser::from("{f|").parse_items(),
             Err(Error {
@@ -385,7 +351,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_expected_filter_but_pipe_error() {
+    fn parse_expected_filter_after_pipe_but_pipe_error() {
         assert_eq!(
             Parser::from("{f||").parse_items(),
             Err(Error {
@@ -396,7 +362,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_expected_filter_but_expr_end_error() {
+    fn parse_expected_filter_after_pipe_but_expr_end_error() {
         assert_eq!(
             Parser::from("{f|}").parse_items(),
             Err(Error {
@@ -418,7 +384,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_expected_pipe_or_expr_end_after_filter_error() {
+    fn parse_expected_pipe_or_expr_end_after_piped_filter_error() {
         assert_eq!(
             Parser::from("{f|ll").parse_items(),
             Err(Error {
@@ -429,46 +395,24 @@ mod tests {
     }
 
     #[test]
-    fn parse_variable_single_filter() {
-        assert_eq!(
-            Parser::from("{b|l}").parse_items(),
-            Ok(vec![Parsed {
-                value: Item::Expression {
-                    variable: Parsed {
-                        value: Variable::BaseName,
-                        range: 1..2,
-                    },
-                    filters: vec![Parsed {
-                        value: Filter::ToLowercase,
-                        range: 3..4,
-                    }],
-                },
-                range: 0..5,
-            }])
-        );
-    }
-
-    #[test]
     fn parse_variable_multiple_filters() {
         assert_eq!(
             Parser::from("{e|t|n1-3}").parse_items(),
             Ok(vec![Parsed {
-                value: Item::Expression {
-                    variable: Parsed {
-                        value: Variable::Extension,
+                value: Item::Expression(vec![
+                    Parsed {
+                        value: Filter::Extension,
                         range: 1..2,
                     },
-                    filters: vec![
-                        Parsed {
-                            value: Filter::Trim,
-                            range: 3..4,
-                        },
-                        Parsed {
-                            value: Filter::Substring(Range::FromTo(0, 3)),
-                            range: 5..9,
-                        },
-                    ],
-                },
+                    Parsed {
+                        value: Filter::Trim,
+                        range: 3..4,
+                    },
+                    Parsed {
+                        value: Filter::Substring(Range::FromTo(0, 3)),
+                        range: 5..9,
+                    },
+                ]),
                 range: 0..10,
             }])
         );
@@ -495,16 +439,16 @@ mod tests {
                     range: 0..6,
                 },
                 Parsed {
-                    value: Item::Expression {
-                        variable: Parsed {
-                            value: Variable::LocalCounter,
+                    value: Item::Expression(vec![
+                        Parsed {
+                            value: Filter::LocalCounter,
                             range: 7..8,
                         },
-                        filters: vec![Parsed {
+                        Parsed {
                             value: Filter::LeftPad(String::from("000")),
                             range: 9..13,
-                        }],
-                    },
+                        }
+                    ]),
                     range: 6..14,
                 },
                 Parsed {
@@ -512,25 +456,23 @@ mod tests {
                     range: 14..15,
                 },
                 Parsed {
-                    value: Item::Expression {
-                        variable: Parsed {
-                            value: Variable::Extension,
+                    value: Item::Expression(vec![
+                        Parsed {
+                            value: Filter::Extension,
                             range: 16..17,
                         },
-                        filters: vec![
-                            Parsed {
-                                value: Filter::ToLowercase,
-                                range: 18..19,
-                            },
-                            Parsed {
-                                value: Filter::ReplaceFirst(Substitution {
-                                    target: 'e'.to_string(),
-                                    replacement: String::new(),
-                                }),
-                                range: 20..23,
-                            },
-                        ],
-                    },
+                        Parsed {
+                            value: Filter::ToLowercase,
+                            range: 18..19,
+                        },
+                        Parsed {
+                            value: Filter::ReplaceFirst(Substitution {
+                                target: 'e'.to_string(),
+                                replacement: String::new(),
+                            }),
+                            range: 20..23,
+                        },
+                    ]),
                     range: 15..24,
                 },
                 Parsed {

@@ -4,7 +4,6 @@ use crate::pattern::reader::Reader;
 use crate::utils::AnyString;
 use lazy_static::lazy_static;
 use regex::Regex;
-use std::borrow::Cow;
 use std::fmt;
 
 lazy_static! {
@@ -45,14 +44,6 @@ impl PartialEq for RegexHolder {
 impl fmt::Display for RegexHolder {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         self.0.fmt(formatter)
-    }
-}
-
-pub fn add_capture_group_brackets(string: &str) -> Cow<str> {
-    if string.contains('$') {
-        CAPTURE_GROUP_VAR_REGEX.replace_all(string, r"$${${1}}")
-    } else {
-        Cow::Borrowed(string)
     }
 }
 
@@ -115,16 +106,6 @@ mod tests {
         assert_eq!(
             RegexHolder(Regex::new("[a-z]+").unwrap()).to_string(),
             String::from("[a-z]+")
-        );
-    }
-
-    #[test]
-    fn adds_capture_group_brackets() {
-        assert_eq!(add_capture_group_brackets("ab"), String::from("ab"));
-        assert_eq!(add_capture_group_brackets("a$1b"), String::from("a${1}b"));
-        assert_eq!(
-            add_capture_group_brackets("$1a$12b$123"),
-            String::from("${1}a${12}b${123}")
         );
     }
 }

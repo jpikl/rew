@@ -29,7 +29,7 @@ fn some_pattern_no_paths() {
 #[test]
 fn paths_from_args() {
     rew()
-        .arg("_{p}_")
+        .arg("_{}_")
         .arg("a")
         .arg("b")
         .assert()
@@ -41,7 +41,7 @@ fn paths_from_args() {
 #[test]
 fn paths_from_args_over_stdin() {
     rew()
-        .arg("_{p}_")
+        .arg("_{}_")
         .arg("a")
         .arg("b")
         .write_stdin("c")
@@ -54,7 +54,7 @@ fn paths_from_args_over_stdin() {
 #[test]
 fn paths_from_stdin() {
     rew()
-        .arg("_{p}_")
+        .arg("_{}_")
         .write_stdin("a\n\0b")
         .assert()
         .success()
@@ -66,7 +66,7 @@ fn paths_from_stdin() {
 fn nul_input_delimiter() {
     rew()
         .arg("--read-nul")
-        .arg("_{p}_")
+        .arg("_{}_")
         .write_stdin("a\n\0b")
         .assert()
         .success()
@@ -78,7 +78,7 @@ fn nul_input_delimiter() {
 fn nul_output_delimiter() {
     rew()
         .arg("--print-nul")
-        .arg("_{p}_")
+        .arg("_{}_")
         .write_stdin("a\n\0b")
         .assert()
         .success()
@@ -90,7 +90,7 @@ fn nul_output_delimiter() {
 fn no_input_delimiter() {
     rew()
         .arg("--read-raw")
-        .arg("_{p}_")
+        .arg("_{}_")
         .write_stdin("a\n\0b")
         .assert()
         .success()
@@ -102,7 +102,7 @@ fn no_input_delimiter() {
 fn no_output_delimiter() {
     rew()
         .arg("--print-raw")
-        .arg("_{p}_")
+        .arg("_{}_")
         .write_stdin("a\n\0b")
         .assert()
         .success()
@@ -114,7 +114,7 @@ fn no_output_delimiter() {
 fn custom_input_delimiter() {
     rew()
         .arg("--read=;")
-        .arg("_{p}_")
+        .arg("_{}_")
         .write_stdin("a;b")
         .assert()
         .success()
@@ -126,7 +126,7 @@ fn custom_input_delimiter() {
 fn bulk_output() {
     rew()
         .arg("--bulk")
-        .arg("_{p}_")
+        .arg("_{}_")
         .write_stdin("a\n\0b")
         .assert()
         .success()
@@ -143,7 +143,7 @@ fn bulk_output() {
 fn pretty_output() {
     rew()
         .arg("--pretty")
-        .arg("_{p}_")
+        .arg("_{}_")
         .write_stdin("a\n\0b")
         .assert()
         .success()
@@ -155,35 +155,11 @@ fn pretty_output() {
 }
 
 #[test]
-fn file_name_regex() {
-    rew()
-        .arg("--regex=([0-9]+)")
-        .arg("{1}")
-        .write_stdin("dir01/file02")
-        .assert()
-        .success()
-        .stdout("02\n")
-        .stderr("");
-}
-
-#[test]
-fn path_regex() {
-    rew()
-        .arg("--regex-full=([0-9]+)")
-        .arg("{1}")
-        .write_stdin("dir01/file02")
-        .assert()
-        .success()
-        .stdout("01\n")
-        .stderr("");
-}
-
-#[test]
 fn local_counter() {
     rew()
         .arg("--lc-init=2")
         .arg("--lc-step=3")
-        .arg("{p}.{c}.{C}")
+        .arg("{}.{c}.{C}")
         .write_stdin(indoc! {"
             a/a
             a/b
@@ -206,7 +182,7 @@ fn global_counter() {
     rew()
         .arg("--gc-init=2")
         .arg("--gc-step=3")
-        .arg("{p}.{c}.{C}")
+        .arg("{}.{c}.{C}")
         .write_stdin(indoc! {"
             a/a
             a/b
@@ -233,10 +209,10 @@ fn pattern_parse_error() {
         .code(3)
         .stdout("")
         .stderr(indoc! {"
-            error: Invalid pattern: Expected variable after '{'
+            error: Invalid pattern: No matching '}' after expression start
             
             {
-             ^
+            ^
         "});
 }
 
@@ -253,7 +229,7 @@ fn pattern_eval_error() {
         .code(4)
         .stdout("")
         .stderr(starts_with(
-            "error: `Canonical path` variable evaluation failed for value 'non-existent':",
+            "error: 'Canonical path' evaluation failed for value 'non-existent':",
         ));
 }
 
@@ -277,7 +253,7 @@ fn pattern_eval_error_at_end() {
                 .to_string_lossy()
         ))
         .stderr(starts_with(
-            "error: `Canonical path` variable evaluation failed for value 'non-existent':",
+            "error: 'Canonical path' evaluation failed for value 'non-existent':",
         ));
 }
 

@@ -221,7 +221,7 @@ mod tests {
     use super::*;
     use crate::pattern::testing::make_eval_context;
     extern crate regex;
-    use crate::pattern::filters::testing::assert_ok_uuid;
+    use crate::pattern::filter::testing::assert_ok_uuid;
     use crate::utils::AnyString;
     use regex::Regex;
 

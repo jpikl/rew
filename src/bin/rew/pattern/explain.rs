@@ -12,11 +12,10 @@ impl Pattern {
         for item in &self.items {
             match &item.value {
                 Item::Constant(_) => self.explain_part(output, &item, Color::Green),
-                Item::Expression { variable, filters } => {
+                Item::Expression(filters) => {
                     self.explain_part(output, &item, Color::Yellow)?;
-                    self.explain_part(output, &variable, Color::Blue)?;
                     for filter in filters {
-                        self.explain_part(output, &filter, Color::Magenta)?;
+                        self.explain_part(output, &filter, Color::Blue)?;
                     }
                     Ok(())
                 }
@@ -45,7 +44,6 @@ mod tests {
     use super::*;
     use crate::pattern::filter::Filter;
     use crate::pattern::parse::Parsed;
-    use crate::pattern::variable::Variable;
     use common::testing::{ColoredOuput, OutputChunk};
 
     #[test]
@@ -64,30 +62,24 @@ mod tests {
     #[test]
     fn explain_complex() {
         let pattern = Pattern {
-            source: String::from("_{f|t|u}"),
+            source: String::from("_{f|t}"),
             items: vec![
                 Parsed {
                     value: Item::Constant(String::from("_")),
                     range: 0..1,
                 },
                 Parsed {
-                    value: Item::Expression {
-                        variable: Parsed {
-                            value: Variable::FileName,
+                    value: Item::Expression(vec![
+                        Parsed {
+                            value: Filter::FileName,
                             range: 2..3,
                         },
-                        filters: vec![
-                            Parsed {
-                                value: Filter::Trim,
-                                range: 4..5,
-                            },
-                            Parsed {
-                                value: Filter::ToUppercase,
-                                range: 6..7,
-                            },
-                        ],
-                    },
-                    range: 1..8,
+                        Parsed {
+                            value: Filter::Trim,
+                            range: 4..5,
+                        },
+                    ]),
+                    range: 1..6,
                 },
             ],
         };
@@ -99,34 +91,28 @@ mod tests {
             output.chunks(),
             &[
                 OutputChunk::bold_color(Color::Green, "_"),
-                OutputChunk::plain("{f|t|u}\n"),
+                OutputChunk::plain("{f|t}\n"),
                 OutputChunk::bold_color(Color::Green, "^"),
                 OutputChunk::plain("\n\n"),
                 OutputChunk::color(Color::Green, "Constant '_'"),
                 OutputChunk::plain("\n\n_"),
-                OutputChunk::bold_color(Color::Yellow, "{f|t|u}"),
+                OutputChunk::bold_color(Color::Yellow, "{f|t}"),
                 OutputChunk::plain("\n "),
-                OutputChunk::bold_color(Color::Yellow, "^^^^^^^"),
+                OutputChunk::bold_color(Color::Yellow, "^^^^^"),
                 OutputChunk::plain("\n\n"),
-                OutputChunk::color(Color::Yellow, "Expression with a variable and 2 filters"),
+                OutputChunk::color(Color::Yellow, "Expression with 2 filters"),
                 OutputChunk::plain("\n\n_{"),
                 OutputChunk::bold_color(Color::Blue, "f"),
-                OutputChunk::plain("|t|u}\n  "),
+                OutputChunk::plain("|t}\n  "),
                 OutputChunk::bold_color(Color::Blue, "^"),
                 OutputChunk::plain("\n\n"),
                 OutputChunk::color(Color::Blue, "File name"),
                 OutputChunk::plain("\n\n_{f|"),
-                OutputChunk::bold_color(Color::Magenta, "t"),
-                OutputChunk::plain("|u}\n    "),
-                OutputChunk::bold_color(Color::Magenta, "^"),
+                OutputChunk::bold_color(Color::Blue, "t"),
+                OutputChunk::plain("}\n    "),
+                OutputChunk::bold_color(Color::Blue, "^"),
                 OutputChunk::plain("\n\n"),
-                OutputChunk::color(Color::Magenta, "Trim"),
-                OutputChunk::plain("\n\n_{f|t|"),
-                OutputChunk::bold_color(Color::Magenta, "u"),
-                OutputChunk::plain("}\n      "),
-                OutputChunk::bold_color(Color::Magenta, "^"),
-                OutputChunk::plain("\n\n"),
-                OutputChunk::color(Color::Magenta, "To uppercase"),
+                OutputChunk::color(Color::Blue, "Trim"),
                 OutputChunk::plain("\n\n")
             ]
         );

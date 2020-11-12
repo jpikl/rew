@@ -1,8 +1,6 @@
 use clap::{crate_name, crate_version, AppSettings, Clap};
 use common::color::{parse_color, COLOR_VALUES};
 use common::run::Options;
-use regex::Regex;
-use std::path::PathBuf;
 use termcolor::ColorChoice;
 
 #[derive(Debug, Clap)]
@@ -30,7 +28,7 @@ pub struct Cli {
 
     /// Input paths (read from stdin by default)
     #[clap(value_name = "path")]
-    pub paths: Vec<PathBuf>,
+    pub paths: Vec<String>,
 
     /// Read paths delimited by a specific character, not newline
     #[clap(
@@ -80,14 +78,6 @@ pub struct Cli {
     /// Continue after a path processing error, fail at end
     #[clap(short = 'c', long)]
     pub fail_at_end: bool,
-
-    /// Regular expression matched against file name
-    #[clap(short = 'e', long)]
-    pub regex: Option<Regex>,
-
-    /// Regular expression matched against path
-    #[clap(short = 'E', long, value_name = "regex")]
-    pub regex_full: Option<Regex>,
 
     /// Global counter initial value
     #[clap(long, value_name = "number")]

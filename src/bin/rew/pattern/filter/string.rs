@@ -1,5 +1,4 @@
-use crate::pattern::filters::error::Result;
-use crate::pattern::substitution::Substitution;
+use crate::pattern::filter::error::Result;
 use unidecode::unidecode;
 
 pub fn replace_first(value: String, target: &str, replacement: &str) -> Result {
