@@ -46,6 +46,14 @@ mod tests {
     use super::*;
 
     #[test]
+    fn forward_from_empty() {
+        assert_eq!(
+            get_forward(String::new(), &Range::From(0)),
+            Ok(String::new())
+        );
+    }
+
+    #[test]
     fn forward_from_first() {
         assert_eq!(
             get_forward(String::from("ábčd"), &Range::From(0)),
@@ -162,6 +170,14 @@ mod tests {
         assert_eq!(
             get_backward(String::from("ábčd"), &Range::From(3)),
             Ok(String::from("á"))
+        );
+    }
+
+    #[test]
+    fn backward_from_empty() {
+        assert_eq!(
+            get_backward(String::new(), &Range::From(0)),
+            Ok(String::new())
         );
     }
 

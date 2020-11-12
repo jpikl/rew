@@ -8,10 +8,12 @@ use std::fmt;
 
 mod error;
 mod path;
+mod string;
 mod substr;
 
 #[derive(Debug, PartialEq)]
 pub enum Filter {
+    // Path filters
     AbsolutePath,
     CanonicalPath,
     ParentPath,
@@ -19,14 +21,15 @@ pub enum Filter {
     BaseName,
     Extension,
     ExtensionWithDot,
+
+    // Substring filters
     Substring(Range),
     SubstringBackward(Range),
-    ReplaceEmpty(String),
+
+    // String filters
     ReplaceFirst(Substitution<String>),
     ReplaceAll(Substitution<String>),
-    RegexMatch(RegexHolder),
-    RegexReplaceFirst(Substitution<RegexHolder>),
-    RegexReplaceAll(Substitution<RegexHolder>),
+    ReplaceEmpty(String),
     Trim,
     ToLowercase,
     ToUppercase,
@@ -34,6 +37,13 @@ pub enum Filter {
     RemoveNonAscii,
     LeftPad(String),
     RightPad(String),
+
+    // Regex filters
+    RegexMatch(RegexHolder),
+    RegexReplaceFirst(Substitution<RegexHolder>),
+    RegexReplaceAll(Substitution<RegexHolder>),
+
+    // Generators
     LocalCounter,
     GlobalCounter,
     Uuid,
@@ -45,6 +55,7 @@ impl Filter {
 
         if let Some(char) = reader.read() {
             match char.as_char() {
+                // Path filters
                 'a' => Ok(Filter::AbsolutePath),
                 'A' => Ok(Filter::CanonicalPath),
                 'd' => Ok(Filter::ParentPath),
@@ -52,16 +63,15 @@ impl Filter {
                 'b' => Ok(Filter::BaseName),
                 'e' => Ok(Filter::Extension),
                 'E' => Ok(Filter::ExtensionWithDot),
+
+                // Substring filters
                 'n' => Ok(Filter::Substring(Range::parse(reader)?)),
                 'N' => Ok(Filter::SubstringBackward(Range::parse(reader)?)),
-                '?' => Ok(Filter::ReplaceEmpty(Char::join(reader.read_to_end()))),
+
+                // String filters
                 'r' => Ok(Filter::ReplaceFirst(Substitution::parse_string(reader)?)),
                 'R' => Ok(Filter::ReplaceAll(Substitution::parse_string(reader)?)),
-                'm' => Ok(Filter::RegexMatch(RegexHolder::parse(reader)?)),
-                's' => Ok(Filter::RegexReplaceFirst(Substitution::parse_regex(
-                    reader,
-                )?)),
-                'S' => Ok(Filter::RegexReplaceAll(Substitution::parse_regex(reader)?)),
+                '?' => Ok(Filter::ReplaceEmpty(Char::join(reader.read_to_end()))),
                 't' => Ok(Filter::Trim),
                 'l' => Ok(Filter::ToLowercase),
                 'L' => Ok(Filter::ToUppercase),
@@ -69,9 +79,19 @@ impl Filter {
                 'I' => Ok(Filter::RemoveNonAscii),
                 '<' => Ok(Filter::LeftPad(Char::join(reader.read_to_end()))),
                 '>' => Ok(Filter::RightPad(Char::join(reader.read_to_end()))),
+
+                // Regex filters
+                'm' => Ok(Filter::RegexMatch(RegexHolder::parse(reader)?)),
+                's' => Ok(Filter::RegexReplaceFirst(Substitution::parse_regex(
+                    reader,
+                )?)),
+                'S' => Ok(Filter::RegexReplaceAll(Substitution::parse_regex(reader)?)),
+
+                // Generators
                 'c' => Ok(Filter::LocalCounter),
                 'C' => Ok(Filter::GlobalCounter),
                 'u' => Ok(Filter::Uuid),
+
                 _ => Err(parse::Error {
                     kind: parse::ErrorKind::UnknownFilter(char.clone()),
                     range: position..reader.position(),
@@ -91,6 +111,7 @@ impl Filter {
         context: &eval::Context,
     ) -> Result<String, eval::ErrorKind> {
         match self {
+            // Path filters
             Filter::AbsolutePath => path::get_absolute(value, context.current_dir),
             Filter::CanonicalPath => path::get_canonical(value, context.current_dir),
             Filter::ParentPath => path::get_parent(value),
@@ -98,21 +119,29 @@ impl Filter {
             Filter::BaseName => path::get_base_name(value),
             Filter::Extension => path::get_extension(value),
             Filter::ExtensionWithDot => path::get_extension_with_dot(value),
+
+            // Substring filters
             Filter::Substring(range) => substr::get_forward(value, &range),
             Filter::SubstringBackward(range) => substr::get_backward(value, &range),
-            Filter::ReplaceEmpty(value) => unimplemented!(),
-            Filter::ReplaceFirst(substitution) => unimplemented!(),
-            Filter::ReplaceAll(substitution) => unimplemented!(),
+
+            // String filters
+            Filter::ReplaceFirst(substitution) => string::replace_first(value, &substitution),
+            Filter::ReplaceAll(substitution) => string::replace_all(value, &substitution),
+            Filter::ReplaceEmpty(replacement) => string::replace_empty(value, &replacement),
+            Filter::Trim => string::trim(value),
+            Filter::ToLowercase => string::to_lowercase(value),
+            Filter::ToUppercase => string::to_uppercase(value),
+            Filter::ToAscii => string::to_ascii(value),
+            Filter::RemoveNonAscii => string::remove_non_ascii(value),
+            Filter::LeftPad(padding) => string::left_pad(value, &padding),
+            Filter::RightPad(padding) => string::right_pad(value, &padding),
+
+            // Regex filters
             Filter::RegexMatch(regex) => unimplemented!(),
             Filter::RegexReplaceFirst(substitution) => unimplemented!(),
             Filter::RegexReplaceAll(substitution) => unimplemented!(),
-            Filter::Trim => unimplemented!(),
-            Filter::ToLowercase => unimplemented!(),
-            Filter::ToUppercase => unimplemented!(),
-            Filter::ToAscii => unimplemented!(),
-            Filter::RemoveNonAscii => unimplemented!(),
-            Filter::LeftPad(String) => unimplemented!(),
-            Filter::RightPad(String) => unimplemented!(),
+
+            // Generators
             Filter::LocalCounter => unimplemented!(),
             Filter::GlobalCounter => unimplemented!(),
             Filter::Uuid => unimplemented!(),
@@ -123,6 +152,7 @@ impl Filter {
 impl fmt::Display for Filter {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match self {
+            // Path filters
             Self::AbsolutePath => write!(formatter, "Absolute path"),
             Self::CanonicalPath => write!(formatter, "Canonical path"),
             Self::ParentPath => write!(formatter, "Parent path"),
@@ -130,8 +160,30 @@ impl fmt::Display for Filter {
             Self::BaseName => write!(formatter, "Base name"),
             Self::Extension => write!(formatter, "Extension"),
             Self::ExtensionWithDot => write!(formatter, "Extension with dot"),
+
+            // Substring filters
             Self::Substring(range) => write!(formatter, "Substring {}", range),
             Self::SubstringBackward(range) => write!(formatter, "Substring (backward) {}", range),
+
+            // String filters
+            Self::ReplaceFirst(substitution) => write!(formatter, "Replace first {}", substitution),
+            Self::ReplaceAll(substitution) => write!(formatter, "Replace all {}", substitution),
+            Self::ReplaceEmpty(replacement) => {
+                write!(formatter, "Replace empty with '{}'", replacement)
+            }
+            Self::Trim => write!(formatter, "Trim"),
+            Self::ToLowercase => write!(formatter, "To lowercase"),
+            Self::ToUppercase => write!(formatter, "To uppercase"),
+            Self::ToAscii => write!(formatter, "To ASCII"),
+            Self::RemoveNonAscii => write!(formatter, "Remove non-ASCII"),
+            Self::LeftPad(padding) => write!(formatter, "Left pad with '{}'", padding),
+            Self::RightPad(padding) => write!(formatter, "Right pad with '{}'", padding),
+
+            // Regex filters
+            // TODO
+
+            // Generators
+            // TODO
             _ => unimplemented!(),
         }
     }
@@ -308,6 +360,39 @@ mod tests {
         assert_eq!(
             Filter::SubstringBackward(Range::FromTo(1, 3)).to_string(),
             "Substring (backward) from 2 to 3"
+        );
+        assert_eq!(
+            Filter::ReplaceFirst(Substitution {
+                value: String::from("a"),
+                replacement: String::from("b")
+            })
+            .to_string(),
+            "Replace first 'a' by 'b'"
+        );
+        assert_eq!(
+            Filter::ReplaceAll(Substitution {
+                value: String::from("a"),
+                replacement: String::from("b")
+            })
+            .to_string(),
+            "Replace all 'a' by 'b'"
+        );
+        assert_eq!(Filter::Trim.to_string(), "Trim");
+        assert_eq!(Filter::ToLowercase.to_string(), "To lowercase");
+        assert_eq!(Filter::ToUppercase.to_string(), "To uppercase");
+        assert_eq!(Filter::ToAscii.to_string(), "To ASCII");
+        assert_eq!(Filter::RemoveNonAscii.to_string(), "Remove non-ASCII");
+        assert_eq!(
+            Filter::LeftPad(String::from("abc")).to_string(),
+            "Left pad with 'abc'"
+        );
+        assert_eq!(
+            Filter::RightPad(String::from("abc")).to_string(),
+            "Right pad with 'abc'"
+        );
+        assert_eq!(
+            Filter::ReplaceEmpty(String::from("abc")).to_string(),
+            "Replace empty with 'abc'"
         );
     }
 }
