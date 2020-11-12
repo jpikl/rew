@@ -17,7 +17,7 @@ use termcolor::ColorChoice;
 pub struct Cli {
     /// Output pattern
     ///
-    /// If not provided, input paths are directly copied to stdout.
+    /// If not provided, input values are directly written to stdout.
     ///
     /// Use `--explain` flag to print explanation of a given pattern.
     /// Use `--help-pattern` flag to print description of patter syntax.
@@ -26,11 +26,11 @@ pub struct Cli {
     #[clap(verbatim_doc_comment)]
     pub pattern: Option<String>,
 
-    /// Input paths (read from stdin by default)
-    #[clap(value_name = "path")]
-    pub paths: Vec<String>,
+    /// Input values (read from stdin by default)
+    #[clap(value_name = "value")]
+    pub values: Vec<String>,
 
-    /// Read paths delimited by a specific character, not newline
+    /// Read values delimited by a specific character, not newline
     #[clap(
     short = 'd',
     long,
@@ -40,11 +40,11 @@ pub struct Cli {
     )]
     pub read: Option<u8>,
 
-    /// Read paths delimited by NUL, not newline
+    /// Read values delimited by NUL, not newline
     #[clap(short = 'z', long, conflicts_with_all = &["read-raw", "read"])]
     pub read_nul: bool,
 
-    /// Read the whole input into memory as a single path
+    /// Read the whole input into memory as a single value
     #[clap(short = 'r', long, conflicts_with_all = &["read-nul", "read"])]
     pub read_raw: bool,
 
@@ -75,7 +75,7 @@ pub struct Cli {
     )]
     pub color: Option<ColorChoice>,
 
-    /// Continue after a path processing error, fail at end
+    /// Continue after a value processing error, fail at end
     #[clap(short = 'c', long)]
     pub fail_at_end: bool,
 
@@ -110,10 +110,6 @@ pub struct Cli {
     /// Print description of pattern syntax
     #[clap(long)]
     pub help_pattern: bool,
-
-    /// Print variable reference
-    #[clap(long)]
-    pub help_vars: bool,
 
     /// Print filter reference
     #[clap(long)]

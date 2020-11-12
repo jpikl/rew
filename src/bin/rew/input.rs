@@ -2,20 +2,20 @@ use common::input::{Delimiter, Splitter};
 use std::io::{BufRead, Result};
 use std::slice::Iter;
 
-pub enum Paths<'a, I: BufRead> {
+pub enum Values<'a, I: BufRead> {
     Args { iter: Iter<'a, String> },
     Stdin { splitter: Splitter<I> },
 }
 
-impl<'a, I: BufRead> Paths<'a, I> {
+impl<'a, I: BufRead> Values<'a, I> {
     pub fn from_args(values: &'a [String]) -> Self {
-        Paths::Args {
+        Values::Args {
             iter: values.iter(),
         }
     }
 
     pub fn from_stdin(stdin: I, delimiter: Delimiter) -> Self {
-        Paths::Stdin {
+        Values::Stdin {
             splitter: Splitter::new(stdin, delimiter),
         }
     }
@@ -38,19 +38,19 @@ mod tests {
     use common::testing::unpack_io_error;
 
     #[test]
-    fn paths_from_args() {
+    fn values_from_args() {
         let args = vec![String::from("a"), String::from("b")];
-        let mut paths: Paths<&[u8]> = Paths::from_args(&args);
-        assert_eq!(paths.next().map_err(unpack_io_error), Ok(Some("a")));
-        assert_eq!(paths.next().map_err(unpack_io_error), Ok(Some("b")));
-        assert_eq!(paths.next().map_err(unpack_io_error), Ok(None));
+        let mut values: Values<&[u8]> = Values::from_args(&args);
+        assert_eq!(values.next().map_err(unpack_io_error), Ok(Some("a")));
+        assert_eq!(values.next().map_err(unpack_io_error), Ok(Some("b")));
+        assert_eq!(values.next().map_err(unpack_io_error), Ok(None));
     }
 
     #[test]
-    fn paths_from_stdin() {
-        let mut paths = Paths::from_stdin(&b"a\nb"[..], Delimiter::Newline);
-        assert_eq!(paths.next().map_err(unpack_io_error), Ok(Some("a")));
-        assert_eq!(paths.next().map_err(unpack_io_error), Ok(Some("b")));
-        assert_eq!(paths.next().map_err(unpack_io_error), Ok(None));
+    fn values_from_stdin() {
+        let mut values = Values::from_stdin(&b"a\nb"[..], Delimiter::Newline);
+        assert_eq!(values.next().map_err(unpack_io_error), Ok(Some("a")));
+        assert_eq!(values.next().map_err(unpack_io_error), Ok(Some("b")));
+        assert_eq!(values.next().map_err(unpack_io_error), Ok(None));
     }
 }

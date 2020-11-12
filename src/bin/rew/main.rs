@@ -27,17 +27,12 @@ fn run(cli: &Cli, io: &Io) -> Result {
         return Ok(EXIT_CODE_OK);
     }
 
-    if cli.help_vars {
-        help::write_variables_help(&mut io.stdout())?;
-        return Ok(EXIT_CODE_OK);
-    }
-
     if cli.help_filters {
         help::write_filters_help(&mut io.stdout())?;
         return Ok(EXIT_CODE_OK);
     }
 
-    let mut input_paths = if cli.paths.is_empty() {
+    let mut input_values = if cli.values.is_empty() {
         let input_delimiter = if let Some(byte) = cli.read {
             InputDelimiter::Byte(byte)
         } else if cli.read_nul {
@@ -47,13 +42,13 @@ fn run(cli: &Cli, io: &Io) -> Result {
         } else {
             InputDelimiter::Newline
         };
-        input::Paths::from_stdin(io.stdin(), input_delimiter)
+        input::Values::from_stdin(io.stdin(), input_delimiter)
     } else {
-        input::Paths::from_args(cli.paths.as_slice())
+        input::Values::from_args(cli.values.as_slice())
     };
 
-    let output_path_mode = if cli.pretty {
-        output::PathMode::Pretty
+    let output_mode = if cli.pretty {
+        output::Mode::Pretty
     } else {
         let output_delimiter = if cli.print_raw {
             None
@@ -63,13 +58,13 @@ fn run(cli: &Cli, io: &Io) -> Result {
             Some('\n')
         };
         if cli.bulk {
-            output::PathMode::Diff(output_delimiter)
+            output::Mode::Diff(output_delimiter)
         } else {
-            output::PathMode::Out(output_delimiter)
+            output::Mode::Out(output_delimiter)
         }
     };
 
-    let mut output_paths = output::Paths::new(io.stdout(), output_path_mode);
+    let mut output_values = output::Values::new(io.stdout(), output_mode);
     let mut exit_code = EXIT_CODE_OK;
 
     if let Some(raw_pattern) = cli.pattern.as_ref() {
@@ -98,7 +93,7 @@ fn run(cli: &Cli, io: &Io) -> Result {
         let current_dir_buf = env::current_dir()?;
         let current_dir = current_dir_buf.as_path();
 
-        while let Some(input_path) = input_paths.next()? {
+        while let Some(input_value) = input_values.next()? {
             let global_counter = if global_counter_used {
                 global_counter_generator.next()
             } else {
@@ -106,7 +101,7 @@ fn run(cli: &Cli, io: &Io) -> Result {
             };
 
             let local_counter = if local_counter_used {
-                local_counter_generator.next(input_path)
+                local_counter_generator.next(input_value)
             } else {
                 0
             };
@@ -117,8 +112,8 @@ fn run(cli: &Cli, io: &Io) -> Result {
                 local_counter,
             };
 
-            let output_path = match pattern.eval(input_path, &context) {
-                Ok(path) => path,
+            let output_value = match pattern.eval(input_value, &context) {
+                Ok(value) => value,
                 Err(error) => {
                     write_pattern_error(&mut io.stderr(), &error, raw_pattern)?;
                     if cli.fail_at_end {
@@ -130,11 +125,11 @@ fn run(cli: &Cli, io: &Io) -> Result {
                 }
             };
 
-            output_paths.write(input_path, &output_path)?;
+            output_values.write(input_value, &output_value)?;
         }
     } else {
-        while let Some(path) = input_paths.next()? {
-            output_paths.write(path, path)?;
+        while let Some(value) = input_values.next()? {
+            output_values.write(value, value)?;
         }
     };
 

@@ -36,8 +36,8 @@ impl LocalGenerator {
         }
     }
 
-    pub fn next(&mut self, path: &str) -> u32 {
-        let key = Path::new(path).parent().map(Path::to_path_buf);
+    pub fn next(&mut self, value: &str) -> u32 {
+        let key = Path::new(value).parent().map(Path::to_path_buf);
         if let Some(value) = self.values.get_mut(&key) {
             *value += self.step;
             *value

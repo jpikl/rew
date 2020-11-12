@@ -6,55 +6,55 @@ use std::error::Error;
 use std::io::{Result, Write};
 use termcolor::{Color, WriteColor};
 
-pub enum PathMode {
+pub enum Mode {
     Out(Option<char>),
     Diff(Option<char>),
     Pretty,
 }
 
-pub struct Paths<O: Write + WriteColor> {
+pub struct Values<O: Write + WriteColor> {
     output: O,
-    mode: PathMode,
+    mode: Mode,
 }
 
-impl<O: Write + WriteColor> Paths<O> {
-    pub fn new(output: O, mode: PathMode) -> Self {
+impl<O: Write + WriteColor> Values<O> {
+    pub fn new(output: O, mode: Mode) -> Self {
         Self { output, mode }
     }
 
-    pub fn write(&mut self, input_path: &str, output_path: &str) -> Result<()> {
+    pub fn write(&mut self, input_value: &str, output_value: &str) -> Result<()> {
         match self.mode {
-            PathMode::Out(Some(delimiter)) => {
-                write!(self.output, "{}{}", output_path, delimiter)?;
+            Mode::Out(Some(delimiter)) => {
+                write!(self.output, "{}{}", output_value, delimiter)?;
                 self.flush_if_needed(delimiter)
             }
-            PathMode::Out(None) => {
-                write!(self.output, "{}", output_path)?;
+            Mode::Out(None) => {
+                write!(self.output, "{}", output_value)?;
                 self.output.flush()
             }
-            PathMode::Diff(Some(delimiter)) => {
+            Mode::Diff(Some(delimiter)) => {
                 write!(
                     self.output,
                     "{}{}{}{}{}{}",
-                    DIFF_IN, input_path, delimiter, DIFF_OUT, output_path, delimiter
+                    DIFF_IN, input_value, delimiter, DIFF_OUT, output_value, delimiter
                 )?;
                 self.flush_if_needed(delimiter)
             }
-            PathMode::Diff(None) => {
+            Mode::Diff(None) => {
                 write!(
                     self.output,
                     "{}{}{}{}",
-                    DIFF_IN, input_path, DIFF_OUT, output_path
+                    DIFF_IN, input_value, DIFF_OUT, output_value
                 )?;
                 self.output.flush()
             }
-            PathMode::Pretty => {
+            Mode::Pretty => {
                 self.output.set_color(&spec_color(Color::Blue))?;
-                write!(self.output, "{}", input_path)?;
+                write!(self.output, "{}", input_value)?;
                 self.output.reset()?;
                 write!(self.output, " -> ")?;
                 self.output.set_color(&spec_color(Color::Green))?;
-                writeln!(self.output, "{}", output_path)
+                writeln!(self.output, "{}", output_value)
             }
         }
     }
@@ -87,58 +87,58 @@ mod tests {
     use std::ops::Range;
 
     #[test]
-    fn paths_out_no_delimiter() {
+    fn values_out_no_delimiter() {
         let mut output = ColoredOuput::new();
-        let mut paths = Paths::new(&mut output, PathMode::Out(None));
-        write_paths(&mut paths);
+        let mut values = Values::new(&mut output, Mode::Out(None));
+        write_values(&mut values);
         assert_eq!(output.chunks(), &[OutputChunk::plain("bd")])
     }
 
     #[test]
-    fn paths_out_newline_delimiter() {
+    fn values_out_newline_delimiter() {
         let mut output = ColoredOuput::new();
-        let mut paths = Paths::new(&mut output, PathMode::Out(Some('\n')));
-        write_paths(&mut paths);
+        let mut values = Values::new(&mut output, Mode::Out(Some('\n')));
+        write_values(&mut values);
         assert_eq!(output.chunks(), &[OutputChunk::plain("b\nd\n")])
     }
 
     #[test]
-    fn paths_out_nul_delimiter() {
+    fn values_out_nul_delimiter() {
         let mut output = ColoredOuput::new();
-        let mut paths = Paths::new(&mut output, PathMode::Out(Some('\0')));
-        write_paths(&mut paths);
+        let mut values = Values::new(&mut output, Mode::Out(Some('\0')));
+        write_values(&mut values);
         assert_eq!(output.chunks(), &[OutputChunk::plain("b\0d\0")])
     }
 
     #[test]
-    fn paths_diff_no_delimiter() {
+    fn values_diff_no_delimiter() {
         let mut output = ColoredOuput::new();
-        let mut paths = Paths::new(&mut output, PathMode::Diff(None));
-        write_paths(&mut paths);
+        let mut values = Values::new(&mut output, Mode::Diff(None));
+        write_values(&mut values);
         assert_eq!(output.chunks(), &[OutputChunk::plain("<a>b<c>d")])
     }
 
     #[test]
-    fn paths_diff_newline_delimiter() {
+    fn values_diff_newline_delimiter() {
         let mut output = ColoredOuput::new();
-        let mut paths = Paths::new(&mut output, PathMode::Diff(Some('\n')));
-        write_paths(&mut paths);
+        let mut values = Values::new(&mut output, Mode::Diff(Some('\n')));
+        write_values(&mut values);
         assert_eq!(output.chunks(), &[OutputChunk::plain("<a\n>b\n<c\n>d\n")])
     }
 
     #[test]
-    fn paths_diff_null_delimiter() {
+    fn values_diff_null_delimiter() {
         let mut output = ColoredOuput::new();
-        let mut paths = Paths::new(&mut output, PathMode::Diff(Some('\0')));
-        write_paths(&mut paths);
+        let mut values = Values::new(&mut output, Mode::Diff(Some('\0')));
+        write_values(&mut values);
         assert_eq!(output.chunks(), &[OutputChunk::plain("<a\0>b\0<c\0>d\0")])
     }
 
     #[test]
-    fn paths_pretty() {
+    fn values_pretty() {
         let mut output = ColoredOuput::new();
-        let mut paths = Paths::new(&mut output, PathMode::Pretty);
-        write_paths(&mut paths);
+        let mut values = Values::new(&mut output, Mode::Pretty);
+        write_values(&mut values);
         assert_eq!(
             output.chunks(),
             &[
@@ -152,9 +152,9 @@ mod tests {
         )
     }
 
-    fn write_paths(paths: &mut Paths<&mut ColoredOuput>) {
-        paths.write("a", "b").unwrap();
-        paths.write("c", "d").unwrap();
+    fn write_values(values: &mut Values<&mut ColoredOuput>) {
+        values.write("a", "b").unwrap();
+        values.write("c", "d").unwrap();
     }
 
     #[test]
