@@ -24,6 +24,7 @@ pub enum ErrorKind {
     ExpectedNumber,
     ExpectedPipeOrExprEnd,
     ExpectedRange,
+    ExpectedRegex,
     ExpectedSubstitution,
     ExpectedVariable,
     ExprStartInsideExpr,
@@ -67,6 +68,10 @@ impl fmt::Display for ErrorKind {
                 write!(formatter, "Expected '{}' or closing '{}'", PIPE, EXPR_END)
             }
             Self::ExpectedRange => write!(formatter, "Filter requires range as a parameter"),
+            Self::ExpectedRegex => write!(
+                formatter,
+                "Filter requires regular expression as a parameter"
+            ),
             Self::ExpectedSubstitution => {
                 write!(formatter, "Filter requires substitution as a parameter")
             }
@@ -180,6 +185,10 @@ mod tests {
         assert_eq!(
             ErrorKind::ExpectedRange.to_string(),
             "Filter requires range as a parameter"
+        );
+        assert_eq!(
+            ErrorKind::ExpectedRegex.to_string(),
+            "Filter requires regular expression as a parameter"
         );
         assert_eq!(
             ErrorKind::ExpectedSubstitution.to_string(),

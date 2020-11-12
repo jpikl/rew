@@ -17,7 +17,16 @@ pub struct RegexHolder(pub Regex);
 impl RegexHolder {
     pub fn parse(reader: &mut Reader<Char>) -> Result<Self> {
         let position = reader.position();
-        match Regex::new(&Char::join(reader.read_to_end())) {
+        let value = Char::join(reader.read_to_end());
+
+        if value.is_empty() {
+            return Err(Error {
+                kind: ErrorKind::ExpectedRegex,
+                range: position..position,
+            });
+        }
+
+        match Regex::new(&value) {
             Ok(regex) => Ok(Self(regex)),
             Err(error) => Err(Error {
                 kind: ErrorKind::RegexInvalid(AnyString(error.to_string())),
@@ -62,7 +71,20 @@ mod tests {
     }
 
     #[test]
-    fn regex_holder_parse_error() {
+    fn regex_holder_parse_empty_error() {
+        let mut reader = Reader::from("");
+        assert_eq!(
+            RegexHolder::parse(&mut reader),
+            Err(Error {
+                kind: ErrorKind::ExpectedRegex,
+                range: 0..0,
+            })
+        );
+        assert_eq!(reader.position(), 0);
+    }
+
+    #[test]
+    fn regex_holder_parse_invalid_error() {
         let mut reader = Reader::from("[0-9");
         assert_eq!(
             RegexHolder::parse(&mut reader),
