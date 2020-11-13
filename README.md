@@ -140,23 +140,22 @@ Let us assume the following directory structure:
 /
 └── home
     ├── alice
-    │   └── docs
-    │       └── notes.txt
+    │   └── notes.txt
     |
     └── bob
 ```
 
-For working directory `/home/bob` and input `../alice/docs/notes.txt`, filters would evaluate to:
+For working directory `/home/bob` and input `../alice/notes.txt`, filters would evaluate to:
 
-| Filter | Output                              |
-| ------ | ----------------------------------- |
-| `a`    | `/home/bob/../alice/docs/notes.txt` |
-| `A`    | `/home/alice/docs/notes.txt`        |
-| `p`    | `../alice/docs`                     |
-| `f`    | `notes.txt`                         |
-| `b`    | `notes`                             |
-| `e`    | `txt`                               |
-| `E`    | `.txt`                              |
+| Filter | Output                         |
+| ------ | ------------------------------ |
+| `a`    | `/home/bob/../alice/notes.txt` |
+| `A`    | `/home/alice/notes.txt`        |
+| `p`    | `../alice`                     |
+| `f`    | `notes.txt`                    |
+| `b`    | `notes`                        |
+| `e`    | `txt`                          |
+| `E`    | `.txt`                         |
 
 ###  Substring filters
 
