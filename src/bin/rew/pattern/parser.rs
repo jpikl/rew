@@ -395,7 +395,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_variable_multiple_filters() {
+    fn parse_multiple_filters() {
         assert_eq!(
             Parser::from("{e|t|n1-3}").parse_items(),
             Ok(vec![Parsed {

@@ -123,15 +123,15 @@ printf 'a\0b' | rew -z # Convert NUL bytes to newlines
 
 ### Path filters
 
-| Variable      | Description         |
-| ------------- | ------------------- |
-| `a`           | Absolute path       |
-| `A`           | Canonical path      |
-| `d`           | Parent path         |
-| `f`           | File name           |
-| `b`           | Base name           |
-| `e`           | Extension           |
-| `E`           | Extension with dot  |
+| Filter | Description         |
+| ------ | ------------------- |
+| `a`    | Absolute path       |
+| `A`    | Canonical path      |
+| `d`    | Parent path         |
+| `f`    | File name           |
+| `b`    | Base name           |
+| `e`    | Extension           |
+| `E`    | Extension with dot  |
 
 Let us assume the following directory structure:
 
@@ -147,15 +147,15 @@ Let us assume the following directory structure:
 
 For working directory `/home/bob` and input `../alice/docs/notes.txt`, filters would evaluate to:
 
-| Variable | Output                              |
-| -------- | ----------------------------------- |
-| `a`      | `/home/bob/../alice/docs/notes.txt` |
-| `A`      | `/home/alice/docs/notes.txt`        |
-| `d`      | `../alice/docs`                     |
-| `f`      | `notes.txt`                         |
-| `b`      | `notes`                             |
-| `e`      | `txt`                               |
-| `E`      | `.txt`                              |
+| Filter | Output                              |
+| ------ | ----------------------------------- |
+| `a`    | `/home/bob/../alice/docs/notes.txt` |
+| `A`    | `/home/alice/docs/notes.txt`        |
+| `d`    | `../alice/docs`                     |
+| `f`    | `notes.txt`                         |
+| `b`    | `notes`                             |
+| `e`    | `txt`                               |
+| `E`    | `.txt`                              |
 
 ###  Substring filters
 

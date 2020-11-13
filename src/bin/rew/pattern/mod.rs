@@ -45,11 +45,11 @@ impl Pattern {
     }
 
     pub fn uses_local_counter(&self) -> bool {
-        self.uses_filter(|variable| *variable == Filter::LocalCounter)
+        self.uses_filter(|filter| *filter == Filter::LocalCounter)
     }
 
     pub fn uses_global_counter(&self) -> bool {
-        self.uses_filter(|variable| *variable == Filter::GlobalCounter)
+        self.uses_filter(|filter| *filter == Filter::GlobalCounter)
     }
 
     fn uses_filter<F: Fn(&Filter) -> bool>(&self, test: F) -> bool {
