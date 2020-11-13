@@ -7,6 +7,7 @@ use crate::pattern::{eval, parse};
 use std::fmt;
 
 mod error;
+mod format;
 mod generate;
 mod path;
 mod regex;
@@ -30,10 +31,17 @@ pub enum Filter {
     Substring(Range),
     SubstringBackward(Range),
 
-    // String filters
+    // Replace filters
     ReplaceFirst(Substitution<String>),
     ReplaceAll(Substitution<String>),
     ReplaceEmpty(String),
+
+    // Regex filters
+    RegexMatch(RegexHolder),
+    RegexReplaceFirst(Substitution<RegexHolder>),
+    RegexReplaceAll(Substitution<RegexHolder>),
+
+    // Format filters
     Trim,
     ToLowercase,
     ToUppercase,
@@ -41,11 +49,6 @@ pub enum Filter {
     RemoveNonAscii,
     LeftPad(String),
     RightPad(String),
-
-    // Regex filters
-    RegexMatch(RegexHolder),
-    RegexReplaceFirst(Substitution<RegexHolder>),
-    RegexReplaceAll(Substitution<RegexHolder>),
 
     // Generators
     LocalCounter,
@@ -72,10 +75,17 @@ impl Filter {
                 'n' => Ok(Self::Substring(Range::parse(reader)?)),
                 'N' => Ok(Self::SubstringBackward(Range::parse(reader)?)),
 
-                // String filters
+                // Replace filters
                 'r' => Ok(Self::ReplaceFirst(Substitution::parse_string(reader)?)),
                 'R' => Ok(Self::ReplaceAll(Substitution::parse_string(reader)?)),
                 '?' => Ok(Self::ReplaceEmpty(Char::join(reader.read_to_end()))),
+
+                // Regex filters
+                'm' => Ok(Self::RegexMatch(RegexHolder::parse(reader)?)),
+                's' => Ok(Self::RegexReplaceFirst(Substitution::parse_regex(reader)?)),
+                'S' => Ok(Self::RegexReplaceAll(Substitution::parse_regex(reader)?)),
+
+                // Format filters
                 't' => Ok(Self::Trim),
                 'l' => Ok(Self::ToLowercase),
                 'L' => Ok(Self::ToUppercase),
@@ -83,11 +93,6 @@ impl Filter {
                 'I' => Ok(Self::RemoveNonAscii),
                 '<' => Ok(Self::LeftPad(Char::join(reader.read_to_end()))),
                 '>' => Ok(Self::RightPad(Char::join(reader.read_to_end()))),
-
-                // Regex filters
-                'm' => Ok(Self::RegexMatch(RegexHolder::parse(reader)?)),
-                's' => Ok(Self::RegexReplaceFirst(Substitution::parse_regex(reader)?)),
-                'S' => Ok(Self::RegexReplaceAll(Substitution::parse_regex(reader)?)),
 
                 // Generators
                 'c' => Ok(Self::LocalCounter),
@@ -122,38 +127,36 @@ impl Filter {
             Self::Substring(range) => substr::get_forward(value, &range),
             Self::SubstringBackward(range) => substr::get_backward(value, &range),
 
-            // String filters
+            // Replace filters
             Self::ReplaceFirst(Substitution {
                 target,
                 replacement,
             }) => string::replace_first(value, &target, &replacement),
-
             Self::ReplaceAll(Substitution {
                 target,
                 replacement,
             }) => string::replace_all(value, &target, &replacement),
-
             Self::ReplaceEmpty(replacement) => string::replace_empty(value, &replacement),
-            Self::Trim => string::trim(value),
-            Self::ToLowercase => string::to_lowercase(value),
-            Self::ToUppercase => string::to_uppercase(value),
-            Self::ToAscii => string::to_ascii(value),
-            Self::RemoveNonAscii => string::remove_non_ascii(value),
-            Self::LeftPad(padding) => string::left_pad(value, &padding),
-            Self::RightPad(padding) => string::right_pad(value, &padding),
 
             // Regex filters
             Self::RegexMatch(RegexHolder(regex)) => regex::get_match(value, &regex),
-
             Self::RegexReplaceFirst(Substitution {
                 target: RegexHolder(regex),
                 replacement,
             }) => regex::replace_first(value, &regex, &replacement),
-
             Self::RegexReplaceAll(Substitution {
                 target: RegexHolder(regex),
                 replacement,
             }) => regex::replace_all(value, &regex, &replacement),
+
+            // Format filters
+            Self::Trim => format::trim(value),
+            Self::ToLowercase => format::to_lowercase(value),
+            Self::ToUppercase => format::to_uppercase(value),
+            Self::ToAscii => format::to_ascii(value),
+            Self::RemoveNonAscii => format::remove_non_ascii(value),
+            Self::LeftPad(padding) => format::left_pad(value, &padding),
+            Self::RightPad(padding) => format::right_pad(value, &padding),
 
             // Generators
             Self::LocalCounter => generate::counter(context.local_counter),
@@ -179,19 +182,12 @@ impl fmt::Display for Filter {
             Self::Substring(range) => write!(formatter, "Substring {}", range),
             Self::SubstringBackward(range) => write!(formatter, "Substring (backward) {}", range),
 
-            // String filters
+            // Replace filters
             Self::ReplaceFirst(substitution) => write!(formatter, "Replace first {}", substitution),
             Self::ReplaceAll(substitution) => write!(formatter, "Replace all {}", substitution),
             Self::ReplaceEmpty(replacement) => {
                 write!(formatter, "Replace empty with '{}'", replacement)
             }
-            Self::Trim => write!(formatter, "Trim"),
-            Self::ToLowercase => write!(formatter, "To lowercase"),
-            Self::ToUppercase => write!(formatter, "To uppercase"),
-            Self::ToAscii => write!(formatter, "To ASCII"),
-            Self::RemoveNonAscii => write!(formatter, "Remove non-ASCII"),
-            Self::LeftPad(padding) => write!(formatter, "Left pad with '{}'", padding),
-            Self::RightPad(padding) => write!(formatter, "Right pad with '{}'", padding),
 
             // Regex filters
             Self::RegexMatch(substitution) => {
@@ -207,6 +203,15 @@ impl fmt::Display for Filter {
                 "Replace all matches of regular expression {}",
                 substitution
             ),
+
+            // Format filters
+            Self::Trim => write!(formatter, "Trim"),
+            Self::ToLowercase => write!(formatter, "To lowercase"),
+            Self::ToUppercase => write!(formatter, "To uppercase"),
+            Self::ToAscii => write!(formatter, "To ASCII"),
+            Self::RemoveNonAscii => write!(formatter, "Remove non-ASCII"),
+            Self::LeftPad(padding) => write!(formatter, "Left pad with '{}'", padding),
+            Self::RightPad(padding) => write!(formatter, "Right pad with '{}'", padding),
 
             // Generators
             Self::LocalCounter => write!(formatter, "Local counter"),

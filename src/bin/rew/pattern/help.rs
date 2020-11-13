@@ -121,7 +121,7 @@ Examples:
     abcde    N2        d
 
 ========================================
- String filters
+ Replace filters
 ========================================
 
     FILTER   DESCRIPTION
@@ -132,13 +132,6 @@ Examples:
              Equivalent to `r:X:`.
     R        Same as `r` but replaces/removes all occurrences.
     ?D       Replace empty value with D.
-    t        Trim white-spaces from both sides.
-    u        Convert to uppercase.
-    l        Convert to lowercase.
-    a        Convert non-ASCII characters to ASCII.
-    A        Remove non-ASCII characters.
-    <M       Left pad with mask M.
-    >M       Right pad with mask M.
     
 Examples:
     
@@ -150,13 +143,6 @@ Examples:
     ab_ab      R:ab       _
     abc        ?def       abc
     (empty)    ?def       def
-    ..a..b..    t         a..b    (dots are white-spaces)
-    aBčĎ        u         ABČĎ
-    aBčĎ        l         abčď
-    aBčĎ        a         aBcD
-    aBčĎ        A         aB
-    abc         <12345    12abc
-    abc         >12345    abc45
     
 ========================================
  Regex filters
@@ -182,6 +168,32 @@ Examples:
     12_34      S:[0-9]+:x               x_x
     12_34      s:([0-9])([0-9]):$2$1    21_34
     12_34      S:([0-9])([0-9]):$2$1    21_43
+
+========================================
+ Format filters
+========================================
+
+    FILTER   DESCRIPTION
+    -----------------------------------------------
+    t        Trim white-spaces from both sides.
+    u        Convert to uppercase.
+    l        Convert to lowercase.
+    a        Convert non-ASCII characters to ASCII.
+    A        Remove non-ASCII characters.
+    <M       Left pad with mask M.
+    >M       Right pad with mask M.
+    
+Examples:
+    
+    INPUT      FILTER     OUTPUT
+    ----------------------------
+    ..a..b..    t         a..b    (dots are white-spaces)
+    aBčĎ        u         ABČĎ
+    aBčĎ        l         abčď
+    aBčĎ        a         aBcD
+    aBčĎ        A         aB
+    abc         <12345    12abc
+    abc         >12345    abc45
 
 ========================================
  Generators

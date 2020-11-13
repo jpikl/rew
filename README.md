@@ -14,8 +14,9 @@ Rew is a CLI tool that rewrites FS paths according to a pattern.
 - [:pencil: Pattern](#pencil-pattern)
   - [Path filters](#path-filters)
   - [Substring filters](#substring-filters)
-  - [String filters](#string-filters)
+  - [Replace filters](#replace-filters)
   - [Regex filters](#regex-filters)
+  - [Format filters](#format-filters)
   - [Generators](#generators)
 - [:speech_balloon: Output](#speech_balloon-output)
 
@@ -180,21 +181,14 @@ Examples:
 | `abcde` |  `n2`   | `b`    |
 | `abcde` |  `N2`   | `d`    |
 
-###  String filters
+###  Replace filters
 
-| Filter  | Description                                       |
-| ------- | ------------------------------------------------- |
+| Filter  | Description                                             |
+| ------- | ------------------------------------------------------- |
 | `r:X:Y` | Replace first occurrence of `X` with `Y`.<br/>Any other character than `:` can be also used as a delimiter. |
 | `r:X`   | Remove first occurrence of `X`.<br>Equivalent to `r:X:` |
-| `R`     | Same as `r` but replaces/removes all occurrences. |
-| `?D`    | Replace empty value with `D`.                     |
-| `t`     | Trim white-spaces from both sides.                |
-| `u`     | Convert to uppercase.                             |
-| `l`     | Convert to lowercase.                             |
-| `a`     | Convert non-ASCII characters to ASCII.            |
-| `A`     | Remove non-ASCII characters.                      |
-| `<M`    | Left pad with mask `M`.                           |
-| `>M`    | Right pad with mask `M`.                          |
+| `R`     | Same as `r` but replaces/removes all occurrences.       |
+| `?D`    | Replace empty value with `D`.                           |
 
 Examples:
 
@@ -206,13 +200,6 @@ Examples:
 | `ab_ab`    |  `R:ab`    | `_`     |
 | `abc`      |  `?def`    | `abc`   |
 | *(empty)*  |  `?def`    | `def`   |
-| `..a..b..` | `t`        | `a..b` *(dots are white-spaces)* |
-| `aBčĎ`     | `u`        | `ABČĎ`  |
-| `aBčĎ`     | `l`        | `abčď`  |
-| `aBčĎ`     | `a`        | `aBcD`  |
-| `aBčĎ`     | `A`        | `aB`    |
-| `abc`      | `<12345`   | `12abc` |
-| `abc`      | `>12345`   | `abc45` |
 
 
 ###  Regex filters
@@ -233,6 +220,30 @@ Examples:
 | `12_34`   |  `S:[0-9]+:x`            | `x_x`   |
 | `12_34`   |  `s:([0-9])([0-9]):$2$1` | `21_34` |
 | `12_34`   |  `S:([0-9])([0-9]):$2$1` | `21_43` |
+
+###  Format filters
+
+| Filter  | Description                            |
+| ------- | -------------------------------------- |
+| `t`     | Trim white-spaces from both sides.     |
+| `u`     | Convert to uppercase.                  |
+| `l`     | Convert to lowercase.                  |
+| `a`     | Convert non-ASCII characters to ASCII. |
+| `A`     | Remove non-ASCII characters.           |
+| `<M`    | Left pad with mask `M`.                |
+| `>M`    | Right pad with mask `M`.               |
+
+Examples:
+
+| Input      |  Filter  | Output  |
+| ---------- | -------- | ------- |
+| `..a..b..` | `t`      | `a..b` *(dots are white-spaces)* |
+| `aBčĎ`     | `u`      | `ABČĎ`  |
+| `aBčĎ`     | `l`      | `abčď`  |
+| `aBčĎ`     | `a`      | `aBcD`  |
+| `aBčĎ`     | `A`      | `aB`    |
+| `abc`      | `<12345` | `12abc` |
+| `abc`      | `>12345` | `abc45` |
 
 ### Generators
 
