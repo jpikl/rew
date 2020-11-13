@@ -62,7 +62,7 @@ impl Filter {
                 // Path filters
                 'a' => Ok(Self::AbsolutePath),
                 'A' => Ok(Self::CanonicalPath),
-                'd' => Ok(Self::ParentPath),
+                'p' => Ok(Self::ParentPath),
                 'f' => Ok(Self::FileName),
                 'b' => Ok(Self::BaseName),
                 'e' => Ok(Self::Extension),
@@ -237,7 +237,7 @@ mod tests {
 
     #[test]
     fn parse_parent_path() {
-        assert_eq!(parse("d"), Ok(Filter::ParentPath));
+        assert_eq!(parse("p"), Ok(Filter::ParentPath));
     }
 
     #[test]

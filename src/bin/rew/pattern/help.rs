@@ -65,7 +65,7 @@ const FILTERS_HELP: &str = indoc! {"
     ----------------------------
     a         Absolute path
     A         Canonical path
-    d         Parent path
+    p         Parent path
     f         File name
     b         Base name
     e         Extension
@@ -87,7 +87,7 @@ For working directory `/home/bob` and input `../alice/docs/notes.txt`, filters w
     ---------------------------------------------
     a           /home/bob/../alice/docs/notes.txt
     A           /home/alice/docs/notes.txt
-    d           ../alice/docs
+    p           ../alice/docs
     f           notes.txt
     b           notes
     e           txt

@@ -127,7 +127,7 @@ printf 'a\0b' | rew -z # Convert NUL bytes to newlines
 | ------ | ------------------- |
 | `a`    | Absolute path       |
 | `A`    | Canonical path      |
-| `d`    | Parent path         |
+| `p`    | Parent path         |
 | `f`    | File name           |
 | `b`    | Base name           |
 | `e`    | Extension           |
@@ -151,7 +151,7 @@ For working directory `/home/bob` and input `../alice/docs/notes.txt`, filters w
 | ------ | ----------------------------------- |
 | `a`    | `/home/bob/../alice/docs/notes.txt` |
 | `A`    | `/home/alice/docs/notes.txt`        |
-| `d`    | `../alice/docs`                     |
+| `p`    | `../alice/docs`                     |
 | `f`    | `notes.txt`                         |
 | `b`    | `notes`                             |
 | `e`    | `txt`                               |
@@ -265,13 +265,13 @@ rew --lc-init=1 --lc-step=3 '{c}' # Start from 1, increment by 3
 By default, results are printed as lines to standard output.
 
 ```bash
-rew '{d}' | xargs mkdir -p # Pass extracted directories to mkdir command
+rew '{p}' | xargs mkdir -p # Pass extracted directories to mkdir command
 ```
 
 Use `-Z, --print-nul` flag to print results delimited by NUL character.
 
 ```bash
-rew -Z '{d}' | xargs -0 mkdir -p # Paths may contain newlines
+rew -Z '{p}' | xargs -0 mkdir -p # Paths may contain newlines
 ```
 
 Use `-R, --print-raw` flag to print results without any delimiter.
