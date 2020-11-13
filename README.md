@@ -221,7 +221,6 @@ Examples:
 | `12_34`   |  `S:([0-9])([0-9]):$2$1` | `21_43` |
 
 ###  Format filters
-
 | Filter  | Description                            |
 | ------- | -------------------------------------- |
 | `t`     | Trim white-spaces from both sides.     |
@@ -249,7 +248,7 @@ Examples:
 | Filter | Description             |
 | ------ | ----------------------- |
 | `c`    | Local counter.          |
-| `c`    | Global counter.         |
+| `C`    | Global counter.         |
 | `u`    | Randomly generated UUID |
 
 - Global counter `C` is incremented for every input value.
@@ -262,12 +261,12 @@ Examples:
 | `b/x` | 3              | 1             |
 | `b/y` | 4              | 2             |
 
-- Use `--gc-init, --gc-step` options to set initial/step value for global counter.
-- Use `--lc-init, --lc-step` options to set initial/step value for local counter.
+- Use `-c, --local-counter` option to change local counter configuration.
+- Use `-C, --global-counter` option to change global counter configuration.
 
 ```bash
-rew --gc-init=0 --gc-step=2 '{C}' # Start from 0, increment by 2
-rew --lc-init=1 --lc-step=3 '{c}' # Start from 1, increment by 3
+rew -c 0   '{c}' # Start from 0, increment by 1
+rew -C 2:3 '{C}' # Start from 2, increment by 3
 ```
 
 ## :speech_balloon: Output

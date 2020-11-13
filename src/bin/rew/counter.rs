@@ -1,17 +1,62 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 
+const INIT_DEFAULT: u32 = 1;
+const STEP_DEFAULT: u32 = 1;
+
+const INIT_ERROR: &str = "Invalid init value";
+const STEP_ERROR: &str = "Invalid step value";
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub struct Config {
+    pub init: u32,
+    pub step: u32,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            init: INIT_DEFAULT,
+            step: STEP_DEFAULT,
+        }
+    }
+}
+
+impl FromStr for Config {
+    type Err = &'static str;
+
+    fn from_str(string: &str) -> Result<Self, Self::Err> {
+        if let Some(separator_index) = string.find(':') {
+            let init_str = &string[0..separator_index];
+            let init = init_str.parse().map_err(|_| INIT_ERROR)?;
+
+            let step = if separator_index < string.len() - 1 {
+                let step_str = &string[(separator_index + 1)..];
+                step_str.parse().map_err(|_| STEP_ERROR)?
+            } else {
+                return Err(STEP_ERROR);
+            };
+
+            Ok(Self { init, step })
+        } else {
+            let init = string.parse().map_err(|_| INIT_ERROR)?;
+            let step = STEP_DEFAULT;
+
+            Ok(Self { init, step })
+        }
+    }
+}
+
+#[derive(PartialEq, Debug)]
 pub struct GlobalGenerator {
     value: u32,
     step: u32,
 }
 
 impl GlobalGenerator {
-    pub fn new(inital: u32, step: u32) -> Self {
-        Self {
-            value: inital,
-            step,
-        }
+    pub fn new(init: u32, step: u32) -> Self {
+        Self { value: init, step }
     }
 
     pub fn next(&mut self) -> u32 {
@@ -21,17 +66,30 @@ impl GlobalGenerator {
     }
 }
 
+impl From<&Config> for GlobalGenerator {
+    fn from(config: &Config) -> Self {
+        Self::new(config.init, config.step)
+    }
+}
+
+#[derive(PartialEq, Debug)]
 pub struct LocalGenerator {
     values: HashMap<Option<PathBuf>, u32>,
-    inital: u32,
+    init: u32,
     step: u32,
 }
 
+impl From<&Config> for LocalGenerator {
+    fn from(config: &Config) -> Self {
+        Self::new(config.init, config.step)
+    }
+}
+
 impl LocalGenerator {
-    pub fn new(inital: u32, step: u32) -> Self {
+    pub fn new(init: u32, step: u32) -> Self {
         Self {
             values: HashMap::new(),
-            inital,
+            init,
             step,
         }
     }
@@ -42,8 +100,8 @@ impl LocalGenerator {
             *value += self.step;
             *value
         } else {
-            self.values.insert(key, self.inital);
-            self.inital
+            self.values.insert(key, self.init);
+            self.init
         }
     }
 }
@@ -51,6 +109,48 @@ impl LocalGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn config_default() {
+        let config = Config::default();
+        assert_eq!(config.init, INIT_DEFAULT);
+        assert_eq!(config.step, STEP_DEFAULT);
+    }
+
+    #[test]
+    fn config_from_str() {
+        assert_eq!(
+            Config::from_str("12"),
+            Ok(Config {
+                init: 12,
+                step: STEP_DEFAULT
+            })
+        );
+
+        assert_eq!(Config::from_str("12:34"), Ok(Config { init: 12, step: 34 }));
+    }
+
+    #[test]
+    fn config_from_str_errors() {
+        assert_eq!(Config::from_str(""), Err(INIT_ERROR));
+        assert_eq!(Config::from_str(":"), Err(INIT_ERROR));
+        assert_eq!(Config::from_str(":34"), Err(INIT_ERROR));
+        assert_eq!(Config::from_str(":cd"), Err(INIT_ERROR));
+        assert_eq!(Config::from_str("12:"), Err(STEP_ERROR));
+        assert_eq!(Config::from_str("12:cd"), Err(STEP_ERROR));
+        assert_eq!(Config::from_str("ab"), Err(INIT_ERROR));
+        assert_eq!(Config::from_str("ab:"), Err(INIT_ERROR));
+        assert_eq!(Config::from_str("ab:34"), Err(INIT_ERROR));
+        assert_eq!(Config::from_str("ab:cd"), Err(INIT_ERROR));
+    }
+
+    #[test]
+    fn global_from_config() {
+        assert_eq!(
+            GlobalGenerator::new(12, 34),
+            GlobalGenerator::from(&Config { init: 12, step: 34 })
+        );
+    }
 
     #[test]
     fn global_from_zero_per_one() {
@@ -66,6 +166,14 @@ mod tests {
         assert_eq!(counter.next(), 1);
         assert_eq!(counter.next(), 11);
         assert_eq!(counter.next(), 21);
+    }
+
+    #[test]
+    fn local_from_config() {
+        assert_eq!(
+            LocalGenerator::new(12, 34),
+            LocalGenerator::from(&Config { init: 12, step: 34 })
+        );
     }
 
     #[test]

@@ -1,3 +1,4 @@
+use crate::counter;
 use clap::{crate_name, crate_version, AppSettings, Clap};
 use common::color::{parse_color, COLOR_VALUES};
 use common::run::Options;
@@ -31,11 +32,11 @@ pub struct Cli {
 
     /// Read values delimited by a specific character, not newline
     #[clap(
-    short = 'd',
-    long,
-    value_name = "char",
-    conflicts_with_all = &["read-nul", "read-raw"],
-    parse(try_from_str = parse_single_byte_char)
+        short = 'd',
+        long,
+        value_name = "char",
+        conflicts_with_all = &["read-nul", "read-raw"],
+        parse(try_from_str = parse_single_byte_char)
     )]
     pub read: Option<u8>,
 
@@ -67,32 +68,30 @@ pub struct Cli {
 
     /// When to use colors
     #[clap(
-    long,
-    value_name = "when",
-    possible_values = COLOR_VALUES,
-    parse(try_from_str = parse_color),
+        long,
+        value_name = "when",
+        possible_values = COLOR_VALUES,
+        parse(try_from_str = parse_color),
     )]
     pub color: Option<ColorChoice>,
 
     /// Continue processing after an error, fail at end
-    #[clap(short = 'c', long)]
+    #[clap(short = 'e', long)]
     pub fail_at_end: bool,
 
-    /// Global counter initial value
-    #[clap(long, value_name = "number")]
-    pub gc_init: Option<u32>,
+    /// Local counter configuration
+    ///
+    /// init - Initial value.
+    /// step - Value increment (default: 1)
+    #[clap(short = 'c', long, value_name = "init[:step]", verbatim_doc_comment)]
+    pub local_counter: Option<counter::Config>,
 
-    /// Global counter step
-    #[clap(long, value_name = "number")]
-    pub gc_step: Option<u32>,
-
-    /// Local counter initial value
-    #[clap(long, value_name = "number")]
-    pub lc_init: Option<u32>,
-
-    /// Local counter step
-    #[clap(long, value_name = "number")]
-    pub lc_step: Option<u32>,
+    /// Global counter configuration
+    ///
+    /// init - Initial value.
+    /// step - Value increment (default: 1).
+    #[clap(short = 'C', long, value_name = "init[:step]", verbatim_doc_comment)]
+    pub global_counter: Option<counter::Config>,
 
     /// Custom escape character to use in pattern
     #[clap(long, value_name = "char")]

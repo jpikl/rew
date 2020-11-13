@@ -157,8 +157,7 @@ fn pretty_output() {
 #[test]
 fn local_counter() {
     rew()
-        .arg("--lc-init=2")
-        .arg("--lc-step=3")
+        .arg("--local-counter=2:3")
         .arg("{}.{c}.{C}")
         .write_stdin(indoc! {"
             a/a
@@ -180,8 +179,7 @@ fn local_counter() {
 #[test]
 fn global_counter() {
     rew()
-        .arg("--gc-init=2")
-        .arg("--gc-step=3")
+        .arg("--global-counter=2:3")
         .arg("{}.{c}.{C}")
         .write_stdin(indoc! {"
             a/a

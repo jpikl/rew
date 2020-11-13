@@ -214,11 +214,11 @@ Local counter `c` is incremented per parent directory (assuming input value is a
     b/x      3         1
     b/y      4         2
 
-Use `--gc-init, --gc-step` options to set initial/step value for global counter.
-Use `--lc-init, --lc-step` options to set initial/step value for local counter.
+Use `-c, --local-counter` option to change local counter configuration.
+Use `-C, --global-counter` option to change global counter configuration.
 
-    $> rew --gc-init=0 --gc-step=2 '{C}' # Start from 0, increment by 2
-    $> rew --lc-init=1 --lc-step=3 '{c}' # Start from 1, increment by 3
+    $> rew -c 0   '{c}' # Start from 0, increment by 1
+    $> rew -C 2:3 '{C}' # Start from 2, increment by 3
 "};
 
 pub fn write_pattern_help<O: Write>(output: &mut O) -> Result<()> {

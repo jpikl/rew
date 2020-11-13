@@ -84,11 +84,11 @@ fn run(cli: &Cli, io: &Io) -> Result {
         let global_counter_used = pattern.uses_global_counter();
         let local_counter_used = pattern.uses_local_counter();
 
-        let mut global_counter_generator =
-            counter::GlobalGenerator::new(cli.gc_init.unwrap_or(1), cli.gc_step.unwrap_or(1));
+        let global_counter_config = cli.global_counter.unwrap_or_else(counter::Config::default);
+        let local_counter_config = cli.local_counter.unwrap_or_else(counter::Config::default);
 
-        let mut local_counter_generator =
-            counter::LocalGenerator::new(cli.lc_init.unwrap_or(1), cli.lc_step.unwrap_or(1));
+        let mut global_counter_generator = counter::GlobalGenerator::from(&global_counter_config);
+        let mut local_counter_generator = counter::LocalGenerator::from(&local_counter_config);
 
         let current_dir_buf = env::current_dir()?;
         let current_dir = current_dir_buf.as_path();

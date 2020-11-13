@@ -44,7 +44,7 @@ pub struct Cli {
     pub read_nul: bool,
 
     /// Continue processing after an error, fail at end
-    #[clap(short = 'c', long)]
+    #[clap(short = 'e', long)]
     pub fail_at_end: bool,
 
     /// Explain what is being done
@@ -53,10 +53,10 @@ pub struct Cli {
 
     /// When to use colors
     #[clap(
-    long,
-    value_name = "when",
-    possible_values = COLOR_VALUES,
-    parse(try_from_str = parse_color),
+        long,
+        value_name = "when",
+        possible_values = COLOR_VALUES,
+        parse(try_from_str = parse_color),
     )]
     pub color: Option<ColorChoice>,
 
