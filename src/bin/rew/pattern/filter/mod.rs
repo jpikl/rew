@@ -195,16 +195,16 @@ impl fmt::Display for Filter {
 
             // Regex filters
             Self::RegexMatch(substitution) => {
-                write!(formatter, "Regular expression '{}' match", substitution)
+                write!(formatter, "Match of regular expression '{}'", substitution)
             }
             Self::RegexReplaceFirst(substitution) => write!(
                 formatter,
-                "Replace first regular expression {}",
+                "Replace first match of regular expression {}",
                 substitution
             ),
             Self::RegexReplaceAll(substitution) => write!(
                 formatter,
-                "Replace all regular expressions {}",
+                "Replace all matches of regular expression {}",
                 substitution
             ),
 
@@ -770,7 +770,7 @@ mod tests {
                 replacement: String::from("b")
             })
             .to_string(),
-            "Replace first 'a' by 'b'"
+            "Replace first 'a' with 'b'"
         );
         assert_eq!(
             Filter::ReplaceAll(Substitution {
@@ -778,7 +778,7 @@ mod tests {
                 replacement: String::from("b")
             })
             .to_string(),
-            "Replace all 'a' by 'b'"
+            "Replace all 'a' with 'b'"
         );
         assert_eq!(Filter::Trim.to_string(), "Trim");
         assert_eq!(Filter::ToLowercase.to_string(), "To lowercase");
@@ -799,7 +799,7 @@ mod tests {
         );
         assert_eq!(
             Filter::RegexMatch(RegexHolder(Regex::new("a+").unwrap())).to_string(),
-            "Regular expression 'a+' match"
+            "Match of regular expression 'a+'"
         );
         assert_eq!(
             Filter::RegexReplaceFirst(Substitution {
@@ -807,7 +807,7 @@ mod tests {
                 replacement: String::from("b")
             })
             .to_string(),
-            "Replace first regular expression 'a+' by 'b'"
+            "Replace first match of regular expression 'a+' with 'b'"
         );
         assert_eq!(
             Filter::RegexReplaceAll(Substitution {
@@ -815,7 +815,7 @@ mod tests {
                 replacement: String::from("b")
             })
             .to_string(),
-            "Replace all regular expressions 'a+' by 'b'"
+            "Replace all matches of regular expression 'a+' with 'b'"
         );
     }
 }

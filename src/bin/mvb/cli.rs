@@ -29,7 +29,7 @@ use termcolor::ColorChoice;
 ///
 /// Such input can be generated using accompanying `rew` utility and its `-b, --bulk` flag:
 ///
-///     $ find -name '*.jpeg' | rew -b '{b}.jpg' | mvb # Rename all *.jpeg files to *.jpg
+///     $> find -name '*.jpeg' | rew -b '{d}/{b}.jpg' | mvb # Rename all *.jpeg files to *.jpg
 ///
 /// Each pair of source and destination path must be either both files or both directories. Mixing these types will result in error.
 ///
@@ -43,7 +43,7 @@ pub struct Cli {
     #[clap(short = 'z', long)]
     pub read_nul: bool,
 
-    /// Continue after an error, fail at end
+    /// Continue processing after an error, fail at end
     #[clap(short = 'c', long)]
     pub fail_at_end: bool,
 

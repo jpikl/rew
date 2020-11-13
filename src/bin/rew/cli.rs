@@ -21,7 +21,6 @@ pub struct Cli {
     ///
     /// Use `--explain` flag to print explanation of a given pattern.
     /// Use `--help-pattern` flag to print description of patter syntax.
-    /// Use `--help-vars` flag to print variable reference.
     /// Use `--help-filters` flag to print filter reference.
     #[clap(verbatim_doc_comment)]
     pub pattern: Option<String>,
@@ -75,7 +74,7 @@ pub struct Cli {
     )]
     pub color: Option<ColorChoice>,
 
-    /// Continue after a value processing error, fail at end
+    /// Continue processing after an error, fail at end
     #[clap(short = 'c', long)]
     pub fail_at_end: bool,
 

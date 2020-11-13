@@ -81,7 +81,7 @@ pub fn parse_target_and_replacement(
 
 impl<T: fmt::Display> fmt::Display for Substitution<T> {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(formatter, "'{}' by '{}'", self.target, self.replacement)
+        write!(formatter, "'{}' with '{}'", self.target, self.replacement)
     }
 }
 
@@ -247,7 +247,7 @@ mod tests {
                 replacement: String::from("def")
             }
             .to_string(),
-            "'abc' by 'def'"
+            "'abc' with 'def'"
         );
         assert_eq!(
             Substitution {
@@ -255,7 +255,7 @@ mod tests {
                 replacement: String::from("_$1_")
             }
             .to_string(),
-            "'([a-z]+)' by '_$1_'"
+            "'([a-z]+)' with '_$1_'"
         );
     }
 }
