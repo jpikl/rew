@@ -12,20 +12,20 @@ Rew is a CLI tool that rewrites FS paths according to a pattern.
 - [:bulb: What rew does](#bulb-what-rew-does)
 - [:keyboard: Input](#keyboard-input)
 - [:pencil: Pattern](#pencil-pattern)
-  - [Path filters](#path-filters)
-  - [Substring filters](#substring-filters)
-  - [Replace filters](#replace-filters)
-  - [Regex filters](#regex-filters)
-  - [Format filters](#format-filters)
-  - [Generators](#generators)
+  - [:railway_track: Path filters](#railway_track-path-filters)
+  - [:ab: Substring filters](#ab-substring-filters)
+  - [:mag: Replace filters](#mag-replace-filters)
+  - [:asterisk: Regex filters](#asterisk-regex-filters)
+  - [:art: Format filters](#art-format-filters)
+  - [:infinity: Generators](#infinity-generators)
 - [:speech_balloon: Output](#speech_balloon-output)
-  - [Diff mode](#diff-mode)
-  - [Pretty mode](#pretty-mode)
+  - [:robot: Diff mode](#robot-diff-mode)
+  - [:rose: Pretty mode](#rose-pretty-mode)
 
 ## :bulb: What rew does
 
 1. Reads values from standard input.
-2. Rewrites them using provided pattern.
+2. Rewrites them according to a pattern.
 3. Prints results to standard output.
 
 Input values are assumed to be FS paths, however, `rew` is able to process any UTF-8 encoded text.
@@ -113,7 +113,7 @@ If no pattern is provided, input values are directly copied to output.
 printf 'a\0b' | rew -z # Convert NUL bytes to newlines
 ```
 
-### Path filters
+### :railway_track: Path filters
 
 | Filter | Description         |
 | ------ | ------------------- |
@@ -148,7 +148,7 @@ For working directory `/home/bob` and input `../alice/notes.txt`, filters would 
 | `e`    | `txt`                          |
 | `E`    | `.txt`                         |
 
-###  Substring filters
+### :ab: Substring filters
 
 | Filter | Description                                       |
 | ------ | ------------------------------------------------- |
@@ -171,7 +171,7 @@ Examples:
 | `abcde` |  `n2`   | `b`    |
 | `abcde` |  `N2`   | `d`    |
 
-###  Replace filters
+### :mag: Replace filters
 
 | Filter  | Description                                             |
 | ------- | ------------------------------------------------------- |
@@ -192,7 +192,7 @@ Examples:
 | *(empty)*  |  `?def`    | `def`   |
 
 
-###  Regex filters
+### :asterisk: Regex filters
 
 | Filter  | Description                                   |
 | ------- | --------------------------------------------- |
@@ -211,7 +211,8 @@ Examples:
 | `12_34`   |  `s:([0-9])([0-9]):$2$1` | `21_34` |
 | `12_34`   |  `S:([0-9])([0-9]):$2$1` | `21_43` |
 
-###  Format filters
+### :art: Format filters
+
 | Filter  | Description                            |
 | ------- | -------------------------------------- |
 | `t`     | Trim white-spaces from both sides.     |
@@ -234,7 +235,7 @@ Examples:
 | `abc`      | `<12345` | `12abc` |
 | `abc`      | `>12345` | `abc45` |
 
-### Generators
+### :infinity: Generators
 
 | Filter | Description             |
 | ------ | ----------------------- |
@@ -275,7 +276,7 @@ rew -R '{}#r#n'                  # We can provide our custom CR+LF delimiter in 
 
 Apart from this (standard) mode, there are also two other output modes.
 
-### Diff mode
+### :robot: Diff mode
 
 - Enabled using `-b, --diff` flag.
 - Respects other `--print*` flags.
@@ -298,7 +299,7 @@ find -name '*.jpeg' | rew -b '{p}/{b}.jpg' | mvb # Rename all *.jpeg files to *.
 find -name '*.txt' | rew -b '{}.bak' | cpb       # Make backup copy of each *.txt file
 ```
 
-### Pretty mode
+### :rose: Pretty mode
 
 - Enabled using `-p, --pretty` flag.
 - Ignores other `--print*` flags.
