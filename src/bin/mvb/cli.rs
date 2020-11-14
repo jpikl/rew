@@ -27,7 +27,7 @@ use termcolor::ColorChoice;
 ///     <src_path_N
 ///     >dst_path_N
 ///
-/// Such input can be generated using accompanying `rew` utility and its `-b, --bulk` flag:
+/// Such input can be generated using accompanying `rew` utility and its `-b, --diff` flag:
 ///
 ///     $> find -name '*.jpeg' | rew -b '{p}/{b}.jpg' | mvb # Rename all *.jpeg files to *.jpg
 ///

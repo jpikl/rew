@@ -57,10 +57,10 @@ fn run(cli: &Cli, io: &Io) -> Result {
         } else {
             Some('\n')
         };
-        if cli.bulk {
+        if cli.diff {
             output::Mode::Diff(output_delimiter)
         } else {
-            output::Mode::Out(output_delimiter)
+            output::Mode::Standard(output_delimiter)
         }
     };
 

@@ -7,7 +7,7 @@ use std::io::{Result, Write};
 use termcolor::{Color, WriteColor};
 
 pub enum Mode {
-    Out(Option<char>),
+    Standard(Option<char>),
     Diff(Option<char>),
     Pretty,
 }
@@ -24,11 +24,11 @@ impl<O: Write + WriteColor> Values<O> {
 
     pub fn write(&mut self, input_value: &str, output_value: &str) -> Result<()> {
         match self.mode {
-            Mode::Out(Some(delimiter)) => {
+            Mode::Standard(Some(delimiter)) => {
                 write!(self.output, "{}{}", output_value, delimiter)?;
                 self.flush_if_needed(delimiter)
             }
-            Mode::Out(None) => {
+            Mode::Standard(None) => {
                 write!(self.output, "{}", output_value)?;
                 self.output.flush()
             }
@@ -89,7 +89,7 @@ mod tests {
     #[test]
     fn values_out_no_delimiter() {
         let mut output = ColoredOuput::new();
-        let mut values = Values::new(&mut output, Mode::Out(None));
+        let mut values = Values::new(&mut output, Mode::Standard(None));
         write_values(&mut values);
         assert_eq!(output.chunks(), &[OutputChunk::plain("bd")])
     }
@@ -97,7 +97,7 @@ mod tests {
     #[test]
     fn values_out_newline_delimiter() {
         let mut output = ColoredOuput::new();
-        let mut values = Values::new(&mut output, Mode::Out(Some('\n')));
+        let mut values = Values::new(&mut output, Mode::Standard(Some('\n')));
         write_values(&mut values);
         assert_eq!(output.chunks(), &[OutputChunk::plain("b\nd\n")])
     }
@@ -105,7 +105,7 @@ mod tests {
     #[test]
     fn values_out_nul_delimiter() {
         let mut output = ColoredOuput::new();
-        let mut values = Values::new(&mut output, Mode::Out(Some('\0')));
+        let mut values = Values::new(&mut output, Mode::Standard(Some('\0')));
         write_values(&mut values);
         assert_eq!(output.chunks(), &[OutputChunk::plain("b\0d\0")])
     }

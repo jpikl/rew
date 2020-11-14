@@ -125,7 +125,7 @@ fn custom_input_delimiter() {
 #[test]
 fn bulk_output() {
     rew()
-        .arg("--bulk")
+        .arg("--diff")
         .arg("_{}_")
         .write_stdin("a\n\0b")
         .assert()

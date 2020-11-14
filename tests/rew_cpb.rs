@@ -13,7 +13,7 @@ fn test() {
     let dst_file = dir.child("b");
 
     let rew = rew()
-        .arg("--bulk")
+        .arg("--diff")
         .arg("b")
         .write_stdin("a")
         .output()

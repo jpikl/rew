@@ -19,6 +19,8 @@ Rew is a CLI tool that rewrites FS paths according to a pattern.
   - [Format filters](#format-filters)
   - [Generators](#generators)
 - [:speech_balloon: Output](#speech_balloon-output)
+  - [Diff mode](#diff-mode)
+  - [Pretty mode](#pretty-mode)
 
 ## :bulb: What rew does
 
@@ -32,32 +34,21 @@ Input values are assumed to be FS paths, however, `rew` is able to process any U
 
 ## :keyboard: Input
 
-By default, values are read as lines from standard input. 
-`CR+LF` or `LF` is auto-detected as a delimiter, independent of platform.
+By default, values are read as lines from standard input.
+`LF` or `CR+LF` is auto-detected as a delimiter, independent of platform.
+
+- Use `-z, --read-nul` flag to read values delimited by NUL character.
+- Use `-r, --read-raw` flag to read whole input into memory as a single value.
+- Use `-d, --read` option to read values delimited by a specific character.
 
 ```bash
-find | rew '{a}' # Process find output and print absolute paths
+find | rew '{a}'            # Convert output lines from find command to absolute paths
+find -print0 | rew -z '{a}' # Use NUL delimiter in case paths contain newlines
+echo "$PATH" | rew -d:      # Split $PATH entries delimited by colon
+rew -r '{R:#r#n:#n}' <X >Y  # Read X as a whole, replace CR+LF by LF, write result to Y
 ```
 
-Use `-z, --read-nul` flag to read values delimited by NUL character.
-
-```bash
-find -print0 | rew -z '{a}' # Paths may contain newlines
-```
-
-Use `-d, --read` option to read values delimited by a specific character.
-
-```bash
-echo "$PATH" | rew -d ':' # Split paths delimited by colon
-```
-
-Use `-r, --read-raw` flag to read whole input into memory as a single value.
-
-```bash
-rew -r '{R:#r#n:#n}' <input.txt >output.txt # Replace CR+LF with LF in file
-```
-
-Input values can be also provided as additional arguments.
+Input values can be also provided as additional arguments, after a pattern.
 
 ```bash
 rew '{a}' *.txt # Wildcard expansion done by shell
@@ -273,29 +264,22 @@ rew -C 2:3 '{C}' # Start from 2, increment by 3
 
 By default, results are printed as lines to standard output.
 
-```bash
-rew '{p}' | xargs mkdir -p # Pass extracted directories to mkdir command
-```
-
-Use `-Z, --print-nul` flag to print results delimited by NUL character.
+- Use `-Z, --print-nul` flag to print results delimited by NUL character.
+- Use `-R, --print-raw` flag to print results without a delimiter.
 
 ```bash
-rew -Z '{p}' | xargs -0 mkdir -p # Paths may contain newlines
+rew '{p}' | xargs mkdir -p       # Pass extracted directories to mkdir command
+rew -Z '{p}' | xargs -0 mkdir -p # Use NUL delimiter in case paths contain newlines
+rew -R '{}#r#n'                  # We can provide our custom CR+LF delimiter in pattern
 ```
 
-Use `-R, --print-raw` flag to print results without any delimiter.
+Apart from this (standard) mode, there are also two other output modes.
 
-```bash
-rew -R '{}:' # Print comma separated values
-```
+### Diff mode
 
-Use `-p, --pretty` flag to print nicely formatted transformations.
-
-```bash
-rew -p '{f}' # Output formatted as "input_value -> output_value"
-```
-
-Use `-b, --bulk` flag to print transformations in the following format.
+- Enabled using `-b, --diff` flag.
+- Respects other `--print*` flags.
+- Prints machine-readable transformations as results:
 
 ```text
 <input_value_1
@@ -307,22 +291,24 @@ Use `-b, --bulk` flag to print transformations in the following format.
 >output_value_N
 ```
 
-Such output can be processed by accompanying `mvb`  and `cpb` utilities to perform bulk move/copy of files and directories.
+Such output can be processed by accompanying `mvb` and `cpb` utilities to perform bulk move/copy.
 
 ```bash
-rew -b '{}.bak' | cpb # Make backup copy of each file
+find -name '*.jpeg' | rew -b '{p}/{b}.jpg' | mvb # Rename all *.jpeg files to *.jpg
+find -name '*.txt' | rew -b '{}.bak' | cpb       # Make backup copy of each *.txt file
 ```
 
-The `-b, --bulk` flag can be combined with `-Z, --print-nul` or `-R, --print-raw`.
+### Pretty mode
 
-```bash
-rew -bZ '{}.bak' | cpb -z # Paths may contain newlines
-```
+- Enabled using `-p, --pretty` flag.
+- Ignores other `--print*` flags.
+- Prints human-readable transformations as results:
 
-Bulk move/copy can be also achieved using standard `mv`/`cp` utilities in less efficient way.
-
-```bash
-rew 'cp "{}" "{}.bak"' | sh # Generate shell code and execute it
+```text
+input_value_1 -> output_value_1
+input_value_2 -> output_value_2
+...
+input_value_N -> output_value_N
 ```
 
 [build]: https://travis-ci.com/github/jpikl/rew

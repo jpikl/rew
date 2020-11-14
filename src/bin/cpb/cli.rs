@@ -27,7 +27,7 @@ use termcolor::ColorChoice;
 ///     <src_path_N
 ///     >dst_path_N
 ///
-/// Such input can be generated using accompanying `rew` utility and its `-b, --bulk` flag:
+/// Such input can be generated using accompanying `rew` utility and its `-b, --diff` flag:
 ///
 ///     $> find -name '*.txt' | rew -b '{}.bak' | cpb # Make backup copy of each *.txt file
 ///

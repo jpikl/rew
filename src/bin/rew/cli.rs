@@ -52,18 +52,37 @@ pub struct Cli {
     #[clap(short = 'Z', long, conflicts_with = "print-raw")]
     pub print_nul: bool,
 
-    /// Print results without any delimiter
+    /// Print results without a delimiter
     #[clap(short = 'R', long, conflicts_with = "print-nul")]
     pub print_raw: bool,
 
-    /// Print machine-readable transformations as a results
+    /// Enable diff output mode
     ///
-    /// Such output can be processed by accompanying `mvb` and `cpb` utilities to perform bulk move/copy of files and directories.
-    #[clap(short = 'b', long, conflicts_with = "pretty")]
-    pub bulk: bool,
+    /// Respects with other `--print*` flags.
+    /// Prints machine-readable transformations as results:
+    ///
+    ///    <input_value_1
+    ///    >output_value_1
+    ///    <input_value_2
+    ///    >output_value_2
+    ///    ...
+    ///    <input_value_N
+    ///    >output_value_N
+    ///
+    /// Such output can be processed by accompanying `mvb` and `cpb` utilities to perform bulk move/copy.
+    #[clap(short = 'b', long, conflicts_with = "pretty", verbatim_doc_comment)]
+    pub diff: bool,
 
-    /// Print human-readable transformations as a results
-    #[clap(short = 'p', long, conflicts_with = "bulk")]
+    /// Enable pretty output mode
+    ///
+    /// Ignores other `--print*` flags.
+    /// Prints human-readable transformations as results:
+    ///
+    ///     input_value_1 -> output_value_1
+    ///     input_value_2 -> output_value_2
+    ///     ...
+    ///     input_value_N -> output_value_N
+    #[clap(short = 'p', long, conflicts_with = "diff", verbatim_doc_comment)]
     pub pretty: bool,
 
     /// When to use colors
