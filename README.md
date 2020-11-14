@@ -42,10 +42,10 @@ By default, values are read as lines from standard input.
 - Use `-d, --read` option to read values delimited by a specific character.
 
 ```bash
-find | rew '{a}'            # Convert output lines from find command to absolute paths
+find         | rew    '{a}' # Convert output lines from find command to absolute paths
 find -print0 | rew -z '{a}' # Use NUL delimiter in case paths contain newlines
 echo "$PATH" | rew -d:      # Split $PATH entries delimited by colon
-rew -r '{R:#r#n:#n}' <X >Y  # Read X as a whole, replace CR+LF by LF, write result to Y
+rew -r 'A{}B' <data.txt     # Read file as a whole, prepend 'A', append 'B'
 ```
 
 Input values can be also provided as additional arguments, after a pattern.
@@ -257,8 +257,8 @@ Examples:
 - Use `-C, --global-counter` option to change global counter configuration.
 
 ```bash
-rew -c 0   '{c}' # Start from 0, increment by 1
-rew -C 2:3 '{C}' # Start from 2, increment by 3
+rew -c0   '{c}' # Start from 0, increment by 1
+rew -c2:3 '{c}' # Start from 2, increment by 3
 ```
 
 ## :speech_balloon: Output
@@ -269,7 +269,7 @@ By default, results are printed as lines to standard output.
 - Use `-R, --print-raw` flag to print results without a delimiter.
 
 ```bash
-rew '{p}' | xargs mkdir -p       # Pass extracted directories to mkdir command
+rew    '{p}' | xargs    mkdir -p # Pass extracted directories to mkdir command
 rew -Z '{p}' | xargs -0 mkdir -p # Use NUL delimiter in case paths contain newlines
 rew -R '{}#r#n'                  # We can provide our custom CR+LF delimiter in pattern
 ```
@@ -295,8 +295,8 @@ Apart from this (standard) mode, there are also two other output modes.
 Such output can be processed by accompanying `mvb` and `cpb` utilities to perform bulk move/copy.
 
 ```bash
-find -name '*.jpeg' | rew -b '{p}/{b}.jpg' | mvb # Rename all *.jpeg files to *.jpg
-find -name '*.txt' | rew -b '{}.bak' | cpb       # Make backup copy of each *.txt file
+find -name '*.jpeg' | rew -b '{N6-}.jpg' | mvb # Rename all *.jpeg files to *.jpg
+find -name '*.txt'  | rew -b '{}.bak'    | cpb # Make backup copy of each *.txt file
 ```
 
 ### :rose: Pretty mode

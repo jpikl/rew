@@ -219,8 +219,8 @@ Local counter `c` is incremented per parent directory (assuming input value is a
 Use `-c, --local-counter` option to change local counter configuration.
 Use `-C, --global-counter` option to change global counter configuration.
 
-    $> rew -c 0   '{c}' # Start from 0, increment by 1
-    $> rew -C 2:3 '{C}' # Start from 2, increment by 3
+    $> rew -c0   '{c}' # Start from 0, increment by 1
+    $> rew -c2:3 '{c}' # Start from 2, increment by 3
 "};
 
 pub fn write_pattern_help<O: Write + WriteColor>(output: &mut O) -> Result<()> {
