@@ -32,11 +32,11 @@ pub struct Cli {
 
     /// Read values delimited by a specific character, not newline
     #[clap(
-        short = 'd',
-        long,
-        value_name = "char",
-        conflicts_with_all = &["read-nul", "read-raw"],
-        parse(try_from_str = parse_single_byte_char)
+    short = 'd',
+    long,
+    value_name = "char",
+    conflicts_with_all = &["read-nul", "read-raw"],
+    parse(try_from_str = parse_single_byte_char)
     )]
     pub read: Option<u8>,
 
@@ -48,12 +48,21 @@ pub struct Cli {
     #[clap(short = 'r', long, conflicts_with_all = &["read-nul", "read"])]
     pub read_raw: bool,
 
+    /// Print results delimited by a specific string, not newline
+    #[clap(
+    short = 'D',
+    long,
+    value_name = "string",
+    conflicts_with_all = &["print-nul", "print-raw"]
+    )]
+    pub print: Option<String>,
+
     /// Print results delimited by NUL, not newline
-    #[clap(short = 'Z', long, conflicts_with = "print-raw")]
+    #[clap(short = 'Z', long, conflicts_with_all = &["print-raw", "print"])]
     pub print_nul: bool,
 
     /// Print results without a delimiter
-    #[clap(short = 'R', long, conflicts_with = "print-nul")]
+    #[clap(short = 'R', long, conflicts_with_all = &["print-nul", "print"])]
     pub print_raw: bool,
 
     /// Enable diff output mode

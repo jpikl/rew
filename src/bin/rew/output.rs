@@ -7,46 +7,41 @@ use std::io::{Result, Write};
 use termcolor::{Color, WriteColor};
 
 pub enum Mode {
-    Standard(Option<char>),
-    Diff(Option<char>),
+    Standard,
+    Diff,
     Pretty,
 }
 
 pub struct Values<O: Write + WriteColor> {
     output: O,
     mode: Mode,
+    delimiter: String,
+    flush_needed: bool,
 }
 
 impl<O: Write + WriteColor> Values<O> {
-    pub fn new(output: O, mode: Mode) -> Self {
-        Self { output, mode }
+    pub fn new(output: O, mode: Mode, delimiter: &str) -> Self {
+        Self {
+            output,
+            mode,
+            delimiter: delimiter.to_string(),
+            flush_needed: !delimiter.ends_with('\n'),
+        }
     }
 
     pub fn write(&mut self, input_value: &str, output_value: &str) -> Result<()> {
         match self.mode {
-            Mode::Standard(Some(delimiter)) => {
-                write!(self.output, "{}{}", output_value, delimiter)?;
-                self.flush_if_needed(delimiter)
+            Mode::Standard => {
+                write!(self.output, "{}{}", output_value, self.delimiter)?;
+                self.flush_if_needed()
             }
-            Mode::Standard(None) => {
-                write!(self.output, "{}", output_value)?;
-                self.output.flush()
-            }
-            Mode::Diff(Some(delimiter)) => {
+            Mode::Diff => {
                 write!(
                     self.output,
                     "{}{}{}{}{}{}",
-                    DIFF_IN, input_value, delimiter, DIFF_OUT, output_value, delimiter
+                    DIFF_IN, input_value, self.delimiter, DIFF_OUT, output_value, self.delimiter
                 )?;
-                self.flush_if_needed(delimiter)
-            }
-            Mode::Diff(None) => {
-                write!(
-                    self.output,
-                    "{}{}{}{}",
-                    DIFF_IN, input_value, DIFF_OUT, output_value
-                )?;
-                self.output.flush()
+                self.flush_if_needed()
             }
             Mode::Pretty => {
                 self.output.set_color(&spec_color(Color::Blue))?;
@@ -59,8 +54,8 @@ impl<O: Write + WriteColor> Values<O> {
         }
     }
 
-    fn flush_if_needed(&mut self, delimiter: char) -> Result<()> {
-        if delimiter != '\n' {
+    fn flush_if_needed(&mut self) -> Result<()> {
+        if self.flush_needed {
             self.output.flush()
         } else {
             Ok(())
@@ -89,7 +84,7 @@ mod tests {
     #[test]
     fn values_out_no_delimiter() {
         let mut output = ColoredOuput::new();
-        let mut values = Values::new(&mut output, Mode::Standard(None));
+        let mut values = Values::new(&mut output, Mode::Standard, "");
         write_values(&mut values);
         assert_eq!(output.chunks(), &[OutputChunk::plain("bd")])
     }
@@ -97,7 +92,7 @@ mod tests {
     #[test]
     fn values_out_newline_delimiter() {
         let mut output = ColoredOuput::new();
-        let mut values = Values::new(&mut output, Mode::Standard(Some('\n')));
+        let mut values = Values::new(&mut output, Mode::Standard, "\n");
         write_values(&mut values);
         assert_eq!(output.chunks(), &[OutputChunk::plain("b\nd\n")])
     }
@@ -105,7 +100,7 @@ mod tests {
     #[test]
     fn values_out_nul_delimiter() {
         let mut output = ColoredOuput::new();
-        let mut values = Values::new(&mut output, Mode::Standard(Some('\0')));
+        let mut values = Values::new(&mut output, Mode::Standard, "\0");
         write_values(&mut values);
         assert_eq!(output.chunks(), &[OutputChunk::plain("b\0d\0")])
     }
@@ -113,7 +108,7 @@ mod tests {
     #[test]
     fn values_diff_no_delimiter() {
         let mut output = ColoredOuput::new();
-        let mut values = Values::new(&mut output, Mode::Diff(None));
+        let mut values = Values::new(&mut output, Mode::Diff, "");
         write_values(&mut values);
         assert_eq!(output.chunks(), &[OutputChunk::plain("<a>b<c>d")])
     }
@@ -121,7 +116,7 @@ mod tests {
     #[test]
     fn values_diff_newline_delimiter() {
         let mut output = ColoredOuput::new();
-        let mut values = Values::new(&mut output, Mode::Diff(Some('\n')));
+        let mut values = Values::new(&mut output, Mode::Diff, "\n");
         write_values(&mut values);
         assert_eq!(output.chunks(), &[OutputChunk::plain("<a\n>b\n<c\n>d\n")])
     }
@@ -129,7 +124,7 @@ mod tests {
     #[test]
     fn values_diff_null_delimiter() {
         let mut output = ColoredOuput::new();
-        let mut values = Values::new(&mut output, Mode::Diff(Some('\0')));
+        let mut values = Values::new(&mut output, Mode::Diff, "\0");
         write_values(&mut values);
         assert_eq!(output.chunks(), &[OutputChunk::plain("<a\0>b\0<c\0>d\0")])
     }
@@ -137,7 +132,7 @@ mod tests {
     #[test]
     fn values_pretty() {
         let mut output = ColoredOuput::new();
-        let mut values = Values::new(&mut output, Mode::Pretty);
+        let mut values = Values::new(&mut output, Mode::Pretty, "ignored");
         write_values(&mut values);
         assert_eq!(
             output.chunks(),

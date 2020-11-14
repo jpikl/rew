@@ -267,11 +267,13 @@ By default, results are printed as lines to standard output.
 
 - Use `-Z, --print-nul` flag to print results delimited by NUL character.
 - Use `-R, --print-raw` flag to print results without a delimiter.
+- Use `-D, --print` options to print results delimited by a specific string.
 
 ```bash
 rew    '{p}' | xargs    mkdir -p # Pass extracted directories to mkdir command
 rew -Z '{p}' | xargs -0 mkdir -p # Use NUL delimiter in case paths contain newlines
-rew -R '{}#r#n'                  # We can provide our custom CR+LF delimiter in pattern
+rew -D$'\r\n'                    # Convert newlines to CR+LF using custom output delimiter
+rew -R '{}#r#n'                  # Same thing as before but output delimiter is inside pattern
 ```
 
 Apart from this (standard) mode, there are also two other output modes.

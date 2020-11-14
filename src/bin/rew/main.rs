@@ -49,22 +49,23 @@ fn run(cli: &Cli, io: &Io) -> Result {
 
     let output_mode = if cli.pretty {
         output::Mode::Pretty
+    } else if cli.diff {
+        output::Mode::Diff
     } else {
-        let output_delimiter = if cli.print_raw {
-            None
-        } else if cli.print_nul {
-            Some('\0')
-        } else {
-            Some('\n')
-        };
-        if cli.diff {
-            output::Mode::Diff(output_delimiter)
-        } else {
-            output::Mode::Standard(output_delimiter)
-        }
+        output::Mode::Standard
     };
 
-    let mut output_values = output::Values::new(io.stdout(), output_mode);
+    let output_delimiter = if let Some(delimiter) = &cli.print {
+        delimiter
+    } else if cli.print_raw {
+        ""
+    } else if cli.print_nul {
+        "\0"
+    } else {
+        "\n"
+    };
+
+    let mut output_values = output::Values::new(io.stdout(), output_mode, output_delimiter);
     let mut exit_code = EXIT_CODE_OK;
 
     if let Some(raw_pattern) = cli.pattern.as_ref() {

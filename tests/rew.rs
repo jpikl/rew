@@ -123,7 +123,19 @@ fn custom_input_delimiter() {
 }
 
 #[test]
-fn bulk_output() {
+fn custom_output_delimiter() {
+    rew()
+        .arg("--print=;")
+        .arg("_{}_")
+        .write_stdin("a\nb")
+        .assert()
+        .success()
+        .stdout("_a_;_b_;")
+        .stderr("");
+}
+
+#[test]
+fn diff_output_mode() {
     rew()
         .arg("--diff")
         .arg("_{}_")
@@ -140,7 +152,7 @@ fn bulk_output() {
 }
 
 #[test]
-fn pretty_output() {
+fn pretty_output_mode() {
     rew()
         .arg("--pretty")
         .arg("_{}_")
