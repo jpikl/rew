@@ -8,6 +8,7 @@ use termcolor::{Color, WriteColor};
 
 pub enum Mode {
     Standard,
+    StandardNoTrailingDelimiter,
     Diff,
     Pretty,
 }
@@ -16,6 +17,7 @@ pub struct Values<O: Write + WriteColor> {
     output: O,
     mode: Mode,
     delimiter: String,
+    first_result: bool,
     flush_needed: bool,
 }
 
@@ -25,6 +27,7 @@ impl<O: Write + WriteColor> Values<O> {
             output,
             mode,
             delimiter: delimiter.to_string(),
+            first_result: true,
             flush_needed: !delimiter.ends_with('\n'),
         }
     }
@@ -34,6 +37,16 @@ impl<O: Write + WriteColor> Values<O> {
             Mode::Standard => {
                 write!(self.output, "{}{}", output_value, self.delimiter)?;
                 self.flush_if_needed()
+            }
+            Mode::StandardNoTrailingDelimiter => {
+                if self.first_result {
+                    self.first_result = false;
+                    write!(self.output, "{}", output_value)
+                } else {
+                    write!(self.output, "{}", self.delimiter)?;
+                    self.flush_if_needed()?;
+                    write!(self.output, "{}", output_value)
+                }
             }
             Mode::Diff => {
                 write!(
@@ -82,7 +95,7 @@ mod tests {
     use std::ops::Range;
 
     #[test]
-    fn values_out_no_delimiter() {
+    fn standard_mode_no_delimiter() {
         let mut output = ColoredOuput::new();
         let mut values = Values::new(&mut output, Mode::Standard, "");
         write_values(&mut values);
@@ -90,7 +103,7 @@ mod tests {
     }
 
     #[test]
-    fn values_out_newline_delimiter() {
+    fn standard_mode_newline_delimiter() {
         let mut output = ColoredOuput::new();
         let mut values = Values::new(&mut output, Mode::Standard, "\n");
         write_values(&mut values);
@@ -98,7 +111,7 @@ mod tests {
     }
 
     #[test]
-    fn values_out_nul_delimiter() {
+    fn standard_mode_nul_delimiter() {
         let mut output = ColoredOuput::new();
         let mut values = Values::new(&mut output, Mode::Standard, "\0");
         write_values(&mut values);
@@ -106,7 +119,31 @@ mod tests {
     }
 
     #[test]
-    fn values_diff_no_delimiter() {
+    fn standard_mode_with_ntr_no_delimiter() {
+        let mut output = ColoredOuput::new();
+        let mut values = Values::new(&mut output, Mode::StandardNoTrailingDelimiter, "");
+        write_values(&mut values);
+        assert_eq!(output.chunks(), &[OutputChunk::plain("bd")])
+    }
+
+    #[test]
+    fn standard_mode_with_ntr_newline_delimiter() {
+        let mut output = ColoredOuput::new();
+        let mut values = Values::new(&mut output, Mode::StandardNoTrailingDelimiter, "\n");
+        write_values(&mut values);
+        assert_eq!(output.chunks(), &[OutputChunk::plain("b\nd")])
+    }
+
+    #[test]
+    fn standard_mode_with_ntr_nul_delimiter() {
+        let mut output = ColoredOuput::new();
+        let mut values = Values::new(&mut output, Mode::StandardNoTrailingDelimiter, "\0");
+        write_values(&mut values);
+        assert_eq!(output.chunks(), &[OutputChunk::plain("b\0d")])
+    }
+
+    #[test]
+    fn diff_mode_no_delimiter() {
         let mut output = ColoredOuput::new();
         let mut values = Values::new(&mut output, Mode::Diff, "");
         write_values(&mut values);
@@ -114,7 +151,7 @@ mod tests {
     }
 
     #[test]
-    fn values_diff_newline_delimiter() {
+    fn diff_mode_newline_delimiter() {
         let mut output = ColoredOuput::new();
         let mut values = Values::new(&mut output, Mode::Diff, "\n");
         write_values(&mut values);
@@ -122,7 +159,7 @@ mod tests {
     }
 
     #[test]
-    fn values_diff_null_delimiter() {
+    fn diff_mode_null_delimiter() {
         let mut output = ColoredOuput::new();
         let mut values = Values::new(&mut output, Mode::Diff, "\0");
         write_values(&mut values);
@@ -130,7 +167,7 @@ mod tests {
     }
 
     #[test]
-    fn values_pretty() {
+    fn pretty_mode() {
         let mut output = ColoredOuput::new();
         let mut values = Values::new(&mut output, Mode::Pretty, "ignored");
         write_values(&mut values);

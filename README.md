@@ -268,12 +268,14 @@ By default, results are printed as lines to standard output.
 - Use `-Z, --print-nul` flag to print results delimited by NUL character.
 - Use `-R, --print-raw` flag to print results without a delimiter.
 - Use `-D, --print` options to print results delimited by a specific string.
+- Use `-T, --no-trailing-delimiter` flag to not print final delimiter at the end of output.
 
 ```bash
 rew    '{p}' | xargs    mkdir -p # Pass extracted directories to mkdir command
 rew -Z '{p}' | xargs -0 mkdir -p # Use NUL delimiter in case paths contain newlines
 rew -D$'\r\n'                    # Convert newlines to CR+LF using custom output delimiter
 rew -R '{}#r#n'                  # Same thing as before but output delimiter is inside pattern
+rew -TD+ '{}' a b c              # Join input values to string "a+b+c"
 ```
 
 Apart from this (standard) mode, there are also two other output modes.
@@ -281,7 +283,8 @@ Apart from this (standard) mode, there are also two other output modes.
 ### :robot: Diff mode
 
 - Enabled using `-b, --diff` flag.
-- Respects other `--print*` flags.
+- Respects `--print*` flags/options.
+- Ignores `--no-trailing-delimiter` flag.
 - Prints machine-readable transformations as results:
 
 ```text
@@ -304,7 +307,8 @@ find -name '*.txt'  | rew -b '{}.bak'    | cpb # Make backup copy of each *.txt 
 ### :rose: Pretty mode
 
 - Enabled using `-p, --pretty` flag.
-- Ignores other `--print*` flags.
+- Ignores `--print*` flags/options.
+- Ignores `--no-trailing-delimiter` flag.
 - Prints human-readable transformations as results:
 
 ```text

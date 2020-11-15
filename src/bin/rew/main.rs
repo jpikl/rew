@@ -4,6 +4,7 @@ use crate::pattern::{eval, help, Pattern};
 use common::input::Delimiter as InputDelimiter;
 use common::run::{exec_run, Io, Result, EXIT_CODE_OK};
 use std::env;
+use std::io::Write;
 
 mod cli;
 mod counter;
@@ -51,6 +52,8 @@ fn run(cli: &Cli, io: &Io) -> Result {
         output::Mode::Pretty
     } else if cli.diff {
         output::Mode::Diff
+    } else if cli.no_trailing_delimiter {
+        output::Mode::StandardNoTrailingDelimiter
     } else {
         output::Mode::Standard
     };
@@ -134,5 +137,6 @@ fn run(cli: &Cli, io: &Io) -> Result {
         }
     };
 
+    io.stdout().flush()?; // output::Values may not do flush if there is no trailing delimiter.
     Ok(exit_code)
 }

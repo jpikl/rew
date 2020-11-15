@@ -135,6 +135,19 @@ fn custom_output_delimiter() {
 }
 
 #[test]
+fn custom_no_trailing_output_delimiter() {
+    rew()
+        .arg("--print=;")
+        .arg("--no-trailing-delimiter")
+        .arg("_{}_")
+        .write_stdin("a\nb")
+        .assert()
+        .success()
+        .stdout("_a_;_b_")
+        .stderr("");
+}
+
+#[test]
 fn diff_output_mode() {
     rew()
         .arg("--diff")

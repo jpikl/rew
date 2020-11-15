@@ -65,9 +65,14 @@ pub struct Cli {
     #[clap(short = 'R', long, conflicts_with_all = &["print-nul", "print"])]
     pub print_raw: bool,
 
+    /// Do not print final delimiter at the end of output
+    #[clap(short = 'T', long)]
+    pub no_trailing_delimiter: bool,
+
     /// Enable diff output mode
     ///
-    /// Respects with other `--print*` flags.
+    /// Respects `--print*` flags/options.
+    /// Ignores `--no-trailing-delimiter` flag.
     /// Prints machine-readable transformations as results:
     ///
     ///    <input_value_1
@@ -84,7 +89,8 @@ pub struct Cli {
 
     /// Enable pretty output mode
     ///
-    /// Ignores other `--print*` flags.
+    /// Ignores `--print*` flags/options.
+    /// Ignores `--no-trailing-delimiter` flag.
     /// Prints human-readable transformations as results:
     ///
     ///     input_value_1 -> output_value_1
