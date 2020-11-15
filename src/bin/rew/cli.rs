@@ -1,5 +1,5 @@
 use crate::counter;
-use clap::{crate_name, crate_version, AppSettings, Clap};
+use clap::{crate_name, crate_version, AppSettings, ArgSettings, Clap};
 use common::color::{parse_color, COLOR_VALUES};
 use common::run::Options;
 use termcolor::ColorChoice;
@@ -23,20 +23,20 @@ pub struct Cli {
     /// Use `--explain` flag to print explanation of a given pattern.
     /// Use `--help-pattern` flag to print description of patter syntax.
     /// Use `--help-filters` flag to print filter reference.
-    #[clap(verbatim_doc_comment)]
+    #[clap(verbatim_doc_comment, setting(ArgSettings::AllowEmptyValues))]
     pub pattern: Option<String>,
 
     /// Input values (read from stdin by default)
-    #[clap(value_name = "value")]
+    #[clap(value_name = "value", setting(ArgSettings::AllowEmptyValues))]
     pub values: Vec<String>,
 
     /// Read values delimited by a specific character, not newline
     #[clap(
-    short = 'd',
-    long,
-    value_name = "char",
-    conflicts_with_all = &["read-nul", "read-raw"],
-    parse(try_from_str = parse_single_byte_char)
+        short = 'd',
+        long,
+        value_name = "char",
+        conflicts_with_all = &["read-nul", "read-raw"],
+        parse(try_from_str = parse_single_byte_char)
     )]
     pub read: Option<u8>,
 
@@ -50,10 +50,10 @@ pub struct Cli {
 
     /// Print results delimited by a specific string, not newline
     #[clap(
-    short = 'D',
-    long,
-    value_name = "string",
-    conflicts_with_all = &["print-nul", "print-raw"]
+        short = 'D',
+        long,
+        value_name = "string",
+        conflicts_with_all = &["print-nul", "print-raw"]
     )]
     pub print: Option<String>,
 
