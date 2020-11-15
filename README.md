@@ -61,7 +61,7 @@ Pattern is a string describing how to generate output from an input.
 Use `--explain` flag to print detailed explanation what a certain pattern does.
 
 ```bash
-rew --explain 'file_{c|<00}.{e}'
+rew --explain 'file_{c|<3:0}.{e}'
 ```
 
 By default, pattern characters are directly copied to output.
@@ -123,7 +123,7 @@ printf 'a\0b' | rew -z # Convert NUL bytes to newlines
 | `f`    | File name           |
 | `b`    | Base name           |
 | `e`    | Extension           |
-| `E`    | Extension with dot  |
+| `E`    | Extension with dot<br/>Dot is not printed for missing extension. |
 
 Let us assume the following directory structure:
 

@@ -12,7 +12,7 @@ Pattern is a string describing how to generate output from an input.
 
 Use `--explain` flag to print detailed explanation what a certain pattern does.
 
-    $> rew --explain 'file_{c|<00}.{e}'
+    $> rew --explain 'file_{c|<3:0}.{e}'
 
 By default, pattern characters are directly copied to output.
 
@@ -72,6 +72,7 @@ const FILTERS_HELP: &str = indoc! {"
     `b`         Base name
     `e`         Extension
     `E`         Extension with dot
+                Dot is not printed for missing extension.
 
 Let us assume the following directory structure:
 
