@@ -29,6 +29,7 @@ pub enum ErrorKind {
     ExpectedRepetition,
     ExpectedSubstitution,
     ExprStartInsideExpr,
+    PaddingPrefixInvalid(char, Option<char>),
     PipeOutsideExpr,
     RangeIndexZero,
     RangeInvalid(String),
@@ -36,6 +37,7 @@ pub enum ErrorKind {
     RangeStartOverEnd(usize, usize),
     RegexCaptureZero,
     RegexInvalid(AnyString),
+    RepetitionDigitDelimiter(char),
     RepetitionWithoutDelimiter,
     SubstitutionWithoutTarget(Char),
     SubstitutionRegexInvalid(AnyString),
@@ -86,6 +88,14 @@ impl fmt::Display for ErrorKind {
             Self::ExprStartInsideExpr => {
                 write!(formatter, "Unescaped '{}' inside expression", EXPR_START)
             }
+            Self::PaddingPrefixInvalid(fixed_prefix, Some(prefix)) => write!(
+                formatter,
+                "Expected '{}' prefix or number but got '{}'",
+                fixed_prefix, prefix
+            ),
+            Self::PaddingPrefixInvalid(fixed_prefix, None) => {
+                write!(formatter, "Expected '{}' prefix or number", fixed_prefix)
+            }
             Self::PipeOutsideExpr => write!(formatter, "Unescaped '{}' outside expression", PIPE),
             Self::RangeIndexZero => write!(formatter, "Range indices start from 1, not 0"),
             Self::RangeInvalid(value) => write!(formatter, "Invalid range '{}'", value),
@@ -97,6 +107,11 @@ impl fmt::Display for ErrorKind {
             ),
             Self::RegexCaptureZero => write!(formatter, "Regex capture groups start from 1, not 0"),
             Self::RegexInvalid(value) => write!(formatter, "Invalid regular expression: {}", value),
+            Self::RepetitionDigitDelimiter(value) => write!(
+                formatter,
+                "Repetition delimiter should not be a digit but is '{}'",
+                value
+            ),
             Self::RepetitionWithoutDelimiter => {
                 write!(formatter, "Repetition is missing delimiter after number")
             }
@@ -209,6 +224,14 @@ mod tests {
             "Unescaped '{' inside expression"
         );
         assert_eq!(
+            ErrorKind::PaddingPrefixInvalid('<', Some('x')).to_string(),
+            "Expected '<' prefix or number but got 'x'"
+        );
+        assert_eq!(
+            ErrorKind::PaddingPrefixInvalid('<', None).to_string(),
+            "Expected '<' prefix or number"
+        );
+        assert_eq!(
             ErrorKind::PipeOutsideExpr.to_string(),
             "Unescaped '|' outside expression"
         );
@@ -232,6 +255,10 @@ mod tests {
         assert_eq!(
             ErrorKind::RegexInvalid(AnyString(String::from("abc"))).to_string(),
             "Invalid regular expression: abc"
+        );
+        assert_eq!(
+            ErrorKind::RepetitionDigitDelimiter('0').to_string(),
+            "Repetition delimiter should not be a digit but is '0'"
         );
         assert_eq!(
             ErrorKind::RepetitionWithoutDelimiter.to_string(),

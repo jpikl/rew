@@ -175,34 +175,41 @@ Examples:
 ========================================
 
     FILTER    DESCRIPTION
-    ------------------------------------------------
+    -----------------------------------------------------------------------
     `t`         Trim white-spaces from both sides.
     `u`         Convert to uppercase.
     `l`         Convert to lowercase.
     `a`         Convert non-ASCII characters to ASCII.
     `A`         Remove non-ASCII characters.
-    `<M`        Left pad with mask `M`.
-    `>M`        Right pad with mask `M`.
+    `<<M`       Left pad with mask `M`.
+    `<N:M`      Left pad with `N` times repeated mask `M`.
+              Any other non-digit than `:` can be also used as a delimiter.
+    `>>M`       Right pad with mask `M`.
+    `>N:M`      Right pad with `N` times repeated mask `M`.
+              Any other non-digit than `:` can be also used as a delimiter.
     
 Examples:
     
-    INPUT       FILTER      OUTPUT
-    ------------------------------
-    ..a..b..    `t`           a..b    (dots are white-spaces)
-    aBčĎ        `u`           ABČĎ
-    aBčĎ        `l`           abčď
-    aBčĎ        `a`           aBcD
-    aBčĎ        `A`           aB
-    abc         `<12345`      12abc
-    abc         `>12345`      abc45
+    INPUT       FILTER     OUTPUT
+    ----------------------------------------------------
+    ..a..b..    `t`          a..b  (dots are white-spaces)
+    aBčĎ        `u`          ABČĎ
+    aBčĎ        `l`          abčď
+    aBčĎ        `a`          aBcD
+    aBčĎ        `A`          aB
+    abc         `<<123456`   123abc
+    abc         `<3:XY`      XYXabc
+    abc         `>>123456`   abc456
+    abc         `>3:XY`      abcYXY
 
 ========================================
  Generators
 ========================================
 
     FILTER    DESCRIPTION
-    ---------------------------------
+    -----------------------------------------------------------------------
     `*N:V`      Repeat `N` times `V`.
+              Any other non-digit than `:` can be also used as a delimiter.
     `c`         Local counter
     `C`         Global counter
     `u`         Randomly generated UUID 

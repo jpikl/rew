@@ -20,16 +20,24 @@ impl Repetition {
         }
 
         let count = parse_usize(reader)?;
+        let position = reader.position();
 
-        if reader.read().is_none() {
-            return Err(Error {
+        if let Some(delimiter) = reader.read_char() {
+            if delimiter.is_ascii_digit() {
+                Err(Error {
+                    kind: ErrorKind::RepetitionDigitDelimiter(delimiter),
+                    range: position..reader.position(),
+                })
+            } else {
+                let value = Char::join(reader.read_to_end());
+                Ok(Self { count, value })
+            }
+        } else {
+            Err(Error {
                 kind: ErrorKind::RepetitionWithoutDelimiter,
                 range: reader.position()..reader.end(),
-            });
+            })
         }
-
-        let value = Char::join(reader.read_to_end());
-        Ok(Self { count, value })
     }
 }
 

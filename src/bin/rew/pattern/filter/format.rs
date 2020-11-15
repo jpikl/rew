@@ -29,11 +29,19 @@ pub fn left_pad(mut value: String, padding: &str) -> Result {
     Ok(value)
 }
 
+pub fn left_pad_repeat(value: String, padding: &str, count: usize) -> Result {
+    left_pad(value, &padding.repeat(count))
+}
+
 pub fn right_pad(mut value: String, padding: &str) -> Result {
     for char in padding.chars().skip(value.len()) {
         value.push(char);
     }
     Ok(value)
+}
+
+pub fn right_pad_repeat(value: String, padding: &str, count: usize) -> Result {
+    right_pad(value, &padding.repeat(count))
 }
 
 #[cfg(test)]
@@ -134,6 +142,22 @@ mod tests {
     }
 
     #[test]
+    fn left_pad_repeated() {
+        assert_eq!(
+            left_pad_repeat(String::from("a"), "01", 2),
+            Ok(String::from("010a"))
+        );
+    }
+
+    #[test]
+    fn left_pad_repeated_zero_times() {
+        assert_eq!(
+            left_pad_repeat(String::from("a"), "01", 0),
+            Ok(String::from("a"))
+        );
+    }
+
+    #[test]
     fn right_pad_empty() {
         assert_eq!(right_pad(String::new(), "0123"), Ok(String::from("0123")));
     }
@@ -159,6 +183,22 @@ mod tests {
         assert_eq!(
             right_pad(String::from("abcd"), ""),
             Ok(String::from("abcd"))
+        );
+    }
+
+    #[test]
+    fn right_pad_repeated() {
+        assert_eq!(
+            right_pad_repeat(String::from("a"), "01", 2),
+            Ok(String::from("a101"))
+        );
+    }
+
+    #[test]
+    fn right_pad_repeated_zero_times() {
+        assert_eq!(
+            right_pad_repeat(String::from("a"), "01", 0),
+            Ok(String::from("a"))
         );
     }
 }

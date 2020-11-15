@@ -1,4 +1,5 @@
 use crate::pattern::char::{AsChar, Char};
+use crate::pattern::padding::Padding;
 use crate::pattern::range::Range;
 use crate::pattern::reader::Reader;
 use crate::pattern::regex::RegexHolder;
@@ -48,8 +49,8 @@ pub enum Filter {
     ToUppercase,
     ToAscii,
     RemoveNonAscii,
-    LeftPad(String),
-    RightPad(String),
+    LeftPad(Padding),
+    RightPad(Padding),
 
     // Generators
     Repeat(Repetition),
@@ -93,8 +94,8 @@ impl Filter {
                 'L' => Ok(Self::ToUppercase),
                 'i' => Ok(Self::ToAscii),
                 'I' => Ok(Self::RemoveNonAscii),
-                '<' => Ok(Self::LeftPad(Char::join(reader.read_to_end()))),
-                '>' => Ok(Self::RightPad(Char::join(reader.read_to_end()))),
+                '<' => Ok(Self::LeftPad(Padding::parse(reader, '<')?)),
+                '>' => Ok(Self::RightPad(Padding::parse(reader, '>')?)),
 
                 // Generators
                 '*' => Ok(Self::Repeat(Repetition::parse(reader)?)),
@@ -135,6 +136,7 @@ impl Filter {
                 target,
                 replacement,
             }) => string::replace_first(value, &target, &replacement),
+
             Self::ReplaceAll(Substitution {
                 target,
                 replacement,
@@ -143,10 +145,12 @@ impl Filter {
 
             // Regex filters
             Self::RegexMatch(RegexHolder(regex)) => regex::get_match(value, &regex),
+
             Self::RegexReplaceFirst(Substitution {
                 target: RegexHolder(regex),
                 replacement,
             }) => regex::replace_first(value, &regex, &replacement),
+
             Self::RegexReplaceAll(Substitution {
                 target: RegexHolder(regex),
                 replacement,
@@ -158,8 +162,18 @@ impl Filter {
             Self::ToUppercase => format::to_uppercase(value),
             Self::ToAscii => format::to_ascii(value),
             Self::RemoveNonAscii => format::remove_non_ascii(value),
-            Self::LeftPad(padding) => format::left_pad(value, &padding),
-            Self::RightPad(padding) => format::right_pad(value, &padding),
+
+            Self::LeftPad(Padding::Fixed(padding)) => format::left_pad(value, &padding),
+            Self::LeftPad(Padding::Repeated(Repetition {
+                value: padding,
+                count,
+            })) => format::left_pad_repeat(value, &padding, *count),
+
+            Self::RightPad(Padding::Fixed(padding)) => format::right_pad(value, &padding),
+            Self::RightPad(Padding::Repeated(Repetition {
+                value: padding,
+                count,
+            })) => format::right_pad_repeat(value, &padding, *count),
 
             // Generators
             Self::Repeat(Repetition { value, count }) => generate::repeat(value, *count),
@@ -214,8 +228,8 @@ impl fmt::Display for Filter {
             Self::ToUppercase => write!(formatter, "To uppercase"),
             Self::ToAscii => write!(formatter, "To ASCII"),
             Self::RemoveNonAscii => write!(formatter, "Remove non-ASCII"),
-            Self::LeftPad(padding) => write!(formatter, "Left pad with '{}'", padding),
-            Self::RightPad(padding) => write!(formatter, "Right pad with '{}'", padding),
+            Self::LeftPad(padding) => write!(formatter, "Left pad with {}", padding),
+            Self::RightPad(padding) => write!(formatter, "Right pad with {}", padding),
 
             // Generators
             Self::Repeat(repetition) => write!(formatter, "Repeat {}", repetition),
@@ -232,6 +246,7 @@ mod tests {
     use crate::pattern::testing::make_eval_context;
     extern crate regex;
     use crate::pattern::filter::testing::assert_ok_uuid;
+    use crate::pattern::parse::{Error, ErrorKind};
     use crate::utils::AnyString;
     use regex::Regex;
 
@@ -393,22 +408,46 @@ mod tests {
 
     #[test]
     fn parse_left_pad() {
-        assert_eq!(parse("<abc"), Ok(Filter::LeftPad(String::from("abc"))));
-    }
-
-    #[test]
-    fn parse_left_pad_empty() {
-        assert_eq!(parse("<"), Ok(Filter::LeftPad(String::new())));
+        assert_eq!(
+            parse("<abc"),
+            Err(Error {
+                kind: ErrorKind::PaddingPrefixInvalid('<', Some('a')),
+                range: 1..2
+            })
+        );
+        assert_eq!(
+            parse("<<abc"),
+            Ok(Filter::LeftPad(Padding::Fixed(String::from("abc"))))
+        );
+        assert_eq!(
+            parse("<10:abc"),
+            Ok(Filter::LeftPad(Padding::Repeated(Repetition {
+                count: 10,
+                value: String::from("abc")
+            })))
+        );
     }
 
     #[test]
     fn parse_right_pad() {
-        assert_eq!(parse(">abc"), Ok(Filter::RightPad(String::from("abc"))));
-    }
-
-    #[test]
-    fn parse_right_pad_empty() {
-        assert_eq!(parse(">"), Ok(Filter::RightPad(String::new())));
+        assert_eq!(
+            parse(">abc"),
+            Err(Error {
+                kind: ErrorKind::PaddingPrefixInvalid('>', Some('a')),
+                range: 1..2
+            })
+        );
+        assert_eq!(
+            parse(">>abc"),
+            Ok(Filter::RightPad(Padding::Fixed(String::from("abc"))))
+        );
+        assert_eq!(
+            parse(">10:abc"),
+            Ok(Filter::RightPad(Padding::Repeated(Repetition {
+                count: 10,
+                value: String::from("abc")
+            })))
+        );
     }
 
     #[test]
@@ -734,16 +773,34 @@ mod tests {
     #[test]
     fn eval_left_pad() {
         assert_eq!(
-            Filter::LeftPad(String::from("0123")).eval(String::from("ab"), &make_eval_context()),
+            Filter::LeftPad(Padding::Fixed(String::from("0123")))
+                .eval(String::from("ab"), &make_eval_context()),
             Ok(String::from("01ab"))
+        );
+        assert_eq!(
+            Filter::LeftPad(Padding::Repeated(Repetition {
+                count: 3,
+                value: String::from("01")
+            }))
+            .eval(String::from("ab"), &make_eval_context()),
+            Ok(String::from("0101ab"))
         );
     }
 
     #[test]
     fn eval_right_pad() {
         assert_eq!(
-            Filter::RightPad(String::from("0123")).eval(String::from("ab"), &make_eval_context()),
+            Filter::RightPad(Padding::Fixed(String::from("0123")))
+                .eval(String::from("ab"), &make_eval_context()),
             Ok(String::from("ab23"))
+        );
+        assert_eq!(
+            Filter::RightPad(Padding::Repeated(Repetition {
+                count: 3,
+                value: String::from("01")
+            }))
+            .eval(String::from("ab"), &make_eval_context()),
+            Ok(String::from("ab0101"))
         );
     }
 
@@ -819,12 +876,28 @@ mod tests {
         assert_eq!(Filter::ToAscii.to_string(), "To ASCII");
         assert_eq!(Filter::RemoveNonAscii.to_string(), "Remove non-ASCII");
         assert_eq!(
-            Filter::LeftPad(String::from("abc")).to_string(),
+            Filter::LeftPad(Padding::Fixed(String::from("abc"))).to_string(),
             "Left pad with 'abc'"
         );
         assert_eq!(
-            Filter::RightPad(String::from("abc")).to_string(),
+            Filter::LeftPad(Padding::Repeated(Repetition {
+                count: 5,
+                value: String::from("abc")
+            }))
+            .to_string(),
+            "Left pad with 5x 'abc'"
+        );
+        assert_eq!(
+            Filter::RightPad(Padding::Fixed(String::from("abc"))).to_string(),
             "Right pad with 'abc'"
+        );
+        assert_eq!(
+            Filter::RightPad(Padding::Repeated(Repetition {
+                count: 5,
+                value: String::from("abc")
+            }))
+            .to_string(),
+            "Right pad with 5x 'abc'"
         );
         assert_eq!(
             Filter::ReplaceEmpty(String::from("abc")).to_string(),

@@ -11,6 +11,7 @@ mod filter;
 pub mod help;
 mod lexer;
 mod number;
+mod padding;
 pub mod parse;
 mod parser;
 mod range;

@@ -193,7 +193,9 @@ impl Parser {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::pattern::padding::Padding;
     use crate::pattern::range::Range;
+    use crate::pattern::repetition::Repetition;
     use crate::pattern::substitution::Substitution;
     use crate::pattern::testing::make_parsed;
 
@@ -432,7 +434,7 @@ mod tests {
     #[test]
     fn parse_complex_input() {
         assert_eq!(
-            Parser::from("image_{c|<000}.{e|l|r_e}2").parse_items(),
+            Parser::from("image_{c|<3:0}.{e|l|r_e}2").parse_items(),
             Ok(vec![
                 Parsed {
                     value: Item::Constant(String::from("image_")),
@@ -445,7 +447,10 @@ mod tests {
                             range: 7..8,
                         },
                         Parsed {
-                            value: Filter::LeftPad(String::from("000")),
+                            value: Filter::LeftPad(Padding::Repeated(Repetition {
+                                count: 3,
+                                value: String::from("0")
+                            })),
                             range: 9..13,
                         }
                     ]),
