@@ -27,12 +27,12 @@ impl FromStr for Config {
     type Err = &'static str;
 
     fn from_str(string: &str) -> Result<Self, Self::Err> {
-        if let Some(separator_index) = string.find(':') {
-            let init_str = &string[0..separator_index];
+        if let Some(delimiter_index) = string.find(':') {
+            let init_str = &string[0..delimiter_index];
             let init = init_str.parse().map_err(|_| INIT_ERROR)?;
 
-            let step = if separator_index < string.len() - 1 {
-                let step_str = &string[(separator_index + 1)..];
+            let step = if delimiter_index < string.len() - 1 {
+                let step_str = &string[(delimiter_index + 1)..];
                 step_str.parse().map_err(|_| STEP_ERROR)?
             } else {
                 return Err(STEP_ERROR);

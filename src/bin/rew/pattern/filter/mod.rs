@@ -2,6 +2,7 @@ use crate::pattern::char::{AsChar, Char};
 use crate::pattern::range::Range;
 use crate::pattern::reader::Reader;
 use crate::pattern::regex::RegexHolder;
+use crate::pattern::repetition::Repetition;
 use crate::pattern::substitution::Substitution;
 use crate::pattern::{eval, parse};
 use std::fmt;
@@ -51,6 +52,7 @@ pub enum Filter {
     RightPad(String),
 
     // Generators
+    Repeat(Repetition),
     LocalCounter,
     GlobalCounter,
     Uuid,
@@ -95,6 +97,7 @@ impl Filter {
                 '>' => Ok(Self::RightPad(Char::join(reader.read_to_end()))),
 
                 // Generators
+                '*' => Ok(Self::Repeat(Repetition::parse(reader)?)),
                 'c' => Ok(Self::LocalCounter),
                 'C' => Ok(Self::GlobalCounter),
                 'u' => Ok(Self::Uuid),
@@ -159,6 +162,7 @@ impl Filter {
             Self::RightPad(padding) => format::right_pad(value, &padding),
 
             // Generators
+            Self::Repeat(Repetition { value, count }) => generate::repeat(value, *count),
             Self::LocalCounter => generate::counter(context.local_counter),
             Self::GlobalCounter => generate::counter(context.global_counter),
             Self::Uuid => generate::uuid(),
@@ -214,6 +218,7 @@ impl fmt::Display for Filter {
             Self::RightPad(padding) => write!(formatter, "Right pad with '{}'", padding),
 
             // Generators
+            Self::Repeat(repetition) => write!(formatter, "Repeat {}", repetition),
             Self::LocalCounter => write!(formatter, "Local counter"),
             Self::GlobalCounter => write!(formatter, "Global counter"),
             Self::Uuid => write!(formatter, "UUID"),
@@ -458,7 +463,7 @@ mod tests {
         assert_eq!(
             parse("s/[0-9+/cd"),
             Err(parse::Error {
-                kind: parse::ErrorKind::SubstituteRegexInvalid(AnyString(String::from(
+                kind: parse::ErrorKind::SubstitutionRegexInvalid(AnyString(String::from(
                     "This string is not compared by assertion"
                 ))),
                 range: 2..7,
@@ -492,11 +497,22 @@ mod tests {
         assert_eq!(
             parse("S/[0-9+/cd"),
             Err(parse::Error {
-                kind: parse::ErrorKind::SubstituteRegexInvalid(AnyString(String::from(
+                kind: parse::ErrorKind::SubstitutionRegexInvalid(AnyString(String::from(
                     "This string is not compared by assertion"
                 ))),
                 range: 2..7,
             }),
+        );
+    }
+
+    #[test]
+    fn parse_repeat() {
+        assert_eq!(
+            parse("*3:abc"),
+            Ok(Filter::Repeat(Repetition {
+                count: 3,
+                value: String::from("abc")
+            }))
         );
     }
 
@@ -728,6 +744,18 @@ mod tests {
         assert_eq!(
             Filter::RightPad(String::from("0123")).eval(String::from("ab"), &make_eval_context()),
             Ok(String::from("ab23"))
+        );
+    }
+
+    #[test]
+    fn eval_repeat() {
+        assert_eq!(
+            Filter::Repeat(Repetition {
+                count: 3,
+                value: String::from("abc")
+            })
+            .eval(String::new(), &make_eval_context()),
+            Ok(String::from("abcabcabc"))
         );
     }
 

@@ -26,6 +26,7 @@ pub enum ErrorKind {
     ExpectedPipeOrExprEnd,
     ExpectedRange,
     ExpectedRegex,
+    ExpectedRepetition,
     ExpectedSubstitution,
     ExprStartInsideExpr,
     PipeOutsideExpr,
@@ -35,8 +36,9 @@ pub enum ErrorKind {
     RangeStartOverEnd(usize, usize),
     RegexCaptureZero,
     RegexInvalid(AnyString),
-    SubstituteWithoutTarget(Char),
-    SubstituteRegexInvalid(AnyString),
+    RepetitionWithoutDelimiter,
+    SubstitutionWithoutTarget(Char),
+    SubstitutionRegexInvalid(AnyString),
     UnknownEscapeSequence(EscapeSequence),
     UnknownFilter(Char),
     UnmatchedExprEnd,
@@ -69,14 +71,18 @@ impl fmt::Display for ErrorKind {
             Self::ExpectedPipeOrExprEnd => {
                 write!(formatter, "Expected '{}' or closing '{}'", PIPE, EXPR_END)
             }
-            Self::ExpectedRange => write!(formatter, "Filter requires range as a parameter"),
+            Self::ExpectedRange => write!(formatter, "Filter requires range 'A-B' as a parameter"),
             Self::ExpectedRegex => write!(
                 formatter,
                 "Filter requires regular expression as a parameter"
             ),
-            Self::ExpectedSubstitution => {
-                write!(formatter, "Filter requires substitution as a parameter")
+            Self::ExpectedRepetition => {
+                write!(formatter, "Filter requires repetition 'N:V' as a parameter")
             }
+            Self::ExpectedSubstitution => write!(
+                formatter,
+                "Filter requires substitution ':A:B' as a parameter"
+            ),
             Self::ExprStartInsideExpr => {
                 write!(formatter, "Unescaped '{}' inside expression", EXPR_START)
             }
@@ -91,17 +97,20 @@ impl fmt::Display for ErrorKind {
             ),
             Self::RegexCaptureZero => write!(formatter, "Regex capture groups start from 1, not 0"),
             Self::RegexInvalid(value) => write!(formatter, "Invalid regular expression: {}", value),
-            Self::SubstituteWithoutTarget(Char::Raw(value)) => write!(
+            Self::RepetitionWithoutDelimiter => {
+                write!(formatter, "Repetition is missing delimiter after number")
+            }
+            Self::SubstitutionWithoutTarget(Char::Raw(value)) => write!(
                 formatter,
                 "Substitution is missing value after delimiter '{}'",
                 value
             ),
-            Self::SubstituteWithoutTarget(Char::Escaped(_, sequence)) => write!(
+            Self::SubstitutionWithoutTarget(Char::Escaped(_, sequence)) => write!(
                 formatter,
                 "Substitution is missing value after delimiter '{}{}' (escape sequence)",
                 sequence[0], sequence[1]
             ),
-            Self::SubstituteRegexInvalid(reason) => write!(
+            Self::SubstitutionRegexInvalid(reason) => write!(
                 formatter,
                 "Invalid regular expression in substitution: {}",
                 reason
@@ -181,15 +190,19 @@ mod tests {
         );
         assert_eq!(
             ErrorKind::ExpectedRange.to_string(),
-            "Filter requires range as a parameter"
+            "Filter requires range 'A-B' as a parameter"
         );
         assert_eq!(
             ErrorKind::ExpectedRegex.to_string(),
             "Filter requires regular expression as a parameter"
         );
         assert_eq!(
+            ErrorKind::ExpectedRepetition.to_string(),
+            "Filter requires repetition 'N:V' as a parameter"
+        );
+        assert_eq!(
             ErrorKind::ExpectedSubstitution.to_string(),
-            "Filter requires substitution as a parameter"
+            "Filter requires substitution ':A:B' as a parameter"
         );
         assert_eq!(
             ErrorKind::ExprStartInsideExpr.to_string(),
@@ -221,15 +234,19 @@ mod tests {
             "Invalid regular expression: abc"
         );
         assert_eq!(
-            ErrorKind::SubstituteWithoutTarget(Char::Raw('_')).to_string(),
+            ErrorKind::RepetitionWithoutDelimiter.to_string(),
+            "Repetition is missing delimiter after number"
+        );
+        assert_eq!(
+            ErrorKind::SubstitutionWithoutTarget(Char::Raw('_')).to_string(),
             "Substitution is missing value after delimiter '_'"
         );
         assert_eq!(
-            ErrorKind::SubstituteWithoutTarget(Char::Escaped('|', ['#', '|'])).to_string(),
+            ErrorKind::SubstitutionWithoutTarget(Char::Escaped('|', ['#', '|'])).to_string(),
             "Substitution is missing value after delimiter '#|' (escape sequence)"
         );
         assert_eq!(
-            ErrorKind::SubstituteRegexInvalid(AnyString(String::from("abc"))).to_string(),
+            ErrorKind::SubstitutionRegexInvalid(AnyString(String::from("abc"))).to_string(),
             "Invalid regular expression in substitution: abc"
         );
         assert_eq!(

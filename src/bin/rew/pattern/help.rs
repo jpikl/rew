@@ -202,12 +202,23 @@ Examples:
 
     FILTER    DESCRIPTION
     ---------------------------------
+    `*N:V`      Repeat `N` times `V`.
     `c`         Local counter
     `C`         Global counter
     `u`         Randomly generated UUID 
+    
+Examples:
+    
+    FILTER    OUTPUT
+    -------------------------------------------------------
+    `*3:ab`     ababab
+    `c`         (see below)
+    `C`         (see below)
+    `u`         5eefc76d-0ca1-4631-8fd0-62eeb401c432 (random)
 
-Global counter `C` is incremented for every input value.
-Local counter `c` is incremented per parent directory (assuming input value is a path).
+Global counter `C` is a number incremented for every input value.
+Local counter `c` is a number incremented per parent directory (assuming input value is a path).
+Both counters start at 1 and are incremented by 1.
 
     INPUT    GLOBAL    LOCAL
     ------------------------

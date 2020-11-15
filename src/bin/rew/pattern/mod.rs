@@ -16,6 +16,7 @@ mod parser;
 mod range;
 mod reader;
 mod regex;
+mod repetition;
 mod substitution;
 mod symbols;
 #[cfg(test)]

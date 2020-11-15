@@ -30,7 +30,7 @@ impl Substitution<RegexHolder> {
             Ok(regex) => RegexHolder(regex),
             Err(error) => {
                 return Err(Error {
-                    kind: ErrorKind::SubstituteRegexInvalid(AnyString(error.to_string())),
+                    kind: ErrorKind::SubstitutionRegexInvalid(AnyString(error.to_string())),
                     range: target_range,
                 })
             }
@@ -61,7 +61,7 @@ pub fn parse_target_and_replacement(
 
         if target.is_empty() {
             return Err(Error {
-                kind: ErrorKind::SubstituteWithoutTarget(delimiter),
+                kind: ErrorKind::SubstitutionWithoutTarget(delimiter),
                 range: target_start..target_end,
             });
         }
@@ -108,7 +108,7 @@ mod tests {
         assert_eq!(
             parse_target_and_replacement(&mut reader),
             Err(Error {
-                kind: ErrorKind::SubstituteWithoutTarget(Char::Raw('/')),
+                kind: ErrorKind::SubstitutionWithoutTarget(Char::Raw('/')),
                 range: 1..1,
             })
         );
@@ -121,7 +121,7 @@ mod tests {
         assert_eq!(
             parse_target_and_replacement(&mut reader),
             Err(Error {
-                kind: ErrorKind::SubstituteWithoutTarget(Char::Raw('/')),
+                kind: ErrorKind::SubstitutionWithoutTarget(Char::Raw('/')),
                 range: 1..1,
             })
         );
@@ -230,7 +230,7 @@ mod tests {
         assert_eq!(
             Substitution::parse_regex(&mut reader),
             Err(Error {
-                kind: ErrorKind::SubstituteRegexInvalid(AnyString(String::from(
+                kind: ErrorKind::SubstitutionRegexInvalid(AnyString(String::from(
                     "This string is not compared by assertion"
                 ))),
                 range: 1..6,
