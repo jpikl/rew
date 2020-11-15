@@ -38,6 +38,8 @@ use termcolor::ColorChoice;
 /// Destination path may exist. Existing destination file will be overwritten. Existing destination directory will have its contents merged with contents of source directory.
 ///
 /// Missing parent directories in destination path will be created as needed.
+///
+/// Nothing will be done if source and destination paths point to the same file or directory.
 pub struct Cli {
     /// Read instructions delimited by NUL, not newline
     #[clap(short = 'z', long)]

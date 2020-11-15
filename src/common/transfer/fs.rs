@@ -2,6 +2,7 @@ use crate::fs::FileType;
 use fs_extra::error::{Error, ErrorKind, Result};
 use fs_extra::{dir, file};
 use lazy_static::lazy_static;
+use same_file::is_same_file;
 use std::fs;
 use std::path::Path;
 
@@ -39,7 +40,7 @@ pub fn transfer_path(src_path: &Path, dst_path: &Path, mode: TransferMode) -> Re
             ),
         )),
 
-        (FileType::File, _) => {
+        (FileType::File, dst_type) => {
             if let Some(dst_parent) = dst_path.parent() {
                 dir::create_all(dst_parent, false)?;
             }
@@ -50,13 +51,15 @@ pub fn transfer_path(src_path: &Path, dst_path: &Path, mode: TransferMode) -> Re
                     }
                 }
                 TransferMode::Copy => {
-                    file::copy(src_path, dst_path, &FILE_COPY_OPTIONS)?;
+                    if dst_type == FileType::Unknown || !is_same_file(src_path, dst_path)? {
+                        file::copy(src_path, dst_path, &FILE_COPY_OPTIONS)?;
+                    }
                 }
             }
             Ok(())
         }
 
-        (FileType::Dir, _) => {
+        (FileType::Dir, dst_type) => {
             dir::create_all(dst_path, false)?;
             match mode {
                 TransferMode::Move => {
@@ -65,7 +68,9 @@ pub fn transfer_path(src_path: &Path, dst_path: &Path, mode: TransferMode) -> Re
                     }
                 }
                 TransferMode::Copy => {
-                    dir::copy(src_path, dst_path, &DIR_COPY_OPTIONS)?;
+                    if dst_type == FileType::Unknown || !is_same_file(src_path, dst_path)? {
+                        dir::copy(src_path, dst_path, &DIR_COPY_OPTIONS)?;
+                    }
                 }
             }
             Ok(())
@@ -101,6 +106,7 @@ mod tests {
     use assert_fs::prelude::*;
     use assert_fs::{NamedTempFile, TempDir};
     use fs_extra::error::ErrorKind;
+    use ntest::timeout;
 
     #[test]
     fn same_dir_and_file_copy_options() {
@@ -194,7 +200,22 @@ mod tests {
     }
 
     #[test]
-    fn move_overwrite_file() {
+    fn rename_file_to_itself() {
+        let src_file = NamedTempFile::new("a").unwrap();
+
+        src_file.write_str("1").unwrap();
+
+        assert_eq!(
+            transfer_path(src_file.path(), src_file.path(), TransferMode::Move)
+                .map_err(unpack_fse_error),
+            Ok(())
+        );
+
+        src_file.assert("1");
+    }
+
+    #[test]
+    fn move_file_to_other() {
         let src_file = NamedTempFile::new("a").unwrap();
         let dst_file = NamedTempFile::new("b").unwrap();
 
@@ -229,7 +250,23 @@ mod tests {
     }
 
     #[test]
-    fn copy_overwrite_file() {
+    #[timeout(5000)] // fs_extra::file::copy freezes for same src/dst path
+    fn copy_file_to_itself() {
+        let src_file = NamedTempFile::new("a").unwrap();
+
+        src_file.write_str("1").unwrap();
+
+        assert_eq!(
+            transfer_path(src_file.path(), src_file.path(), TransferMode::Copy)
+                .map_err(unpack_fse_error),
+            Ok(())
+        );
+
+        src_file.assert("1");
+    }
+
+    #[test]
+    fn copy_file_to_other() {
         let src_file = NamedTempFile::new("a").unwrap();
         let dst_file = NamedTempFile::new("b").unwrap();
 
@@ -273,7 +310,24 @@ mod tests {
     }
 
     #[test]
-    fn move_overwrite_dir() {
+    fn rename_dir_to_itself() {
+        let src_dir = TempDir::new().unwrap();
+        let src_file = src_dir.child("a");
+
+        src_file.write_str("1").unwrap();
+
+        assert_eq!(
+            transfer_path(src_dir.path(), src_dir.path(), TransferMode::Move)
+                .map_err(unpack_fse_error),
+            Ok(())
+        );
+
+        src_dir.assert(predicates::path::is_dir());
+        src_file.assert("1");
+    }
+
+    #[test]
+    fn move_dir_to_other() {
         let root_dir = TempDir::new().unwrap();
 
         let src_dir = root_dir.child("a");
@@ -328,7 +382,25 @@ mod tests {
     }
 
     #[test]
-    fn copy_overwrite_dir() {
+    #[timeout(5000)] // // fs_extra::dir::copy freezes for same src/dst path
+    fn copy_dir_to_itself() {
+        let src_dir = TempDir::new().unwrap();
+        let src_file = src_dir.child("a");
+
+        src_file.write_str("1").unwrap();
+
+        assert_eq!(
+            transfer_path(src_dir.path(), src_dir.path(), TransferMode::Copy)
+                .map_err(unpack_fse_error),
+            Ok(())
+        );
+
+        src_dir.assert(predicates::path::is_dir());
+        src_file.assert("1");
+    }
+
+    #[test]
+    fn copy_dir_to_other() {
         let root_dir = TempDir::new().unwrap();
 
         let src_dir = root_dir.child("a");
