@@ -185,10 +185,11 @@ pub fn parse_single_byte_char(string: &str) -> Result<u8, &'static str> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use claim::*;
 
     #[test]
     fn init() {
-        assert!(Cli::try_parse_from(&["rew", "pattern"]).is_ok());
+        assert_ok!(Cli::try_parse_from(&["rew", "pattern"]));
     }
 
     #[test]

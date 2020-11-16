@@ -109,6 +109,7 @@ mod tests {
     use crate::pattern::substitution::Substitution;
     use crate::pattern::testing::{make_eval_context, make_parsed};
     use crate::utils::AnyString;
+    use ntest::{assert_false, assert_true};
 
     #[test]
     fn parse_default_escape() {
@@ -196,9 +197,9 @@ mod tests {
                 make_parsed(Item::Expression(vec![make_parsed(Filter::FileName)])),
             ],
         };
-        assert!(!pattern.uses_local_counter());
-        assert!(!pattern.uses_global_counter());
-        assert!(!pattern.uses_regex_capture());
+        assert_false!(pattern.uses_local_counter());
+        assert_false!(pattern.uses_global_counter());
+        assert_false!(pattern.uses_regex_capture());
     }
 
     #[test]
@@ -209,7 +210,7 @@ mod tests {
                 Filter::LocalCounter,
             )]))],
         };
-        assert!(pattern.uses_local_counter());
+        assert_true!(pattern.uses_local_counter());
     }
 
     #[test]
@@ -220,7 +221,7 @@ mod tests {
                 Filter::GlobalCounter,
             )]))],
         };
-        assert!(pattern.uses_global_counter());
+        assert_true!(pattern.uses_global_counter());
     }
 
     #[test]
@@ -231,7 +232,7 @@ mod tests {
                 Filter::RegexCapture(1),
             )]))],
         };
-        assert!(pattern.uses_regex_capture());
+        assert_true!(pattern.uses_regex_capture());
     }
 
     #[test]

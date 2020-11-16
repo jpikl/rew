@@ -107,6 +107,7 @@ impl fmt::Debug for OutputChunk {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ntest::assert_true;
 
     #[test]
     fn unpacks_io_error() {
@@ -118,7 +119,7 @@ mod tests {
 
     #[test]
     fn output_supports_color() {
-        assert!(ColoredOuput::new().supports_color());
+        assert_true!(ColoredOuput::new().supports_color());
     }
 
     #[test]

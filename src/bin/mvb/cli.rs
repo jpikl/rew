@@ -94,10 +94,12 @@ impl TransferOptions for Cli {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use claim::*;
+    use ntest::assert_true;
 
     #[test]
     fn init() {
-        assert!(Cli::try_parse_from(&["mvb"]).is_ok());
+        assert_ok!(Cli::try_parse_from(&["mvb"]));
     }
 
     #[test]
@@ -109,18 +111,18 @@ mod tests {
     #[test]
     fn read_nul() {
         let cli = Cli::try_parse_from(&["mvb", "--read-nul"]).unwrap();
-        assert_eq!(TransferOptions::read_nul(&cli), true);
+        assert_true!(TransferOptions::read_nul(&cli));
     }
 
     #[test]
     fn verbose() {
         let cli = Cli::try_parse_from(&["mvb", "--verbose"]).unwrap();
-        assert_eq!(TransferOptions::verbose(&cli), true);
+        assert_true!(TransferOptions::verbose(&cli));
     }
 
     #[test]
     fn fail_at_end() {
         let cli = Cli::try_parse_from(&["mvb", "--fail-at-end"]).unwrap();
-        assert_eq!(TransferOptions::fail_at_end(&cli), true);
+        assert_true!(TransferOptions::fail_at_end(&cli));
     }
 }

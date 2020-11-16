@@ -16,9 +16,10 @@ pub fn make_non_utf8_os_str<'a>() -> &'a OsStr {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use claim::*;
 
     #[test]
     fn makes_non_utf8_os_str() {
-        assert!(make_non_utf8_os_str().to_str().is_none());
+        assert_none!(make_non_utf8_os_str().to_str());
     }
 }

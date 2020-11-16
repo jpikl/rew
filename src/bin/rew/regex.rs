@@ -30,6 +30,7 @@ impl<'a> Solver<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use claim::*;
     use regex::Match;
 
     #[test]
@@ -45,7 +46,7 @@ mod tests {
     #[test]
     fn path_empty() {
         let regex = Regex::new("([a-z]+)_([A-Z]+)").unwrap();
-        assert_eq!(Solver::Value(&regex).eval("").is_none(), true);
+        assert_none!(Solver::Value(&regex).eval(""));
     }
 
     #[test]
@@ -63,11 +64,11 @@ mod tests {
     #[test]
     fn file_name_empty() {
         let regex = Regex::new("([a-z]+)_([A-Z]+)").unwrap();
-        assert_eq!(Solver::FileName(&regex).eval("/").is_none(), true);
+        assert_none!(Solver::FileName(&regex).eval("/"));
     }
 
     #[test]
     fn none() {
-        assert_eq!(Solver::None.eval("abc").is_none(), true);
+        assert_none!(Solver::None.eval("abc"));
     }
 }

@@ -66,23 +66,24 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use claim::*;
     use std::io::{Read, Write};
 
     #[test]
     fn io_stdin() {
         let io = Io::new(ColorChoice::Never);
-        assert!(io.stdin().read_exact(&mut []).is_ok());
+        assert_ok!(io.stdin().read_exact(&mut []));
     }
 
     #[test]
     fn io_stdout() {
         let io = Io::new(ColorChoice::Never);
-        assert!(io.stdout().flush().is_ok());
+        assert_ok!(io.stdout().flush());
     }
 
     #[test]
     fn io_stderr() {
         let io = Io::new(ColorChoice::Never);
-        assert!(io.stderr().flush().is_ok());
+        assert_ok!(io.stderr().flush());
     }
 }
