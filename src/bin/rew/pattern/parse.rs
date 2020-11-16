@@ -105,7 +105,9 @@ impl fmt::Display for ErrorKind {
                 "Range start ({}) is bigger than end ({})",
                 start, end
             ),
-            Self::RegexCaptureZero => write!(formatter, "Regex capture groups start from 1, not 0"),
+            Self::RegexCaptureZero => {
+                write!(formatter, "Regular expression captures start from 1, not 0")
+            }
             Self::RegexInvalid(value) => write!(formatter, "Invalid regular expression: {}", value),
             Self::RepetitionDigitDelimiter(value) => write!(
                 formatter,
@@ -250,7 +252,7 @@ mod tests {
         );
         assert_eq!(
             ErrorKind::RegexCaptureZero.to_string(),
-            "Regex capture groups start from 1, not 0"
+            "Regular expression captures start from 1, not 0"
         );
         assert_eq!(
             ErrorKind::RegexInvalid(AnyString(String::from("abc"))).to_string(),

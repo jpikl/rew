@@ -8,6 +8,7 @@ pub struct Context<'a> {
     pub current_dir: &'a Path,
     pub global_counter: u32,
     pub local_counter: u32,
+    pub regex_captures: Option<regex::Captures<'a>>,
 }
 
 pub type Result<'a, T> = result::Result<T, Error<'a>>;

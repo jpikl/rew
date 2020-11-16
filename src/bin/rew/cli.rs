@@ -2,6 +2,7 @@ use crate::counter;
 use clap::{crate_name, crate_version, AppSettings, ArgSettings, Clap};
 use common::color::{parse_color, COLOR_VALUES};
 use common::run::Options;
+use regex::Regex;
 use termcolor::ColorChoice;
 
 #[derive(Debug, Clap)]
@@ -109,8 +110,21 @@ pub struct Cli {
     )]
     pub color: Option<ColorChoice>,
 
+    /// Regular expression matched against each input value
+    #[clap(
+        short = 'e',
+        long,
+        value_name = "regex",
+        conflicts_with = "regex-filename"
+    )]
+    pub regex: Option<Regex>,
+
+    /// Regular expression matched against 'file name component' of each input value
+    #[clap(short = 'E', long, value_name = "regex", conflicts_with = "regex")]
+    pub regex_filename: Option<Regex>,
+
     /// Continue processing after an error, fail at end
-    #[clap(short = 'e', long)]
+    #[clap(short = 's', long)]
     pub fail_at_end: bool,
 
     /// Local counter configuration

@@ -1,4 +1,5 @@
 use crate::pattern::char::{AsChar, Char};
+use crate::pattern::number::parse_usize;
 use crate::pattern::padding::Padding;
 use crate::pattern::range::Range;
 use crate::pattern::reader::Reader;
@@ -42,6 +43,7 @@ pub enum Filter {
     RegexMatch(RegexHolder),
     RegexReplaceFirst(Substitution<RegexHolder>),
     RegexReplaceAll(Substitution<RegexHolder>),
+    RegexCapture(usize),
 
     // Format filters
     Trim,
@@ -63,7 +65,17 @@ impl Filter {
     pub fn parse(reader: &mut Reader<Char>) -> parse::Result<Self> {
         let position = reader.position();
 
-        if let Some(char) = reader.read() {
+        if let Some('0'..='9') = reader.peek_char() {
+            let number = parse_usize(reader)?;
+            if number > 0 {
+                Ok(Filter::RegexCapture(number))
+            } else {
+                Err(parse::Error {
+                    kind: parse::ErrorKind::RegexCaptureZero,
+                    range: position..reader.position(),
+                })
+            }
+        } else if let Some(char) = reader.read() {
             match char.as_char() {
                 // Path filters
                 'a' => Ok(Self::AbsolutePath),
@@ -156,6 +168,10 @@ impl Filter {
                 replacement,
             }) => regex::replace_all(value, &regex, &replacement),
 
+            Self::RegexCapture(number) => {
+                regex::get_capture(context.regex_captures.as_ref(), *number)
+            }
+
             // Format filters
             Self::Trim => format::trim(value),
             Self::ToLowercase => format::to_lowercase(value),
@@ -221,6 +237,9 @@ impl fmt::Display for Filter {
                 "Replace all matches of regular expression {}",
                 substitution
             ),
+            Self::RegexCapture(number) => {
+                write!(formatter, "Regular expression capture #{}", number)
+            }
 
             // Format filters
             Self::Trim => write!(formatter, "Trim"),
@@ -545,6 +564,20 @@ mod tests {
     }
 
     #[test]
+    fn parse_regex_capture() {
+        assert_eq!(
+            parse("0"),
+            Err(parse::Error {
+                kind: parse::ErrorKind::RegexCaptureZero,
+                range: 0..1,
+            }),
+        );
+        assert_eq!(parse("1"), Ok(Filter::RegexCapture(1)));
+        assert_eq!(parse("2"), Ok(Filter::RegexCapture(2)));
+        assert_eq!(parse("10"), Ok(Filter::RegexCapture(10)));
+    }
+
+    #[test]
     fn parse_repeat() {
         assert_eq!(
             parse("*3:abc"),
@@ -699,34 +732,42 @@ mod tests {
     }
 
     #[test]
-    fn eval_remove_first() {
-        assert_eq!(
-            Filter::ReplaceFirst(Substitution {
-                target: String::from("ab"),
-                replacement: String::new(),
-            })
-            .eval(String::from("abcd_abcd"), &make_eval_context()),
-            Ok(String::from("cd_abcd"))
-        );
-    }
-
-    #[test]
-    fn eval_remove_all() {
-        assert_eq!(
-            Filter::ReplaceAll(Substitution {
-                target: String::from("ab"),
-                replacement: String::new(),
-            })
-            .eval(String::from("abcd_abcd"), &make_eval_context()),
-            Ok(String::from("cd_cd"))
-        );
-    }
-
-    #[test]
     fn eval_replace_empty() {
         assert_eq!(
             Filter::ReplaceEmpty(String::from("xyz")).eval(String::new(), &make_eval_context()),
             Ok(String::from("xyz"))
+        );
+    }
+
+    #[test]
+    fn eval_regex_replace_first() {
+        assert_eq!(
+            Filter::RegexReplaceFirst(Substitution {
+                target: RegexHolder(Regex::new("[0-9]+").unwrap()),
+                replacement: String::from("x"),
+            })
+            .eval(String::from("12_34"), &make_eval_context()),
+            Ok(String::from("x_34"))
+        );
+    }
+
+    #[test]
+    fn eval_regex_replace_all() {
+        assert_eq!(
+            Filter::RegexReplaceAll(Substitution {
+                target: RegexHolder(Regex::new("[0-9]+").unwrap()),
+                replacement: String::from("x"),
+            })
+            .eval(String::from("12_34"), &make_eval_context()),
+            Ok(String::from("x_x"))
+        );
+    }
+
+    #[test]
+    fn eval_regex_capture() {
+        assert_eq!(
+            Filter::RegexCapture(1).eval(String::new(), &make_eval_context()),
+            Ok(String::from("abc"))
         );
     }
 

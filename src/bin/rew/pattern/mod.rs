@@ -54,6 +54,10 @@ impl Pattern {
         self.uses_filter(|filter| *filter == Filter::GlobalCounter)
     }
 
+    pub fn uses_regex_capture(&self) -> bool {
+        self.uses_filter(|variable| matches!(variable, Filter::RegexCapture(_)))
+    }
+
     fn uses_filter<F: Fn(&Filter) -> bool>(&self, test: F) -> bool {
         self.items.iter().any(|item| {
             if let Item::Expression(filters) = &item.value {
@@ -194,6 +198,7 @@ mod tests {
         };
         assert!(!pattern.uses_local_counter());
         assert!(!pattern.uses_global_counter());
+        assert!(!pattern.uses_regex_capture());
     }
 
     #[test]
@@ -216,6 +221,17 @@ mod tests {
             )]))],
         };
         assert!(pattern.uses_global_counter());
+    }
+
+    #[test]
+    fn uses_regex_capture() {
+        let pattern = Pattern {
+            source: String::new(),
+            items: vec![make_parsed(Item::Expression(vec![make_parsed(
+                Filter::RegexCapture(1),
+            )]))],
+        };
+        assert!(pattern.uses_regex_capture());
     }
 
     #[test]

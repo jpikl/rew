@@ -159,8 +159,8 @@ Examples:
     `s:X`        Remove first match of regular expression `X`.
                Equivalent to `s:X:`.
     `S`          Same as `s` but replaces/removes all matches.
+    `1`, `2`, ...  Capture group of an external regular expression.
     
-
 Examples:
 
     INPUT    FILTER                     OUTPUT
@@ -170,6 +170,13 @@ Examples:
     12_34    `S:[0-9]+:x`                 x_x
     12_34    `s:([0-9])([0-9]):$2$1`      21_34
     12_34    `S:([0-9])([0-9]):$2$1`      21_43
+
+Use `-e, --regex` / `-E, --regex-filename` option to define an external regular expression.
+Option `-e, --regex` matches regex against the whole input value.
+Option `-E, --regex-filename` matches regex against its file name component.
+
+    $> echo 'a/b.c' | rew -e '([a-z])' '{1}' # Will print 'a'
+    $> echo 'a/b.c' | rew -E '([a-z])' '{1}' # Will print 'b'
 
 ========================================
  Format filters

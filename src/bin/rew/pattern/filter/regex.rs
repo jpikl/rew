@@ -24,6 +24,14 @@ pub fn replace_all(value: String, regex: &Regex, replacement: &str) -> Result {
     Ok(regex.replace_all(&value, replacement.as_ref()).to_string())
 }
 
+pub fn get_capture(captures: Option<&regex::Captures>, number: usize) -> Result {
+    Ok(captures
+        .map(|captures| captures.get(number))
+        .flatten()
+        .map(|capture| capture.as_str())
+        .map_or_else(String::new, String::from))
+}
+
 fn add_capture_group_brackets(string: &str) -> Cow<str> {
     if string.contains('$') {
         CAPTURE_GROUP_VAR_REGEX.replace_all(string, r"$${${1}}")
@@ -35,6 +43,7 @@ fn add_capture_group_brackets(string: &str) -> Cow<str> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::pattern::testing::make_regex_captures;
 
     #[test]
     fn match_in_some() {
@@ -135,6 +144,27 @@ mod tests {
     fn remove_all_in_empty() {
         assert_eq!(
             replace_all(String::new(), &Regex::new("[0-9]+").unwrap(), ""),
+            Ok(String::new())
+        );
+    }
+
+    #[test]
+    fn get_capture_from_none() {
+        assert_eq!(get_capture(None, 1), Ok(String::new()));
+    }
+
+    #[test]
+    fn get_capture_from_some() {
+        assert_eq!(
+            get_capture(make_regex_captures().as_ref(), 1),
+            Ok(String::from("abc"))
+        );
+    }
+
+    #[test]
+    fn get_capture_from_some_wrong_number() {
+        assert_eq!(
+            get_capture(make_regex_captures().as_ref(), 2),
             Ok(String::new())
         );
     }

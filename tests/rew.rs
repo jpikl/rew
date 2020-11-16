@@ -224,6 +224,30 @@ fn global_counter() {
 }
 
 #[test]
+fn regex() {
+    rew()
+        .arg("--regex=([0-9]+)")
+        .arg("{1}")
+        .write_stdin("dir_1/file_2")
+        .assert()
+        .success()
+        .stdout("1\n")
+        .stderr("");
+}
+
+#[test]
+fn regex_file_name() {
+    rew()
+        .arg("--regex-filename=([0-9]+)")
+        .arg("{1}")
+        .write_stdin("dir_1/file_2")
+        .assert()
+        .success()
+        .stdout("2\n")
+        .stderr("");
+}
+
+#[test]
 fn pattern_parse_error() {
     rew()
         .arg("{")

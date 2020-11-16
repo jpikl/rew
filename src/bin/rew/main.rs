@@ -11,6 +11,7 @@ mod counter;
 mod input;
 mod output;
 mod pattern;
+mod regex;
 #[cfg(test)]
 mod testing;
 mod utils;
@@ -87,12 +88,21 @@ fn run(cli: &Cli, io: &Io) -> Result {
 
         let global_counter_used = pattern.uses_global_counter();
         let local_counter_used = pattern.uses_local_counter();
+        let regex_capture_used = pattern.uses_regex_capture();
 
         let global_counter_config = cli.global_counter.unwrap_or_else(counter::Config::default);
         let local_counter_config = cli.local_counter.unwrap_or_else(counter::Config::default);
 
         let mut global_counter_generator = counter::GlobalGenerator::from(&global_counter_config);
         let mut local_counter_generator = counter::LocalGenerator::from(&local_counter_config);
+
+        let regex_solver = if let Some(regex) = &cli.regex {
+            regex::Solver::Value(regex)
+        } else if let Some(regex) = &cli.regex_filename {
+            regex::Solver::FileName(regex)
+        } else {
+            regex::Solver::None
+        };
 
         let current_dir_buf = env::current_dir()?;
         let current_dir = current_dir_buf.as_path();
@@ -110,10 +120,17 @@ fn run(cli: &Cli, io: &Io) -> Result {
                 0
             };
 
+            let regex_captures = if regex_capture_used {
+                regex_solver.eval(input_value)
+            } else {
+                None
+            };
+
             let context = eval::Context {
                 current_dir,
                 global_counter,
                 local_counter,
+                regex_captures,
             };
 
             let output_value = match pattern.eval(input_value, &context) {
