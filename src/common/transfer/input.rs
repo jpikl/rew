@@ -48,7 +48,7 @@ impl<I: BufRead> PathDiff<I> {
 
         let (out_path, out_size) = match self.splitter.read()? {
             Some((value, size)) => (extract_path(value, &self.position, DIFF_OUT)?, size),
-            None => (extract_path("", &self.position, DIFF_OUT)?, 0),
+            None => return Err(make_unexpected_eof_error(&self.position, DIFF_OUT)),
         };
         self.position.increment(out_size);
 
@@ -78,11 +78,15 @@ fn extract_path(value: &str, position: &Position, prefix: char) -> Result<PathBu
             ))
         }
     } else {
-        Err(Error::new(
-            ErrorKind::UnexpectedEof,
-            format!("Expected '{}' ({})", prefix, position),
-        ))
+        Err(make_unexpected_eof_error(position, prefix))
     }
+}
+
+fn make_unexpected_eof_error(position: &Position, prefix: char) -> Error {
+    Error::new(
+        ErrorKind::UnexpectedEof,
+        format!("Expected '{}' ({})", prefix, position),
+    )
 }
 
 #[cfg(test)]
@@ -112,7 +116,7 @@ mod tests {
     }
 
     #[test]
-    fn path_diff_read() {
+    fn path_diff_valid() {
         let input = indoc! {"
             <abc
             >def
@@ -132,20 +136,7 @@ mod tests {
     }
 
     #[test]
-    fn path_diff_empty_in() {
-        assert_eq!(
-            PathDiff::new(&b"<"[..], Delimiter::Newline)
-                .read()
-                .map_err(unpack_io_error),
-            Err((
-                ErrorKind::UnexpectedEof,
-                String::from("Expected a path after '<' (item #1 at offset 0)")
-            ))
-        )
-    }
-
-    #[test]
-    fn path_diff_invalid_in() {
+    fn path_diff_invalid_in_prefix_error() {
         assert_eq!(
             PathDiff::new(&b"abc"[..], Delimiter::Newline)
                 .read()
@@ -158,20 +149,33 @@ mod tests {
     }
 
     #[test]
-    fn path_diff_no_out() {
+    fn path_diff_invalid_out_prefix_error() {
         assert_eq!(
-            PathDiff::new(&b"<abc"[..], Delimiter::Newline)
+            PathDiff::new(&b"<abc\ndef"[..], Delimiter::Newline)
                 .read()
                 .map_err(unpack_io_error),
             Err((
-                ErrorKind::UnexpectedEof,
-                String::from("Expected '>' (item #2 at offset 4)")
+                ErrorKind::InvalidData,
+                String::from("Expected '>' but got 'd' (item #2 at offset 5)")
             ))
         )
     }
 
     #[test]
-    fn path_diff_empty_out() {
+    fn path_diff_missing_in_path_error() {
+        assert_eq!(
+            PathDiff::new(&b"<"[..], Delimiter::Newline)
+                .read()
+                .map_err(unpack_io_error),
+            Err((
+                ErrorKind::UnexpectedEof,
+                String::from("Expected a path after '<' (item #1 at offset 0)")
+            ))
+        )
+    }
+
+    #[test]
+    fn path_diff_missing_out_path_error() {
         assert_eq!(
             PathDiff::new(&b"<abc\n>"[..], Delimiter::Newline)
                 .read()
@@ -184,14 +188,27 @@ mod tests {
     }
 
     #[test]
-    fn path_diff_invalid_out() {
+    fn path_diff_missing_out_error() {
         assert_eq!(
-            PathDiff::new(&b"<abc\ndef"[..], Delimiter::Newline)
+            PathDiff::new(&b"<abc"[..], Delimiter::Newline)
                 .read()
                 .map_err(unpack_io_error),
             Err((
-                ErrorKind::InvalidData,
-                String::from("Expected '>' but got 'd' (item #2 at offset 5)")
+                ErrorKind::UnexpectedEof,
+                String::from("Expected '>' (item #2 at offset 4)")
+            ))
+        )
+    }
+
+    #[test]
+    fn path_diff_empty_out_error() {
+        assert_eq!(
+            PathDiff::new(&b"<abc\n\n"[..], Delimiter::Newline)
+                .read()
+                .map_err(unpack_io_error),
+            Err((
+                ErrorKind::UnexpectedEof,
+                String::from("Expected '>' (item #2 at offset 5)")
             ))
         )
     }

@@ -254,7 +254,7 @@ impl fmt::Display for Filter {
             Self::Repeat(repetition) => write!(formatter, "Repeat {}", repetition),
             Self::LocalCounter => write!(formatter, "Local counter"),
             Self::GlobalCounter => write!(formatter, "Global counter"),
-            Self::Uuid => write!(formatter, "UUID"),
+            Self::Uuid => write!(formatter, "Randomly generated UUID"),
         }
     }
 }
@@ -657,6 +657,14 @@ mod tests {
     }
 
     #[test]
+    fn eval_parent_path() {
+        assert_eq!(
+            Filter::ParentPath.eval(String::from("root/parent/file.ext"), &make_eval_context()),
+            Ok(String::from("root/parent"))
+        );
+    }
+
+    #[test]
     fn eval_file_name() {
         assert_eq!(
             Filter::FileName.eval(String::from("root/parent/file.ext"), &make_eval_context()),
@@ -736,6 +744,15 @@ mod tests {
         assert_eq!(
             Filter::ReplaceEmpty(String::from("xyz")).eval(String::new(), &make_eval_context()),
             Ok(String::from("xyz"))
+        );
+    }
+
+    #[test]
+    fn eval_regex_match() {
+        assert_eq!(
+            Filter::RegexMatch(RegexHolder(Regex::new("[0-9]+").unwrap()))
+                .eval(String::from("a123y"), &make_eval_context()),
+            Ok(String::from("123"))
         );
     }
 
@@ -964,5 +981,20 @@ mod tests {
             .to_string(),
             "Replace all matches of regular expression 'a+' with 'b'"
         );
+        assert_eq!(
+            Filter::RegexCapture(1).to_string(),
+            "Regular expression capture #1"
+        );
+        assert_eq!(
+            Filter::Repeat(Repetition {
+                count: 5,
+                value: String::from("abc")
+            })
+            .to_string(),
+            "Repeat 5x 'abc'"
+        );
+        assert_eq!(Filter::LocalCounter.to_string(), "Local counter");
+        assert_eq!(Filter::GlobalCounter.to_string(), "Global counter");
+        assert_eq!(Filter::Uuid.to_string(), "Randomly generated UUID");
     }
 }

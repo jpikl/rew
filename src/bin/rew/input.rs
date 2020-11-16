@@ -23,11 +23,7 @@ impl<'a, I: BufRead> Values<'a, I> {
     pub fn next(&mut self) -> Result<Option<&str>> {
         match self {
             Self::Args { iter } => Ok(iter.next().map(String::as_str)),
-            Self::Stdin { splitter: reader } => match reader.read() {
-                Ok(Some((value, _))) => Ok(Some(value)),
-                Ok(None) => Ok(None),
-                Err(error) => Err(error),
-            },
+            Self::Stdin { splitter: reader } => Ok(reader.read()?.map(|(value, _)| value)),
         }
     }
 }

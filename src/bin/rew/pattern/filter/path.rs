@@ -72,6 +72,7 @@ fn to_string<S: AsRef<OsStr> + ?Sized>(value: &S) -> Result {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::testing::make_non_utf8_os_str;
     use std::path::Path;
 
     #[test]
@@ -201,6 +202,14 @@ mod tests {
     #[test]
     fn extension_with_dot_from_empty() {
         assert_eq!(get_extension_with_dot(String::new()), Ok(String::new()));
+    }
+
+    #[test]
+    fn to_string_utf8_error() {
+        assert_eq!(
+            to_string(make_non_utf8_os_str()),
+            Err(ErrorKind::InputNotUtf8)
+        )
     }
 
     #[cfg(any(unix))]

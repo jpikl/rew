@@ -2,7 +2,7 @@
 mod utils;
 
 use indoc::indoc;
-use predicates::str::starts_with;
+use predicates::prelude::*;
 use std::path::Path;
 use utils::rew;
 
@@ -248,6 +248,17 @@ fn regex_file_name() {
 }
 
 #[test]
+fn non_utf8_input_errpr() {
+    rew()
+        .write_stdin(&[0x66, 0x6f, 0x80, 0x6f][..])
+        .assert()
+        .failure()
+        .code(1)
+        .stdout("")
+        .stderr("error: Input does not have UTF-8 encoding (offset 2)\n");
+}
+
+#[test]
 fn pattern_parse_error() {
     rew()
         .arg("{")
@@ -275,7 +286,7 @@ fn pattern_eval_error() {
         .failure()
         .code(4)
         .stdout("")
-        .stderr(starts_with(
+        .stderr(predicate::str::starts_with(
             "error: 'Canonical path' evaluation failed for value 'non-existent':",
         ));
 }
@@ -299,9 +310,29 @@ fn pattern_eval_error_at_end() {
                 .unwrap()
                 .to_string_lossy()
         ))
-        .stderr(starts_with(
+        .stderr(predicate::str::starts_with(
             "error: 'Canonical path' evaluation failed for value 'non-existent':",
         ));
+}
+
+#[test]
+fn help_pattern() {
+    rew()
+        .arg("--help-pattern")
+        .assert()
+        .success()
+        .stdout(predicate::str::is_empty().not())
+        .stderr("");
+}
+
+#[test]
+fn help_filters() {
+    rew()
+        .arg("--help-filters")
+        .assert()
+        .success()
+        .stdout(predicate::str::is_empty().not())
+        .stderr("");
 }
 
 #[test]

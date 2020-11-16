@@ -93,6 +93,19 @@ mod tests {
     }
 
     #[test]
+    fn parse_digit_delimiter_error() {
+        let mut reader = Reader::from("010");
+        assert_eq!(
+            Repetition::parse(&mut reader),
+            Err(Error {
+                kind: ErrorKind::RepetitionDigitDelimiter('1'),
+                range: 1..2
+            })
+        );
+        assert_eq!(reader.position(), 2);
+    }
+
+    #[test]
     fn parse_no_value() {
         let mut reader = Reader::from("12:");
         assert_eq!(
