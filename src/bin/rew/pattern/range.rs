@@ -269,7 +269,7 @@ mod tests {
     }
 
     #[test]
-    fn fmt() {
+    fn display() {
         // For users, indices start from 1, end is inclusive.
         // Internally, indices start from 0, end is exclusive.
         assert_eq!(Range::From(1).to_string(), "from 2 to end");

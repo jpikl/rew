@@ -170,7 +170,7 @@ mod tests {
     }
 
     #[test]
-    fn output_chunk_fmt() {
+    fn output_chunk_display() {
         assert_eq!(
             format!("{:?}", OutputChunk::plain("a\nb")),
             r#"OutputChunk::plain("a\\nb")"#

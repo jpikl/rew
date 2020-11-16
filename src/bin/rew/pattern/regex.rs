@@ -102,7 +102,7 @@ mod tests {
     }
 
     #[test]
-    fn regex_holder_fmt() {
+    fn regex_holder_display() {
         assert_eq!(
             RegexHolder(Regex::new("[a-z]+").unwrap()).to_string(),
             String::from("[a-z]+")

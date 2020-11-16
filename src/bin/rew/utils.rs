@@ -60,7 +60,7 @@ mod tests {
     }
 
     #[test]
-    fn any_string_fmt() {
+    fn any_string_display() {
         assert_eq!(AnyString(String::from("abc")).to_string(), "abc");
     }
 

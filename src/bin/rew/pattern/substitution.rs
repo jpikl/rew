@@ -240,7 +240,7 @@ mod tests {
     }
 
     #[test]
-    fn fmt() {
+    fn display() {
         assert_eq!(
             Substitution {
                 target: String::from("abc"),

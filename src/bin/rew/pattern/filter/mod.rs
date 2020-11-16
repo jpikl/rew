@@ -879,7 +879,7 @@ mod tests {
     }
 
     #[test]
-    fn fmt() {
+    fn display() {
         assert_eq!(Filter::AbsolutePath.to_string(), "Absolute path");
         assert_eq!(Filter::CanonicalPath.to_string(), "Canonical path");
         assert_eq!(Filter::ParentPath.to_string(), "Parent path");

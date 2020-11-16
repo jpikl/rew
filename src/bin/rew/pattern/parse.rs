@@ -179,7 +179,7 @@ mod tests {
     }
 
     #[test]
-    fn error_fmt() {
+    fn error_display() {
         assert_eq!(
             Error {
                 kind: ErrorKind::ExpectedNumber,
@@ -191,7 +191,7 @@ mod tests {
     }
 
     #[test]
-    fn error_kind_fmt() {
+    fn error_kind_display() {
         assert_eq!(
             ErrorKind::ExpectedFilter.to_string(),
             "Expected filter after '|'"

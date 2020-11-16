@@ -200,7 +200,7 @@ mod tests {
     use crate::pattern::testing::make_parsed;
 
     #[test]
-    fn item_fmt() {
+    fn item_display() {
         assert_eq!(
             Item::Constant(String::from("abc")).to_string(),
             "Constant 'abc'"
@@ -240,28 +240,6 @@ mod tests {
     }
 
     #[test]
-    fn parse_expected_filter_but_end_error() {
-        assert_eq!(
-            Parser::from("{").parse_items(),
-            Err(Error {
-                kind: ErrorKind::UnmatchedExprStart,
-                range: 0..1,
-            })
-        );
-    }
-
-    #[test]
-    fn parse_expected_filter_but_pipe_error() {
-        assert_eq!(
-            Parser::from("{|").parse_items(),
-            Err(Error {
-                kind: ErrorKind::ExpectedFilterOrExprEnd,
-                range: 1..2,
-            })
-        );
-    }
-
-    #[test]
     fn parse_pipe_outside_expr_error() {
         assert_eq!(
             Parser::from("|").parse_items(),
@@ -284,12 +262,23 @@ mod tests {
     }
 
     #[test]
-    fn parse_unterminated_expr_start_after_filter_error() {
+    fn parse_unmatched_expr_start_error() {
         assert_eq!(
-            Parser::from("{f").parse_items(),
+            Parser::from("{").parse_items(),
             Err(Error {
                 kind: ErrorKind::UnmatchedExprStart,
                 range: 0..1,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_filter_after_expr_start_error() {
+        assert_eq!(
+            Parser::from("{|").parse_items(),
+            Err(Error {
+                kind: ErrorKind::ExpectedFilterOrExprEnd,
+                range: 1..2,
             })
         );
     }
@@ -306,7 +295,29 @@ mod tests {
     }
 
     #[test]
-    fn parse_filter() {
+    fn parse_missing_pipe_or_expr_end_error() {
+        assert_eq!(
+            Parser::from("{f").parse_items(),
+            Err(Error {
+                kind: ErrorKind::UnmatchedExprStart,
+                range: 0..1,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_expr_start_after_filter_error() {
+        assert_eq!(
+            Parser::from("{f{").parse_items(),
+            Err(Error {
+                kind: ErrorKind::ExprStartInsideExpr,
+                range: 2..3,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_expr_single_filter() {
         assert_eq!(
             Parser::from("{f}").parse_items(),
             Ok(vec![Parsed {
@@ -320,18 +331,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_expr_start_inside_expr_error() {
-        assert_eq!(
-            Parser::from("{f{").parse_items(),
-            Err(Error {
-                kind: ErrorKind::ExprStartInsideExpr,
-                range: 2..3,
-            })
-        );
-    }
-
-    #[test]
-    fn parse_expected_pipe_or_expr_end_after_filter_error() {
+    fn parse_filter_after_filter_error() {
         assert_eq!(
             Parser::from("{fg").parse_items(),
             Err(Error {
@@ -342,7 +342,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_expected_filter_after_pipe_but_end_error() {
+    fn parse_missing_filter_after_pipe_error() {
         assert_eq!(
             Parser::from("{f|").parse_items(),
             Err(Error {
@@ -353,7 +353,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_expected_filter_after_pipe_but_pipe_error() {
+    fn parse_pipe_after_pipe_error() {
         assert_eq!(
             Parser::from("{f||").parse_items(),
             Err(Error {
@@ -364,7 +364,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_expected_filter_after_pipe_but_expr_end_error() {
+    fn parse_expr_end_after_pipe_error() {
         assert_eq!(
             Parser::from("{f|}").parse_items(),
             Err(Error {
@@ -375,7 +375,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_unternimeted_expr_start_after_filter_error() {
+    fn parse_missing_pipe_or_expr_end_error_2() {
         assert_eq!(
             Parser::from("{f|l").parse_items(),
             Err(Error {
@@ -386,7 +386,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_expected_pipe_or_expr_end_after_piped_filter_error() {
+    fn parse_filter_after_filter_error_2() {
         assert_eq!(
             Parser::from("{f|ll").parse_items(),
             Err(Error {
@@ -397,7 +397,18 @@ mod tests {
     }
 
     #[test]
-    fn parse_multiple_filters() {
+    fn parse_invalid_filter_error() {
+        assert_eq!(
+            Parser::from("{n2-1}").parse_items(),
+            Err(Error {
+                kind: ErrorKind::RangeStartOverEnd(2, 1),
+                range: 2..5,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_expr_multiple_filters() {
         assert_eq!(
             Parser::from("{e|t|n1-3}").parse_items(),
             Ok(vec![Parsed {
@@ -421,18 +432,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_invalid_filter_error() {
-        assert_eq!(
-            Parser::from("{f|n2-1}").parse_items(),
-            Err(Error {
-                kind: ErrorKind::RangeStartOverEnd(2, 1),
-                range: 4..7,
-            })
-        );
-    }
-
-    #[test]
-    fn parse_complex_input() {
+    fn parse_complex_pattern() {
         assert_eq!(
             Parser::from("image_{c|<3:0}.{e|l|r_e}2").parse_items(),
             Ok(vec![

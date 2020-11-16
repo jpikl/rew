@@ -119,7 +119,7 @@ mod tests {
     }
 
     #[test]
-    fn fmt() {
+    fn display() {
         assert_eq!(
             Repetition {
                 count: 5,

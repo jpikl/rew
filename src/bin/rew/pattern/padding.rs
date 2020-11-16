@@ -123,7 +123,7 @@ mod tests {
     }
 
     #[test]
-    fn fmt() {
+    fn display() {
         assert_eq!(Padding::Fixed(String::from("abc")).to_string(), "'abc'");
         assert_eq!(
             Padding::Repeated(Repetition {

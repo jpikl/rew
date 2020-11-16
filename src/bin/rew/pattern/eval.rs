@@ -75,7 +75,7 @@ mod tests {
     }
 
     #[test]
-    fn error_fmt() {
+    fn error_display() {
         assert_eq!(
             Error {
                 kind: ErrorKind::InputNotUtf8,
@@ -89,7 +89,7 @@ mod tests {
     }
 
     #[test]
-    fn error_kind_fmt() {
+    fn error_kind_display() {
         assert_eq!(
             ErrorKind::InputNotUtf8.to_string(),
             "Input does not have UTF-8 encoding"
