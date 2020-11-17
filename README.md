@@ -470,6 +470,24 @@ Normalize base names of files to `file_001`, `file_002`, ...
 find -type f | rew -b '{p|h}/file_{C|<3:0}{E}' | mvb -v
 ```
 
+Print the first word of each line with removed diacritics (accents).
+
+```bash
+rew '{m\S+|i}' <input.txt
+```
+
+Swap the first and second column in a CSV file.
+
+```bash
+rew -e'([^:]*):([^:]*):(.*)' '{2}:{1}:{3}' <input.csv >output.csv
+```
+
+Same thing but we use regex replace filter.
+
+```bash
+rew '{s/([^:]*):([^:]*):(.*)/$2:$1:$3}' <input.csv >output.csv
+```
+
 Print `PATH` variable entries as lines.
 
 ````bash
