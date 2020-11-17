@@ -67,6 +67,7 @@ const FILTERS_HELP: &str = indoc! {"
     ----------------------------
     `a`         Absolute path
     `A`         Canonical path
+    `h`         Normalized path
     `p`         Parent path
     `f`         File name
     `b`         Base name
@@ -90,12 +91,45 @@ For working directory `/home/bob` and input `../alice/notes.txt`, filters would 
     --------------------------------------
     `a`         /home/bob/../alice/notes.txt
     `A`         /home/alice/notes.txt
+    `h`         ../alice/notes.txt
     `p`         ../alice
     `f`         notes.txt
     `b`         notes
     `B`         ../alice/notes
     `e`         txt
     `E`         .txt
+    
+Normalized path `h` is constructed using the following rules:
+
+ - On Windows, all `/` separators are converted to `\\`. 
+ - Consecutive path separators are collapsed into one.
+ - Trailing path separator is removed.
+ - Unnecessary current directory `.` components are removed.
+ - Parent directory `..` components are resolved where possible.
+ - Initial `..` components in an absolute path are dropped.
+ - Initial `..` components in a relative path are kept.
+ - Empty path is resolved to `.` (current directory).
+    
+    INPUT      OUTPUT        INPUT      OUTPUT
+    -----------------        -----------------
+    (empty)    .             /          /
+    .          .             /.         /
+    ..         ..            /..        /
+    a/         a             /a/        /a
+    a//        a             /a//       /a
+    a/.        a             /a/.       /a
+    a/..       .             /a/..      /
+    ./a        a             /./a       /a
+    ../a       ../a          /../a      /a
+    a//b       a/b           /a//b      /a/b
+    a/./b      a/b           /a/./b     /a/b
+    a/../b     b             /a/../b    /b
+
+Canonical path `A` works similarly to `h` but has some differences:
+
+ - Evaluation will fail for a non-existent path.
+ - The result will always be an absolute path.
+ - If path is a symbolic link, it will be resolved.
 
 ========================================
  Substring filters

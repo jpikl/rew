@@ -1,6 +1,6 @@
 use std::ffi::OsStr;
 
-#[cfg(any(unix))]
+#[cfg(unix)]
 pub fn make_non_utf8_os_str<'a>() -> &'a OsStr {
     use std::os::unix::ffi::OsStrExt;
     OsStr::from_bytes(&[0x66, 0x6f, 0x80, 0x6f][..])

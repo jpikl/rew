@@ -24,6 +24,7 @@ pub enum Filter {
     // Path filters
     AbsolutePath,
     CanonicalPath,
+    NormalizedPath,
     ParentPath,
     FileName,
     BaseName,
@@ -81,6 +82,7 @@ impl Filter {
                 // Path filters
                 'a' => Ok(Self::AbsolutePath),
                 'A' => Ok(Self::CanonicalPath),
+                'h' => Ok(Self::NormalizedPath),
                 'p' => Ok(Self::ParentPath),
                 'f' => Ok(Self::FileName),
                 'b' => Ok(Self::BaseName),
@@ -135,6 +137,7 @@ impl Filter {
             // Path filters
             Self::AbsolutePath => path::get_absolute(value, context.current_dir),
             Self::CanonicalPath => path::get_canonical(value, context.current_dir),
+            Self::NormalizedPath => path::get_normalized(value),
             Self::ParentPath => path::get_parent_path(value),
             Self::FileName => path::get_file_name(value),
             Self::BaseName => path::get_base_name(value),
@@ -209,6 +212,7 @@ impl fmt::Display for Filter {
             // Path filters
             Self::AbsolutePath => write!(formatter, "Absolute path"),
             Self::CanonicalPath => write!(formatter, "Canonical path"),
+            Self::NormalizedPath => write!(formatter, "Normalized path"),
             Self::ParentPath => write!(formatter, "Parent path"),
             Self::FileName => write!(formatter, "File name"),
             Self::BaseName => write!(formatter, "Base name"),
@@ -281,6 +285,11 @@ mod tests {
     #[test]
     fn parse_canonical_path() {
         assert_eq!(parse("A"), Ok(Filter::CanonicalPath));
+    }
+
+    #[test]
+    fn parse_normalized_path() {
+        assert_eq!(parse("h"), Ok(Filter::NormalizedPath));
     }
 
     #[test]
@@ -666,6 +675,17 @@ mod tests {
     }
 
     #[test]
+    fn eval_normalized_path() {
+        assert_eq!(
+            Filter::NormalizedPath.eval(
+                String::from("root/parent/../new-parent/./dir/"),
+                &make_eval_context()
+            ),
+            Ok(String::from("root/new-parent/dir"))
+        );
+    }
+
+    #[test]
     fn eval_parent_path() {
         assert_eq!(
             Filter::ParentPath.eval(String::from("root/parent/file.ext"), &make_eval_context()),
@@ -917,6 +937,7 @@ mod tests {
     fn display() {
         assert_eq!(Filter::AbsolutePath.to_string(), "Absolute path");
         assert_eq!(Filter::CanonicalPath.to_string(), "Canonical path");
+        assert_eq!(Filter::NormalizedPath.to_string(), "Normalized path");
         assert_eq!(Filter::ParentPath.to_string(), "Parent path");
         assert_eq!(Filter::FileName.to_string(), "File name");
         assert_eq!(Filter::BaseName.to_string(), "Base name");
