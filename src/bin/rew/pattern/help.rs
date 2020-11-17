@@ -70,9 +70,10 @@ const FILTERS_HELP: &str = indoc! {"
     `p`         Parent path
     `f`         File name
     `b`         Base name
+    `B`         Base name with path
     `e`         Extension
     `E`         Extension with dot
-                Dot is not printed for missing extension.
+              Dot is not printed for missing extension.
 
 Let us assume the following directory structure:
 
@@ -92,6 +93,7 @@ For working directory `/home/bob` and input `../alice/notes.txt`, filters would 
     `p`         ../alice
     `f`         notes.txt
     `b`         notes
+    `B`         ../alice/notes
     `e`         txt
     `E`         .txt
 

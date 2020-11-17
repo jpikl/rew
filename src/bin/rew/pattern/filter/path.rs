@@ -29,7 +29,7 @@ pub fn get_canonical(value: String, current_dir: &Path) -> Result {
     }
 }
 
-pub fn get_parent(value: String) -> Result {
+pub fn get_parent_path(value: String) -> Result {
     opt_to_string(Path::new(&value).parent())
 }
 
@@ -39,6 +39,13 @@ pub fn get_file_name(value: String) -> Result {
 
 pub fn get_base_name(value: String) -> Result {
     opt_to_string(Path::new(&value).file_stem())
+}
+
+pub fn get_base_name_with_path(mut value: String) -> Result {
+    if let Some(extension_len) = Path::new(&value).extension().map(OsStr::len) {
+        value.replace_range((value.len() - extension_len - 1).., "");
+    }
+    Ok(value)
 }
 
 pub fn get_extension(value: String) -> Result {
@@ -119,21 +126,21 @@ mod tests {
     }
 
     #[test]
-    fn parent() {
+    fn parent_path() {
         assert_eq!(
-            get_parent(String::from("root/parent/file.ext")),
+            get_parent_path(String::from("root/parent/file.ext")),
             Ok(String::from("root/parent"))
         );
     }
 
     #[test]
-    fn parent_missing() {
-        assert_eq!(get_parent(String::from("file.ext")), Ok(String::new()));
+    fn parent_path_missing() {
+        assert_eq!(get_parent_path(String::from("file.ext")), Ok(String::new()));
     }
 
     #[test]
-    fn parent_from_empty() {
-        assert_eq!(get_parent(String::new()), Ok(String::new()));
+    fn parent_path_from_empty() {
+        assert_eq!(get_parent_path(String::new()), Ok(String::new()));
     }
 
     #[test]
@@ -158,8 +165,37 @@ mod tests {
     }
 
     #[test]
+    fn base_name_extension_missing() {
+        assert_eq!(
+            get_base_name(String::from("root/parent/file")),
+            Ok(String::from("file"))
+        );
+    }
+
+    #[test]
     fn base_name_from_empty() {
         assert_eq!(get_base_name(String::new()), Ok(String::new()));
+    }
+
+    #[test]
+    fn base_name_with_path() {
+        assert_eq!(
+            get_base_name_with_path(String::from("root/parent/file.ext")),
+            Ok(String::from("root/parent/file"))
+        );
+    }
+
+    #[test]
+    fn base_name_with_path_extension_missing() {
+        assert_eq!(
+            get_base_name_with_path(String::from("root/parent/file")),
+            Ok(String::from("root/parent/file"))
+        );
+    }
+
+    #[test]
+    fn base_name_with_path_from_empty() {
+        assert_eq!(get_base_name_with_path(String::new()), Ok(String::new()));
     }
 
     #[test]

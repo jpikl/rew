@@ -29,7 +29,7 @@ use termcolor::ColorChoice;
 ///
 /// Such input can be generated using accompanying `rew` utility and its `-b, --diff` flag:
 ///
-///     $> find -name '*.jpeg' | rew -b '{N6-}.jpg' | mvb # Rename all *.jpeg files to *.jpg
+///     $> find -name '*.jpeg' | rew -b '{B}.jpg' | mvb # Rename all *.jpeg files to *.jpg
 ///
 /// Each pair of source and destination path must be either both files or both directories. Mixing these types will result in error.
 ///

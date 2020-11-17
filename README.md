@@ -124,6 +124,7 @@ printf 'a\0b' | rew -z # Convert NUL bytes to newlines
 | `p`    | Parent path         |
 | `f`    | File name           |
 | `b`    | Base name           |
+| `B`    | Base name with path |
 | `e`    | Extension           |
 | `E`    | Extension with dot<br/>Dot is not printed for missing extension. |
 
@@ -147,6 +148,7 @@ For working directory `/home/bob` and input `../alice/notes.txt`, filters would 
 | `p`    | `../alice`                     |
 | `f`    | `notes.txt`                    |
 | `b`    | `notes`                        |
+| `B`    | `../alice/notes`               |
 | `e`    | `txt`                          |
 | `E`    | `.txt`                         |
 
@@ -298,8 +300,8 @@ By default, results are printed as lines to standard output.
 - Use `-T, --no-trailing-delimiter` flag to not print final delimiter at the end of output.
 
 ```bash
-rew    '{p}' | xargs    mkdir -p # Pass extracted directories to mkdir command
-rew -Z '{p}' | xargs -0 mkdir -p # Use NUL delimiter in case paths contain newlines
+rew    '{B}' | xargs    mkdir -p # Pass extracted directories to mkdir command
+rew -Z '{B}' | xargs -0 mkdir -p # Use NUL delimiter in case paths contain newlines
 rew -D$'\r\n'                    # Convert newlines to CR+LF using custom output delimiter
 rew -R '{}#r#n'                  # Same thing as before but output delimiter is inside pattern
 rew -TD+ '{}' a b c              # Join input values to string "a+b+c"
@@ -327,8 +329,8 @@ Apart from this (standard) mode, there are also two other output modes.
 Such output can be processed by accompanying `mvb` and `cpb` utilities to perform bulk move/copy.
 
 ```bash
-find -name '*.jpeg' | rew -b '{N6-}.jpg' | mvb # Rename all *.jpeg files to *.jpg
-find -name '*.txt'  | rew -b '{}.bak'    | cpb # Make backup copy of each *.txt file
+find -name '*.jpeg' | rew -b '{B}.jpg' | mvb # Rename all *.jpeg files to *.jpg
+find -name '*.txt'  | rew -b '{}.bak'  | cpb # Make backup copy of each *.txt file
 ```
 
 ### :rose: Pretty mode
@@ -355,9 +357,9 @@ input_value_N -> output_value_N
   You have to use accompanying `mvb` / `cpb` utilities, or you can generate executable shell code.
 
 ```bash
-find -name '*.htm' | xargs rename .htm .html           # Rename *.htm files to *.html
-find -name '*.htm' | rew '{p}/{b}.html' -b | mvb       # Same thing using rew + mvb
-find -name '*.htm' | rew 'mv "{}" "{p}/{b}.html"' | sh # Same thing using rew + mv + sh
+find -name '*.htm' | xargs rename .htm .html       # Rename *.htm files to *.html
+find -name '*.htm' | rew '{B}.html' -b | mvb       # Same thing using rew + mvb
+find -name '*.htm' | rew 'mv "{}" "{B}.html"' | sh # Same thing using rew + mv + sh
 ```
 
 ### `rew` vs `sed` / [`sd`][sd]

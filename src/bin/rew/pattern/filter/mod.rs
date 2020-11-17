@@ -27,6 +27,7 @@ pub enum Filter {
     ParentPath,
     FileName,
     BaseName,
+    BaseNameWithPath,
     Extension,
     ExtensionWithDot,
 
@@ -83,6 +84,7 @@ impl Filter {
                 'p' => Ok(Self::ParentPath),
                 'f' => Ok(Self::FileName),
                 'b' => Ok(Self::BaseName),
+                'B' => Ok(Self::BaseNameWithPath),
                 'e' => Ok(Self::Extension),
                 'E' => Ok(Self::ExtensionWithDot),
 
@@ -133,9 +135,10 @@ impl Filter {
             // Path filters
             Self::AbsolutePath => path::get_absolute(value, context.current_dir),
             Self::CanonicalPath => path::get_canonical(value, context.current_dir),
-            Self::ParentPath => path::get_parent(value),
+            Self::ParentPath => path::get_parent_path(value),
             Self::FileName => path::get_file_name(value),
             Self::BaseName => path::get_base_name(value),
+            Self::BaseNameWithPath => path::get_base_name_with_path(value),
             Self::Extension => path::get_extension(value),
             Self::ExtensionWithDot => path::get_extension_with_dot(value),
 
@@ -209,6 +212,7 @@ impl fmt::Display for Filter {
             Self::ParentPath => write!(formatter, "Parent path"),
             Self::FileName => write!(formatter, "File name"),
             Self::BaseName => write!(formatter, "Base name"),
+            Self::BaseNameWithPath => write!(formatter, "Base name with path"),
             Self::Extension => write!(formatter, "Extension"),
             Self::ExtensionWithDot => write!(formatter, "Extension with dot"),
 
@@ -292,6 +296,11 @@ mod tests {
     #[test]
     fn parse_base_name() {
         assert_eq!(parse("b"), Ok(Filter::BaseName));
+    }
+
+    #[test]
+    fn parse_path_without_extension() {
+        assert_eq!(parse("B"), Ok(Filter::BaseNameWithPath));
     }
 
     #[test]
@@ -681,6 +690,15 @@ mod tests {
     }
 
     #[test]
+    fn eval_base_name_with_path() {
+        assert_eq!(
+            Filter::BaseNameWithPath
+                .eval(String::from("root/parent/file.ext"), &make_eval_context()),
+            Ok(String::from("root/parent/file"))
+        );
+    }
+
+    #[test]
     fn eval_extension() {
         assert_eq!(
             Filter::Extension.eval(String::from("root/parent/file.ext"), &make_eval_context()),
@@ -902,6 +920,7 @@ mod tests {
         assert_eq!(Filter::ParentPath.to_string(), "Parent path");
         assert_eq!(Filter::FileName.to_string(), "File name");
         assert_eq!(Filter::BaseName.to_string(), "Base name");
+        assert_eq!(Filter::BaseNameWithPath.to_string(), "Base name with path");
         assert_eq!(Filter::Extension.to_string(), "Extension");
         assert_eq!(Filter::ExtensionWithDot.to_string(), "Extension with dot");
         assert_eq!(
