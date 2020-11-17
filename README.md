@@ -21,6 +21,7 @@ Rew is a CLI tool that rewrites FS paths according to a pattern.
 - [:speech_balloon: Output](#speech_balloon-output)
   - [:robot: Diff mode](#robot-diff-mode)
   - [:rose: Pretty mode](#rose-pretty-mode)
+- [:microscope: Comparison with similar tools](#microscope-comparison-with-similar-tools)
 - [:page_facing_up: License](#page_facing_up-license)
 
 ## :bulb: What rew does
@@ -344,6 +345,33 @@ input_value_2 -> output_value_2
 input_value_N -> output_value_N
 ```
 
+## :microscope: Comparison with similar tools
+
+### `rew` vs `rename` / `prename`
+
+- Unlike `rename`, `rew` can read input paths directly from standard input.
+  Use of `xargs` to pass output of `find` or [`fd`][fd] is not needed.
+- Unlike `rename`, `rew` is only a text-processing tool and it is unable to rename files.
+  You have to use accompanying `mvb` / `cpb` utilities, or you can generate executable shell code.
+
+```bash
+find -name '*.htm' | xargs rename .htm .html           # Rename *.htm files to *.html
+find -name '*.htm' | rew '{p}/{b}.html' -b | mvb       # Same thing using rew + mvb
+find -name '*.htm' | rew 'mv "{}" "{p}/{b}.html"' | sh # Same thing using rew + mv + sh
+```
+
+### `rew` vs `sed` / [`sd`][sd]
+
+- Like `sed` or [`sd`][sd], `rew` is able to replace text using a regular expression.
+
+```bash
+echo "foo 123 bar" | sed -E 's/[^0-9]*([0-9]+).*/\1/' # Extract first number using sed
+echo "foo 123 bar" | sd '\D*(\d+).*' '$1'    # Same thing using sd
+echo "Foo 123 Bar" | rew '{s:\D*(\d+).*:$1}' # Same thing using rew (regex replace filter)
+echo "Foo 123 Bar" | rew -e'([0-9]+)' '{1}'  # Same thing using rew (external regex)
+echo "Foo 123 Bar" | rew '{m[0-9]+}'         # Same thing using rew (regex match filter)
+```
+
 ## :page_facing_up: License
 
 Rew is licensed under the [MIT license](LICENSE.md).
@@ -352,3 +380,5 @@ Rew is licensed under the [MIT license](LICENSE.md).
 [build-img]: https://travis-ci.com/jpikl/rew.svg?branch=master
 [coverage]: https://codecov.io/gh/jpikl/rew
 [coverage-img]: https://codecov.io/gh/jpikl/rew/branch/master/graph/badge.svg
+[fd]: https://github.com/sharkdp/fd
+[sd]: https://github.com/chmln/sd
