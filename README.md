@@ -21,6 +21,7 @@ Rew is a CLI tool that rewrites FS paths according to a pattern.
 - [:speech_balloon: Output](#speech_balloon-output)
   - [:robot: Diff mode](#robot-diff-mode)
   - [:rose: Pretty mode](#rose-pretty-mode)
+- [:page_facing_up: License](#page_facing_up-license)
 
 ## :bulb: What rew does
 
@@ -342,6 +343,10 @@ input_value_2 -> output_value_2
 ...
 input_value_N -> output_value_N
 ```
+
+## :page_facing_up: License
+
+Rew is licensed under the [MIT license](LICENSE.md).
 
 [build]: https://travis-ci.com/github/jpikl/rew
 [build-img]: https://travis-ci.com/jpikl/rew.svg?branch=master
