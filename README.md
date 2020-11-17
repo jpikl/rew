@@ -22,6 +22,7 @@ Rew is a CLI tool that rewrites FS paths according to a pattern.
   - [:robot: Diff mode](#robot-diff-mode)
   - [:rose: Pretty mode](#rose-pretty-mode)
 - [:microscope: Comparison with similar tools](#microscope-comparison-with-similar-tools)
+- [:rocket: Examples](#rocket-examples)
 - [:page_facing_up: License](#page_facing_up-license)
 
 ## :bulb: What rew does
@@ -46,14 +47,14 @@ By default, values are read as lines from standard input.
 ```bash
 find         | rew    '{a}' # Convert output lines from find command to absolute paths
 find -print0 | rew -z '{a}' # Use NUL delimiter in case paths contain newlines
-echo "$PATH" | rew -d:      # Split $PATH entries delimited by colon
+echo "$PATH" | rew -d:      # Split PATH variable entries delimited by colon
 rew -r 'A{}B' <data.txt     # Read file as a whole, prepend 'A', append 'B'
 ```
 
 Input values can be also provided as additional arguments, after a pattern.
 
 ```bash
-rew '{a}' *.txt # Wildcard expansion done by shell
+rew '{a}' *.txt # Wildcard expansion is done by shell
 ```
 
 ## :pencil: Pattern
@@ -392,9 +393,9 @@ input_value_N -> output_value_N
   You have to use accompanying `mvb` / `cpb` utilities, or you can generate executable shell code.
 
 ```bash
-find -name '*.htm' | xargs rename .htm .html       # Rename *.htm files to *.html
-find -name '*.htm' | rew '{B}.html' -b | mvb       # Same thing using rew + mvb
-find -name '*.htm' | rew 'mv "{}" "{B}.html"' | sh # Same thing using rew + mv + sh
+find -name '*.jpeg' | xargs rename .jpeg .jpg      # Rename *.jpeg files to *.jpg
+find -name '*.jpeg' | rew '{B}.jpg' -b | mvb       # Same thing using rew + mvb
+find -name '*.jpeg' | rew 'mv "{}" "{B}.jpg"' | sh # Same thing using rew + mv + sh
 ```
 
 ### `rew` vs `sed` / [`sd`][sd]
@@ -408,6 +409,91 @@ echo "Foo 123 Bar" | rew '{s:\D*(\d+).*:$1}' # Same thing using rew (regex repla
 echo "Foo 123 Bar" | rew -e'([0-9]+)' '{1}'  # Same thing using rew (external regex)
 echo "Foo 123 Bar" | rew '{m[0-9]+}'         # Same thing using rew (regex match filter)
 ```
+
+## :rocket: Examples
+
+> :information_source:
+> Use `rew --explain <pattern>` to print detailed explanation what a certain pattern does.
+
+Print contents of working directory as absolute paths.
+
+```bash
+rew '{a}' *    # Paths are passed as arguments, wildcard expansion is done by shell
+ls | rew '{a}' # Paths are read from standard input
+```
+
+Rename all `*.jpeg` files to `*.jpg`.
+
+```bash
+find -name '*.jpeg' | rew -b '{B}.jpg' | mvb -v
+```
+
+Same thing but we use `rew` to generate executable shell code.
+
+```bash
+find -name '*.jpeg' | rew 'mv -v "{}" "{B}.jpg"' | sh
+```
+
+Make backup copy of each `*.txt` file with `.txt.bak` extension in the same directory.
+
+```bash
+find -name '*.txt'  | rew -b '{}.bak'  | cpb -v
+```
+
+Copy `*.txt` files (keep directory structure) to the `~/Backup` directory.
+
+```bash
+find -name '*.txt'  | rew -b "$HOME/Backup/{h}"  | cpb -v
+```
+
+Copy `*.txt` files (flatten directory structure) to the `~/Backup` directory.
+
+```bash
+find -name '*.txt'  | rew -b "$HOME/Backup/{f}"  | cpb -v
+```
+
+Same thing but we append randomly generated suffix after base name to avoid name collisions.
+
+```bash
+find -name '*.txt'  | rew -b "$HOME/Backup/{b}_{u}.{e}"  | cpb -v
+```
+
+Flatten directory structure `./dir/subdir/` to `./dir_subdir/`.
+
+```bash
+find -mindepth 2 -maxdepth 2 -type d | rew -b '{p}_{f}' | mvb -v
+```
+
+Normalize base names of files to `file_001`, `file_002`, ...
+
+```bash
+find -type f | rew -b '{p|h}/file_{C|<3:0}{E}' | mvb -v
+```
+
+Print `PATH` variable entries as lines.
+
+````bash
+echo "$PATH" | rew -d: # PATH entries are delimited by ':'
+````
+
+Replace tabs with 4 spaces in a file.
+
+````bash
+rew -rR '{R:#t:    }' <input.txt >output.txt # Read/write file content as a whole
+````
+
+Normalize line endings in a file to `LF`.
+
+````bash
+rew <input.txt >output.txt # LF is the default output delimiter
+````
+
+Normalize line endings in a file to `CR+LF`.
+
+````bash
+rew -D$'\r\n'   <input.txt >output.txt # CR+LF delimiter using -D option
+rew -R '{}#r#n' <input.txt >output.txt # CR+LF delimiter inside pattern
+````
 
 ## :page_facing_up: License
 
