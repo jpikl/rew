@@ -184,7 +184,7 @@ Normalized path `h` is constructed using the following rules:
 
 Canonical path `A` works similarly to `h` but has some differences:
 
-- Evaluation will fail for a non-existent path.
+- Evaluation will fail for a non-existent path (*Linux* / *Unix*).
 - The result will always be an absolute path.
 - If path is a symbolic link, it will be resolved.
 
