@@ -29,11 +29,11 @@ pub enum ErrorKind {
     ExpectedRepetition,
     ExpectedSubstitution,
     ExprStartInsideExpr,
+    NumberOverflow(String),
     PaddingPrefixInvalid(char, Option<char>),
     PipeOutsideExpr,
     RangeIndexZero,
     RangeInvalid(String),
-    RangeUnbounded,
     RangeStartOverEnd(usize, usize),
     RegexCaptureZero,
     RegexInvalid(AnyString),
@@ -88,6 +88,9 @@ impl fmt::Display for ErrorKind {
             Self::ExprStartInsideExpr => {
                 write!(formatter, "Unescaped '{}' inside expression", EXPR_START)
             }
+            Self::NumberOverflow(max) => {
+                write!(formatter, "Cannot parse value greater than {}", max)
+            }
             Self::PaddingPrefixInvalid(fixed_prefix, Some(prefix)) => write!(
                 formatter,
                 "Expected '{}' prefix or number but got '{}'",
@@ -99,10 +102,9 @@ impl fmt::Display for ErrorKind {
             Self::PipeOutsideExpr => write!(formatter, "Unescaped '{}' outside expression", PIPE),
             Self::RangeIndexZero => write!(formatter, "Range indices start from 1, not 0"),
             Self::RangeInvalid(value) => write!(formatter, "Invalid range '{}'", value),
-            Self::RangeUnbounded => write!(formatter, "Unbounded range"),
             Self::RangeStartOverEnd(start, end) => write!(
                 formatter,
-                "Range start ({}) is bigger than end ({})",
+                "Range start ({}) is greater than end ({})",
                 start, end
             ),
             Self::RegexCaptureZero => {
@@ -226,6 +228,10 @@ mod tests {
             "Unescaped '{' inside expression"
         );
         assert_eq!(
+            ErrorKind::NumberOverflow(String::from("255")).to_string(),
+            "Cannot parse value greater than 255"
+        );
+        assert_eq!(
             ErrorKind::PaddingPrefixInvalid('<', Some('x')).to_string(),
             "Expected '<' prefix or number but got 'x'"
         );
@@ -245,10 +251,9 @@ mod tests {
             ErrorKind::RangeInvalid(String::from("abc")).to_string(),
             "Invalid range 'abc'"
         );
-        assert_eq!(ErrorKind::RangeUnbounded.to_string(), "Unbounded range");
         assert_eq!(
             ErrorKind::RangeStartOverEnd(2, 1).to_string(),
-            "Range start (2) is bigger than end (1)"
+            "Range start (2) is greater than end (1)"
         );
         assert_eq!(
             ErrorKind::RegexCaptureZero.to_string(),

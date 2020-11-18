@@ -1,5 +1,5 @@
 use crate::pattern::char::Char;
-use crate::pattern::number::parse_usize;
+use crate::pattern::number::parse_number;
 use crate::pattern::parse::{Error, ErrorKind, Result};
 use crate::pattern::reader::Reader;
 use crate::pattern::symbols::RANGE;
@@ -10,6 +10,7 @@ pub enum Range {
     From(usize),
     FromTo(usize, usize),
     To(usize),
+    Full,
 }
 
 impl Range {
@@ -17,16 +18,16 @@ impl Range {
         match self {
             Self::From(start) => Some(*start),
             Self::FromTo(start, _) => Some(*start),
-            Self::To(_) => None,
+            Self::To(_) | Self::Full => None,
         }
     }
 
     pub fn length(&self) -> Option<usize> {
         match self {
-            Self::From(_) => None,
+            Self::From(_) | Self::Full => None,
             Self::FromTo(start, end) => {
                 if start > end {
-                    panic!("Range start ({}) > end ({})", start, end)
+                    panic!("IndexRange start ({}) > end ({})", start, end)
                 }
                 Some(end - start)
             }
@@ -71,10 +72,7 @@ impl Range {
                     let end = parse_index(reader)?;
                     Ok(Range::To(end + 1)) // Inclusive end -> exclusive end
                 } else {
-                    Err(Error {
-                        kind: ErrorKind::RangeUnbounded,
-                        range: (reader.position() - 1)..reader.position(),
-                    })
+                    Ok(Range::Full)
                 }
             }
 
@@ -93,7 +91,7 @@ impl Range {
 
 fn parse_index(reader: &mut Reader<Char>) -> Result<usize> {
     let position = reader.position();
-    let index = parse_usize(reader)?;
+    let index: usize = parse_number(reader)?;
 
     if index >= 1 {
         Ok(index - 1)
@@ -113,6 +111,7 @@ impl fmt::Display for Range {
             Self::From(start) => write!(formatter, "from {} to end", start + 1),
             Self::FromTo(start, end) => write!(formatter, "from {} to {}", start + 1, end),
             Self::To(end) => write!(formatter, "from start to {}", end),
+            Self::Full => write!(formatter, "from start to end"),
         }
     }
 }
@@ -130,6 +129,7 @@ mod tests {
         assert_eq!(Range::FromTo(1, 1).start(), Some(1));
         assert_eq!(Range::To(0).start(), None);
         assert_eq!(Range::To(1).start(), None);
+        assert_eq!(Range::Full.start(), None);
     }
 
     #[test]
@@ -140,6 +140,7 @@ mod tests {
         assert_eq!(Range::FromTo(1, 1).length(), Some(0));
         assert_eq!(Range::To(0).length(), Some(0));
         assert_eq!(Range::To(1).length(), Some(1));
+        assert_eq!(Range::Full.length(), None);
     }
 
     #[test]
@@ -162,19 +163,6 @@ mod tests {
     }
 
     #[test]
-    fn parse_unbounded_error() {
-        let mut reader = Reader::from("-");
-        assert_eq!(
-            Range::parse(&mut reader),
-            Err(Error {
-                kind: ErrorKind::RangeUnbounded,
-                range: 0..1,
-            })
-        );
-        assert_eq!(reader.position(), 1);
-    }
-
-    #[test]
     fn parse_invalid_error() {
         let mut reader = Reader::from("a");
         assert_eq!(
@@ -185,6 +173,13 @@ mod tests {
             })
         );
         assert_eq!(reader.position(), 0);
+    }
+
+    #[test]
+    fn parse_full() {
+        let mut reader = Reader::from("-");
+        assert_eq!(Range::parse(&mut reader), Ok(Range::Full));
+        assert_eq!(reader.position(), 1);
     }
 
     #[test]
@@ -275,5 +270,6 @@ mod tests {
         assert_eq!(Range::From(1).to_string(), "from 2 to end");
         assert_eq!(Range::FromTo(1, 3).to_string(), "from 2 to 3");
         assert_eq!(Range::To(3).to_string(), "from start to 3");
+        assert_eq!(Range::Full.to_string(), "from start to end");
     }
 }

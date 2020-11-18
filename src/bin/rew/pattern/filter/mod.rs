@@ -1,5 +1,5 @@
 use crate::pattern::char::{AsChar, Char};
-use crate::pattern::number::parse_usize;
+use crate::pattern::number::parse_number;
 use crate::pattern::padding::Padding;
 use crate::pattern::range::Range;
 use crate::pattern::reader::Reader;
@@ -68,7 +68,7 @@ impl Filter {
         let position = reader.position();
 
         if let Some('0'..='9') = reader.peek_char() {
-            let number = parse_usize(reader)?;
+            let number = parse_number(reader)?;
             if number > 0 {
                 Ok(Filter::RegexCapture(number))
             } else {
