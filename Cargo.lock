@@ -97,6 +97,7 @@ dependencies = [
  "os_str_bytes",
  "strsim",
  "termcolor",
+ "terminal_size",
  "textwrap",
  "unicode-width",
  "vec_map",
@@ -592,11 +593,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "terminal_size"
+version = "0.1.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9a14cd9f8c72704232f0bfc8455c0e861f0ad4eb60cc9ec8a170e231414c1e13"
+dependencies = [
+ "libc",
+ "winapi",
+]
+
+[[package]]
 name = "textwrap"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "203008d98caf094106cfaba70acfed15e18ed3ddb7d94e49baec153a2b462789"
 dependencies = [
+ "terminal_size",
  "unicode-width",
 ]
 

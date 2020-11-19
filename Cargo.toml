@@ -8,7 +8,7 @@ edition = "2018"
 
 [dependencies]
 atty = "0.2.14"
-clap = "3.0.0-beta.1"
+clap = { version = "3.0.0-beta.2", features = ["wrap_help"] }
 fs_extra = "1.2.0"
 indoc = "1.0"
 lazy_static = "1.4.0"
