@@ -105,7 +105,7 @@ mod tests {
     use super::*;
     use crate::pattern::filter::Filter;
     use crate::pattern::parse::Parsed;
-    use crate::pattern::range::Range;
+    use crate::pattern::range::IndexRange;
     use crate::pattern::substitution::Substitution;
     use crate::pattern::testing::{make_eval_context, make_parsed};
     use crate::utils::AnyString;
@@ -296,7 +296,7 @@ mod tests {
                 make_parsed(Item::Constant(String::from("prefix_"))),
                 make_parsed(Item::Expression(vec![
                     make_parsed(Filter::BaseName),
-                    make_parsed(Filter::Substring(Range::To(3))),
+                    make_parsed(Filter::Substring(IndexRange::new(0, Some(2)))),
                 ])),
                 make_parsed(Item::Constant(String::from("_"))),
                 make_parsed(Item::Expression(vec![make_parsed(Filter::LocalCounter)])),

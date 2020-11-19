@@ -194,7 +194,6 @@ Canonical path `A` works similarly to `h` but has some differences:
 | ------ | ------------------------------------------------- |
 | `nA-B` | Substring from index `A` to `B`.<br/>Indices start from 1 and are both inclusive. |
 | `nA-`  | Substring from index `A` to end.                  |
-| `n-B`  | Substring from start to index `B`.                |
 | `nA`   | Character at index `A`.<br/>Equivalent to `nA-A`. |
 | `N`    | Same as `n` but with backward indexing.           |
 
@@ -206,8 +205,6 @@ Examples:
 | `abcde` |  `N2-3` | `cd`   |
 | `abcde` |  `n2-`  | `bcde` |
 | `abcde` |  `N2-`  | `abcd` |
-| `abcde` |  `n-2`  | `ab`   |
-| `abcde` |  `N-2`  | `de`   |
 | `abcde` |  `n2`   | `b`    |
 | `abcde` |  `N2`   | `d`    |
 
@@ -291,12 +288,15 @@ Examples:
 
 ### :infinity: Generators
 
-| Filter | Description             |
-| ------ | ----------------------- |
+| Filter | Description                                        |
+| ------ | -------------------------------------------------- |
 | `*N:V` | Repeat `N` times `V`.<br/>Any other non-digit than `:` can be also used as a delimiter. |
-| `c`    | Local counter           |
-| `C`    | Global counter          |
-| `u`    | Randomly generated UUID |
+| `c`    | Local counter                                      |
+| `C`    | Global counter                                     |
+| `uA-B` | Random number from interval \[`A`, `B`]            |
+| `uA-`  | Random number from interval \[`A`, 2<sup>64</sup>) |
+| `u`    | Random number from interval \[0, 2<sup>64</sup>)   |
+| `U`    | Random UUID                                        |
 
 Examples:
 
@@ -305,7 +305,8 @@ Examples:
 | `*3:ab` | `ababab`                                          |
 | `c`     | *(see below)*                                     |
 | `C`     | *(see below)*                                     |
-| `u`     | `5eefc76d-0ca1-4631-8fd0-62eeb401c432` *(random)* |
+| `u0-99` | *(random number between 0-99)*                     |
+| `U`     | `5eefc76d-0ca1-4631-8fd0-62eeb401c432` *(random)* |
 
 - Global counter `C` is incremented for every input value.
 - Local counter `c` is incremented per parent directory (assuming input value is a path).
@@ -455,7 +456,7 @@ find -name '*.txt'  | rew -b "$HOME/Backup/{f}"  | cpb -v
 Same thing but we append randomly generated suffix after base name to avoid name collisions.
 
 ```bash
-find -name '*.txt'  | rew -b "$HOME/Backup/{b}_{u}.{e}"  | cpb -v
+find -name '*.txt'  | rew -b "$HOME/Backup/{b}_{U}.{e}"  | cpb -v
 ```
 
 Flatten directory structure `./dir/subdir/` to `./dir_subdir/`.

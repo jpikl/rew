@@ -5,6 +5,10 @@ use num_traits::PrimInt;
 use std::convert::TryFrom;
 use std::fmt::{Debug, Display};
 
+pub const fn get_bits<T>() -> usize {
+    std::mem::size_of::<T>() * 8
+}
+
 pub fn parse_number<T, E>(reader: &mut Reader<Char>) -> Result<T>
 where
     T: TryFrom<u32, Error = E> + PrimInt + Display,
@@ -68,6 +72,15 @@ fn parse_u32<T: TryFrom<u32, Error = E>, E: Debug>(value: u32) -> T {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn gets_bits() {
+        assert_eq!(get_bits::<u8>(), 8);
+        assert_eq!(get_bits::<u16>(), 16);
+        assert_eq!(get_bits::<u32>(), 32);
+        assert_eq!(get_bits::<u64>(), 64);
+        assert_eq!(get_bits::<u128>(), 128);
+    }
 
     #[test]
     fn parse_empty_error() {

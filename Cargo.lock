@@ -528,6 +528,7 @@ dependencies = [
  "ntest",
  "num-traits",
  "predicates",
+ "rand",
  "regex",
  "same-file",
  "termcolor",

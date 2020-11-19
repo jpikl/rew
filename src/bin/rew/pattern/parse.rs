@@ -1,5 +1,5 @@
 use crate::pattern::char::{Char, EscapeSequence};
-use crate::pattern::symbols::{EXPR_END, EXPR_START, PIPE};
+use crate::pattern::symbols::{EXPR_END, EXPR_START, PIPE, RANGE};
 use crate::utils::{AnyString, HasRange};
 use std::ops::Range;
 use std::{error, fmt, result};
@@ -25,6 +25,7 @@ pub enum ErrorKind {
     ExpectedFilterOrExprEnd,
     ExpectedPipeOrExprEnd,
     ExpectedRange,
+    ExpectedRangeDelimiter(Option<Char>),
     ExpectedRegex,
     ExpectedRepetition,
     ExpectedSubstitution,
@@ -34,7 +35,7 @@ pub enum ErrorKind {
     PipeOutsideExpr,
     RangeIndexZero,
     RangeInvalid(String),
-    RangeStartOverEnd(usize, usize),
+    RangeStartOverEnd(String, String),
     RegexCaptureZero,
     RegexInvalid(AnyString),
     RepetitionDigitDelimiter(char),
@@ -74,6 +75,19 @@ impl fmt::Display for ErrorKind {
                 write!(formatter, "Expected '{}' or closing '{}'", PIPE, EXPR_END)
             }
             Self::ExpectedRange => write!(formatter, "Filter requires range 'A-B' as a parameter"),
+            Self::ExpectedRangeDelimiter(None) => {
+                write!(formatter, "Expected range delimiter '{}'", RANGE)
+            }
+            Self::ExpectedRangeDelimiter(Some(Char::Raw(value))) => write!(
+                formatter,
+                "Expected range delimiter '{}' but got '{}'",
+                RANGE, value
+            ),
+            Self::ExpectedRangeDelimiter(Some(Char::Escaped(_, sequence))) => write!(
+                formatter,
+                "Expected range delimiter '{}' but got escape sequence '{}{}'",
+                RANGE, sequence[0], sequence[1]
+            ),
             Self::ExpectedRegex => write!(
                 formatter,
                 "Filter requires regular expression as a parameter"
@@ -212,6 +226,18 @@ mod tests {
             "Filter requires range 'A-B' as a parameter"
         );
         assert_eq!(
+            ErrorKind::ExpectedRangeDelimiter(None).to_string(),
+            "Expected range delimiter '-'"
+        );
+        assert_eq!(
+            ErrorKind::ExpectedRangeDelimiter(Some(Char::Raw('x'))).to_string(),
+            "Expected range delimiter '-' but got 'x'"
+        );
+        assert_eq!(
+            ErrorKind::ExpectedRangeDelimiter(Some(Char::Escaped('x', ['#', 'y']))).to_string(),
+            "Expected range delimiter '-' but got escape sequence '#y'"
+        );
+        assert_eq!(
             ErrorKind::ExpectedRegex.to_string(),
             "Filter requires regular expression as a parameter"
         );
@@ -252,7 +278,7 @@ mod tests {
             "Invalid range 'abc'"
         );
         assert_eq!(
-            ErrorKind::RangeStartOverEnd(2, 1).to_string(),
+            ErrorKind::RangeStartOverEnd(String::from("2"), String::from("1")).to_string(),
             "Range start (2) is greater than end (1)"
         );
         assert_eq!(

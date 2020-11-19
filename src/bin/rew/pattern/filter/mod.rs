@@ -1,7 +1,7 @@
 use crate::pattern::char::{AsChar, Char};
 use crate::pattern::number::parse_number;
 use crate::pattern::padding::Padding;
-use crate::pattern::range::Range;
+use crate::pattern::range::{IndexRange, NumberInterval};
 use crate::pattern::reader::Reader;
 use crate::pattern::regex::RegexHolder;
 use crate::pattern::repetition::Repetition;
@@ -33,8 +33,8 @@ pub enum Filter {
     ExtensionWithDot,
 
     // Substring filters
-    Substring(Range),
-    SubstringBackward(Range),
+    Substring(IndexRange),
+    SubstringBackward(IndexRange),
 
     // Replace filters
     ReplaceFirst(Substitution<String>),
@@ -60,7 +60,8 @@ pub enum Filter {
     Repeat(Repetition),
     LocalCounter,
     GlobalCounter,
-    Uuid,
+    RandomNumber(NumberInterval),
+    RandomUuid,
 }
 
 impl Filter {
@@ -91,8 +92,8 @@ impl Filter {
                 'E' => Ok(Self::ExtensionWithDot),
 
                 // Substring filters
-                'n' => Ok(Self::Substring(Range::parse(reader)?)),
-                'N' => Ok(Self::SubstringBackward(Range::parse(reader)?)),
+                'n' => Ok(Self::Substring(IndexRange::parse(reader)?)),
+                'N' => Ok(Self::SubstringBackward(IndexRange::parse(reader)?)),
 
                 // Replace filters
                 'r' => Ok(Self::ReplaceFirst(Substitution::parse_string(reader)?)),
@@ -117,7 +118,8 @@ impl Filter {
                 '*' => Ok(Self::Repeat(Repetition::parse(reader)?)),
                 'c' => Ok(Self::LocalCounter),
                 'C' => Ok(Self::GlobalCounter),
-                'u' => Ok(Self::Uuid),
+                'u' => Ok(Self::RandomNumber(NumberInterval::parse(reader)?)),
+                'U' => Ok(Self::RandomUuid),
 
                 _ => Err(parse::Error {
                     kind: parse::ErrorKind::UnknownFilter(char.clone()),
@@ -146,8 +148,10 @@ impl Filter {
             Self::ExtensionWithDot => path::get_extension_with_dot(value),
 
             // Substring filters
-            Self::Substring(range) => substr::get_forward(value, &range),
-            Self::SubstringBackward(range) => substr::get_backward(value, &range),
+            Self::Substring(range) => substr::get_forward(value, range.start(), range.length()),
+            Self::SubstringBackward(range) => {
+                substr::get_backward(value, range.start(), range.length())
+            }
 
             // Replace filters
             Self::ReplaceFirst(Substitution {
@@ -198,10 +202,13 @@ impl Filter {
             })) => format::right_pad_repeat(value, &padding, *count),
 
             // Generators
-            Self::Repeat(Repetition { value, count }) => generate::repeat(value, *count),
+            Self::Repeat(Repetition { value, count }) => generate::repetition(value, *count),
             Self::LocalCounter => generate::counter(context.local_counter),
             Self::GlobalCounter => generate::counter(context.global_counter),
-            Self::Uuid => generate::uuid(),
+            Self::RandomNumber(interval) => {
+                generate::random_number(interval.start(), interval.end())
+            }
+            Self::RandomUuid => generate::random_uuid(),
         }
     }
 }
@@ -221,8 +228,10 @@ impl fmt::Display for Filter {
             Self::ExtensionWithDot => write!(formatter, "Extension with dot"),
 
             // Substring filters
-            Self::Substring(range) => write!(formatter, "Substring {}", range),
-            Self::SubstringBackward(range) => write!(formatter, "Substring (backward) {}", range),
+            Self::Substring(range) => write!(formatter, "Substring from {}", range),
+            Self::SubstringBackward(range) => {
+                write!(formatter, "Substring (backward) from {}", range)
+            }
 
             // Replace filters
             Self::ReplaceFirst(substitution) => write!(formatter, "Replace first {}", substitution),
@@ -262,7 +271,8 @@ impl fmt::Display for Filter {
             Self::Repeat(repetition) => write!(formatter, "Repeat {}", repetition),
             Self::LocalCounter => write!(formatter, "Local counter"),
             Self::GlobalCounter => write!(formatter, "Global counter"),
-            Self::Uuid => write!(formatter, "Randomly generated UUID"),
+            Self::RandomNumber(interval) => write!(formatter, "Random number from {}", interval),
+            Self::RandomUuid => write!(formatter, "Random UUID"),
         }
     }
 }
@@ -331,10 +341,18 @@ mod tests {
                 range: 1..1,
             }),
         );
-        assert_eq!(parse("n5"), Ok(Filter::Substring(Range::FromTo(4, 5))));
-        assert_eq!(parse("n2-10"), Ok(Filter::Substring(Range::FromTo(1, 10))));
-        assert_eq!(parse("n2-"), Ok(Filter::Substring(Range::From(1))));
-        assert_eq!(parse("n-10"), Ok(Filter::Substring(Range::To(10))));
+        assert_eq!(
+            parse("n2-10"),
+            Ok(Filter::Substring(IndexRange::new(1, Some(9))))
+        );
+        assert_eq!(
+            parse("n2-"),
+            Ok(Filter::Substring(IndexRange::new(1, None)))
+        );
+        assert_eq!(
+            parse("n2"),
+            Ok(Filter::Substring(IndexRange::new(1, Some(1))))
+        );
     }
 
     #[test]
@@ -347,15 +365,17 @@ mod tests {
             }),
         );
         assert_eq!(
-            parse("N5"),
-            Ok(Filter::SubstringBackward(Range::FromTo(4, 5)))
+            parse("N2-10"),
+            Ok(Filter::SubstringBackward(IndexRange::new(1, Some(9))))
         );
         assert_eq!(
-            parse("N2-10"),
-            Ok(Filter::SubstringBackward(Range::FromTo(1, 10)))
+            parse("N2-"),
+            Ok(Filter::SubstringBackward(IndexRange::new(1, None)))
         );
-        assert_eq!(parse("N2-"), Ok(Filter::SubstringBackward(Range::From(1))));
-        assert_eq!(parse("N-10"), Ok(Filter::SubstringBackward(Range::To(10))));
+        assert_eq!(
+            parse("N2"),
+            Ok(Filter::SubstringBackward(IndexRange::new(1, Some(1))))
+        );
     }
 
     #[test]
@@ -617,8 +637,16 @@ mod tests {
     }
 
     #[test]
-    fn parse_uuid() {
-        assert_eq!(parse("u"), Ok(Filter::Uuid));
+    fn parse_random_number() {
+        assert_eq!(
+            parse("u1-10"),
+            Ok(Filter::RandomNumber(NumberInterval::new(1, Some(10))))
+        );
+    }
+
+    #[test]
+    fn parse_random_uuid() {
+        assert_eq!(parse("U"), Ok(Filter::RandomUuid));
     }
 
     #[test]
@@ -738,7 +766,7 @@ mod tests {
     #[test]
     fn eval_substring() {
         assert_eq!(
-            Filter::Substring(Range::FromTo(1, 3))
+            Filter::Substring(IndexRange::new(1, Some(2)))
                 .eval(String::from("abcde"), &make_eval_context()),
             Ok(String::from("bc"))
         );
@@ -747,7 +775,7 @@ mod tests {
     #[test]
     fn eval_substring_backward() {
         assert_eq!(
-            Filter::SubstringBackward(Range::FromTo(1, 3))
+            Filter::SubstringBackward(IndexRange::new(1, Some(2)))
                 .eval(String::from("abcde"), &make_eval_context()),
             Ok(String::from("cd"))
         );
@@ -929,8 +957,17 @@ mod tests {
     }
 
     #[test]
-    fn eval_uuid() {
-        assert_ok_uuid(Filter::Uuid.eval(String::new(), &make_eval_context()));
+    fn eval_random_number() {
+        assert_eq!(
+            Filter::RandomNumber(NumberInterval::new(0, Some(0)))
+                .eval(String::new(), &make_eval_context()),
+            Ok(String::from("0"))
+        );
+    }
+
+    #[test]
+    fn eval_random_uuid() {
+        assert_ok_uuid(Filter::RandomUuid.eval(String::new(), &make_eval_context()));
     }
 
     #[test]
@@ -945,12 +982,12 @@ mod tests {
         assert_eq!(Filter::Extension.to_string(), "Extension");
         assert_eq!(Filter::ExtensionWithDot.to_string(), "Extension with dot");
         assert_eq!(
-            Filter::Substring(Range::FromTo(1, 3)).to_string(),
-            "Substring from 2 to 3"
+            Filter::Substring(IndexRange::new(1, Some(2))).to_string(),
+            "Substring from 2..3"
         );
         assert_eq!(
-            Filter::SubstringBackward(Range::FromTo(1, 3)).to_string(),
-            "Substring (backward) from 2 to 3"
+            Filter::SubstringBackward(IndexRange::new(1, Some(2))).to_string(),
+            "Substring (backward) from 2..3"
         );
         assert_eq!(
             Filter::ReplaceFirst(Substitution {
@@ -1035,6 +1072,10 @@ mod tests {
         );
         assert_eq!(Filter::LocalCounter.to_string(), "Local counter");
         assert_eq!(Filter::GlobalCounter.to_string(), "Global counter");
-        assert_eq!(Filter::Uuid.to_string(), "Randomly generated UUID");
+        assert_eq!(
+            Filter::RandomNumber(NumberInterval::new(0, Some(99))).to_string(),
+            "Random number from [0, 99]"
+        );
+        assert_eq!(Filter::RandomUuid.to_string(), "Random UUID");
     }
 }

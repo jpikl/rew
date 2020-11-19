@@ -1,78 +1,162 @@
 use crate::pattern::char::Char;
-use crate::pattern::number::parse_number;
+use crate::pattern::number::{get_bits, parse_number};
 use crate::pattern::parse::{Error, ErrorKind, Result};
 use crate::pattern::reader::Reader;
 use crate::pattern::symbols::RANGE;
+use num_traits::PrimInt;
 use std::fmt;
 
-#[derive(Debug, PartialEq)]
-pub enum Range {
-    From(usize),
-    FromTo(usize, usize),
-    To(usize),
-    Full,
+pub type Number = u64;
+pub type Index = usize;
+
+pub trait RangeBound: PrimInt {
+    const REQUIRES_DELIMTER: bool;
+
+    fn parse(reader: &mut Reader<Char>) -> Result<Self>;
+
+    fn unparse(self) -> String;
 }
 
-impl Range {
-    pub fn start(&self) -> Option<usize> {
-        match self {
-            Self::From(start) => Some(*start),
-            Self::FromTo(start, _) => Some(*start),
-            Self::To(_) | Self::Full => None,
+impl RangeBound for Number {
+    const REQUIRES_DELIMTER: bool = true;
+
+    fn parse(reader: &mut Reader<Char>) -> Result<Self> {
+        parse_number(reader)
+    }
+
+    fn unparse(self) -> String {
+        self.to_string()
+    }
+}
+
+impl RangeBound for Index {
+    const REQUIRES_DELIMTER: bool = false;
+
+    fn parse(reader: &mut Reader<Char>) -> Result<Self> {
+        let position = reader.position();
+        let index: Index = parse_number(reader)?;
+
+        if index >= 1 {
+            Ok(index - 1)
+        } else {
+            Err(Error {
+                kind: ErrorKind::RangeIndexZero,
+                range: position..reader.position(),
+            })
         }
     }
 
-    pub fn length(&self) -> Option<usize> {
-        match self {
-            Self::From(_) | Self::Full => None,
-            Self::FromTo(start, end) => {
-                if start > end {
-                    panic!("IndexRange start ({}) > end ({})", start, end)
-                }
-                Some(end - start)
-            }
-            Self::To(end) => Some(*end),
-        }
+    fn unparse(self) -> String {
+        (self + 1).to_string()
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct NumberInterval(Range<Number>);
+
+#[derive(Debug, PartialEq)]
+pub struct IndexRange(Range<Index>);
+
+#[derive(Debug, PartialEq)]
+pub struct Range<T: RangeBound>(T, Option<T>);
+
+impl NumberInterval {
+    #[cfg(test)]
+    pub fn new(start: Number, end: Option<Number>) -> Self {
+        Self(Range(start, end))
     }
 
     pub fn parse(reader: &mut Reader<Char>) -> Result<Self> {
-        // For users, indices start from 1, end is inclusive.
-        // Internally, indices start from 0, end is exclusive.
+        if reader.peek().is_some() {
+            Range::parse(reader).map(Self)
+        } else {
+            Ok(Self(Range(0, None)))
+        }
+    }
 
+    pub fn start(&self) -> Number {
+        (self.0).0
+    }
+
+    pub fn end(&self) -> Option<Number> {
+        (self.0).1
+    }
+}
+
+impl IndexRange {
+    #[cfg(test)]
+    pub fn new(start: Index, end: Option<Index>) -> Self {
+        Self(Range(start, end))
+    }
+
+    pub fn parse(reader: &mut Reader<Char>) -> Result<Self> {
+        Range::parse(reader).map(Self)
+    }
+
+    pub fn start(&self) -> Index {
+        (self.0).0
+    }
+
+    pub fn length(&self) -> Option<Index> {
+        (self.0).1.map(|end| {
+            let start = self.start();
+            assert!(end >= start, "IndexRange start {} > end {}", start, end);
+            end - start + 1
+        })
+    }
+}
+
+impl fmt::Display for NumberInterval {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        match &self.0 {
+            Range(start, Some(end)) => write!(formatter, "[{}, {}]", start, end),
+            Range(start, None) => write!(formatter, "[{}, 2^{})", start, get_bits::<Number>()),
+        }
+    }
+}
+
+impl fmt::Display for IndexRange {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        match &self.0 {
+            Range(start, Some(end)) => write!(formatter, "{}..{}", start + 1, end + 1),
+            Range(start, None) => write!(formatter, "{}..", start + 1),
+        }
+    }
+}
+
+impl<T: RangeBound> Range<T> {
+    pub fn parse(reader: &mut Reader<Char>) -> Result<Self> {
         match reader.peek_char() {
             Some('0'..='9') => {
                 let position = reader.position();
-                let start = parse_index(reader)?;
+                let start = T::parse(reader)?;
 
                 if let Some(RANGE) = reader.peek_char() {
                     reader.seek();
 
                     if let Some('0'..='9') = reader.peek_char() {
-                        let end = parse_index(reader)?;
+                        let end = T::parse(reader)?;
                         if start > end {
                             Err(Error {
-                                kind: ErrorKind::RangeStartOverEnd(start + 1, end + 1),
+                                kind: ErrorKind::RangeStartOverEnd(start.unparse(), end.unparse()),
                                 range: position..reader.position(),
                             })
                         } else {
-                            Ok(Range::FromTo(start, end + 1)) // Inclusive end -> exclusive end
+                            Ok(Range(start, Some(end)))
                         }
                     } else {
-                        Ok(Range::From(start))
+                        Ok(Range(start, None))
                     }
-                } else {
-                    Ok(Range::FromTo(start, start + 1))
-                }
-            }
+                } else if T::REQUIRES_DELIMTER {
+                    let position = reader.position();
+                    let char = reader.read();
 
-            Some(RANGE) => {
-                reader.seek();
-
-                if let Some('0'..='9') = reader.peek_char() {
-                    let end = parse_index(reader)?;
-                    Ok(Range::To(end + 1)) // Inclusive end -> exclusive end
+                    Err(Error {
+                        kind: ErrorKind::ExpectedRangeDelimiter(char.map(Clone::clone)),
+                        range: position..reader.position(),
+                    })
                 } else {
-                    Ok(Range::Full)
+                    Ok(Range(start, Some(start)))
                 }
             }
 
@@ -89,187 +173,337 @@ impl Range {
     }
 }
 
-fn parse_index(reader: &mut Reader<Char>) -> Result<usize> {
-    let position = reader.position();
-    let index: usize = parse_number(reader)?;
-
-    if index >= 1 {
-        Ok(index - 1)
-    } else {
-        Err(Error {
-            kind: ErrorKind::RangeIndexZero,
-            range: position..reader.position(),
-        })
-    }
-}
-
-impl fmt::Display for Range {
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            // For users, indices start from 1, end is inclusive.
-            // Internally, indices start from 0, end is exclusive.
-            Self::From(start) => write!(formatter, "from {} to end", start + 1),
-            Self::FromTo(start, end) => write!(formatter, "from {} to {}", start + 1, end),
-            Self::To(end) => write!(formatter, "from start to {}", end),
-            Self::Full => write!(formatter, "from start to end"),
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    #[test]
-    fn start() {
-        assert_eq!(Range::From(0).start(), Some(0));
-        assert_eq!(Range::From(1).start(), Some(1));
-        assert_eq!(Range::FromTo(0, 0).start(), Some(0));
-        assert_eq!(Range::FromTo(0, 1).start(), Some(0));
-        assert_eq!(Range::FromTo(1, 1).start(), Some(1));
-        assert_eq!(Range::To(0).start(), None);
-        assert_eq!(Range::To(1).start(), None);
-        assert_eq!(Range::Full.start(), None);
+    mod number {
+        use super::*;
+
+        #[test]
+        fn parse_zere() {
+            let mut reader = Reader::from("0abc");
+            assert_eq!(Number::parse(&mut reader), Ok(0));
+            assert_eq!(reader.position(), 1);
+        }
+
+        #[test]
+        fn parse_positive() {
+            let mut reader = Reader::from("123abc");
+            assert_eq!(Number::parse(&mut reader), Ok(123));
+            assert_eq!(reader.position(), 3);
+        }
+
+        #[test]
+        fn parse_invalid() {
+            let mut reader = Reader::from("abc");
+            assert_eq!(
+                Number::parse(&mut reader),
+                Err(Error {
+                    kind: ErrorKind::ExpectedNumber,
+                    range: 0..3
+                })
+            );
+            assert_eq!(reader.position(), 0);
+        }
+
+        #[test]
+        fn unparse() {
+            assert_eq!((123 as Number).unparse(), String::from("123"));
+        }
     }
 
-    #[test]
-    fn length() {
-        assert_eq!(Range::From(0).length(), None);
-        assert_eq!(Range::FromTo(0, 0).length(), Some(0));
-        assert_eq!(Range::FromTo(0, 1).length(), Some(1));
-        assert_eq!(Range::FromTo(1, 1).length(), Some(0));
-        assert_eq!(Range::To(0).length(), Some(0));
-        assert_eq!(Range::To(1).length(), Some(1));
-        assert_eq!(Range::Full.length(), None);
+    mod index {
+        use super::*;
+
+        #[test]
+        fn parse_zero() {
+            let mut reader = Reader::from("0abc");
+            assert_eq!(
+                Index::parse(&mut reader),
+                Err(Error {
+                    kind: ErrorKind::RangeIndexZero,
+                    range: 0..1
+                })
+            );
+            assert_eq!(reader.position(), 1);
+        }
+
+        #[test]
+        fn parse_positive() {
+            let mut reader = Reader::from("123abc");
+            assert_eq!(Index::parse(&mut reader), Ok(122));
+            assert_eq!(reader.position(), 3);
+        }
+
+        #[test]
+        fn parse_invalid() {
+            let mut reader = Reader::from("abc");
+            assert_eq!(
+                Index::parse(&mut reader),
+                Err(Error {
+                    kind: ErrorKind::ExpectedNumber,
+                    range: 0..3
+                })
+            );
+            assert_eq!(reader.position(), 0);
+        }
+
+        #[test]
+        fn unparse() {
+            assert_eq!((122 as Index).unparse(), String::from("123"));
+        }
     }
 
-    #[test]
-    #[should_panic]
-    fn length_invalid() {
-        Range::FromTo(1, 0).length();
+    mod number_interval {
+        use super::*;
+
+        #[test]
+        fn start() {
+            assert_eq!(NumberInterval::new(0, None).start(), 0);
+            assert_eq!(NumberInterval::new(1, None).start(), 1);
+        }
+
+        #[test]
+        fn length() {
+            assert_eq!(NumberInterval::new(0, None).end(), None);
+            assert_eq!(NumberInterval::new(0, Some(0)).end(), Some(0));
+            assert_eq!(NumberInterval::new(0, Some(1)).end(), Some(1));
+        }
+
+        #[test]
+        fn display() {
+            assert_eq!(NumberInterval::new(1, None).to_string(), "[1, 2^64)");
+            assert_eq!(NumberInterval::new(1, Some(2)).to_string(), "[1, 2]");
+        }
+
+        #[test]
+        fn parse_empty() {
+            let mut reader = Reader::from("");
+            assert_eq!(
+                NumberInterval::parse(&mut reader),
+                Ok(NumberInterval::new(0, None))
+            );
+            assert_eq!(reader.position(), 0);
+        }
+
+        #[test]
+        fn parse_invalid_error() {
+            let mut reader = Reader::from("-");
+            assert_eq!(
+                NumberInterval::parse(&mut reader),
+                Err(Error {
+                    kind: ErrorKind::RangeInvalid(String::from("-")),
+                    range: 0..1,
+                })
+            );
+            assert_eq!(reader.position(), 0);
+        }
+
+        #[test]
+        fn parse_start() {
+            let mut reader = Reader::from("0-");
+            assert_eq!(
+                NumberInterval::parse(&mut reader),
+                Ok(NumberInterval::new(0, None))
+            );
+            assert_eq!(reader.position(), 2);
+        }
+
+        #[test]
+        fn parse_start_end() {
+            let mut reader = Reader::from("0-1");
+            assert_eq!(
+                NumberInterval::parse(&mut reader),
+                Ok(NumberInterval::new(0, Some(1)))
+            );
+            assert_eq!(reader.position(), 3);
+        }
+
+        #[test]
+        fn parse_start_over_end_error() {
+            let mut reader = Reader::from("1-0");
+            assert_eq!(
+                NumberInterval::parse(&mut reader),
+                Err(Error {
+                    kind: ErrorKind::RangeStartOverEnd(String::from("1"), String::from("0")),
+                    range: 0..3,
+                })
+            );
+            assert_eq!(reader.position(), 3);
+        }
+
+        #[test]
+        fn parse_start_equals_end() {
+            let mut reader = Reader::from("0-0");
+            assert_eq!(
+                NumberInterval::parse(&mut reader),
+                Ok(NumberInterval::new(0, Some(0)))
+            );
+            assert_eq!(reader.position(), 3);
+        }
+
+        #[test]
+        fn parse_no_delimiter_error() {
+            let mut reader = Reader::from("1");
+            assert_eq!(
+                NumberInterval::parse(&mut reader),
+                Err(Error {
+                    kind: ErrorKind::ExpectedRangeDelimiter(None),
+                    range: 1..1
+                })
+            );
+            assert_eq!(reader.position(), 1);
+        }
+
+        #[test]
+        fn parse_no_delimiter_remaining_error() {
+            let mut reader = Reader::from("1ab");
+            assert_eq!(
+                NumberInterval::parse(&mut reader),
+                Err(Error {
+                    kind: ErrorKind::ExpectedRangeDelimiter(Some(Char::Raw('a'))),
+                    range: 1..2
+                })
+            );
+            assert_eq!(reader.position(), 2);
+        }
     }
 
-    #[test]
-    fn parse_empty_error() {
-        let mut reader = Reader::from("");
-        assert_eq!(
-            Range::parse(&mut reader),
-            Err(Error {
-                kind: ErrorKind::ExpectedRange,
-                range: 0..0,
-            })
-        );
-        assert_eq!(reader.position(), 0);
-    }
+    mod index_range {
+        use super::*;
 
-    #[test]
-    fn parse_invalid_error() {
-        let mut reader = Reader::from("a");
-        assert_eq!(
-            Range::parse(&mut reader),
-            Err(Error {
-                kind: ErrorKind::RangeInvalid(String::from("a")),
-                range: 0..1,
-            })
-        );
-        assert_eq!(reader.position(), 0);
-    }
+        #[test]
+        fn start() {
+            assert_eq!(IndexRange::new(0, None).start(), 0);
+            assert_eq!(IndexRange::new(1, None).start(), 1);
+        }
 
-    #[test]
-    fn parse_full() {
-        let mut reader = Reader::from("-");
-        assert_eq!(Range::parse(&mut reader), Ok(Range::Full));
-        assert_eq!(reader.position(), 1);
-    }
+        #[test]
+        fn length() {
+            assert_eq!(IndexRange::new(0, None).length(), None);
+            assert_eq!(IndexRange::new(1, None).length(), None);
+            assert_eq!(IndexRange::new(0, Some(0)).length(), Some(1));
+            assert_eq!(IndexRange::new(0, Some(1)).length(), Some(2));
+            assert_eq!(IndexRange::new(1, Some(1)).length(), Some(1));
+        }
 
-    #[test]
-    fn parse_start_zero_error() {
-        let mut reader = Reader::from("0-");
-        assert_eq!(
-            Range::parse(&mut reader),
-            Err(Error {
-                kind: ErrorKind::RangeIndexZero,
-                range: 0..1,
-            })
-        );
-        assert_eq!(reader.position(), 1);
-    }
+        #[test]
+        fn display() {
+            assert_eq!(IndexRange::new(1, None).to_string(), "2..");
+            assert_eq!(IndexRange::new(1, Some(2)).to_string(), "2..3");
+        }
 
-    #[test]
-    fn parse_start() {
-        let mut reader = Reader::from("1-");
-        assert_eq!(Range::parse(&mut reader), Ok(Range::From(0)));
-        assert_eq!(reader.position(), 2);
-    }
+        #[test]
+        fn parse_empty_error() {
+            let mut reader = Reader::from("");
+            assert_eq!(
+                IndexRange::parse(&mut reader),
+                Err(Error {
+                    kind: ErrorKind::ExpectedRange,
+                    range: 0..0,
+                })
+            );
+            assert_eq!(reader.position(), 0);
+        }
 
-    #[test]
-    fn parse_end_zero_error() {
-        let mut reader = Reader::from("-0");
-        assert_eq!(
-            Range::parse(&mut reader),
-            Err(Error {
-                kind: ErrorKind::RangeIndexZero,
-                range: 1..2,
-            })
-        );
-        assert_eq!(reader.position(), 2);
-    }
+        #[test]
+        fn parse_invalid_error() {
+            let mut reader = Reader::from("-");
+            assert_eq!(
+                IndexRange::parse(&mut reader),
+                Err(Error {
+                    kind: ErrorKind::RangeInvalid(String::from("-")),
+                    range: 0..1,
+                })
+            );
+            assert_eq!(reader.position(), 0);
+        }
 
-    #[test]
-    fn parse_end() {
-        let mut reader = Reader::from("-1");
-        assert_eq!(Range::parse(&mut reader), Ok(Range::To(1)));
-        assert_eq!(reader.position(), 2);
-    }
+        #[test]
+        fn parse_start_zero_error() {
+            let mut reader = Reader::from("0-");
+            assert_eq!(
+                IndexRange::parse(&mut reader),
+                Err(Error {
+                    kind: ErrorKind::RangeIndexZero,
+                    range: 0..1,
+                })
+            );
+            assert_eq!(reader.position(), 1);
+        }
 
-    #[test]
-    fn parse_start_over_end_error() {
-        let mut reader = Reader::from("2-1");
-        assert_eq!(
-            Range::parse(&mut reader),
-            Err(Error {
-                kind: ErrorKind::RangeStartOverEnd(2, 1),
-                range: 0..3,
-            })
-        );
-        assert_eq!(reader.position(), 3);
-    }
+        #[test]
+        fn parse_start() {
+            let mut reader = Reader::from("1-");
+            assert_eq!(IndexRange::parse(&mut reader), Ok(IndexRange::new(0, None)));
+            assert_eq!(reader.position(), 2);
+        }
 
-    #[test]
-    fn parse_start_equals_end() {
-        let mut reader = Reader::from("1-1");
-        assert_eq!(Range::parse(&mut reader), Ok(Range::FromTo(0, 1)));
-        assert_eq!(reader.position(), 3);
-    }
+        #[test]
+        fn parse_start_end_zero_error() {
+            let mut reader = Reader::from("1-0");
+            assert_eq!(
+                IndexRange::parse(&mut reader),
+                Err(Error {
+                    kind: ErrorKind::RangeIndexZero,
+                    range: 2..3,
+                })
+            );
+            assert_eq!(reader.position(), 3);
+        }
 
-    #[test]
-    fn parse_start_equals_end_short() {
-        let mut reader = Reader::from("1");
-        assert_eq!(Range::parse(&mut reader), Ok(Range::FromTo(0, 1)));
-        assert_eq!(reader.position(), 1);
-    }
+        #[test]
+        fn parse_start_end() {
+            let mut reader = Reader::from("1-2");
+            assert_eq!(
+                IndexRange::parse(&mut reader),
+                Ok(IndexRange::new(0, Some(1)))
+            );
+            assert_eq!(reader.position(), 3);
+        }
 
-    #[test]
-    fn parse_start_below_end() {
-        let mut reader = Reader::from("1-2");
-        assert_eq!(Range::parse(&mut reader), Ok(Range::FromTo(0, 2)));
-        assert_eq!(reader.position(), 3);
-    }
+        #[test]
+        fn parse_start_over_end_error() {
+            let mut reader = Reader::from("2-1");
+            assert_eq!(
+                IndexRange::parse(&mut reader),
+                Err(Error {
+                    kind: ErrorKind::RangeStartOverEnd(String::from("2"), String::from("1")),
+                    range: 0..3,
+                })
+            );
+            assert_eq!(reader.position(), 3);
+        }
 
-    #[test]
-    fn parse_ignore_remaining_chars() {
-        let mut reader = Reader::from("1ab");
-        assert_eq!(Range::parse(&mut reader), Ok(Range::FromTo(0, 1)));
-        assert_eq!(reader.position(), 1);
-    }
+        #[test]
+        fn parse_start_equals_end() {
+            let mut reader = Reader::from("1-1");
+            assert_eq!(
+                IndexRange::parse(&mut reader),
+                Ok(IndexRange::new(0, Some(0)))
+            );
+            assert_eq!(reader.position(), 3);
+        }
 
-    #[test]
-    fn display() {
-        // For users, indices start from 1, end is inclusive.
-        // Internally, indices start from 0, end is exclusive.
-        assert_eq!(Range::From(1).to_string(), "from 2 to end");
-        assert_eq!(Range::FromTo(1, 3).to_string(), "from 2 to 3");
-        assert_eq!(Range::To(3).to_string(), "from start to 3");
-        assert_eq!(Range::Full.to_string(), "from start to end");
+        #[test]
+        fn parse_no_delimiter() {
+            let mut reader = Reader::from("1");
+            assert_eq!(
+                IndexRange::parse(&mut reader),
+                Ok(IndexRange::new(0, Some(0)))
+            );
+            assert_eq!(reader.position(), 1);
+        }
+
+        #[test]
+        fn parse_no_delimiter_ignore_remaining() {
+            let mut reader = Reader::from("1ab");
+            assert_eq!(
+                IndexRange::parse(&mut reader),
+                Ok(IndexRange::new(0, Some(0)))
+            );
+            assert_eq!(reader.position(), 1);
+        }
     }
 }

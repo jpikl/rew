@@ -1,16 +1,14 @@
 use crate::pattern::filter::error::Result;
-use crate::pattern::range::Range;
+use crate::pattern::range::Index;
 
-pub fn get_forward(mut value: String, range: &Range) -> Result {
-    if let Some(start) = range.start() {
-        if let Some((start, _)) = value.char_indices().nth(start) {
-            value.replace_range(..start, "");
-        } else {
-            value.clear();
-        }
+pub fn get_forward(mut value: String, start: Index, length: Option<Index>) -> Result {
+    if let Some((start, _)) = value.char_indices().nth(start) {
+        value.replace_range(..start, "");
+    } else {
+        value.clear();
     }
 
-    if let Some(length) = range.length() {
+    if let Some(length) = length {
         if let Some((end, _)) = value.char_indices().nth(length) {
             value.replace_range(end.., "");
         }
@@ -19,17 +17,16 @@ pub fn get_forward(mut value: String, range: &Range) -> Result {
     Ok(value)
 }
 
-pub fn get_backward(mut value: String, range: &Range) -> Result {
-    if let Some(start) = range.start() {
-        if start > 0 {
-            if let Some((start, _)) = value.char_indices().nth_back(start - 1) {
-                value.replace_range(start.., "");
-            } else {
-                value.clear();
-            }
+pub fn get_backward(mut value: String, start: Index, length: Option<Index>) -> Result {
+    if start > 0 {
+        if let Some((start, _)) = value.char_indices().nth_back(start - 1) {
+            value.replace_range(start.., "");
+        } else {
+            value.clear();
         }
     }
-    if let Some(length) = range.length() {
+
+    if let Some(length) = length {
         if length > 0 {
             if let Some((end, _)) = value.char_indices().nth_back(length - 1) {
                 value.replace_range(..end, "");
@@ -38,6 +35,7 @@ pub fn get_backward(mut value: String, range: &Range) -> Result {
             value.clear();
         }
     }
+
     Ok(value)
 }
 
@@ -47,16 +45,13 @@ mod tests {
 
     #[test]
     fn forward_from_empty() {
-        assert_eq!(
-            get_forward(String::new(), &Range::From(0)),
-            Ok(String::new())
-        );
+        assert_eq!(get_forward(String::new(), 0, None), Ok(String::new()));
     }
 
     #[test]
     fn forward_from_first() {
         assert_eq!(
-            get_forward(String::from("ábčd"), &Range::From(0)),
+            get_forward(String::from("ábčd"), 0, None),
             Ok(String::from("ábčd"))
         );
     }
@@ -64,7 +59,7 @@ mod tests {
     #[test]
     fn forward_from_last() {
         assert_eq!(
-            get_forward(String::from("ábčd"), &Range::From(3)),
+            get_forward(String::from("ábčd"), 3, None),
             Ok(String::from("d"))
         );
     }
@@ -72,7 +67,7 @@ mod tests {
     #[test]
     fn forward_from_over() {
         assert_eq!(
-            get_forward(String::from("ábčd"), &Range::From(4)),
+            get_forward(String::from("ábčd"), 4, None),
             Ok(String::from(""))
         );
     }
@@ -80,7 +75,7 @@ mod tests {
     #[test]
     fn forward_to_below() {
         assert_eq!(
-            get_forward(String::from("ábčd"), &Range::To(0)),
+            get_forward(String::from("ábčd"), 0, Some(0)),
             Ok(String::from(""))
         );
     }
@@ -88,7 +83,7 @@ mod tests {
     #[test]
     fn forward_to_last_but_one() {
         assert_eq!(
-            get_forward(String::from("ábčd"), &Range::To(3)),
+            get_forward(String::from("ábčd"), 0, Some(3)),
             Ok(String::from("ábč"))
         );
     }
@@ -96,7 +91,7 @@ mod tests {
     #[test]
     fn forward_to_last() {
         assert_eq!(
-            get_forward(String::from("ábčd"), &Range::To(4)),
+            get_forward(String::from("ábčd"), 0, Some(4)),
             Ok(String::from("ábčd"))
         );
     }
@@ -104,7 +99,7 @@ mod tests {
     #[test]
     fn forward_to_over() {
         assert_eq!(
-            get_forward(String::from("ábčd"), &Range::To(5)),
+            get_forward(String::from("ábčd"), 0, Some(5)),
             Ok(String::from("ábčd"))
         );
     }
@@ -112,7 +107,7 @@ mod tests {
     #[test]
     fn forward_from_first_to_below() {
         assert_eq!(
-            get_forward(String::from("ábčd"), &Range::FromTo(0, 0)),
+            get_forward(String::from("ábčd"), 0, Some(0)),
             Ok(String::from(""))
         );
     }
@@ -120,7 +115,7 @@ mod tests {
     #[test]
     fn forward_from_first_to_last_but_one() {
         assert_eq!(
-            get_forward(String::from("ábčd"), &Range::FromTo(0, 3)),
+            get_forward(String::from("ábčd"), 0, Some(3)),
             Ok(String::from("ábč"))
         );
     }
@@ -128,7 +123,7 @@ mod tests {
     #[test]
     fn forward_from_first_to_last() {
         assert_eq!(
-            get_forward(String::from("ábčd"), &Range::FromTo(0, 4)),
+            get_forward(String::from("ábčd"), 0, Some(4)),
             Ok(String::from("ábčd"))
         );
     }
@@ -136,7 +131,7 @@ mod tests {
     #[test]
     fn forward_from_last_to_last() {
         assert_eq!(
-            get_forward(String::from("ábčd"), &Range::FromTo(3, 4)),
+            get_forward(String::from("ábčd"), 3, Some(1)),
             Ok(String::from("d"))
         );
     }
@@ -144,7 +139,7 @@ mod tests {
     #[test]
     fn forward_from_last_to_over() {
         assert_eq!(
-            get_forward(String::from("ábčd"), &Range::FromTo(3, 5)),
+            get_forward(String::from("ábčd"), 3, Some(2)),
             Ok(String::from("d"))
         );
     }
@@ -152,7 +147,7 @@ mod tests {
     #[test]
     fn forward_from_over_to_over() {
         assert_eq!(
-            get_forward(String::from("ábčd"), &Range::FromTo(4, 5)),
+            get_forward(String::from("ábčd"), 4, Some(1)),
             Ok(String::from(""))
         );
     }
@@ -160,7 +155,7 @@ mod tests {
     #[test]
     fn backward_from_first() {
         assert_eq!(
-            get_backward(String::from("ábčd"), &Range::From(0)),
+            get_backward(String::from("ábčd"), 0, None),
             Ok(String::from("ábčd"))
         );
     }
@@ -168,23 +163,20 @@ mod tests {
     #[test]
     fn backward_from_last() {
         assert_eq!(
-            get_backward(String::from("ábčd"), &Range::From(3)),
+            get_backward(String::from("ábčd"), 3, None),
             Ok(String::from("á"))
         );
     }
 
     #[test]
     fn backward_from_empty() {
-        assert_eq!(
-            get_backward(String::new(), &Range::From(0)),
-            Ok(String::new())
-        );
+        assert_eq!(get_backward(String::new(), 0, None), Ok(String::new()));
     }
 
     #[test]
     fn backward_from_over() {
         assert_eq!(
-            get_backward(String::from("ábčd"), &Range::From(4)),
+            get_backward(String::from("ábčd"), 4, None),
             Ok(String::from(""))
         );
     }
@@ -192,7 +184,7 @@ mod tests {
     #[test]
     fn backward_to_below() {
         assert_eq!(
-            get_backward(String::from("ábčd"), &Range::To(0)),
+            get_backward(String::from("ábčd"), 0, Some(0)),
             Ok(String::from(""))
         );
     }
@@ -200,7 +192,7 @@ mod tests {
     #[test]
     fn backward_to_last_but_one() {
         assert_eq!(
-            get_backward(String::from("ábčd"), &Range::To(3)),
+            get_backward(String::from("ábčd"), 0, Some(3)),
             Ok(String::from("bčd"))
         );
     }
@@ -208,7 +200,7 @@ mod tests {
     #[test]
     fn backward_to_last() {
         assert_eq!(
-            get_backward(String::from("ábčd"), &Range::To(4)),
+            get_backward(String::from("ábčd"), 0, Some(4)),
             Ok(String::from("ábčd"))
         );
     }
@@ -216,7 +208,7 @@ mod tests {
     #[test]
     fn backward_to_over() {
         assert_eq!(
-            get_backward(String::from("ábčd"), &Range::To(5)),
+            get_backward(String::from("ábčd"), 0, Some(5)),
             Ok(String::from("ábčd"))
         );
     }
@@ -224,7 +216,7 @@ mod tests {
     #[test]
     fn backward_from_first_to_below() {
         assert_eq!(
-            get_backward(String::from("ábčd"), &Range::FromTo(0, 0)),
+            get_backward(String::from("ábčd"), 0, Some(0)),
             Ok(String::from(""))
         );
     }
@@ -232,7 +224,7 @@ mod tests {
     #[test]
     fn backward_from_first_to_last_but_one() {
         assert_eq!(
-            get_backward(String::from("ábčd"), &Range::FromTo(0, 3)),
+            get_backward(String::from("ábčd"), 0, Some(3)),
             Ok(String::from("bčd"))
         );
     }
@@ -240,7 +232,7 @@ mod tests {
     #[test]
     fn backward_from_first_to_last() {
         assert_eq!(
-            get_backward(String::from("ábčd"), &Range::FromTo(0, 4)),
+            get_backward(String::from("ábčd"), 0, Some(4)),
             Ok(String::from("ábčd"))
         );
     }
@@ -248,7 +240,7 @@ mod tests {
     #[test]
     fn backward_from_last_to_last() {
         assert_eq!(
-            get_backward(String::from("ábčd"), &Range::FromTo(3, 4)),
+            get_backward(String::from("ábčd"), 3, Some(1)),
             Ok(String::from("á"))
         );
     }
@@ -256,7 +248,7 @@ mod tests {
     #[test]
     fn backward_from_last_to_over() {
         assert_eq!(
-            get_backward(String::from("ábčd"), &Range::FromTo(3, 5)),
+            get_backward(String::from("ábčd"), 3, Some(2)),
             Ok(String::from("á"))
         );
     }
@@ -265,11 +257,11 @@ mod tests {
     fn backward_from_over_to_over() {
         // Each assert covers different evaluation branch
         assert_eq!(
-            get_backward(String::from("ábčd"), &Range::FromTo(4, 5)),
+            get_backward(String::from("ábčd"), 4, Some(1)),
             Ok(String::from(""))
         );
         assert_eq!(
-            get_backward(String::from("ábčd"), &Range::FromTo(5, 6)),
+            get_backward(String::from("ábčd"), 5, Some(1)),
             Ok(String::from(""))
         );
     }

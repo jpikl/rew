@@ -194,7 +194,7 @@ impl Parser {
 mod tests {
     use super::*;
     use crate::pattern::padding::Padding;
-    use crate::pattern::range::Range;
+    use crate::pattern::range::IndexRange;
     use crate::pattern::repetition::Repetition;
     use crate::pattern::substitution::Substitution;
     use crate::pattern::testing::make_parsed;
@@ -401,7 +401,7 @@ mod tests {
         assert_eq!(
             Parser::from("{n2-1}").parse_items(),
             Err(Error {
-                kind: ErrorKind::RangeStartOverEnd(2, 1),
+                kind: ErrorKind::RangeStartOverEnd(String::from("2"), String::from("1")),
                 range: 2..5,
             })
         );
@@ -422,7 +422,7 @@ mod tests {
                         range: 3..4,
                     },
                     Parsed {
-                        value: Filter::Substring(Range::FromTo(0, 3)),
+                        value: Filter::Substring(IndexRange::new(0, Some(2))),
                         range: 5..9,
                     },
                 ]),
