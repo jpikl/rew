@@ -5,11 +5,10 @@ Rew is a CLI tool that rewrites FS paths according to a pattern.
 [![Build status][build-img]][build]
 [![Code coverage][coverage-img]][coverage]
 
-:construction: Work in progress... :construction:
-
 ## Contents
 
 - [:bulb: What rew does](#bulb-what-rew-does)
+- [:package: Installation](#package-installation)
 - [:keyboard: Input](#keyboard-input)
 - [:pencil: Pattern](#pencil-pattern)
   - [:railway_track: Path filters](#railway_track-path-filters)
@@ -34,6 +33,16 @@ Rew is a CLI tool that rewrites FS paths according to a pattern.
 Input values are assumed to be FS paths, however, `rew` is able to process any UTF-8 encoded text.
 
 ![What rew does](images/diagram.png)
+
+## :package: Installation
+
+- Set up a [Rust development environment][rust-dev].
+- Install `rew` from sources using `cargo`.
+
+    ```bash
+    cargo install --git https://github.com/jpikl/rew
+    ```
+- Binaries will be installed to `.cargo/bin/` in your home directory.
 
 ## :keyboard: Input
 
@@ -523,4 +532,5 @@ Rew is licensed under the [MIT license](LICENSE.md).
 [coverage]: https://codecov.io/gh/jpikl/rew
 [coverage-img]: https://codecov.io/gh/jpikl/rew/branch/master/graph/badge.svg
 [fd]: https://github.com/sharkdp/fd
+[rust-dev]: https://www.rust-lang.org/learn/get-started
 [sd]: https://github.com/chmln/sd
