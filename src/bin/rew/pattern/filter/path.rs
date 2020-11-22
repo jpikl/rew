@@ -25,7 +25,7 @@ pub fn get_canonical(value: String, current_dir: &Path) -> Result {
     // Normalize unix vs windows behaviour
     if cfg!(windows) && !absolute_path.exists() {
         return Err(ErrorKind::CanonicalizationFailed(AnyString(format!(
-            "Path '{}' does not exist",
+            "Path '{}' not found or user lacks permission",
             absolute_path.to_string_lossy()
         ))));
     }
