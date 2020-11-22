@@ -24,7 +24,7 @@ Characters `{` and `}` form an expression which is evaluated and replaced in out
 
 Empty exrpession `{}` evaluates directly to input value.
 
-    INPUT    PATTERN      OUTPUT     
+    INPUT    PATTERN      OUTPUT
     ------------------------------------
     world    `{}`           world
     world    `Hello_{}_!`   Hello_world_!
@@ -98,10 +98,10 @@ For working directory `/home/bob` and input `../alice/notes.txt`, filters would 
     `B`         ../alice/notes
     `e`         txt
     `E`         .txt
-    
+
 Normalized path `h` is constructed using the following rules:
 
- - On Windows, all `/` separators are converted to `\\`. 
+ - On Windows, all `/` separators are converted to `\\`.
  - Consecutive path separators are collapsed into one.
  - Trailing path separator is removed.
  - Unnecessary current directory `.` components are removed.
@@ -109,7 +109,7 @@ Normalized path `h` is constructed using the following rules:
  - Initial `..` components in an absolute path are dropped.
  - Initial `..` components in a relative path are kept.
  - Empty path is resolved to `.` (current directory).
-    
+
     INPUT      OUTPUT        INPUT      OUTPUT
     -----------------        -----------------
     (empty)    .             /          /
@@ -167,9 +167,9 @@ Examples:
                Equivalent to `r:X:`.
     `R`          Same as `r` but replaces/removes all occurrences.
     `?D`         Replace empty value with `D`.
-    
+
 Examples:
-    
+
     INPUT      FILTER       OUTPUT
     ------------------------------
     ab_ab      `r:ab:xy`      xy_ab
@@ -178,7 +178,7 @@ Examples:
     ab_ab      `R:ab`         _
     abc        `?def`         abc
     (empty)    `?def`         def
-    
+
 ========================================
  Regex filters
 ========================================
@@ -193,7 +193,7 @@ Examples:
                Equivalent to `s:X:`.
     `S`          Same as `s` but replaces/removes all matches.
     `1`, `2`, ...  Capture group of an external regular expression.
-    
+
 Examples:
 
     INPUT    FILTER             OUTPUT
@@ -228,9 +228,9 @@ Option `-E, --regex-filename` matches regex against 'filename component' of each
     `>>M`       Right pad with mask `M`.
     `>N:M`      Right pad with `N` times repeated mask `M`.
               Any other non-digit than `:` can be also used as a delimiter.
-    
+
 Examples:
-    
+
     INPUT       FILTER     OUTPUT
     ----------------------------------------------------
     ..a..b..    `t`          a..b  (dots are white-spaces)
@@ -254,12 +254,12 @@ Examples:
     `c`         Local counter
     `C`         Global counter
     `uA-B`      Random number from interval [`A`, `B`]
-    `uA-`       Random number from interval [`A`, 2^64)
-    `u`         Random number from interval [0, 2^64)
-    `U`         Random UUID                          
-    
+    `uA-`       Random number from interval [`A`, `2^64`)
+    `u`         Random number from interval [`0`, `2^64`)
+    `U`         Random UUID
+
 Examples:
-    
+
     FILTER    OUTPUT
     -------------------------------------------------------
     `*3:ab`     ababab

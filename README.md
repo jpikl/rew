@@ -303,8 +303,8 @@ Examples:
 | `c`    | Local counter                                      |
 | `C`    | Global counter                                     |
 | `uA-B` | Random number from interval \[`A`, `B`]            |
-| `uA-`  | Random number from interval \[`A`, 2<sup>64</sup>) |
-| `u`    | Random number from interval \[0, 2<sup>64</sup>)   |
+| `uA-`  | Random number from interval \[`A`, `2`<sup>`64`</sup>) |
+| `u`    | Random number from interval \[`0`, `2`<sup>`64`</sup>) |
 | `U`    | Random UUID                                        |
 
 Examples:
@@ -349,7 +349,7 @@ By default, results are printed as lines to standard output.
 rew    '{B}' | xargs    mkdir -p # Pass extracted directories to mkdir command
 rew -Z '{B}' | xargs -0 mkdir -p # Use NUL delimiter in case paths contain newlines
 rew -D$'\r\n'                    # Convert newlines to CR+LF using custom output delimiter
-rew -R '{}#r#n'                  # Same thing as before but output delimiter is inside pattern
+rew -R '{}#r#n'                  # Same thing but output delimiter is inside pattern
 rew -TD+ '{}' a b c              # Join input values to string "a+b+c"
 ```
 
