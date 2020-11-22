@@ -1,7 +1,7 @@
+use crate::output::highlight_range;
 use crate::pattern::parse::Parsed;
 use crate::pattern::parser::Item;
 use crate::pattern::Pattern;
-use crate::utils::highlight_range;
 use common::color::spec_color;
 use std::fmt::Display;
 use std::io::{Result, Write};

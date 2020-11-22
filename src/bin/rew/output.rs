@@ -1,9 +1,10 @@
-use crate::utils::{highlight_range, HasRange};
-use common::color::spec_color;
+use crate::utils::HasRange;
+use common::color::{spec_bold_color, spec_color};
 use common::output::write_error;
 use common::symbols::{DIFF_IN, DIFF_OUT};
 use std::error::Error;
 use std::io::{Result, Write};
+use std::ops::Range;
 use termcolor::{Color, WriteColor};
 
 pub enum Mode {
@@ -85,6 +86,29 @@ pub fn write_pattern_error<O: Write + WriteColor, E: Error + HasRange>(
     writeln!(output)?;
     highlight_range(output, raw_pattern, error.range(), Color::Red)?;
     output.reset()
+}
+
+pub fn highlight_range<O: Write + WriteColor>(
+    output: &mut O,
+    string: &str,
+    range: &Range<usize>,
+    color: Color,
+) -> Result<()> {
+    write!(output, "{}", &string[..range.start])?;
+    output.set_color(&spec_bold_color(color))?;
+    write!(output, "{}", &string[range.start..range.end])?;
+    output.reset()?;
+    writeln!(output, "{}", &string[range.end..])?;
+
+    let spaces_count = string[..range.start].chars().count();
+    let markers_count = string[range.start..range.end].chars().count().max(1);
+
+    write!(output, "{}", " ".repeat(spaces_count))?;
+    output.set_color(&spec_bold_color(color))?;
+    write!(output, "{}", "^".repeat(markers_count))?;
+    output.reset()?;
+
+    writeln!(output)
 }
 
 #[cfg(test)]
@@ -218,6 +242,23 @@ mod tests {
                 OutputChunk::bold_color(Color::Red, "bc"),
                 OutputChunk::plain("d\n "),
                 OutputChunk::bold_color(Color::Red, "^^"),
+                OutputChunk::plain("\n")
+            ]
+        );
+    }
+
+    #[test]
+    fn highlights_range() {
+        let mut output = ColoredOuput::new();
+        highlight_range(&mut output, "abcde", &(1..4), Color::Green).unwrap();
+
+        assert_eq!(
+            output.chunks(),
+            &[
+                OutputChunk::plain("a"),
+                OutputChunk::bold_color(Color::Green, "bcd"),
+                OutputChunk::plain("e\n "),
+                OutputChunk::bold_color(Color::Green, "^^^"),
                 OutputChunk::plain("\n")
             ]
         );
