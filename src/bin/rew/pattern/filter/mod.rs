@@ -469,7 +469,7 @@ mod tests {
         assert_eq!(
             parse("<abc"),
             Err(Error {
-                kind: ErrorKind::PaddingPrefixInvalid('<', Some('a')),
+                kind: ErrorKind::PaddingPrefixInvalid('<', Some(Char::Raw('a'))),
                 range: 1..2
             })
         );
@@ -491,7 +491,7 @@ mod tests {
         assert_eq!(
             parse(">abc"),
             Err(Error {
-                kind: ErrorKind::PaddingPrefixInvalid('>', Some('a')),
+                kind: ErrorKind::PaddingPrefixInvalid('>', Some(Char::Raw('a'))),
                 range: 1..2
             })
         );

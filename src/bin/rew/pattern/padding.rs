@@ -16,12 +16,12 @@ impl Padding {
         match reader.peek() {
             Some(prefix) => match prefix.as_char() {
                 '0'..='9' => Ok(Self::Repeated(Repetition::parse(reader)?)),
-                valid_prefix if valid_prefix == fixed_prefix => {
+                prefix if prefix == fixed_prefix => {
                     reader.seek();
                     Ok(Self::Fixed(Char::join(reader.read_to_end())))
                 }
-                invalid_prefix => Err(Error {
-                    kind: ErrorKind::PaddingPrefixInvalid(fixed_prefix, Some(invalid_prefix)),
+                _ => Err(Error {
+                    kind: ErrorKind::PaddingPrefixInvalid(fixed_prefix, Some(prefix.clone())),
                     range: position..(position + prefix.len_utf8()),
                 }),
             },
@@ -69,7 +69,7 @@ mod tests {
         assert_eq!(
             Padding::parse(&mut reader, '<'),
             Err(Error {
-                kind: ErrorKind::PaddingPrefixInvalid('<', Some('>')),
+                kind: ErrorKind::PaddingPrefixInvalid('<', Some(Char::Raw('>'))),
                 range: 0..1,
             })
         );
@@ -82,7 +82,7 @@ mod tests {
         assert_eq!(
             Padding::parse(&mut reader, '<'),
             Err(Error {
-                kind: ErrorKind::PaddingPrefixInvalid('<', Some('x')),
+                kind: ErrorKind::PaddingPrefixInvalid('<', Some(Char::Escaped('x', ['#', 'x']))),
                 range: 0..2,
             })
         );

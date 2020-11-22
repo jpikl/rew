@@ -31,7 +31,7 @@ pub enum ErrorKind {
     ExpectedSubstitution,
     ExprStartInsideExpr,
     NumberOverflow(String),
-    PaddingPrefixInvalid(char, Option<char>),
+    PaddingPrefixInvalid(char, Option<Char>),
     PipeOutsideExpr,
     RangeIndexZero,
     RangeInvalid(String),
@@ -105,14 +105,19 @@ impl fmt::Display for ErrorKind {
             Self::NumberOverflow(max) => {
                 write!(formatter, "Cannot parse value greater than {}", max)
             }
-            Self::PaddingPrefixInvalid(fixed_prefix, Some(prefix)) => write!(
-                formatter,
-                "Expected '{}' prefix or number but got '{}'",
-                fixed_prefix, prefix
-            ),
             Self::PaddingPrefixInvalid(fixed_prefix, None) => {
                 write!(formatter, "Expected '{}' prefix or number", fixed_prefix)
             }
+            Self::PaddingPrefixInvalid(expected, Some(Char::Raw(value))) => write!(
+                formatter,
+                "Expected '{}' prefix or number but got '{}'",
+                expected, value
+            ),
+            Self::PaddingPrefixInvalid(expected, Some(Char::Escaped(_, sequence))) => write!(
+                formatter,
+                "Expected '{}' prefix or number but got escape sequence '{}{}'",
+                expected, sequence[0], sequence[1]
+            ),
             Self::PipeOutsideExpr => write!(formatter, "Unescaped '{}' outside expression", PIPE),
             Self::RangeIndexZero => write!(formatter, "Range indices start from 1, not 0"),
             Self::RangeInvalid(value) => write!(formatter, "Invalid range '{}'", value),
@@ -258,12 +263,16 @@ mod tests {
             "Cannot parse value greater than 255"
         );
         assert_eq!(
-            ErrorKind::PaddingPrefixInvalid('<', Some('x')).to_string(),
+            ErrorKind::PaddingPrefixInvalid('<', None).to_string(),
+            "Expected '<' prefix or number"
+        );
+        assert_eq!(
+            ErrorKind::PaddingPrefixInvalid('<', Some(Char::Raw('x'))).to_string(),
             "Expected '<' prefix or number but got 'x'"
         );
         assert_eq!(
-            ErrorKind::PaddingPrefixInvalid('<', None).to_string(),
-            "Expected '<' prefix or number"
+            ErrorKind::PaddingPrefixInvalid('<', Some(Char::Escaped('x', ['#', 'y']))).to_string(),
+            "Expected '<' prefix or number but got escape sequence '#y'"
         );
         assert_eq!(
             ErrorKind::PipeOutsideExpr.to_string(),
