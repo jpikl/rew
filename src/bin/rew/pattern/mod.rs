@@ -178,7 +178,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_error() {
+    fn parse() {
         assert_eq!(
             Pattern::parse("{", None),
             Err(parse::Error {
@@ -320,7 +320,7 @@ mod tests {
     }
 
     #[test]
-    fn eval_filter_error() {
+    fn eval_filter() {
         let pattern = Pattern {
             source: String::new(),
             items: vec![make_parsed(Item::Expression(vec![Parsed {

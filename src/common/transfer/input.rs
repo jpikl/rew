@@ -136,7 +136,7 @@ mod tests {
     }
 
     #[test]
-    fn path_diff_invalid_in_prefix_error() {
+    fn path_diff_invalid_in_prefix() {
         assert_eq!(
             PathDiff::new(&b"abc"[..], Delimiter::Newline)
                 .read()
@@ -149,7 +149,7 @@ mod tests {
     }
 
     #[test]
-    fn path_diff_invalid_out_prefix_error() {
+    fn path_diff_invalid_out_prefix() {
         assert_eq!(
             PathDiff::new(&b"<abc\ndef"[..], Delimiter::Newline)
                 .read()
@@ -162,7 +162,7 @@ mod tests {
     }
 
     #[test]
-    fn path_diff_missing_in_path_error() {
+    fn path_diff_missing_in_path() {
         assert_eq!(
             PathDiff::new(&b"<"[..], Delimiter::Newline)
                 .read()
@@ -175,7 +175,7 @@ mod tests {
     }
 
     #[test]
-    fn path_diff_missing_out_path_error() {
+    fn path_diff_missing_out_path() {
         assert_eq!(
             PathDiff::new(&b"<abc\n>"[..], Delimiter::Newline)
                 .read()
@@ -188,7 +188,7 @@ mod tests {
     }
 
     #[test]
-    fn path_diff_missing_out_error() {
+    fn path_diff_missing_out() {
         assert_eq!(
             PathDiff::new(&b"<abc"[..], Delimiter::Newline)
                 .read()
@@ -201,7 +201,7 @@ mod tests {
     }
 
     #[test]
-    fn path_diff_empty_out_error() {
+    fn path_diff_empty_out() {
         assert_eq!(
             PathDiff::new(&b"<abc\n\n"[..], Delimiter::Newline)
                 .read()

@@ -119,26 +119,6 @@ fn verbose_output() {
 }
 
 #[test]
-fn verbose_output_error() {
-    let dir = TempDir::new().unwrap();
-    let src_file = dir.child("a");
-    let dst_file = dir.child("b");
-
-    mvb()
-        .current_dir(dir.path())
-        .arg("--verbose")
-        .write_stdin("<a\n>b")
-        .assert()
-        .failure()
-        .code(1)
-        .stdout("Moving 'a' to 'b' ... FAILED\n")
-        .stderr("error: Path 'a' not found or user lacks permission\n");
-
-    src_file.assert(predicates::path::missing());
-    dst_file.assert(predicates::path::missing());
-}
-
-#[test]
 fn verbose_output_fail_immediately() {
     let dir = TempDir::new().unwrap();
     let src_file_1 = dir.child("a1");

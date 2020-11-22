@@ -214,7 +214,7 @@ mod tests {
     }
 
     #[test]
-    fn writes_pattern_error() {
+    fn writes_pattern() {
         #[derive(Debug)]
         struct CustomError {}
         impl Error for CustomError {}

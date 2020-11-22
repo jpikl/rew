@@ -14,7 +14,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn unpacks_fse_error() {
+    fn unpacks_fse() {
         assert_eq!(
             unpack_fse_error(Error::new(ErrorKind::Other, "test")),
             (debug_fse_error_kind(ErrorKind::Other), String::from("test"))

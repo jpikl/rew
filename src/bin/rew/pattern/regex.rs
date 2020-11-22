@@ -62,7 +62,7 @@ mod tests {
     }
 
     #[test]
-    fn regex_holder_parse_empty_error() {
+    fn regex_holder_parse_empty() {
         let mut reader = Reader::from("");
         assert_eq!(
             RegexHolder::parse(&mut reader),
@@ -75,7 +75,7 @@ mod tests {
     }
 
     #[test]
-    fn regex_holder_parse_invalid_error() {
+    fn regex_holder_parse_invalid() {
         let mut reader = Reader::from("[0-9");
         assert_eq!(
             RegexHolder::parse(&mut reader),

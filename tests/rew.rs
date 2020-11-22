@@ -260,7 +260,7 @@ fn non_utf8_input_errpr() {
 }
 
 #[test]
-fn pattern_parse_error() {
+fn pattern_parse() {
     rew()
         .arg("{")
         .assert()
@@ -276,7 +276,7 @@ fn pattern_parse_error() {
 }
 
 #[test]
-fn pattern_eval_error() {
+fn pattern_eval() {
     rew()
         .arg("{A}")
         .write_stdin(indoc! {"

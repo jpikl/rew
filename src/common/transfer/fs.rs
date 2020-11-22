@@ -116,7 +116,7 @@ mod tests {
     }
 
     #[test]
-    fn path_not_found_error() {
+    fn path_not_found() {
         let src_file = NamedTempFile::new("a").unwrap();
 
         assert_eq!(
@@ -135,7 +135,7 @@ mod tests {
     }
 
     #[test]
-    fn overwrite_dir_with_file_error() {
+    fn overwrite_dir_with_file() {
         let src_file = NamedTempFile::new("a").unwrap();
         let dst_dir = TempDir::new().unwrap();
 
@@ -159,7 +159,7 @@ mod tests {
     }
 
     #[test]
-    fn overwrite_file_with_dir_error() {
+    fn overwrite_file_with_dir() {
         let src_dir = TempDir::new().unwrap();
         let dst_file = NamedTempFile::new("a").unwrap();
 

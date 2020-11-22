@@ -110,7 +110,7 @@ mod tests {
     use ntest::assert_true;
 
     #[test]
-    fn unpacks_io_error() {
+    fn unpacks_io() {
         assert_eq!(
             unpack_io_error(Error::new(ErrorKind::Other, "test")),
             (ErrorKind::Other, String::from("test"))

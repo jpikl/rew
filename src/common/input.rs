@@ -209,7 +209,7 @@ mod tests {
     }
 
     #[test]
-    fn splitter_utf8_error() {
+    fn splitter_utf8() {
         assert_eq!(
             Splitter::new(&[0, 159, 146, 150][..], Delimiter::None)
                 .read()

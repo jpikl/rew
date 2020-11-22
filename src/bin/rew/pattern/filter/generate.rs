@@ -31,33 +31,66 @@ pub fn random_uuid() -> Result {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::pattern::filter::testing::assert_ok_uuid;
     use claim::*;
 
-    #[test]
-    fn generates_repetition() {
-        assert_eq!(repetition("a", 0), Ok(String::new()));
-        assert_eq!(repetition("", 1), Ok(String::new()));
-        assert_eq!(repetition("ab", 2), Ok(String::from("abab")));
+    mod repetition {
+        use super::*;
+
+        #[test]
+        fn empty_zero_times() {
+            assert_eq!(repetition("", 0), Ok(String::new()));
+        }
+
+        #[test]
+        fn empty_multiple_times() {
+            assert_eq!(repetition("", 2), Ok(String::new()));
+        }
+
+        #[test]
+        fn nonempty_zero_times() {
+            assert_eq!(repetition("ab", 0), Ok(String::new()));
+        }
+
+        #[test]
+        fn nonempty_multiple_times() {
+            assert_eq!(repetition("ab", 2), Ok(String::from("abab")));
+        }
     }
 
     #[test]
-    fn generates_counter() {
+    fn counter() {
+        use super::*;
+
         assert_eq!(counter(123), Ok(String::from("123")))
     }
 
-    #[test]
-    fn generates_random_number() {
-        assert_eq!(random_number(0, Some(0)), Ok(String::from("0")));
-        assert_eq!(
-            random_number(Number::MAX, None),
-            Ok(Number::MAX.to_string())
-        );
-        assert_ok!(random_number(0, None)); // Should not overflow
+    mod random_number {
+        use super::*;
+
+        #[test]
+        fn lowest() {
+            assert_eq!(random_number(0, Some(0)), Ok(String::from("0")));
+        }
+
+        #[test]
+        fn highest() {
+            assert_eq!(
+                random_number(Number::MAX, None),
+                Ok(Number::MAX.to_string())
+            );
+        }
+
+        #[test]
+        fn lowest_to_highest() {
+            assert_ok!(random_number(0, None)); // Should not overflow
+        }
     }
 
     #[test]
-    fn generates_random_uuid() {
+    fn random_uuid() {
+        use super::*;
+        use crate::pattern::filter::testing::assert_ok_uuid;
+
         assert_ok_uuid(random_uuid());
     }
 }

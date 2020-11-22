@@ -17,7 +17,7 @@ pub mod tests {
     use std::io::{self, ErrorKind};
 
     #[test]
-    fn writes_error() {
+    fn writes() {
         let mut output = ColoredOuput::new();
         write_error(
             &mut output,

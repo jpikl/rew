@@ -279,805 +279,938 @@ impl fmt::Display for Filter {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::pattern::testing::make_eval_context;
     extern crate regex;
-    use crate::pattern::filter::testing::assert_ok_uuid;
-    use crate::pattern::parse::{Error, ErrorKind};
+    use super::Filter;
+    use crate::pattern::char::Char;
+    use crate::pattern::padding::Padding;
+    use crate::pattern::range::{IndexRange, NumberInterval};
+    use crate::pattern::regex::RegexHolder;
+    use crate::pattern::repetition::Repetition;
+    use crate::pattern::substitution::Substitution;
     use crate::utils::AnyString;
     use regex::Regex;
-    use std::path::MAIN_SEPARATOR;
 
-    #[test]
-    fn parse_absolute_path() {
-        assert_eq!(parse("a"), Ok(Filter::AbsolutePath));
-    }
+    mod parse {
+        use super::*;
+        use crate::pattern::parse::{Error, ErrorKind, Result};
+        use crate::pattern::reader::Reader;
 
-    #[test]
-    fn parse_canonical_path() {
-        assert_eq!(parse("A"), Ok(Filter::CanonicalPath));
-    }
+        #[test]
+        fn empty() {
+            assert_eq!(
+                parse(""),
+                Err(Error {
+                    kind: ErrorKind::ExpectedFilter,
+                    range: 0..0,
+                }),
+            )
+        }
 
-    #[test]
-    fn parse_normalized_path() {
-        assert_eq!(parse("h"), Ok(Filter::NormalizedPath));
-    }
+        #[test]
+        fn unknown() {
+            assert_eq!(
+                parse("-a"),
+                Err(Error {
+                    kind: ErrorKind::UnknownFilter(Char::Raw('-')),
+                    range: 0..1,
+                }),
+            );
+        }
 
-    #[test]
-    fn parse_parent_path() {
-        assert_eq!(parse("p"), Ok(Filter::ParentPath));
-    }
+        #[test]
+        fn remaining_chars() {
+            let mut reader = Reader::from("a_");
+            Filter::parse(&mut reader).unwrap();
+            assert_eq!(reader.position(), 1);
+        }
 
-    #[test]
-    fn parse_file_name() {
-        assert_eq!(parse("f"), Ok(Filter::FileName));
-    }
+        #[test]
+        fn absolute_path() {
+            assert_eq!(parse("a"), Ok(Filter::AbsolutePath));
+        }
 
-    #[test]
-    fn parse_base_name() {
-        assert_eq!(parse("b"), Ok(Filter::BaseName));
-    }
+        #[test]
+        fn canonical_path() {
+            assert_eq!(parse("A"), Ok(Filter::CanonicalPath));
+        }
 
-    #[test]
-    fn parse_path_without_extension() {
-        assert_eq!(parse("B"), Ok(Filter::BaseNameWithPath));
-    }
+        #[test]
+        fn normalized_path() {
+            assert_eq!(parse("h"), Ok(Filter::NormalizedPath));
+        }
 
-    #[test]
-    fn parse_extension() {
-        assert_eq!(parse("e"), Ok(Filter::Extension));
-    }
+        #[test]
+        fn parent_path() {
+            assert_eq!(parse("p"), Ok(Filter::ParentPath));
+        }
 
-    #[test]
-    fn parse_extension_with_dot() {
-        assert_eq!(parse("E"), Ok(Filter::ExtensionWithDot));
-    }
+        #[test]
+        fn file_name() {
+            assert_eq!(parse("f"), Ok(Filter::FileName));
+        }
 
-    #[test]
-    fn parse_substring() {
-        assert_eq!(
-            parse("n"),
-            Err(parse::Error {
-                kind: parse::ErrorKind::ExpectedRange,
-                range: 1..1,
-            }),
-        );
-        assert_eq!(
-            parse("n2-10"),
-            Ok(Filter::Substring(IndexRange::new(1, Some(9))))
-        );
-        assert_eq!(
-            parse("n2-"),
-            Ok(Filter::Substring(IndexRange::new(1, None)))
-        );
-        assert_eq!(
-            parse("n2"),
-            Ok(Filter::Substring(IndexRange::new(1, Some(1))))
-        );
-    }
+        #[test]
+        fn base_name() {
+            assert_eq!(parse("b"), Ok(Filter::BaseName));
+        }
 
-    #[test]
-    fn parse_substring_backward() {
-        assert_eq!(
-            parse("N"),
-            Err(parse::Error {
-                kind: parse::ErrorKind::ExpectedRange,
-                range: 1..1,
-            }),
-        );
-        assert_eq!(
-            parse("N2-10"),
-            Ok(Filter::SubstringBackward(IndexRange::new(1, Some(9))))
-        );
-        assert_eq!(
-            parse("N2-"),
-            Ok(Filter::SubstringBackward(IndexRange::new(1, None)))
-        );
-        assert_eq!(
-            parse("N2"),
-            Ok(Filter::SubstringBackward(IndexRange::new(1, Some(1))))
-        );
-    }
+        #[test]
+        fn base_name_with_path() {
+            assert_eq!(parse("B"), Ok(Filter::BaseNameWithPath));
+        }
 
-    #[test]
-    fn parse_replace_first() {
-        assert_eq!(
-            parse("r"),
-            Err(parse::Error {
-                kind: parse::ErrorKind::ExpectedSubstitution,
-                range: 1..1,
-            }),
-        );
-        assert_eq!(
-            parse("r/ab"),
-            Ok(Filter::ReplaceFirst(Substitution {
-                target: String::from("ab"),
-                replacement: String::from(""),
-            })),
-        );
-        assert_eq!(
-            parse("r/ab/cd"),
-            Ok(Filter::ReplaceFirst(Substitution {
-                target: String::from("ab"),
-                replacement: String::from("cd"),
-            })),
-        );
-    }
+        #[test]
+        fn extension() {
+            assert_eq!(parse("e"), Ok(Filter::Extension));
+        }
 
-    #[test]
-    fn parse_replace_all() {
-        assert_eq!(
-            parse("R"),
-            Err(parse::Error {
-                kind: parse::ErrorKind::ExpectedSubstitution,
-                range: 1..1,
-            }),
-        );
-        assert_eq!(
-            parse("R/ab"),
-            Ok(Filter::ReplaceAll(Substitution {
-                target: String::from("ab"),
-                replacement: String::from(""),
-            })),
-        );
-        assert_eq!(
-            parse("R/ab/cd"),
-            Ok(Filter::ReplaceAll(Substitution {
-                target: String::from("ab"),
-                replacement: String::from("cd"),
-            })),
-        );
-    }
+        #[test]
+        fn extension_with_dot() {
+            assert_eq!(parse("E"), Ok(Filter::ExtensionWithDot));
+        }
 
-    #[test]
-    fn parse_replace_empty() {
-        assert_eq!(parse("?abc"), Ok(Filter::ReplaceEmpty(String::from("abc"))));
-    }
+        #[test]
+        fn substring() {
+            assert_eq!(
+                parse("n2-10"),
+                Ok(Filter::Substring(IndexRange::new(1, Some(9))))
+            );
+            assert_eq!(
+                parse("n2-"),
+                Ok(Filter::Substring(IndexRange::new(1, None)))
+            );
+            assert_eq!(
+                parse("n2"),
+                Ok(Filter::Substring(IndexRange::new(1, Some(1))))
+            );
+            assert_eq!(
+                parse("n"),
+                Err(Error {
+                    kind: ErrorKind::ExpectedRange,
+                    range: 1..1,
+                }),
+            );
+        }
 
-    #[test]
-    fn parse_replace_empty_with_empty() {
-        assert_eq!(parse("?"), Ok(Filter::ReplaceEmpty(String::new())));
-    }
+        #[test]
+        fn substring_backward() {
+            assert_eq!(
+                parse("N"),
+                Err(Error {
+                    kind: ErrorKind::ExpectedRange,
+                    range: 1..1,
+                }),
+            );
+            assert_eq!(
+                parse("N2"),
+                Ok(Filter::SubstringBackward(IndexRange::new(1, Some(1))))
+            );
+            assert_eq!(
+                parse("N2-"),
+                Ok(Filter::SubstringBackward(IndexRange::new(1, None)))
+            );
+            assert_eq!(
+                parse("N2-10"),
+                Ok(Filter::SubstringBackward(IndexRange::new(1, Some(9))))
+            );
+        }
 
-    #[test]
-    fn parse_trim() {
-        assert_eq!(parse("t"), Ok(Filter::Trim));
-    }
+        #[test]
+        fn replace_first() {
+            assert_eq!(
+                parse("r"),
+                Err(Error {
+                    kind: ErrorKind::ExpectedSubstitution,
+                    range: 1..1,
+                }),
+            );
+            assert_eq!(
+                parse("r/ab"),
+                Ok(Filter::ReplaceFirst(Substitution {
+                    target: String::from("ab"),
+                    replacement: String::from(""),
+                })),
+            );
+            assert_eq!(
+                parse("r/ab/cd"),
+                Ok(Filter::ReplaceFirst(Substitution {
+                    target: String::from("ab"),
+                    replacement: String::from("cd"),
+                })),
+            );
+        }
 
-    #[test]
-    fn parse_to_lower_case() {
-        assert_eq!(parse("l"), Ok(Filter::ToLowercase));
-    }
+        #[test]
+        fn replace_all() {
+            assert_eq!(
+                parse("R"),
+                Err(Error {
+                    kind: ErrorKind::ExpectedSubstitution,
+                    range: 1..1,
+                }),
+            );
+            assert_eq!(
+                parse("R/ab"),
+                Ok(Filter::ReplaceAll(Substitution {
+                    target: String::from("ab"),
+                    replacement: String::from(""),
+                })),
+            );
+            assert_eq!(
+                parse("R/ab/cd"),
+                Ok(Filter::ReplaceAll(Substitution {
+                    target: String::from("ab"),
+                    replacement: String::from("cd"),
+                })),
+            );
+        }
 
-    #[test]
-    fn parse_to_upper_case() {
-        assert_eq!(parse("L"), Ok(Filter::ToUppercase));
-    }
+        #[test]
+        fn replace_empty() {
+            assert_eq!(parse("?abc"), Ok(Filter::ReplaceEmpty(String::from("abc"))));
+        }
 
-    #[test]
-    fn parse_to_ascii() {
-        assert_eq!(parse("i"), Ok(Filter::ToAscii));
-    }
-
-    #[test]
-    fn parse_remove_non_ascii() {
-        assert_eq!(parse("I"), Ok(Filter::RemoveNonAscii));
-    }
-
-    #[test]
-    fn parse_left_pad() {
-        assert_eq!(
-            parse("<abc"),
-            Err(Error {
-                kind: ErrorKind::PaddingPrefixInvalid('<', Some(Char::Raw('a'))),
-                range: 1..2
-            })
-        );
-        assert_eq!(
-            parse("<<abc"),
-            Ok(Filter::LeftPad(Padding::Fixed(String::from("abc"))))
-        );
-        assert_eq!(
-            parse("<10:abc"),
-            Ok(Filter::LeftPad(Padding::Repeated(Repetition {
-                count: 10,
-                value: String::from("abc")
-            })))
-        );
-    }
-
-    #[test]
-    fn parse_right_pad() {
-        assert_eq!(
-            parse(">abc"),
-            Err(Error {
-                kind: ErrorKind::PaddingPrefixInvalid('>', Some(Char::Raw('a'))),
-                range: 1..2
-            })
-        );
-        assert_eq!(
-            parse(">>abc"),
-            Ok(Filter::RightPad(Padding::Fixed(String::from("abc"))))
-        );
-        assert_eq!(
-            parse(">10:abc"),
-            Ok(Filter::RightPad(Padding::Repeated(Repetition {
-                count: 10,
-                value: String::from("abc")
-            })))
-        );
-    }
-
-    #[test]
-    fn parse_regex_match() {
-        assert_eq!(
-            parse("m"),
-            Err(parse::Error {
-                kind: parse::ErrorKind::ExpectedRegex,
-                range: 1..1,
-            }),
-        );
-        assert_eq!(
-            parse("m\\d+"),
-            Ok(Filter::RegexMatch(RegexHolder(Regex::new("\\d+").unwrap()))),
-        );
-        assert_eq!(
-            parse("m[0-9+"),
-            Err(parse::Error {
-                kind: parse::ErrorKind::RegexInvalid(AnyString(String::from(
-                    "This string is not compared by assertion"
+        #[test]
+        fn regex_match() {
+            assert_eq!(
+                parse("m"),
+                Err(Error {
+                    kind: ErrorKind::ExpectedRegex,
+                    range: 1..1,
+                }),
+            );
+            assert_eq!(
+                parse("m[0-9]+"),
+                Ok(Filter::RegexMatch(RegexHolder(
+                    Regex::new("[0-9]+").unwrap()
                 ))),
-                range: 1..6,
-            }),
-        );
+            );
+            assert_eq!(
+                parse("m[0-9+"),
+                Err(Error {
+                    kind: ErrorKind::RegexInvalid(AnyString(String::from(
+                        "This string is not compared by assertion"
+                    ))),
+                    range: 1..6,
+                }),
+            );
+        }
+
+        #[test]
+        fn regex_replace_first() {
+            assert_eq!(
+                parse("s"),
+                Err(Error {
+                    kind: ErrorKind::ExpectedSubstitution,
+                    range: 1..1,
+                }),
+            );
+            assert_eq!(
+                parse("s/[0-9]+"),
+                Ok(Filter::RegexReplaceFirst(Substitution {
+                    target: RegexHolder(Regex::new("[0-9]+").unwrap()),
+                    replacement: String::from(""),
+                })),
+            );
+            assert_eq!(
+                parse("s/[0-9]+/cd"),
+                Ok(Filter::RegexReplaceFirst(Substitution {
+                    target: RegexHolder(Regex::new("[0-9]+").unwrap()),
+                    replacement: String::from("cd"),
+                })),
+            );
+            assert_eq!(
+                parse("s/[0-9+/cd"),
+                Err(Error {
+                    kind: ErrorKind::SubstitutionRegexInvalid(AnyString(String::from(
+                        "This string is not compared by assertion"
+                    ))),
+                    range: 2..7,
+                }),
+            );
+        }
+
+        #[test]
+        fn regex_replace_all() {
+            assert_eq!(
+                parse("S"),
+                Err(Error {
+                    kind: ErrorKind::ExpectedSubstitution,
+                    range: 1..1,
+                }),
+            );
+            assert_eq!(
+                parse("S/[0-9]+"),
+                Ok(Filter::RegexReplaceAll(Substitution {
+                    target: RegexHolder(Regex::new("[0-9]+").unwrap()),
+                    replacement: String::from(""),
+                })),
+            );
+            assert_eq!(
+                parse("S/[0-9]+/cd"),
+                Ok(Filter::RegexReplaceAll(Substitution {
+                    target: RegexHolder(Regex::new("[0-9]+").unwrap()),
+                    replacement: String::from("cd"),
+                })),
+            );
+            assert_eq!(
+                parse("S/[0-9+/cd"),
+                Err(Error {
+                    kind: ErrorKind::SubstitutionRegexInvalid(AnyString(String::from(
+                        "This string is not compared by assertion"
+                    ))),
+                    range: 2..7,
+                }),
+            );
+        }
+
+        #[test]
+        fn regex_capture() {
+            assert_eq!(
+                parse("0"),
+                Err(Error {
+                    kind: ErrorKind::RegexCaptureZero,
+                    range: 0..1,
+                }),
+            );
+            assert_eq!(parse("1"), Ok(Filter::RegexCapture(1)));
+            assert_eq!(parse("2"), Ok(Filter::RegexCapture(2)));
+            assert_eq!(parse("10"), Ok(Filter::RegexCapture(10)));
+        }
+
+        #[test]
+        fn trim() {
+            assert_eq!(parse("t"), Ok(Filter::Trim));
+        }
+
+        #[test]
+        fn to_lowercase() {
+            assert_eq!(parse("l"), Ok(Filter::ToLowercase));
+        }
+
+        #[test]
+        fn to_uppercase() {
+            assert_eq!(parse("L"), Ok(Filter::ToUppercase));
+        }
+
+        #[test]
+        fn to_ascii() {
+            assert_eq!(parse("i"), Ok(Filter::ToAscii));
+        }
+
+        #[test]
+        fn remove_non_ascii() {
+            assert_eq!(parse("I"), Ok(Filter::RemoveNonAscii));
+        }
+
+        #[test]
+        fn left_pad() {
+            assert_eq!(
+                parse("<abc"),
+                Err(Error {
+                    kind: ErrorKind::PaddingPrefixInvalid('<', Some(Char::Raw('a'))),
+                    range: 1..2
+                })
+            );
+            assert_eq!(
+                parse("<<abc"),
+                Ok(Filter::LeftPad(Padding::Fixed(String::from("abc"))))
+            );
+            assert_eq!(
+                parse("<10:abc"),
+                Ok(Filter::LeftPad(Padding::Repeated(Repetition {
+                    count: 10,
+                    value: String::from("abc")
+                })))
+            );
+        }
+
+        #[test]
+        fn right_pad() {
+            assert_eq!(
+                parse(">abc"),
+                Err(Error {
+                    kind: ErrorKind::PaddingPrefixInvalid('>', Some(Char::Raw('a'))),
+                    range: 1..2
+                })
+            );
+            assert_eq!(
+                parse(">>abc"),
+                Ok(Filter::RightPad(Padding::Fixed(String::from("abc"))))
+            );
+            assert_eq!(
+                parse(">10:abc"),
+                Ok(Filter::RightPad(Padding::Repeated(Repetition {
+                    count: 10,
+                    value: String::from("abc")
+                })))
+            );
+        }
+
+        #[test]
+        fn repeat() {
+            assert_eq!(
+                parse("*3:abc"),
+                Ok(Filter::Repeat(Repetition {
+                    count: 3,
+                    value: String::from("abc")
+                }))
+            );
+        }
+
+        #[test]
+        fn local_counter() {
+            assert_eq!(parse("c"), Ok(Filter::LocalCounter));
+        }
+
+        #[test]
+        fn global_counter() {
+            assert_eq!(parse("C"), Ok(Filter::GlobalCounter));
+        }
+
+        #[test]
+        fn random_number() {
+            assert_eq!(
+                parse("u1-10"),
+                Ok(Filter::RandomNumber(NumberInterval::new(1, Some(10))))
+            );
+        }
+
+        #[test]
+        fn random_uuid() {
+            assert_eq!(parse("U"), Ok(Filter::RandomUuid));
+        }
+
+        fn parse(string: &str) -> Result<Filter> {
+            Filter::parse(&mut Reader::from(string))
+        }
     }
 
-    #[test]
-    fn parse_regex_replace_first() {
-        assert_eq!(
-            parse("s"),
-            Err(parse::Error {
-                kind: parse::ErrorKind::ExpectedSubstitution,
-                range: 1..1,
-            }),
-        );
-        assert_eq!(
-            parse("s/\\d+"),
-            Ok(Filter::RegexReplaceFirst(Substitution {
-                target: RegexHolder(Regex::new("\\d+").unwrap()),
-                replacement: String::from(""),
-            })),
-        );
-        assert_eq!(
-            parse("s/\\d+/cd"),
-            Ok(Filter::RegexReplaceFirst(Substitution {
-                target: RegexHolder(Regex::new("\\d+").unwrap()),
-                replacement: String::from("cd"),
-            })),
-        );
-        assert_eq!(
-            parse("s/[0-9+/cd"),
-            Err(parse::Error {
-                kind: parse::ErrorKind::SubstitutionRegexInvalid(AnyString(String::from(
-                    "This string is not compared by assertion"
-                ))),
-                range: 2..7,
-            }),
-        );
-    }
+    mod eval {
+        use super::*;
+        use crate::pattern::filter::testing::assert_ok_uuid;
+        use crate::pattern::testing::make_eval_context;
+        use std::path::MAIN_SEPARATOR;
 
-    #[test]
-    fn parse_regex_replace_all() {
-        assert_eq!(
-            parse("S"),
-            Err(parse::Error {
-                kind: parse::ErrorKind::ExpectedSubstitution,
-                range: 1..1,
-            }),
-        );
-        assert_eq!(
-            parse("S/\\d+"),
-            Ok(Filter::RegexReplaceAll(Substitution {
-                target: RegexHolder(Regex::new("\\d+").unwrap()),
-                replacement: String::from(""),
-            })),
-        );
-        assert_eq!(
-            parse("S/\\d+/cd"),
-            Ok(Filter::RegexReplaceAll(Substitution {
-                target: RegexHolder(Regex::new("\\d+").unwrap()),
-                replacement: String::from("cd"),
-            })),
-        );
-        assert_eq!(
-            parse("S/[0-9+/cd"),
-            Err(parse::Error {
-                kind: parse::ErrorKind::SubstitutionRegexInvalid(AnyString(String::from(
-                    "This string is not compared by assertion"
-                ))),
-                range: 2..7,
-            }),
-        );
-    }
+        #[test]
+        fn absolute_path() {
+            assert_eq!(
+                Filter::AbsolutePath
+                    .eval(String::from("root/parent/file.ext"), &make_eval_context()),
+                Ok(format!("current_dir{}root/parent/file.ext", MAIN_SEPARATOR))
+            );
+        }
 
-    #[test]
-    fn parse_regex_capture() {
-        assert_eq!(
-            parse("0"),
-            Err(parse::Error {
-                kind: parse::ErrorKind::RegexCaptureZero,
-                range: 0..1,
-            }),
-        );
-        assert_eq!(parse("1"), Ok(Filter::RegexCapture(1)));
-        assert_eq!(parse("2"), Ok(Filter::RegexCapture(2)));
-        assert_eq!(parse("10"), Ok(Filter::RegexCapture(10)));
-    }
+        #[test]
+        fn canonical_path() {
+            let current_dir = std::env::current_dir().unwrap();
+            let mut context = make_eval_context();
+            context.current_dir = &current_dir;
 
-    #[test]
-    fn parse_repeat() {
-        assert_eq!(
-            parse("*3:abc"),
-            Ok(Filter::Repeat(Repetition {
-                count: 3,
-                value: String::from("abc")
-            }))
-        );
-    }
+            assert_eq!(
+                Filter::CanonicalPath.eval(String::from("Cargo.toml"), &context),
+                Ok(current_dir.join("Cargo.toml").to_str().unwrap().to_string())
+            );
+        }
 
-    #[test]
-    fn parse_local_counter() {
-        assert_eq!(parse("c"), Ok(Filter::LocalCounter));
-    }
+        #[test]
+        fn normalized_path() {
+            assert_eq!(
+                Filter::NormalizedPath.eval(
+                    String::from("root/parent/../new-parent/./dir/"),
+                    &make_eval_context()
+                ),
+                Ok(format!(
+                    "root{}new-parent{}dir",
+                    MAIN_SEPARATOR, MAIN_SEPARATOR
+                ))
+            );
+        }
 
-    #[test]
-    fn parse_global_counter() {
-        assert_eq!(parse("C"), Ok(Filter::GlobalCounter));
-    }
+        #[test]
+        fn parent_path() {
+            assert_eq!(
+                Filter::ParentPath.eval(String::from("root/parent/file.ext"), &make_eval_context()),
+                Ok(String::from("root/parent"))
+            );
+        }
 
-    #[test]
-    fn parse_random_number() {
-        assert_eq!(
-            parse("u1-10"),
-            Ok(Filter::RandomNumber(NumberInterval::new(1, Some(10))))
-        );
-    }
+        #[test]
+        fn file_name() {
+            assert_eq!(
+                Filter::FileName.eval(String::from("root/parent/file.ext"), &make_eval_context()),
+                Ok(String::from("file.ext"))
+            );
+        }
 
-    #[test]
-    fn parse_random_uuid() {
-        assert_eq!(parse("U"), Ok(Filter::RandomUuid));
-    }
+        #[test]
+        fn base_name() {
+            assert_eq!(
+                Filter::BaseName.eval(String::from("root/parent/file.ext"), &make_eval_context()),
+                Ok(String::from("file"))
+            );
+        }
 
-    #[test]
-    fn parse_ignore_chars_after_filter() {
-        let mut reader = Reader::from("a_");
-        Filter::parse(&mut reader).unwrap();
-        assert_eq!(reader.position(), 1);
-    }
+        #[test]
+        fn base_name_with_path() {
+            assert_eq!(
+                Filter::BaseNameWithPath
+                    .eval(String::from("root/parent/file.ext"), &make_eval_context()),
+                Ok(String::from("root/parent/file"))
+            );
+        }
 
-    #[test]
-    fn parse_unknown_filter_error() {
-        assert_eq!(
-            parse("-_"),
-            Err(parse::Error {
-                kind: parse::ErrorKind::UnknownFilter(Char::Raw('-')),
-                range: 0..1,
-            }),
-        );
-    }
+        #[test]
+        fn extension() {
+            assert_eq!(
+                Filter::Extension.eval(String::from("root/parent/file.ext"), &make_eval_context()),
+                Ok(String::from("ext"))
+            );
+        }
 
-    #[test]
-    fn parse_empty_error() {
-        assert_eq!(
-            parse(""),
-            Err(parse::Error {
-                kind: parse::ErrorKind::ExpectedFilter,
-                range: 0..0,
-            }),
-        )
-    }
+        #[test]
+        fn extension_with_dot() {
+            assert_eq!(
+                Filter::ExtensionWithDot
+                    .eval(String::from("root/parent/file.ext"), &make_eval_context()),
+                Ok(String::from(".ext"))
+            );
+        }
 
-    fn parse(string: &str) -> parse::Result<Filter> {
-        Filter::parse(&mut Reader::from(string))
-    }
+        #[test]
+        fn substring() {
+            assert_eq!(
+                Filter::Substring(IndexRange::new(1, Some(2)))
+                    .eval(String::from("abcde"), &make_eval_context()),
+                Ok(String::from("bc"))
+            );
+        }
 
-    #[test]
-    fn eval_absolute_path() {
-        assert_eq!(
-            Filter::AbsolutePath.eval(String::from("root/parent/file.ext"), &make_eval_context()),
-            Ok(format!("current_dir{}root/parent/file.ext", MAIN_SEPARATOR))
-        );
-    }
+        #[test]
+        fn substring_backward() {
+            assert_eq!(
+                Filter::SubstringBackward(IndexRange::new(1, Some(2)))
+                    .eval(String::from("abcde"), &make_eval_context()),
+                Ok(String::from("cd"))
+            );
+        }
 
-    #[test]
-    fn eval_canonical_path() {
-        let current_dir = std::env::current_dir().unwrap();
-        let mut context = make_eval_context();
-        context.current_dir = &current_dir;
+        #[test]
+        fn replace_first() {
+            assert_eq!(
+                Filter::ReplaceFirst(Substitution {
+                    target: String::from("ab"),
+                    replacement: String::from("x"),
+                })
+                .eval(String::from("abcd_abcd"), &make_eval_context()),
+                Ok(String::from("xcd_abcd"))
+            );
+        }
 
-        assert_eq!(
-            Filter::CanonicalPath.eval(String::from("Cargo.toml"), &context),
-            Ok(current_dir.join("Cargo.toml").to_str().unwrap().to_string())
-        );
-    }
+        #[test]
+        fn replace_all() {
+            assert_eq!(
+                Filter::ReplaceAll(Substitution {
+                    target: String::from("ab"),
+                    replacement: String::from("x"),
+                })
+                .eval(String::from("abcd_abcd"), &make_eval_context()),
+                Ok(String::from("xcd_xcd"))
+            );
+        }
 
-    #[test]
-    fn eval_normalized_path() {
-        assert_eq!(
-            Filter::NormalizedPath.eval(
-                String::from("root/parent/../new-parent/./dir/"),
-                &make_eval_context()
-            ),
-            Ok(format!(
-                "root{}new-parent{}dir",
-                MAIN_SEPARATOR, MAIN_SEPARATOR
-            ))
-        );
-    }
+        #[test]
+        fn replace_empty() {
+            assert_eq!(
+                Filter::ReplaceEmpty(String::from("xyz")).eval(String::new(), &make_eval_context()),
+                Ok(String::from("xyz"))
+            );
+        }
 
-    #[test]
-    fn eval_parent_path() {
-        assert_eq!(
-            Filter::ParentPath.eval(String::from("root/parent/file.ext"), &make_eval_context()),
-            Ok(String::from("root/parent"))
-        );
-    }
+        #[test]
+        fn regex_match() {
+            assert_eq!(
+                Filter::RegexMatch(RegexHolder(Regex::new("\\d+").unwrap()))
+                    .eval(String::from("a123y"), &make_eval_context()),
+                Ok(String::from("123"))
+            );
+        }
 
-    #[test]
-    fn eval_file_name() {
-        assert_eq!(
-            Filter::FileName.eval(String::from("root/parent/file.ext"), &make_eval_context()),
-            Ok(String::from("file.ext"))
-        );
-    }
+        #[test]
+        fn regex_replace_first() {
+            assert_eq!(
+                Filter::RegexReplaceFirst(Substitution {
+                    target: RegexHolder(Regex::new("\\d+").unwrap()),
+                    replacement: String::from("x"),
+                })
+                .eval(String::from("12_34"), &make_eval_context()),
+                Ok(String::from("x_34"))
+            );
+        }
 
-    #[test]
-    fn eval_base_name() {
-        assert_eq!(
-            Filter::BaseName.eval(String::from("root/parent/file.ext"), &make_eval_context()),
-            Ok(String::from("file"))
-        );
-    }
+        #[test]
+        fn regex_replace_all() {
+            assert_eq!(
+                Filter::RegexReplaceAll(Substitution {
+                    target: RegexHolder(Regex::new("\\d+").unwrap()),
+                    replacement: String::from("x"),
+                })
+                .eval(String::from("12_34"), &make_eval_context()),
+                Ok(String::from("x_x"))
+            );
+        }
 
-    #[test]
-    fn eval_base_name_with_path() {
-        assert_eq!(
-            Filter::BaseNameWithPath
-                .eval(String::from("root/parent/file.ext"), &make_eval_context()),
-            Ok(String::from("root/parent/file"))
-        );
-    }
+        #[test]
+        fn regex_capture() {
+            assert_eq!(
+                Filter::RegexCapture(1).eval(String::new(), &make_eval_context()),
+                Ok(String::from("abc"))
+            );
+        }
 
-    #[test]
-    fn eval_extension() {
-        assert_eq!(
-            Filter::Extension.eval(String::from("root/parent/file.ext"), &make_eval_context()),
-            Ok(String::from("ext"))
-        );
-    }
+        #[test]
+        fn trim() {
+            assert_eq!(
+                Filter::Trim.eval(String::from(" abcd "), &make_eval_context()),
+                Ok(String::from("abcd"))
+            );
+        }
 
-    #[test]
-    fn eval_extension_with_dot() {
-        assert_eq!(
-            Filter::ExtensionWithDot
-                .eval(String::from("root/parent/file.ext"), &make_eval_context()),
-            Ok(String::from(".ext"))
-        );
-    }
+        #[test]
+        fn to_lowercase() {
+            assert_eq!(
+                Filter::ToLowercase.eval(String::from("ábčdÁBČD"), &make_eval_context()),
+                Ok(String::from("ábčdábčd"))
+            );
+        }
 
-    #[test]
-    fn eval_substring() {
-        assert_eq!(
-            Filter::Substring(IndexRange::new(1, Some(2)))
-                .eval(String::from("abcde"), &make_eval_context()),
-            Ok(String::from("bc"))
-        );
-    }
+        #[test]
+        fn to_uppercase() {
+            assert_eq!(
+                Filter::ToUppercase.eval(String::from("ábčdÁBČD"), &make_eval_context()),
+                Ok(String::from("ÁBČDÁBČD"))
+            );
+        }
 
-    #[test]
-    fn eval_substring_backward() {
-        assert_eq!(
-            Filter::SubstringBackward(IndexRange::new(1, Some(2)))
-                .eval(String::from("abcde"), &make_eval_context()),
-            Ok(String::from("cd"))
-        );
-    }
+        #[test]
+        fn to_ascii() {
+            assert_eq!(
+                Filter::ToAscii.eval(String::from("ábčdÁBČD"), &make_eval_context()),
+                Ok(String::from("abcdABCD"))
+            );
+        }
 
-    #[test]
-    fn eval_replace_first() {
-        assert_eq!(
-            Filter::ReplaceFirst(Substitution {
-                target: String::from("ab"),
-                replacement: String::from("x"),
-            })
-            .eval(String::from("abcd_abcd"), &make_eval_context()),
-            Ok(String::from("xcd_abcd"))
-        );
-    }
+        #[test]
+        fn remove_non_ascii() {
+            assert_eq!(
+                Filter::RemoveNonAscii.eval(String::from("ábčdÁBČD"), &make_eval_context()),
+                Ok(String::from("bdBD"))
+            );
+        }
 
-    #[test]
-    fn eval_replace_all() {
-        assert_eq!(
-            Filter::ReplaceAll(Substitution {
-                target: String::from("ab"),
-                replacement: String::from("x"),
-            })
-            .eval(String::from("abcd_abcd"), &make_eval_context()),
-            Ok(String::from("xcd_xcd"))
-        );
-    }
-
-    #[test]
-    fn eval_replace_empty() {
-        assert_eq!(
-            Filter::ReplaceEmpty(String::from("xyz")).eval(String::new(), &make_eval_context()),
-            Ok(String::from("xyz"))
-        );
-    }
-
-    #[test]
-    fn eval_regex_match() {
-        assert_eq!(
-            Filter::RegexMatch(RegexHolder(Regex::new("\\d+").unwrap()))
-                .eval(String::from("a123y"), &make_eval_context()),
-            Ok(String::from("123"))
-        );
-    }
-
-    #[test]
-    fn eval_regex_replace_first() {
-        assert_eq!(
-            Filter::RegexReplaceFirst(Substitution {
-                target: RegexHolder(Regex::new("\\d+").unwrap()),
-                replacement: String::from("x"),
-            })
-            .eval(String::from("12_34"), &make_eval_context()),
-            Ok(String::from("x_34"))
-        );
-    }
-
-    #[test]
-    fn eval_regex_replace_all() {
-        assert_eq!(
-            Filter::RegexReplaceAll(Substitution {
-                target: RegexHolder(Regex::new("\\d+").unwrap()),
-                replacement: String::from("x"),
-            })
-            .eval(String::from("12_34"), &make_eval_context()),
-            Ok(String::from("x_x"))
-        );
-    }
-
-    #[test]
-    fn eval_regex_capture() {
-        assert_eq!(
-            Filter::RegexCapture(1).eval(String::new(), &make_eval_context()),
-            Ok(String::from("abc"))
-        );
-    }
-
-    #[test]
-    fn eval_trim() {
-        assert_eq!(
-            Filter::Trim.eval(String::from(" abcd "), &make_eval_context()),
-            Ok(String::from("abcd"))
-        );
-    }
-
-    #[test]
-    fn eval_to_lowercase() {
-        assert_eq!(
-            Filter::ToLowercase.eval(String::from("ábčdÁBČD"), &make_eval_context()),
-            Ok(String::from("ábčdábčd"))
-        );
-    }
-
-    #[test]
-    fn eval_to_uppercase() {
-        assert_eq!(
-            Filter::ToUppercase.eval(String::from("ábčdÁBČD"), &make_eval_context()),
-            Ok(String::from("ÁBČDÁBČD"))
-        );
-    }
-
-    #[test]
-    fn eval_to_ascii() {
-        assert_eq!(
-            Filter::ToAscii.eval(String::from("ábčdÁBČD"), &make_eval_context()),
-            Ok(String::from("abcdABCD"))
-        );
-    }
-
-    #[test]
-    fn eval_remove_non_ascii() {
-        assert_eq!(
-            Filter::RemoveNonAscii.eval(String::from("ábčdÁBČD"), &make_eval_context()),
-            Ok(String::from("bdBD"))
-        );
-    }
-
-    #[test]
-    fn eval_left_pad() {
-        assert_eq!(
-            Filter::LeftPad(Padding::Fixed(String::from("0123")))
+        #[test]
+        fn left_pad() {
+            assert_eq!(
+                Filter::LeftPad(Padding::Fixed(String::from("0123")))
+                    .eval(String::from("ab"), &make_eval_context()),
+                Ok(String::from("01ab"))
+            );
+            assert_eq!(
+                Filter::LeftPad(Padding::Repeated(Repetition {
+                    count: 3,
+                    value: String::from("01")
+                }))
                 .eval(String::from("ab"), &make_eval_context()),
-            Ok(String::from("01ab"))
-        );
-        assert_eq!(
-            Filter::LeftPad(Padding::Repeated(Repetition {
-                count: 3,
-                value: String::from("01")
-            }))
-            .eval(String::from("ab"), &make_eval_context()),
-            Ok(String::from("0101ab"))
-        );
-    }
+                Ok(String::from("0101ab"))
+            );
+        }
 
-    #[test]
-    fn eval_right_pad() {
-        assert_eq!(
-            Filter::RightPad(Padding::Fixed(String::from("0123")))
+        #[test]
+        fn right_pad() {
+            assert_eq!(
+                Filter::RightPad(Padding::Fixed(String::from("0123")))
+                    .eval(String::from("ab"), &make_eval_context()),
+                Ok(String::from("ab23"))
+            );
+            assert_eq!(
+                Filter::RightPad(Padding::Repeated(Repetition {
+                    count: 3,
+                    value: String::from("01")
+                }))
                 .eval(String::from("ab"), &make_eval_context()),
-            Ok(String::from("ab23"))
-        );
-        assert_eq!(
-            Filter::RightPad(Padding::Repeated(Repetition {
-                count: 3,
-                value: String::from("01")
-            }))
-            .eval(String::from("ab"), &make_eval_context()),
-            Ok(String::from("ab0101"))
-        );
-    }
+                Ok(String::from("ab0101"))
+            );
+        }
 
-    #[test]
-    fn eval_repeat() {
-        assert_eq!(
-            Filter::Repeat(Repetition {
-                count: 3,
-                value: String::from("abc")
-            })
-            .eval(String::new(), &make_eval_context()),
-            Ok(String::from("abcabcabc"))
-        );
-    }
-
-    #[test]
-    fn eval_local_counter() {
-        assert_eq!(
-            Filter::LocalCounter.eval(String::new(), &make_eval_context()),
-            Ok(String::from("1"))
-        );
-    }
-
-    #[test]
-    fn eval_global_counter() {
-        assert_eq!(
-            Filter::GlobalCounter.eval(String::new(), &make_eval_context()),
-            Ok(String::from("2"))
-        );
-    }
-
-    #[test]
-    fn eval_random_number() {
-        assert_eq!(
-            Filter::RandomNumber(NumberInterval::new(0, Some(0)))
+        #[test]
+        fn repeat() {
+            assert_eq!(
+                Filter::Repeat(Repetition {
+                    count: 3,
+                    value: String::from("abc")
+                })
                 .eval(String::new(), &make_eval_context()),
-            Ok(String::from("0"))
-        );
+                Ok(String::from("abcabcabc"))
+            );
+        }
+
+        #[test]
+        fn local_counter() {
+            assert_eq!(
+                Filter::LocalCounter.eval(String::new(), &make_eval_context()),
+                Ok(String::from("1"))
+            );
+        }
+
+        #[test]
+        fn global_counter() {
+            assert_eq!(
+                Filter::GlobalCounter.eval(String::new(), &make_eval_context()),
+                Ok(String::from("2"))
+            );
+        }
+
+        #[test]
+        fn random_number() {
+            assert_eq!(
+                Filter::RandomNumber(NumberInterval::new(0, Some(0)))
+                    .eval(String::new(), &make_eval_context()),
+                Ok(String::from("0"))
+            );
+        }
+
+        #[test]
+        fn random_uuid() {
+            assert_ok_uuid(Filter::RandomUuid.eval(String::new(), &make_eval_context()));
+        }
     }
 
-    #[test]
-    fn eval_random_uuid() {
-        assert_ok_uuid(Filter::RandomUuid.eval(String::new(), &make_eval_context()));
-    }
+    mod display {
+        use super::*;
 
-    #[test]
-    fn display() {
-        assert_eq!(Filter::AbsolutePath.to_string(), "Absolute path");
-        assert_eq!(Filter::CanonicalPath.to_string(), "Canonical path");
-        assert_eq!(Filter::NormalizedPath.to_string(), "Normalized path");
-        assert_eq!(Filter::ParentPath.to_string(), "Parent path");
-        assert_eq!(Filter::FileName.to_string(), "File name");
-        assert_eq!(Filter::BaseName.to_string(), "Base name");
-        assert_eq!(Filter::BaseNameWithPath.to_string(), "Base name with path");
-        assert_eq!(Filter::Extension.to_string(), "Extension");
-        assert_eq!(Filter::ExtensionWithDot.to_string(), "Extension with dot");
-        assert_eq!(
-            Filter::Substring(IndexRange::new(1, Some(2))).to_string(),
-            "Substring from 2..3"
-        );
-        assert_eq!(
-            Filter::SubstringBackward(IndexRange::new(1, Some(2))).to_string(),
-            "Substring (backward) from 2..3"
-        );
-        assert_eq!(
-            Filter::ReplaceFirst(Substitution {
-                target: String::from("a"),
-                replacement: String::from("b")
-            })
-            .to_string(),
-            "Replace first 'a' with 'b'"
-        );
-        assert_eq!(
-            Filter::ReplaceAll(Substitution {
-                target: String::from("a"),
-                replacement: String::from("b")
-            })
-            .to_string(),
-            "Replace all 'a' with 'b'"
-        );
-        assert_eq!(Filter::Trim.to_string(), "Trim");
-        assert_eq!(Filter::ToLowercase.to_string(), "To lowercase");
-        assert_eq!(Filter::ToUppercase.to_string(), "To uppercase");
-        assert_eq!(Filter::ToAscii.to_string(), "To ASCII");
-        assert_eq!(Filter::RemoveNonAscii.to_string(), "Remove non-ASCII");
-        assert_eq!(
-            Filter::LeftPad(Padding::Fixed(String::from("abc"))).to_string(),
-            "Left pad with 'abc'"
-        );
-        assert_eq!(
-            Filter::LeftPad(Padding::Repeated(Repetition {
-                count: 5,
-                value: String::from("abc")
-            }))
-            .to_string(),
-            "Left pad with 5x 'abc'"
-        );
-        assert_eq!(
-            Filter::RightPad(Padding::Fixed(String::from("abc"))).to_string(),
-            "Right pad with 'abc'"
-        );
-        assert_eq!(
-            Filter::RightPad(Padding::Repeated(Repetition {
-                count: 5,
-                value: String::from("abc")
-            }))
-            .to_string(),
-            "Right pad with 5x 'abc'"
-        );
-        assert_eq!(
-            Filter::ReplaceEmpty(String::from("abc")).to_string(),
-            "Replace empty with 'abc'"
-        );
-        assert_eq!(
-            Filter::RegexMatch(RegexHolder(Regex::new("a+").unwrap())).to_string(),
-            "Match of regular expression 'a+'"
-        );
-        assert_eq!(
-            Filter::RegexReplaceFirst(Substitution {
-                target: RegexHolder(Regex::new("a+").unwrap()),
-                replacement: String::from("b")
-            })
-            .to_string(),
-            "Replace first match of regular expression 'a+' with 'b'"
-        );
-        assert_eq!(
-            Filter::RegexReplaceAll(Substitution {
-                target: RegexHolder(Regex::new("a+").unwrap()),
-                replacement: String::from("b")
-            })
-            .to_string(),
-            "Replace all matches of regular expression 'a+' with 'b'"
-        );
-        assert_eq!(
-            Filter::RegexCapture(1).to_string(),
-            "Regular expression capture #1"
-        );
-        assert_eq!(
-            Filter::Repeat(Repetition {
-                count: 5,
-                value: String::from("abc")
-            })
-            .to_string(),
-            "Repeat 5x 'abc'"
-        );
-        assert_eq!(Filter::LocalCounter.to_string(), "Local counter");
-        assert_eq!(Filter::GlobalCounter.to_string(), "Global counter");
-        assert_eq!(
-            Filter::RandomNumber(NumberInterval::new(0, Some(99))).to_string(),
-            "Random number from [0, 99]"
-        );
-        assert_eq!(Filter::RandomUuid.to_string(), "Random UUID");
+        #[test]
+        fn absolute_path() {
+            assert_eq!(Filter::AbsolutePath.to_string(), "Absolute path");
+        }
+
+        #[test]
+        fn canonical_path() {
+            assert_eq!(Filter::CanonicalPath.to_string(), "Canonical path");
+        }
+
+        #[test]
+        fn normalized_path() {
+            assert_eq!(Filter::NormalizedPath.to_string(), "Normalized path");
+        }
+
+        #[test]
+        fn parent_path() {
+            assert_eq!(Filter::ParentPath.to_string(), "Parent path");
+        }
+
+        #[test]
+        fn file_name() {
+            assert_eq!(Filter::FileName.to_string(), "File name");
+        }
+
+        #[test]
+        fn base_name() {
+            assert_eq!(Filter::BaseName.to_string(), "Base name");
+        }
+
+        #[test]
+        fn base_name_with_path() {
+            assert_eq!(Filter::BaseNameWithPath.to_string(), "Base name with path");
+        }
+
+        #[test]
+        fn extension() {
+            assert_eq!(Filter::Extension.to_string(), "Extension");
+        }
+
+        #[test]
+        fn extension_with_dor() {
+            assert_eq!(Filter::ExtensionWithDot.to_string(), "Extension with dot");
+        }
+
+        #[test]
+        fn substring() {
+            assert_eq!(
+                Filter::Substring(IndexRange::new(1, Some(2))).to_string(),
+                "Substring from 2..3"
+            );
+        }
+
+        #[test]
+        fn substring_backward() {
+            assert_eq!(
+                Filter::SubstringBackward(IndexRange::new(1, Some(2))).to_string(),
+                "Substring (backward) from 2..3"
+            );
+        }
+
+        #[test]
+        fn replace_first() {
+            assert_eq!(
+                Filter::ReplaceFirst(Substitution {
+                    target: String::from("a"),
+                    replacement: String::from("b")
+                })
+                .to_string(),
+                "Replace first 'a' with 'b'"
+            );
+        }
+
+        #[test]
+        fn replace_all() {
+            assert_eq!(
+                Filter::ReplaceAll(Substitution {
+                    target: String::from("a"),
+                    replacement: String::from("b")
+                })
+                .to_string(),
+                "Replace all 'a' with 'b'"
+            );
+        }
+
+        #[test]
+        fn replace_empty() {
+            assert_eq!(
+                Filter::ReplaceEmpty(String::from("abc")).to_string(),
+                "Replace empty with 'abc'"
+            );
+        }
+
+        #[test]
+        fn regex_match() {
+            assert_eq!(
+                Filter::RegexMatch(RegexHolder(Regex::new("a+").unwrap())).to_string(),
+                "Match of regular expression 'a+'"
+            );
+        }
+
+        #[test]
+        fn regex_replace_first() {
+            assert_eq!(
+                Filter::RegexReplaceFirst(Substitution {
+                    target: RegexHolder(Regex::new("a+").unwrap()),
+                    replacement: String::from("b")
+                })
+                .to_string(),
+                "Replace first match of regular expression 'a+' with 'b'"
+            );
+        }
+
+        #[test]
+        fn regex_replace_all() {
+            assert_eq!(
+                Filter::RegexReplaceAll(Substitution {
+                    target: RegexHolder(Regex::new("a+").unwrap()),
+                    replacement: String::from("b")
+                })
+                .to_string(),
+                "Replace all matches of regular expression 'a+' with 'b'"
+            );
+        }
+
+        #[test]
+        fn regex_capture() {
+            assert_eq!(
+                Filter::RegexCapture(1).to_string(),
+                "Regular expression capture #1"
+            );
+        }
+
+        #[test]
+        fn trim() {
+            assert_eq!(Filter::Trim.to_string(), "Trim");
+        }
+
+        #[test]
+        fn to_lowercase() {
+            assert_eq!(Filter::ToLowercase.to_string(), "To lowercase");
+        }
+
+        #[test]
+        fn to_uppercase() {
+            assert_eq!(Filter::ToUppercase.to_string(), "To uppercase");
+        }
+
+        #[test]
+        fn to_ascii() {
+            assert_eq!(Filter::ToAscii.to_string(), "To ASCII");
+        }
+
+        #[test]
+        fn remove_non_ascii() {
+            assert_eq!(Filter::RemoveNonAscii.to_string(), "Remove non-ASCII");
+        }
+
+        #[test]
+        fn left_pad() {
+            assert_eq!(
+                Filter::LeftPad(Padding::Fixed(String::from("abc"))).to_string(),
+                "Left pad with 'abc'"
+            );
+            assert_eq!(
+                Filter::LeftPad(Padding::Repeated(Repetition {
+                    count: 5,
+                    value: String::from("abc")
+                }))
+                .to_string(),
+                "Left pad with 5x 'abc'"
+            );
+        }
+
+        #[test]
+        fn right_pad() {
+            assert_eq!(
+                Filter::RightPad(Padding::Fixed(String::from("abc"))).to_string(),
+                "Right pad with 'abc'"
+            );
+            assert_eq!(
+                Filter::RightPad(Padding::Repeated(Repetition {
+                    count: 5,
+                    value: String::from("abc")
+                }))
+                .to_string(),
+                "Right pad with 5x 'abc'"
+            );
+        }
+
+        #[test]
+        fn repeat() {
+            assert_eq!(
+                Filter::Repeat(Repetition {
+                    count: 5,
+                    value: String::from("abc")
+                })
+                .to_string(),
+                "Repeat 5x 'abc'"
+            );
+        }
+
+        #[test]
+        fn local_counter() {
+            assert_eq!(Filter::LocalCounter.to_string(), "Local counter");
+        }
+
+        #[test]
+        fn global_counter() {
+            assert_eq!(Filter::GlobalCounter.to_string(), "Global counter");
+        }
+
+        #[test]
+        fn random_number() {
+            assert_eq!(
+                Filter::RandomNumber(NumberInterval::new(0, Some(99))).to_string(),
+                "Random number from [0, 99]"
+            );
+        }
+
+        #[test]
+        fn random_uuid() {
+            assert_eq!(Filter::RandomUuid.to_string(), "Random UUID");
+        }
     }
 }

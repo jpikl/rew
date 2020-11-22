@@ -48,157 +48,203 @@ pub fn right_pad_repeat(value: String, padding: &str, count: usize) -> Result {
 mod tests {
     use super::*;
 
-    #[test]
-    fn trim_not_trimmed() {
-        assert_eq!(trim(String::from("  abc  ")), Ok(String::from("abc")));
+    mod trim {
+        use super::*;
+
+        #[test]
+        fn empty() {
+            assert_eq!(trim(String::new()), Ok(String::new()));
+        }
+
+        #[test]
+        fn trimmed() {
+            assert_eq!(trim(String::from("abc")), Ok(String::from("abc")));
+        }
+
+        #[test]
+        fn not_trimmed() {
+            assert_eq!(trim(String::from("  abc  ")), Ok(String::from("abc")));
+        }
     }
 
-    #[test]
-    fn trim_trimmed() {
-        assert_eq!(trim(String::from("abc")), Ok(String::from("abc")));
+    mod to_lowercase {
+        use super::*;
+
+        #[test]
+        fn empty() {
+            assert_eq!(to_lowercase(String::new()), Ok(String::new()));
+        }
+
+        #[test]
+        fn mixed() {
+            assert_eq!(
+                to_lowercase(String::from("ábčdÁBČD")),
+                Ok(String::from("ábčdábčd"))
+            );
+        }
     }
 
-    #[test]
-    fn trim_empty() {
-        assert_eq!(trim(String::new()), Ok(String::new()));
+    mod to_uppercase {
+        use super::*;
+
+        #[test]
+        fn empty() {
+            assert_eq!(to_uppercase(String::new()), Ok(String::new()));
+        }
+
+        #[test]
+        fn mixed() {
+            assert_eq!(
+                to_uppercase(String::from("ábčdÁBČD")),
+                Ok(String::from("ÁBČDÁBČD"))
+            );
+        }
     }
 
-    #[test]
-    fn convert_to_lowercase() {
-        assert_eq!(
-            to_lowercase(String::from("ábčdÁBČD")),
-            Ok(String::from("ábčdábčd"))
-        );
+    mod to_ascii {
+        use super::*;
+
+        #[test]
+        fn empty() {
+            assert_eq!(to_ascii(String::new()), Ok(String::new()));
+        }
+
+        #[test]
+        fn mixed() {
+            assert_eq!(
+                to_ascii(String::from("ábčdÁBČD")),
+                Ok(String::from("abcdABCD"))
+            );
+        }
     }
 
-    #[test]
-    fn convert_empty_to_lowercase() {
-        assert_eq!(to_lowercase(String::new()), Ok(String::new()));
+    mod remove_non_ascii {
+        use super::*;
+
+        #[test]
+        fn empty() {
+            assert_eq!(remove_non_ascii(String::new()), Ok(String::new()));
+        }
+
+        #[test]
+        fn mixed() {
+            assert_eq!(
+                remove_non_ascii(String::from("ábčdÁBČD")),
+                Ok(String::from("bdBD"))
+            );
+        }
     }
 
-    #[test]
-    fn convert_some_to_uppercase() {
-        assert_eq!(
-            to_uppercase(String::from("ábčdÁBČD")),
-            Ok(String::from("ÁBČDÁBČD"))
-        );
+    mod left_pad {
+        use super::*;
+
+        #[test]
+        fn empty_with_empty() {
+            assert_eq!(left_pad(String::from(""), ""), Ok(String::from("")));
+        }
+
+        #[test]
+        fn empty_with_nonempty() {
+            assert_eq!(left_pad(String::new(), "0123"), Ok(String::from("0123")));
+        }
+
+        #[test]
+        fn nonempty_with_empty() {
+            assert_eq!(left_pad(String::from("abcd"), ""), Ok(String::from("abcd")));
+        }
+
+        #[test]
+        fn shorter_with_longer() {
+            assert_eq!(
+                left_pad(String::from("ab"), "0123"),
+                Ok(String::from("01ab"))
+            );
+        }
+
+        #[test]
+        fn longer_with_shorter() {
+            assert_eq!(
+                left_pad(String::from("abcd"), "0123"),
+                Ok(String::from("abcd"))
+            );
+        }
     }
 
-    #[test]
-    fn convert_empty_to_uppercase() {
-        assert_eq!(to_uppercase(String::new()), Ok(String::new()));
+    mod left_pad_repeat {
+        use super::*;
+
+        #[test]
+        fn zero_times() {
+            assert_eq!(
+                left_pad_repeat(String::from("a"), "01", 0),
+                Ok(String::from("a"))
+            );
+        }
+
+        #[test]
+        fn multiple_times() {
+            assert_eq!(
+                left_pad_repeat(String::from("a"), "01", 2),
+                Ok(String::from("010a"))
+            );
+        }
     }
 
-    #[test]
-    fn convert_some_to_ascii() {
-        assert_eq!(
-            to_ascii(String::from("ábčdÁBČD")),
-            Ok(String::from("abcdABCD"))
-        );
+    mod right_pad {
+        use super::*;
+
+        #[test]
+        fn empty_with_empty() {
+            assert_eq!(right_pad(String::from(""), ""), Ok(String::from("")));
+        }
+
+        #[test]
+        fn empty_with_nonempty() {
+            assert_eq!(right_pad(String::new(), "0123"), Ok(String::from("0123")));
+        }
+
+        #[test]
+        fn nonempty_with_empty() {
+            assert_eq!(
+                right_pad(String::from("abcd"), ""),
+                Ok(String::from("abcd"))
+            );
+        }
+
+        #[test]
+        fn shorter_with_longer() {
+            assert_eq!(
+                right_pad(String::from("ab"), "0123"),
+                Ok(String::from("ab23"))
+            );
+        }
+
+        #[test]
+        fn longer_with_shorter() {
+            assert_eq!(
+                right_pad(String::from("abcd"), "0123"),
+                Ok(String::from("abcd"))
+            );
+        }
     }
 
-    #[test]
-    fn convert_empty_to_ascii() {
-        assert_eq!(to_ascii(String::new()), Ok(String::new()));
-    }
+    mod right_pad_repeat {
+        use super::*;
 
-    #[test]
-    fn remove_non_ascii_from_some() {
-        assert_eq!(
-            remove_non_ascii(String::from("ábčdÁBČD")),
-            Ok(String::from("bdBD"))
-        );
-    }
+        #[test]
+        fn zero_times() {
+            assert_eq!(
+                right_pad_repeat(String::from("a"), "01", 0),
+                Ok(String::from("a"))
+            );
+        }
 
-    #[test]
-    fn remove_non_ascii_from_empty() {
-        assert_eq!(remove_non_ascii(String::new()), Ok(String::new()));
-    }
-
-    #[test]
-    fn left_pad_empty() {
-        assert_eq!(left_pad(String::new(), "0123"), Ok(String::from("0123")));
-    }
-
-    #[test]
-    fn left_pad_some() {
-        assert_eq!(
-            left_pad(String::from("ab"), "0123"),
-            Ok(String::from("01ab"))
-        );
-    }
-
-    #[test]
-    fn left_pad_none() {
-        assert_eq!(
-            left_pad(String::from("abcd"), "0123"),
-            Ok(String::from("abcd"))
-        );
-    }
-
-    #[test]
-    fn left_pad_with_empty() {
-        assert_eq!(left_pad(String::from("abcd"), ""), Ok(String::from("abcd")));
-    }
-
-    #[test]
-    fn left_pad_repeated() {
-        assert_eq!(
-            left_pad_repeat(String::from("a"), "01", 2),
-            Ok(String::from("010a"))
-        );
-    }
-
-    #[test]
-    fn left_pad_repeated_zero_times() {
-        assert_eq!(
-            left_pad_repeat(String::from("a"), "01", 0),
-            Ok(String::from("a"))
-        );
-    }
-
-    #[test]
-    fn right_pad_empty() {
-        assert_eq!(right_pad(String::new(), "0123"), Ok(String::from("0123")));
-    }
-
-    #[test]
-    fn right_pad_some() {
-        assert_eq!(
-            right_pad(String::from("ab"), "0123"),
-            Ok(String::from("ab23"))
-        );
-    }
-
-    #[test]
-    fn right_pad_none() {
-        assert_eq!(
-            right_pad(String::from("abcd"), "0123"),
-            Ok(String::from("abcd"))
-        );
-    }
-
-    #[test]
-    fn right_pad_with_empty() {
-        assert_eq!(
-            right_pad(String::from("abcd"), ""),
-            Ok(String::from("abcd"))
-        );
-    }
-
-    #[test]
-    fn right_pad_repeated() {
-        assert_eq!(
-            right_pad_repeat(String::from("a"), "01", 2),
-            Ok(String::from("a101"))
-        );
-    }
-
-    #[test]
-    fn right_pad_repeated_zero_times() {
-        assert_eq!(
-            right_pad_repeat(String::from("a"), "01", 0),
-            Ok(String::from("a"))
-        );
+        #[test]
+        fn multiple_times() {
+            assert_eq!(
+                right_pad_repeat(String::from("a"), "01", 2),
+                Ok(String::from("a101"))
+            );
+        }
     }
 }

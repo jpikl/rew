@@ -54,7 +54,7 @@ mod tests {
     use crate::pattern::reader::Reader;
 
     #[test]
-    fn parse_empty_error() {
+    fn parse_empty() {
         let mut reader = Reader::from("");
         assert_eq!(
             Repetition::parse(&mut reader),
@@ -67,7 +67,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_invalid_count_error() {
+    fn parse_invalid_count() {
         let mut reader = Reader::from("ab");
         assert_eq!(
             Repetition::parse(&mut reader),
@@ -80,7 +80,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_missing_delimiter_error() {
+    fn parse_missing_delimiter() {
         let mut reader = Reader::from("12");
         assert_eq!(
             Repetition::parse(&mut reader),
@@ -93,7 +93,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_digit_delimiter_error() {
+    fn parse_digit_delimiter() {
         let mut reader = Reader::from("010");
         assert_eq!(
             Repetition::parse(&mut reader),

@@ -288,7 +288,7 @@ mod tests {
         }
 
         #[test]
-        fn parse_invalid_error() {
+        fn parse_invalid() {
             let mut reader = Reader::from("-");
             assert_eq!(
                 NumberInterval::parse(&mut reader),
@@ -321,7 +321,7 @@ mod tests {
         }
 
         #[test]
-        fn parse_start_over_end_error() {
+        fn parse_start_over_end() {
             let mut reader = Reader::from("1-0");
             assert_eq!(
                 NumberInterval::parse(&mut reader),
@@ -344,7 +344,7 @@ mod tests {
         }
 
         #[test]
-        fn parse_no_delimiter_error() {
+        fn parse_no_delimiter() {
             let mut reader = Reader::from("1");
             assert_eq!(
                 NumberInterval::parse(&mut reader),
@@ -357,7 +357,7 @@ mod tests {
         }
 
         #[test]
-        fn parse_no_delimiter_remaining_error() {
+        fn parse_no_delimiter_remaining() {
             let mut reader = Reader::from("1ab");
             assert_eq!(
                 NumberInterval::parse(&mut reader),
@@ -395,7 +395,7 @@ mod tests {
         }
 
         #[test]
-        fn parse_empty_error() {
+        fn parse_empty() {
             let mut reader = Reader::from("");
             assert_eq!(
                 IndexRange::parse(&mut reader),
@@ -408,7 +408,7 @@ mod tests {
         }
 
         #[test]
-        fn parse_invalid_error() {
+        fn parse_invalid() {
             let mut reader = Reader::from("-");
             assert_eq!(
                 IndexRange::parse(&mut reader),
@@ -421,7 +421,7 @@ mod tests {
         }
 
         #[test]
-        fn parse_start_zero_error() {
+        fn parse_start_zero() {
             let mut reader = Reader::from("0-");
             assert_eq!(
                 IndexRange::parse(&mut reader),
@@ -441,7 +441,7 @@ mod tests {
         }
 
         #[test]
-        fn parse_start_end_zero_error() {
+        fn parse_start_end_zero() {
             let mut reader = Reader::from("1-0");
             assert_eq!(
                 IndexRange::parse(&mut reader),
@@ -464,7 +464,7 @@ mod tests {
         }
 
         #[test]
-        fn parse_start_over_end_error() {
+        fn parse_start_over_end() {
             let mut reader = Reader::from("2-1");
             assert_eq!(
                 IndexRange::parse(&mut reader),

@@ -19,81 +19,125 @@ pub fn replace_empty(mut value: String, replacement: &str) -> Result {
 mod tests {
     use super::*;
 
-    #[test]
-    fn replace_first_in_some() {
-        assert_eq!(
-            replace_first(String::from("abcd_abcd"), "ab", "x"),
-            Ok(String::from("xcd_abcd"))
-        );
+    mod replace_first {
+        use super::*;
+
+        #[test]
+        fn empty_with_empty() {
+            assert_eq!(replace_first(String::new(), "ab", ""), Ok(String::new()));
+        }
+
+        #[test]
+        fn empty_with_nonempty() {
+            assert_eq!(replace_first(String::new(), "ab", "x"), Ok(String::new()));
+        }
+
+        #[test]
+        fn none_with_empty() {
+            assert_eq!(
+                replace_first(String::from("cd"), "ab", ""),
+                Ok(String::from("cd"))
+            );
+        }
+
+        #[test]
+        fn none_with_nonempty() {
+            assert_eq!(
+                replace_first(String::from("cd"), "ab", "x"),
+                Ok(String::from("cd"))
+            );
+        }
+
+        #[test]
+        fn first_with_empty() {
+            assert_eq!(
+                replace_first(String::from("abcd_abcd"), "ab", ""),
+                Ok(String::from("cd_abcd"))
+            );
+        }
+
+        #[test]
+        fn first_with_nonempty() {
+            assert_eq!(
+                replace_first(String::from("abcd_abcd"), "ab", "x"),
+                Ok(String::from("xcd_abcd"))
+            );
+        }
     }
 
-    #[test]
-    fn replace_first_in_empty() {
-        assert_eq!(replace_first(String::new(), "ab", "x"), Ok(String::new()));
+    mod replace_all {
+        use super::*;
+
+        #[test]
+        fn empty_with_empty() {
+            assert_eq!(replace_all(String::new(), "ab", ""), Ok(String::new()));
+        }
+
+        #[test]
+        fn empty_with_nonempty() {
+            assert_eq!(replace_all(String::new(), "ab", "x"), Ok(String::new()));
+        }
+
+        #[test]
+        fn none_with_empty() {
+            assert_eq!(
+                replace_all(String::from("cd"), "ab", ""),
+                Ok(String::from("cd"))
+            );
+        }
+
+        #[test]
+        fn none_with_nonempty() {
+            assert_eq!(
+                replace_all(String::from("cd"), "ab", "x"),
+                Ok(String::from("cd"))
+            );
+        }
+
+        #[test]
+        fn first_with_empty() {
+            assert_eq!(
+                replace_all(String::from("abcd_abcd"), "ab", ""),
+                Ok(String::from("cd_cd"))
+            );
+        }
+
+        #[test]
+        fn first_with_nonempty() {
+            assert_eq!(
+                replace_all(String::from("abcd_abcd"), "ab", "x"),
+                Ok(String::from("xcd_xcd"))
+            );
+        }
     }
 
-    #[test]
-    fn replace_all_in_some() {
-        assert_eq!(
-            replace_all(String::from("abcd_abcd"), "ab", "x"),
-            Ok(String::from("xcd_xcd"))
-        );
-    }
+    mod replace_empty {
+        use super::*;
 
-    #[test]
-    fn replace_all_in_empty() {
-        assert_eq!(replace_all(String::new(), "ab", "x"), Ok(String::new()));
-    }
+        #[test]
+        fn empty_with_empty() {
+            assert_eq!(replace_empty(String::new(), ""), Ok(String::new()));
+        }
 
-    #[test]
-    fn remove_first_in_some() {
-        assert_eq!(
-            replace_first(String::from("abcd_abcd"), "ab", ""),
-            Ok(String::from("cd_abcd"))
-        );
-    }
+        #[test]
+        fn empty_with_nonempty() {
+            assert_eq!(replace_empty(String::new(), "def"), Ok(String::from("def")));
+        }
 
-    #[test]
-    fn remove_first_in_empty() {
-        assert_eq!(replace_first(String::new(), "ab", ""), Ok(String::new()));
-    }
+        #[test]
+        fn nonempty_with_empty() {
+            assert_eq!(
+                replace_empty(String::from("abc"), ""),
+                Ok(String::from("abc"))
+            );
+        }
 
-    #[test]
-    fn remove_all_in_some() {
-        assert_eq!(
-            replace_all(String::from("abcd_abcd"), "ab", ""),
-            Ok(String::from("cd_cd"))
-        );
-    }
-
-    #[test]
-    fn remove_all_in_empty() {
-        assert_eq!(replace_all(String::new(), "ab", ""), Ok(String::new()));
-    }
-
-    #[test]
-    fn replace_empty_with_some() {
-        assert_eq!(replace_empty(String::new(), "def"), Ok(String::from("def")));
-    }
-
-    #[test]
-    fn replace_some_with_empty() {
-        assert_eq!(
-            replace_empty(String::from("abc"), ""),
-            Ok(String::from("abc"))
-        );
-    }
-
-    #[test]
-    fn replace_some_with_some() {
-        assert_eq!(
-            replace_empty(String::from("abc"), "def"),
-            Ok(String::from("abc"))
-        );
-    }
-
-    #[test]
-    fn replace_empty_with_empty() {
-        assert_eq!(replace_empty(String::new(), ""), Ok(String::new()));
+        #[test]
+        fn nonempty_with_nonempty() {
+            assert_eq!(
+                replace_empty(String::from("abc"), "def"),
+                Ok(String::from("abc"))
+            );
+        }
     }
 }

@@ -149,423 +149,488 @@ fn to_str<S: AsRef<OsStr> + ?Sized>(value: &S) -> std::result::Result<&str, Erro
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::testing::make_non_utf8_os_string;
 
-    #[test]
-    fn absolute_empty() {
-        let current_dir = std::env::current_dir().unwrap();
-        assert_eq!(
-            get_absolute(String::new(), &current_dir),
-            Ok(current_dir.to_str().unwrap().to_string())
-        );
-    }
-
-    #[test]
-    fn canonical_empty() {
-        let current_dir = std::env::current_dir().unwrap();
-        assert_eq!(
-            get_canonical(String::new(), &current_dir),
-            Ok(current_dir.to_str().unwrap().to_string())
-        );
-    }
-
-    #[test]
-    fn canonical_non_existent() {
-        let current_dir = std::env::current_dir().unwrap();
-        assert_eq!(
-            get_canonical(String::from("non-existent"), &current_dir),
-            Err(ErrorKind::CanonicalizationFailed(AnyString(String::from(
-                "This string is not compared by assertion"
-            ))))
-        );
-    }
-
-    #[test]
-    fn normalized_empty() {
-        assert_normalized("", ".");
-    }
-
-    fn assert_normalized(value: &str, result: &str) {
-        assert_eq!(get_normalized(value.to_string()), Ok(result.to_string()));
-    }
-
-    #[test]
-    fn parent_path() {
-        assert_eq!(
-            get_parent_path(String::from("root/parent/file.ext")),
-            Ok(String::from("root/parent"))
-        );
-    }
-
-    #[test]
-    fn parent_path_missing() {
-        assert_eq!(get_parent_path(String::from("file.ext")), Ok(String::new()));
-    }
-
-    #[test]
-    fn parent_path_empty() {
-        assert_eq!(get_parent_path(String::new()), Ok(String::new()));
-    }
-
-    #[test]
-    fn file_name() {
-        assert_eq!(
-            get_file_name(String::from("root/parent/file.ext")),
-            Ok(String::from("file.ext"))
-        );
-    }
-
-    #[test]
-    fn file_name_empty() {
-        assert_eq!(get_file_name(String::new()), Ok(String::new()));
-    }
-
-    #[test]
-    fn base_name() {
-        assert_eq!(
-            get_base_name(String::from("root/parent/file.ext")),
-            Ok(String::from("file"))
-        );
-    }
-
-    #[test]
-    fn base_name_extension_missing() {
-        assert_eq!(
-            get_base_name(String::from("root/parent/file")),
-            Ok(String::from("file"))
-        );
-    }
-
-    #[test]
-    fn base_name_empty() {
-        assert_eq!(get_base_name(String::new()), Ok(String::new()));
-    }
-
-    #[test]
-    fn base_name_with_path() {
-        assert_eq!(
-            get_base_name_with_path(String::from("root/parent/file.ext")),
-            Ok(String::from("root/parent/file"))
-        );
-    }
-
-    #[test]
-    fn base_name_with_path_extension_missing() {
-        assert_eq!(
-            get_base_name_with_path(String::from("root/parent/file")),
-            Ok(String::from("root/parent/file"))
-        );
-    }
-
-    #[test]
-    fn base_name_with_path_empty() {
-        assert_eq!(get_base_name_with_path(String::new()), Ok(String::new()));
-    }
-
-    #[test]
-    fn extension() {
-        assert_eq!(
-            get_extension(String::from("root/parent/file.ext")),
-            Ok(String::from("ext"))
-        );
-    }
-
-    #[test]
-    fn extension_missing() {
-        assert_eq!(
-            get_extension(String::from("root/parent/file")),
-            Ok(String::new())
-        );
-    }
-
-    #[test]
-    fn extension_empty() {
-        assert_eq!(get_extension(String::new()), Ok(String::new()));
-    }
-
-    #[test]
-    fn extension_with_dot() {
-        assert_eq!(
-            get_extension_with_dot(String::from("root/parent/file.ext")),
-            Ok(String::from(".ext"))
-        );
-    }
-
-    #[test]
-    fn extension_with_dot_missing() {
-        assert_eq!(
-            get_extension_with_dot(String::from("root/parent/file")),
-            Ok(String::new())
-        );
-    }
-
-    #[test]
-    fn extension_with_dot_empty() {
-        assert_eq!(get_extension_with_dot(String::new()), Ok(String::new()));
-    }
-
-    #[test]
-    fn to_str_utf8_error() {
-        assert_eq!(
-            to_str(&make_non_utf8_os_string()),
-            Err(ErrorKind::InputNotUtf8)
-        )
-    }
-
-    #[cfg(unix)]
-    mod unix {
+    mod get_absolute {
         use super::*;
 
         #[test]
-        fn absolute_from_relative() {
+        fn empty() {
             let current_dir = std::env::current_dir().unwrap();
             assert_eq!(
-                get_absolute(String::from("parent/file.ext"), &current_dir),
-                Ok(format!("{}/parent/file.ext", current_dir.to_str().unwrap()))
+                get_absolute(String::new(), &current_dir),
+                Ok(current_dir.to_str().unwrap().to_string())
             );
         }
 
-        #[test]
-        fn absolute_from_absolute() {
-            let current_dir = std::env::current_dir().unwrap();
-            assert_eq!(
-                get_absolute(String::from("/root/file.ext"), &current_dir),
-                Ok(String::from("/root/file.ext"))
-            );
+        #[cfg(unix)]
+        mod unix {
+            use super::*;
+
+            #[test]
+            fn relative() {
+                let current_dir = std::env::current_dir().unwrap();
+                assert_eq!(
+                    get_absolute(String::from("parent/file.ext"), &current_dir),
+                    Ok(format!("{}/parent/file.ext", current_dir.to_str().unwrap()))
+                );
+            }
+
+            #[test]
+            fn absolute() {
+                let current_dir = std::env::current_dir().unwrap();
+                assert_eq!(
+                    get_absolute(String::from("/root/file.ext"), &current_dir),
+                    Ok(String::from("/root/file.ext"))
+                );
+            }
         }
 
-        #[test]
-        fn canonical() {
-            let current_dir = std::env::current_dir().unwrap();
-            assert_eq!(
-                get_canonical(String::from("src/"), &current_dir),
-                Ok(format!("{}/src", current_dir.to_str().unwrap(),))
-            );
-        }
+        #[cfg(windows)]
+        mod windows {
+            use super::*;
 
-        #[test]
-        fn normalized_relative_separator() {
-            assert_normalized("abc", "abc");
-            assert_normalized("abc/", "abc");
-            assert_normalized("abc/def", "abc/def");
-            assert_normalized("abc/def/", "abc/def");
-            assert_normalized("abc//", "abc");
-            assert_normalized("abc//def", "abc/def");
-            assert_normalized("abc//def//", "abc/def");
-        }
+            #[test]
+            fn relative() {
+                let current_dir = std::env::current_dir().unwrap();
+                assert_eq!(
+                    get_absolute(String::from("parent\\file.ext"), &current_dir),
+                    Ok(format!(
+                        "{}\\parent\\file.ext",
+                        current_dir.to_str().unwrap()
+                    ))
+                );
+            }
 
-        #[test]
-        fn normalized_relative_dot() {
-            assert_normalized(".", ".");
-            assert_normalized("./", ".");
-            assert_normalized("./.", ".");
-            assert_normalized("././", ".");
-            assert_normalized("./abc", "abc");
-            assert_normalized("./abc/", "abc");
-            assert_normalized("abc/.", "abc");
-            assert_normalized("abc/./", "abc");
-        }
-
-        #[test]
-        fn normalized_relative_double_dot() {
-            assert_normalized("..", "..");
-            assert_normalized("../", "..");
-            assert_normalized("../..", "../..");
-            assert_normalized("../../", "../..");
-            assert_normalized("../abc", "../abc");
-            assert_normalized("../abc/", "../abc");
-            assert_normalized("abc/..", ".");
-            assert_normalized("abc/../", ".");
-            assert_normalized("abc/../def", "def");
-            assert_normalized("abc/../def/", "def");
-            assert_normalized("abc/../def/ghi", "def/ghi");
-            assert_normalized("abc/../def/ghi/", "def/ghi");
-            assert_normalized("abc/../../ghi", "../ghi");
-            assert_normalized("abc/../../ghi/", "../ghi");
-            assert_normalized("abc/def/../../ghi", "ghi");
-            assert_normalized("abc/def/../../ghi/", "ghi");
-        }
-
-        #[test]
-        fn normalized_absolute_separator() {
-            assert_normalized("/abc", "/abc");
-            assert_normalized("/abc/", "/abc");
-            assert_normalized("/abc/def", "/abc/def");
-            assert_normalized("/abc/def/", "/abc/def");
-            assert_normalized("//abc", "/abc");
-            assert_normalized("//abc//", "/abc");
-            assert_normalized("//abc//def", "/abc/def");
-            assert_normalized("//abc//def//", "/abc/def");
-        }
-
-        #[test]
-        fn normalized_absolute_dot() {
-            assert_normalized("/.", "/");
-            assert_normalized("/./", "/");
-            assert_normalized("/./.", "/");
-            assert_normalized("/././", "/");
-            assert_normalized("/./abc", "/abc");
-            assert_normalized("/./abc/", "/abc");
-            assert_normalized("/abc/.", "/abc");
-            assert_normalized("/abc/./", "/abc");
-        }
-
-        #[test]
-        fn normalized_absolute_double_dot() {
-            assert_normalized("/..", "/");
-            assert_normalized("/../", "/");
-            assert_normalized("/../..", "/");
-            assert_normalized("/../../", "/");
-            assert_normalized("/../abc", "/abc");
-            assert_normalized("/../abc/", "/abc");
-            assert_normalized("/abc/..", "/");
-            assert_normalized("/abc/../", "/");
-            assert_normalized("/abc/../def", "/def");
-            assert_normalized("/abc/../def/", "/def");
-            assert_normalized("/abc/../def/ghi", "/def/ghi");
-            assert_normalized("/abc/../def/ghi/", "/def/ghi");
-            assert_normalized("/abc/../../ghi", "/ghi");
-            assert_normalized("/abc/../../ghi/", "/ghi");
-            assert_normalized("/abc/def/../../ghi", "/ghi");
-            assert_normalized("/abc/def/../../ghi/", "/ghi");
+            #[test]
+            fn absolute() {
+                let current_dir = std::env::current_dir().unwrap();
+                assert_eq!(
+                    get_absolute(String::from("C:\\file.ext"), &current_dir),
+                    Ok(String::from("C:\\file.ext"))
+                );
+            }
         }
     }
 
-    #[cfg(windows)]
-    mod windows {
+    mod get_canonical {
         use super::*;
 
         #[test]
-        fn absolute_from_relative() {
+        fn empty() {
             let current_dir = std::env::current_dir().unwrap();
             assert_eq!(
-                get_absolute(String::from("parent\\file.ext"), &current_dir),
-                Ok(format!(
-                    "{}\\parent\\file.ext",
-                    current_dir.to_str().unwrap()
-                ))
+                get_canonical(String::new(), &current_dir),
+                Ok(current_dir.to_str().unwrap().to_string())
             );
         }
 
         #[test]
-        fn absolute_from_absolute() {
+        fn non_existent() {
             let current_dir = std::env::current_dir().unwrap();
             assert_eq!(
-                get_absolute(String::from("C:\\file.ext"), &current_dir),
-                Ok(String::from("C:\\file.ext"))
+                get_canonical(String::from("non-existent"), &current_dir),
+                Err(ErrorKind::CanonicalizationFailed(AnyString(String::from(
+                    "This string is not compared by assertion"
+                ))))
+            );
+        }
+
+        #[cfg(unix)]
+        mod unix {
+            use super::*;
+
+            #[test]
+            fn existent() {
+                let current_dir = std::env::current_dir().unwrap();
+                assert_eq!(
+                    get_canonical(String::from("src/"), &current_dir),
+                    Ok(format!("{}/src", current_dir.to_str().unwrap(),))
+                );
+            }
+        }
+
+        #[cfg(windows)]
+        mod windows {
+            use super::*;
+
+            #[test]
+            fn existent() {
+                let current_dir = std::env::current_dir().unwrap();
+                assert_eq!(
+                    get_canonical(String::from("src\\"), &current_dir),
+                    Ok(format!("{}\\src", current_dir.to_str().unwrap()))
+                );
+            }
+        }
+    }
+
+    mod get_normalized {
+        use super::*;
+
+        #[test]
+        fn empty() {
+            assert_normalized("", ".");
+        }
+
+        #[cfg(unix)]
+        mod unix {
+            use super::*;
+
+            #[test]
+            fn relative_separator() {
+                assert_normalized("abc", "abc");
+                assert_normalized("abc/", "abc");
+                assert_normalized("abc/def", "abc/def");
+                assert_normalized("abc/def/", "abc/def");
+                assert_normalized("abc//", "abc");
+                assert_normalized("abc//def", "abc/def");
+                assert_normalized("abc//def//", "abc/def");
+            }
+
+            #[test]
+            fn relative_dot() {
+                assert_normalized(".", ".");
+                assert_normalized("./", ".");
+                assert_normalized("./.", ".");
+                assert_normalized("././", ".");
+                assert_normalized("./abc", "abc");
+                assert_normalized("./abc/", "abc");
+                assert_normalized("abc/.", "abc");
+                assert_normalized("abc/./", "abc");
+            }
+
+            #[test]
+            fn relative_double_dot() {
+                assert_normalized("..", "..");
+                assert_normalized("../", "..");
+                assert_normalized("../..", "../..");
+                assert_normalized("../../", "../..");
+                assert_normalized("../abc", "../abc");
+                assert_normalized("../abc/", "../abc");
+                assert_normalized("abc/..", ".");
+                assert_normalized("abc/../", ".");
+                assert_normalized("abc/../def", "def");
+                assert_normalized("abc/../def/", "def");
+                assert_normalized("abc/../def/ghi", "def/ghi");
+                assert_normalized("abc/../def/ghi/", "def/ghi");
+                assert_normalized("abc/../../ghi", "../ghi");
+                assert_normalized("abc/../../ghi/", "../ghi");
+                assert_normalized("abc/def/../../ghi", "ghi");
+                assert_normalized("abc/def/../../ghi/", "ghi");
+            }
+
+            #[test]
+            fn absolute_separator() {
+                assert_normalized("/abc", "/abc");
+                assert_normalized("/abc/", "/abc");
+                assert_normalized("/abc/def", "/abc/def");
+                assert_normalized("/abc/def/", "/abc/def");
+                assert_normalized("//abc", "/abc");
+                assert_normalized("//abc//", "/abc");
+                assert_normalized("//abc//def", "/abc/def");
+                assert_normalized("//abc//def//", "/abc/def");
+            }
+
+            #[test]
+            fn absolute_dot() {
+                assert_normalized("/.", "/");
+                assert_normalized("/./", "/");
+                assert_normalized("/./.", "/");
+                assert_normalized("/././", "/");
+                assert_normalized("/./abc", "/abc");
+                assert_normalized("/./abc/", "/abc");
+                assert_normalized("/abc/.", "/abc");
+                assert_normalized("/abc/./", "/abc");
+            }
+
+            #[test]
+            fn absolute_double_dot() {
+                assert_normalized("/..", "/");
+                assert_normalized("/../", "/");
+                assert_normalized("/../..", "/");
+                assert_normalized("/../../", "/");
+                assert_normalized("/../abc", "/abc");
+                assert_normalized("/../abc/", "/abc");
+                assert_normalized("/abc/..", "/");
+                assert_normalized("/abc/../", "/");
+                assert_normalized("/abc/../def", "/def");
+                assert_normalized("/abc/../def/", "/def");
+                assert_normalized("/abc/../def/ghi", "/def/ghi");
+                assert_normalized("/abc/../def/ghi/", "/def/ghi");
+                assert_normalized("/abc/../../ghi", "/ghi");
+                assert_normalized("/abc/../../ghi/", "/ghi");
+                assert_normalized("/abc/def/../../ghi", "/ghi");
+                assert_normalized("/abc/def/../../ghi/", "/ghi");
+            }
+        }
+
+        #[cfg(windows)]
+        mod windows {
+            use super::*;
+
+            #[test]
+            fn relative_separator() {
+                assert_normalized("abc", "abc");
+                assert_normalized("abc\\", "abc");
+                assert_normalized("abc\\def", "abc\\def");
+                assert_normalized("abc\\def\\", "abc\\def");
+                assert_normalized("abc\\\\", "abc");
+                assert_normalized("abc\\\\def", "abc\\def");
+                assert_normalized("abc\\\\def\\\\", "abc\\def");
+            }
+
+            #[test]
+            fn relative_forward_slashes() {
+                assert_normalized("abc", "abc");
+                assert_normalized("abc/", "abc");
+                assert_normalized("abc/def", "abc\\def");
+                assert_normalized("abc/def/", "abc\\def");
+            }
+
+            #[test]
+            fn relative_dot() {
+                assert_normalized(".", ".");
+                assert_normalized(".\\", ".");
+                assert_normalized(".\\.", ".");
+                assert_normalized(".\\.\\", ".");
+                assert_normalized(".\\abc", "abc");
+                assert_normalized(".\\abc\\", "abc");
+                assert_normalized("abc\\.", "abc");
+                assert_normalized("abc\\.\\", "abc");
+            }
+
+            #[test]
+            fn relative_double_dot() {
+                assert_normalized("..", "..");
+                assert_normalized("..\\", "..");
+                assert_normalized("..\\..", "..\\..");
+                assert_normalized("..\\..\\", "..\\..");
+                assert_normalized("..\\abc", "..\\abc");
+                assert_normalized("..\\abc\\", "..\\abc");
+                assert_normalized("abc\\..", ".");
+                assert_normalized("abc\\..\\", ".");
+                assert_normalized("abc\\..\\def", "def");
+                assert_normalized("abc\\..\\def\\", "def");
+                assert_normalized("abc\\..\\def\\ghi", "def\\ghi");
+                assert_normalized("abc\\..\\def\\ghi\\", "def\\ghi");
+                assert_normalized("abc\\..\\..\\ghi", "..\\ghi");
+                assert_normalized("abc\\..\\..\\ghi\\", "..\\ghi");
+                assert_normalized("abc\\def\\..\\..\\ghi", "ghi");
+                assert_normalized("abc\\def\\..\\..\\ghi\\", "ghi");
+            }
+
+            #[test]
+            fn absolute_separator() {
+                assert_normalized("C:\\abc", "C:\\abc");
+                assert_normalized("C:\\abc\\", "C:\\abc");
+                assert_normalized("C:\\abc\\def", "C:\\abc\\def");
+                assert_normalized("C:\\abc\\def\\", "C:\\abc\\def");
+                assert_normalized("C:\\\\abc", "C:\\abc");
+                assert_normalized("C:\\\\abc\\\\", "C:\\abc");
+                assert_normalized("C:\\\\abc\\\\def", "C:\\abc\\def");
+                assert_normalized("C:\\\\abc\\\\def\\\\", "C:\\abc\\def");
+            }
+
+            #[test]
+            fn absolute_forward_slashes() {
+                assert_normalized("C:/abc", "C:\\abc");
+                assert_normalized("C:/abc/", "C:\\abc");
+                assert_normalized("C:/abc/def", "C:\\abc\\def");
+                assert_normalized("C:/abc/def/", "C:\\abc\\def");
+            }
+
+            #[test]
+            fn absolute_dot() {
+                assert_normalized("C:\\.", "C:\\");
+                assert_normalized("C:\\.\\", "C:\\");
+                assert_normalized("C:\\.\\.", "C:\\");
+                assert_normalized("C:\\.\\.\\", "C:\\");
+                assert_normalized("C:\\.\\abc", "C:\\abc");
+                assert_normalized("C:\\.\\abc\\", "C:\\abc");
+                assert_normalized("C:\\abc\\.", "C:\\abc");
+                assert_normalized("C:\\abc\\.\\", "C:\\abc");
+            }
+
+            #[test]
+            fn absolute_double_dot() {
+                assert_normalized("C:\\..", "C:\\");
+                assert_normalized("C:\\..\\", "C:\\");
+                assert_normalized("C:\\..\\..", "C:\\");
+                assert_normalized("C:\\..\\..\\", "C:\\");
+                assert_normalized("C:\\..\\abc", "C:\\abc");
+                assert_normalized("C:\\..\\abc\\", "C:\\abc");
+                assert_normalized("C:\\abc\\..", "C:\\");
+                assert_normalized("C:\\abc\\..\\", "C:\\");
+                assert_normalized("C:\\abc\\..\\def", "C:\\def");
+                assert_normalized("C:\\abc\\..\\def\\", "C:\\def");
+                assert_normalized("C:\\abc\\..\\def\\ghi", "C:\\def\\ghi");
+                assert_normalized("C:\\abc\\..\\def\\ghi\\", "C:\\def\\ghi");
+                assert_normalized("C:\\abc\\..\\..\\ghi", "C:\\ghi");
+                assert_normalized("C:\\abc\\..\\..\\ghi\\", "C:\\ghi");
+                assert_normalized("C:\\abc\\def\\..\\..\\ghi", "C:\\ghi");
+                assert_normalized("C:\\abc\\def\\..\\..\\ghi\\", "C:\\ghi");
+            }
+        }
+
+        fn assert_normalized(value: &str, result: &str) {
+            assert_eq!(get_normalized(value.to_string()), Ok(result.to_string()));
+        }
+    }
+
+    mod parent_path {
+        use super::*;
+
+        #[test]
+        fn empty() {
+            assert_eq!(get_parent_path(String::new()), Ok(String::new()));
+        }
+
+        #[test]
+        fn none() {
+            assert_eq!(get_parent_path(String::from("file.ext")), Ok(String::new()));
+        }
+
+        #[test]
+        fn some() {
+            assert_eq!(
+                get_parent_path(String::from("root/parent/file.ext")),
+                Ok(String::from("root/parent"))
+            );
+        }
+    }
+
+    mod file_name {
+        use super::*;
+
+        #[test]
+        fn empty() {
+            assert_eq!(get_file_name(String::new()), Ok(String::new()));
+        }
+
+        #[test]
+        fn some() {
+            assert_eq!(
+                get_file_name(String::from("root/parent/file.ext")),
+                Ok(String::from("file.ext"))
+            );
+        }
+    }
+
+    mod base_name {
+        use super::*;
+
+        #[test]
+        fn empty() {
+            assert_eq!(get_base_name(String::new()), Ok(String::new()));
+        }
+
+        #[test]
+        fn no_extension() {
+            assert_eq!(
+                get_base_name(String::from("root/parent/file")),
+                Ok(String::from("file"))
             );
         }
 
         #[test]
-        fn canonical() {
-            let current_dir = std::env::current_dir().unwrap();
+        fn with_extension() {
             assert_eq!(
-                get_canonical(String::from("src\\"), &current_dir),
-                Ok(format!("{}\\src", current_dir.to_str().unwrap()))
+                get_base_name(String::from("root/parent/file.ext")),
+                Ok(String::from("file"))
+            );
+        }
+    }
+
+    mod base_name_with_path {
+        use super::*;
+
+        #[test]
+        fn empty() {
+            assert_eq!(get_base_name_with_path(String::new()), Ok(String::new()));
+        }
+
+        #[test]
+        fn no_extension() {
+            assert_eq!(
+                get_base_name_with_path(String::from("root/parent/file")),
+                Ok(String::from("root/parent/file"))
             );
         }
 
         #[test]
-        fn normalized_relative_separator() {
-            assert_normalized("abc", "abc");
-            assert_normalized("abc\\", "abc");
-            assert_normalized("abc\\def", "abc\\def");
-            assert_normalized("abc\\def\\", "abc\\def");
-            assert_normalized("abc\\\\", "abc");
-            assert_normalized("abc\\\\def", "abc\\def");
-            assert_normalized("abc\\\\def\\\\", "abc\\def");
+        fn with_extension() {
+            assert_eq!(
+                get_base_name_with_path(String::from("root/parent/file.ext")),
+                Ok(String::from("root/parent/file"))
+            );
+        }
+    }
+
+    mod extension {
+        use super::*;
+
+        #[test]
+        fn empty() {
+            assert_eq!(get_extension(String::new()), Ok(String::new()));
         }
 
         #[test]
-        fn normalized_relative_forward_slashes() {
-            assert_normalized("abc", "abc");
-            assert_normalized("abc/", "abc");
-            assert_normalized("abc/def", "abc\\def");
-            assert_normalized("abc/def/", "abc\\def");
+        fn none() {
+            assert_eq!(
+                get_extension(String::from("root/parent/file.ext")),
+                Ok(String::from("ext"))
+            );
         }
 
         #[test]
-        fn normalized_relative_dot() {
-            assert_normalized(".", ".");
-            assert_normalized(".\\", ".");
-            assert_normalized(".\\.", ".");
-            assert_normalized(".\\.\\", ".");
-            assert_normalized(".\\abc", "abc");
-            assert_normalized(".\\abc\\", "abc");
-            assert_normalized("abc\\.", "abc");
-            assert_normalized("abc\\.\\", "abc");
+        fn some() {
+            assert_eq!(
+                get_extension(String::from("root/parent/file")),
+                Ok(String::new())
+            );
+        }
+    }
+
+    mod extension_with_dot {
+        use super::*;
+
+        #[test]
+        fn empty() {
+            assert_eq!(get_extension_with_dot(String::new()), Ok(String::new()));
         }
 
         #[test]
-        fn normalized_relative_double_dot() {
-            assert_normalized("..", "..");
-            assert_normalized("..\\", "..");
-            assert_normalized("..\\..", "..\\..");
-            assert_normalized("..\\..\\", "..\\..");
-            assert_normalized("..\\abc", "..\\abc");
-            assert_normalized("..\\abc\\", "..\\abc");
-            assert_normalized("abc\\..", ".");
-            assert_normalized("abc\\..\\", ".");
-            assert_normalized("abc\\..\\def", "def");
-            assert_normalized("abc\\..\\def\\", "def");
-            assert_normalized("abc\\..\\def\\ghi", "def\\ghi");
-            assert_normalized("abc\\..\\def\\ghi\\", "def\\ghi");
-            assert_normalized("abc\\..\\..\\ghi", "..\\ghi");
-            assert_normalized("abc\\..\\..\\ghi\\", "..\\ghi");
-            assert_normalized("abc\\def\\..\\..\\ghi", "ghi");
-            assert_normalized("abc\\def\\..\\..\\ghi\\", "ghi");
+        fn none() {
+            assert_eq!(
+                get_extension_with_dot(String::from("root/parent/file")),
+                Ok(String::new())
+            );
         }
 
         #[test]
-        fn normalized_absolute_separator() {
-            assert_normalized("C:\\abc", "C:\\abc");
-            assert_normalized("C:\\abc\\", "C:\\abc");
-            assert_normalized("C:\\abc\\def", "C:\\abc\\def");
-            assert_normalized("C:\\abc\\def\\", "C:\\abc\\def");
-            assert_normalized("C:\\\\abc", "C:\\abc");
-            assert_normalized("C:\\\\abc\\\\", "C:\\abc");
-            assert_normalized("C:\\\\abc\\\\def", "C:\\abc\\def");
-            assert_normalized("C:\\\\abc\\\\def\\\\", "C:\\abc\\def");
+        fn some() {
+            assert_eq!(
+                get_extension_with_dot(String::from("root/parent/file.ext")),
+                Ok(String::from(".ext"))
+            );
+        }
+    }
+
+    mod to_str {
+        use super::*;
+        use crate::testing::make_non_utf8_os_string;
+
+        #[test]
+        fn utf8() {
+            assert_eq!(to_str(OsStr::new("abc")), Ok("abc"));
         }
 
         #[test]
-        fn normalized_absolute_forward_slashes() {
-            assert_normalized("C:/abc", "C:\\abc");
-            assert_normalized("C:/abc/", "C:\\abc");
-            assert_normalized("C:/abc/def", "C:\\abc\\def");
-            assert_normalized("C:/abc/def/", "C:\\abc\\def");
-        }
-
-        #[test]
-        fn normalized_absolute_dot() {
-            assert_normalized("C:\\.", "C:\\");
-            assert_normalized("C:\\.\\", "C:\\");
-            assert_normalized("C:\\.\\.", "C:\\");
-            assert_normalized("C:\\.\\.\\", "C:\\");
-            assert_normalized("C:\\.\\abc", "C:\\abc");
-            assert_normalized("C:\\.\\abc\\", "C:\\abc");
-            assert_normalized("C:\\abc\\.", "C:\\abc");
-            assert_normalized("C:\\abc\\.\\", "C:\\abc");
-        }
-
-        #[test]
-        fn normalized_absolute_double_dot() {
-            assert_normalized("C:\\..", "C:\\");
-            assert_normalized("C:\\..\\", "C:\\");
-            assert_normalized("C:\\..\\..", "C:\\");
-            assert_normalized("C:\\..\\..\\", "C:\\");
-            assert_normalized("C:\\..\\abc", "C:\\abc");
-            assert_normalized("C:\\..\\abc\\", "C:\\abc");
-            assert_normalized("C:\\abc\\..", "C:\\");
-            assert_normalized("C:\\abc\\..\\", "C:\\");
-            assert_normalized("C:\\abc\\..\\def", "C:\\def");
-            assert_normalized("C:\\abc\\..\\def\\", "C:\\def");
-            assert_normalized("C:\\abc\\..\\def\\ghi", "C:\\def\\ghi");
-            assert_normalized("C:\\abc\\..\\def\\ghi\\", "C:\\def\\ghi");
-            assert_normalized("C:\\abc\\..\\..\\ghi", "C:\\ghi");
-            assert_normalized("C:\\abc\\..\\..\\ghi\\", "C:\\ghi");
-            assert_normalized("C:\\abc\\def\\..\\..\\ghi", "C:\\ghi");
-            assert_normalized("C:\\abc\\def\\..\\..\\ghi\\", "C:\\ghi");
+        fn non_utf8() {
+            assert_eq!(
+                to_str(&make_non_utf8_os_string()),
+                Err(ErrorKind::InputNotUtf8)
+            )
         }
     }
 }

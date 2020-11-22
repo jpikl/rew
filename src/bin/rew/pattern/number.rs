@@ -83,7 +83,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_empty_error() {
+    fn parse_empty() {
         let mut reader = Reader::from("");
         assert_eq!(
             parse_number::<usize, _>(&mut reader),
@@ -96,7 +96,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_no_digits_error() {
+    fn parse_no_digits() {
         let mut reader = Reader::from("ab");
         assert_eq!(
             parse_number::<usize, _>(&mut reader),
@@ -158,7 +158,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_mul_overflow_error() {
+    fn parse_mul_overflow() {
         let mut reader = Reader::from("25500");
         assert_eq!(
             parse_number::<u8, _>(&mut reader),
@@ -171,7 +171,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_add_overflow_error() {
+    fn parse_add_overflow() {
         let mut reader = Reader::from("2560");
         assert_eq!(
             parse_number::<u8, _>(&mut reader),

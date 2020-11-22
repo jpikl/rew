@@ -302,7 +302,7 @@ mod tests {
     }
 
     #[test]
-    fn unterminated_escape_error() {
+    fn unterminated_escape() {
         let mut lexer = Lexer::new("#");
         assert_eq!(
             lexer.read_token(),
@@ -314,7 +314,7 @@ mod tests {
     }
 
     #[test]
-    fn unknown_escape_error() {
+    fn unknown_escape() {
         let mut lexer = Lexer::new("#x");
         assert_eq!(
             lexer.read_token(),

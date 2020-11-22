@@ -51,7 +51,7 @@ mod tests {
     use crate::pattern::repetition::Repetition;
 
     #[test]
-    fn parse_no_prefix_error() {
+    fn parse_no_prefix() {
         let mut reader = Reader::from("");
         assert_eq!(
             Padding::parse(&mut reader, '<'),
@@ -64,7 +64,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_invalid_prefix_error() {
+    fn parse_invalid_prefix() {
         let mut reader = Reader::from(">abc");
         assert_eq!(
             Padding::parse(&mut reader, '<'),
@@ -77,7 +77,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_invalid_escaped_prefix_error() {
+    fn parse_invalid_escaped_prefix() {
         let mut reader = Reader::new(vec![Char::Escaped('x', ['#', 'x'])]);
         assert_eq!(
             Padding::parse(&mut reader, '<'),

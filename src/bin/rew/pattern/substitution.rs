@@ -90,7 +90,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn parse_empty_error() {
+    fn parse_empty() {
         let mut reader = Reader::from("");
         assert_eq!(
             parse_target_and_replacement(&mut reader),
@@ -103,7 +103,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_no_target_error() {
+    fn parse_no_target() {
         let mut reader = Reader::from("/");
         assert_eq!(
             parse_target_and_replacement(&mut reader),
@@ -116,7 +116,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_empty_target_error() {
+    fn parse_empty_target() {
         let mut reader = Reader::from("//");
         assert_eq!(
             parse_target_and_replacement(&mut reader),
@@ -225,7 +225,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_as_regex_error() {
+    fn parse_as_regex_invalid() {
         let mut reader = Reader::from("/[0-9+/def");
         assert_eq!(
             Substitution::parse_regex(&mut reader),

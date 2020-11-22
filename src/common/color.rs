@@ -55,7 +55,7 @@ mod tests {
     }
 
     #[test]
-    fn parses_color_error() {
+    fn parses_invalid_color() {
         assert_eq!(parse_color(""), Err("invalid value"));
         assert_eq!(parse_color("x"), Err("invalid value"));
     }

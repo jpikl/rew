@@ -240,7 +240,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_pipe_outside_expr_error() {
+    fn parse_pipe_outside_expr() {
         assert_eq!(
             Parser::from("|").parse_items(),
             Err(Error {
@@ -251,7 +251,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_unmatched_expr_end_error() {
+    fn parse_unmatched_expr_end() {
         assert_eq!(
             Parser::from("}").parse_items(),
             Err(Error {
@@ -262,7 +262,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_unmatched_expr_start_error() {
+    fn parse_unmatched_expr_start() {
         assert_eq!(
             Parser::from("{").parse_items(),
             Err(Error {
@@ -273,7 +273,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_filter_after_expr_start_error() {
+    fn parse_filter_after_expr_start() {
         assert_eq!(
             Parser::from("{|").parse_items(),
             Err(Error {
@@ -295,7 +295,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_missing_pipe_or_expr_end_error() {
+    fn parse_missing_pipe_or_expr_end() {
         assert_eq!(
             Parser::from("{f").parse_items(),
             Err(Error {
@@ -306,7 +306,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_expr_start_after_filter_error() {
+    fn parse_expr_start_after_filter() {
         assert_eq!(
             Parser::from("{f{").parse_items(),
             Err(Error {
@@ -331,7 +331,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_filter_after_filter_error() {
+    fn parse_filter_after_filter() {
         assert_eq!(
             Parser::from("{fg").parse_items(),
             Err(Error {
@@ -342,7 +342,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_missing_filter_after_pipe_error() {
+    fn parse_missing_filter_after_pipe() {
         assert_eq!(
             Parser::from("{f|").parse_items(),
             Err(Error {
@@ -353,7 +353,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_pipe_after_pipe_error() {
+    fn parse_pipe_after_pipe() {
         assert_eq!(
             Parser::from("{f||").parse_items(),
             Err(Error {
@@ -364,7 +364,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_expr_end_after_pipe_error() {
+    fn parse_expr_end_after_pipe() {
         assert_eq!(
             Parser::from("{f|}").parse_items(),
             Err(Error {
@@ -397,7 +397,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_invalid_filter_error() {
+    fn parse_invalid_filter() {
         assert_eq!(
             Parser::from("{n2-1}").parse_items(),
             Err(Error {
