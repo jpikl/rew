@@ -21,8 +21,23 @@ pub fn get_absolute(value: String, current_dir: &Path) -> Result {
 pub fn get_canonical(value: String, current_dir: &Path) -> Result {
     let absolute_value = get_absolute(value, current_dir)?;
     let absolute_path = Path::new(&absolute_value);
+
+    // Normalize unix vs windows behaviour
+    if cfg!(windows) && !absolute_path.exists() {
+        return Err(ErrorKind::CanonicalizationFailed(AnyString(format!(
+            "Path '{}' does not exist",
+            absolute_path.to_string_lossy()
+        ))));
+    }
+
     match absolute_path.normalize() {
-        Ok(path_buf) => to_string(&path_buf),
+        Ok(path_buf) => to_string(&path_buf).map(|mut result| {
+            // Normalize unix vs windows behaviour
+            if cfg!(windows) && result.ends_with(MAIN_SEPARATOR) {
+                result.pop();
+            }
+            result
+        }),
         Err(error) => Err(ErrorKind::CanonicalizationFailed(AnyString(
             error.to_string(),
         ))),
@@ -134,38 +149,31 @@ fn to_str<S: AsRef<OsStr> + ?Sized>(value: &S) -> std::result::Result<&str, Erro
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::testing::make_non_utf8_os_str;
-    use std::path::Path;
-
-    #[test]
-    fn absolute_from_relative() {
-        assert_eq!(
-            get_absolute(String::from("parent/file.ext"), &Path::new("root")),
-            Ok(String::from("root/parent/file.ext"))
-        );
-    }
+    use crate::testing::make_non_utf8_os_string;
 
     #[test]
     fn absolute_empty() {
-        assert_eq!(
-            get_absolute(String::new(), &Path::new("root")),
-            Ok(String::from("root"))
-        );
-    }
-
-    #[test]
-    fn canonical() {
         let current_dir = std::env::current_dir().unwrap();
         assert_eq!(
-            get_canonical(String::from("Cargo.toml"), &current_dir),
-            Ok(current_dir.join("Cargo.toml").to_str().unwrap().to_string())
+            get_absolute(String::new(), &current_dir),
+            Ok(current_dir.to_str().unwrap().to_string())
         );
     }
 
     #[test]
     fn canonical_empty() {
+        let current_dir = std::env::current_dir().unwrap();
         assert_eq!(
-            get_canonical(String::new(), &Path::new("root")),
+            get_canonical(String::new(), &current_dir),
+            Ok(current_dir.to_str().unwrap().to_string())
+        );
+    }
+
+    #[test]
+    fn canonical_non_existent() {
+        let current_dir = std::env::current_dir().unwrap();
+        assert_eq!(
+            get_canonical(String::from("non-existent"), &current_dir),
             Err(ErrorKind::CanonicalizationFailed(AnyString(String::from(
                 "This string is not compared by assertion"
             ))))
@@ -298,7 +306,10 @@ mod tests {
 
     #[test]
     fn to_str_utf8_error() {
-        assert_eq!(to_str(make_non_utf8_os_str()), Err(ErrorKind::InputNotUtf8))
+        assert_eq!(
+            to_str(&make_non_utf8_os_string()),
+            Err(ErrorKind::InputNotUtf8)
+        )
     }
 
     #[cfg(unix)]
@@ -306,10 +317,29 @@ mod tests {
         use super::*;
 
         #[test]
-        fn absolute_from_absolute() {
+        fn absolute_from_relative() {
+            let current_dir = std::env::current_dir().unwrap();
             assert_eq!(
-                get_absolute(String::from("/root/parent/file.ext"), &Path::new("ignored")),
-                Ok(String::from("/root/parent/file.ext"))
+                get_absolute(String::from("parent/file.ext"), &current_dir),
+                Ok(format!("{}/parent/file.ext", current_dir.to_str().unwrap()))
+            );
+        }
+
+        #[test]
+        fn absolute_from_absolute() {
+            let current_dir = std::env::current_dir().unwrap();
+            assert_eq!(
+                get_absolute(String::from("/root/file.ext"), &current_dir),
+                Ok(String::from("/root/file.ext"))
+            );
+        }
+
+        #[test]
+        fn canonical() {
+            let current_dir = std::env::current_dir().unwrap();
+            assert_eq!(
+                get_canonical(String::from("src/"), &current_dir),
+                Ok(format!("{}/src", current_dir.to_str().unwrap(),))
             );
         }
 
@@ -406,10 +436,32 @@ mod tests {
         use super::*;
 
         #[test]
-        fn absolute_from_absolute() {
+        fn absolute_from_relative() {
+            let current_dir = std::env::current_dir().unwrap();
             assert_eq!(
-                get_absolute(String::from("C:\\parent\\file.ext"), &Path::new("ignored")),
-                Ok(String::from("C:\\parent\\file.ext"))
+                get_absolute(String::from("parent\\file.ext"), &current_dir),
+                Ok(format!(
+                    "{}\\parent\\file.ext",
+                    current_dir.to_str().unwrap()
+                ))
+            );
+        }
+
+        #[test]
+        fn absolute_from_absolute() {
+            let current_dir = std::env::current_dir().unwrap();
+            assert_eq!(
+                get_absolute(String::from("C:\\file.ext"), &current_dir),
+                Ok(String::from("C:\\file.ext"))
+            );
+        }
+
+        #[test]
+        fn canonical() {
+            let current_dir = std::env::current_dir().unwrap();
+            assert_eq!(
+                get_canonical(String::from("src\\"), &current_dir),
+                Ok(format!("{}\\src", current_dir.to_str().unwrap()))
             );
         }
 
