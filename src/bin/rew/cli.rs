@@ -119,7 +119,7 @@ pub struct Cli {
     )]
     pub regex: Option<Regex>,
 
-    /// Regular expression matched against 'file name component' of each input value
+    /// Regular expression matched against 'filename component' of each input value
     #[clap(short = 'E', long, value_name = "regex", conflicts_with = "regex")]
     pub regex_filename: Option<Regex>,
 

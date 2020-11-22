@@ -250,8 +250,8 @@ Examples:
 | `12_34`   |  `S:([0-9])([0-9]):$2$1` | `21_43` |
 
 - Use `-e, --regex` / `-E, --regex-filename` option to define an external regular expression.
-- Option `-e, --regex` matches regex against the whole input value.
-- Option `-E, --regex-filename` matches regex against its *file name component*.
+- Option `-e, --regex` matches regex against each input value.
+- Option `-E, --regex-filename` matches regex against *filename component* of each input value.
 
 ```bash
 echo 'a/b.c' | rew -e '([a-z])' '{1}' # Will print 'a'
