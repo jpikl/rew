@@ -7,7 +7,7 @@ use regex::Regex;
 use std::fmt;
 
 lazy_static! {
-    static ref CAPTURE_GROUP_VAR_REGEX: Regex = Regex::new(r"\$([0-9]+)").unwrap();
+    static ref CAPTURE_GROUP_VAR_REGEX: Regex = Regex::new(r"\$(\d+)").unwrap();
 }
 
 #[derive(Debug)]
@@ -53,12 +53,12 @@ mod tests {
 
     #[test]
     fn regex_holder_parse() {
-        let mut reader = Reader::from("[0-9]+");
+        let mut reader = Reader::from("\\d+");
         assert_eq!(
             RegexHolder::parse(&mut reader),
-            Ok(RegexHolder(Regex::new("[0-9]+").unwrap()))
+            Ok(RegexHolder(Regex::new("\\d+").unwrap()))
         );
-        assert_eq!(reader.position(), 6);
+        assert_eq!(reader.position(), 3);
     }
 
     #[test]

@@ -196,17 +196,17 @@ Examples:
     
 Examples:
 
-    INPUT    FILTER                     OUTPUT
-    ------------------------------------------
-    12_34    `m[0-9]+`                    12
-    12_34    `s:[0-9]+:x`                 x_34
-    12_34    `S:[0-9]+:x`                 x_x
-    12_34    `s:([0-9])([0-9]):$2$1`      21_34
-    12_34    `S:([0-9])([0-9]):$2$1`      21_43
+    INPUT    FILTER             OUTPUT
+    ----------------------------------
+    12_34    `m\\d+`               12
+    12_34    `s:\\d+:x`            x_34
+    12_34    `S:\\d+:x`            x_x
+    12_34    `s:(\\d)(\\d):$2$1`    21_34
+    12_34    `S:(\\d)(\\d):$2$1`    21_43
 
 Use `-e, --regex` / `-E, --regex-filename` option to define an external regular expression.
-- Option `-e, --regex` matches regex against each input value.
-- Option `-E, --regex-filename` matches regex against 'filename component' of each input value.
+Option `-e, --regex` matches regex against each input value.
+Option `-E, --regex-filename` matches regex against 'filename component' of each input value.
 
     $> echo 'a/b.c' | rew -e '([a-z])' '{1}' # Will print 'a'
     $> echo 'a/b.c' | rew -E '([a-z])' '{1}' # Will print 'b'

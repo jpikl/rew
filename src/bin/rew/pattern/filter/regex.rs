@@ -4,7 +4,7 @@ use regex::Regex;
 use std::borrow::Cow;
 
 lazy_static! {
-    static ref CAPTURE_GROUP_VAR_REGEX: Regex = Regex::new(r"\$([0-9]+)").unwrap();
+    static ref CAPTURE_GROUP_VAR_REGEX: Regex = Regex::new(r"\$(\d+)").unwrap();
 }
 
 pub fn get_match(value: String, regex: &Regex) -> Result {
@@ -48,14 +48,14 @@ mod tests {
     #[test]
     fn match_in_some() {
         assert_eq!(
-            get_match(String::from("abc123def456"), &Regex::new("[0-9]+").unwrap()),
+            get_match(String::from("abc123def456"), &Regex::new("\\d+").unwrap()),
             Ok(String::from("123"))
         );
     }
     #[test]
     fn match_in_empty() {
         assert_eq!(
-            get_match(String::new(), &Regex::new("[0-9]+").unwrap()),
+            get_match(String::new(), &Regex::new("\\d+").unwrap()),
             Ok(String::new(),)
         );
     }
@@ -65,7 +65,7 @@ mod tests {
         assert_eq!(
             replace_first(
                 String::from("abc123def456"),
-                &Regex::new("([0-9])([0-9]+)").unwrap(),
+                &Regex::new("(\\d)(\\d+)").unwrap(),
                 "_$2$1_"
             ),
             Ok(String::from("abc_231_def456"))
@@ -75,11 +75,7 @@ mod tests {
     #[test]
     fn replace_first_in_empty() {
         assert_eq!(
-            replace_first(
-                String::new(),
-                &Regex::new("([0-9])([0-9]+)").unwrap(),
-                "_$2$1_"
-            ),
+            replace_first(String::new(), &Regex::new("(\\d)(\\d+)").unwrap(), "_$2$1_"),
             Ok(String::new())
         );
     }
@@ -89,7 +85,7 @@ mod tests {
         assert_eq!(
             replace_all(
                 String::from("abc123def456"),
-                &Regex::new("([0-9])([0-9]+)").unwrap(),
+                &Regex::new("(\\d)(\\d+)").unwrap(),
                 "_$2$1_"
             ),
             Ok(String::from("abc_231_def_564_"))
@@ -99,11 +95,7 @@ mod tests {
     #[test]
     fn replace_all_in_empty() {
         assert_eq!(
-            replace_all(
-                String::new(),
-                &Regex::new("([0-9])([0-9]+)").unwrap(),
-                "_$2$1_"
-            ),
+            replace_all(String::new(), &Regex::new("(\\d)(\\d+)").unwrap(), "_$2$1_"),
             Ok(String::new())
         );
     }
@@ -113,7 +105,7 @@ mod tests {
         assert_eq!(
             replace_first(
                 String::from("abc123def456"),
-                &Regex::new("[0-9]+").unwrap(),
+                &Regex::new("\\d+").unwrap(),
                 ""
             ),
             Ok(String::from("abcdef456"))
@@ -123,7 +115,7 @@ mod tests {
     #[test]
     fn remove_first_in_empty() {
         assert_eq!(
-            replace_first(String::new(), &Regex::new("[0-9]+").unwrap(), ""),
+            replace_first(String::new(), &Regex::new("\\d+").unwrap(), ""),
             Ok(String::new())
         );
     }
@@ -133,7 +125,7 @@ mod tests {
         assert_eq!(
             replace_all(
                 String::from("abc123def456"),
-                &Regex::new("[0-9]+").unwrap(),
+                &Regex::new("\\d+").unwrap(),
                 ""
             ),
             Ok(String::from("abcdef"))
@@ -143,7 +135,7 @@ mod tests {
     #[test]
     fn remove_all_in_empty() {
         assert_eq!(
-            replace_all(String::new(), &Regex::new("[0-9]+").unwrap(), ""),
+            replace_all(String::new(), &Regex::new("\\d+").unwrap(), ""),
             Ok(String::new())
         );
     }

@@ -213,15 +213,15 @@ mod tests {
 
     #[test]
     fn parse_as_regex() {
-        let mut reader = Reader::from("/[0-9]+/def");
+        let mut reader = Reader::from("/\\d+/def");
         assert_eq!(
             Substitution::parse_regex(&mut reader),
             Ok(Substitution {
-                target: RegexHolder(Regex::new("[0-9]+").unwrap()),
+                target: RegexHolder(Regex::new("\\d+").unwrap()),
                 replacement: String::from("def"),
             })
         );
-        assert_eq!(reader.position(), 11);
+        assert_eq!(reader.position(), 8);
     }
 
     #[test]

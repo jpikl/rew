@@ -250,13 +250,13 @@ Examples:
 
 Examples:
 
-| Input     |  Filter                  | Output  |
-| --------- | ------------------------ | ------- |
-| `12_34`   |  `m[0-9]+`               | `12`    |
-| `12_34`   |  `s:[0-9]+:x`            | `x_34`  |
-| `12_34`   |  `S:[0-9]+:x`            | `x_x`   |
-| `12_34`   |  `s:([0-9])([0-9]):$2$1` | `21_34` |
-| `12_34`   |  `S:([0-9])([0-9]):$2$1` | `21_43` |
+| Input     |  Filter            | Output  |
+| --------- | -------------------| ------- |
+| `12_34`   |  `m\d+`            | `12`    |
+| `12_34`   |  `s:\d+:x`         | `x_34`  |
+| `12_34`   |  `S:\d+:x`         | `x_x`   |
+| `12_34`   |  `s:(\d)(\d):$2$1` | `21_34` |
+| `12_34`   |  `S:(\d)(\d):$2$1` | `21_43` |
 
 - Use `-e, --regex` / `-E, --regex-filename` option to define an external regular expression.
 - Option `-e, --regex` matches regex against each input value.
@@ -416,8 +416,8 @@ find -name '*.jpeg' | rew 'mv "{}" "{B}.jpg"' | sh # Same thing using rew + mv +
 echo "foo 123 bar" | sed -E 's/[^0-9]*([0-9]+).*/\1/' # Extract first number using sed
 echo "foo 123 bar" | sd '\D*(\d+).*' '$1'    # Same thing using sd
 echo "Foo 123 Bar" | rew '{s:\D*(\d+).*:$1}' # Same thing using rew (regex replace filter)
-echo "Foo 123 Bar" | rew -e'([0-9]+)' '{1}'  # Same thing using rew (external regex)
-echo "Foo 123 Bar" | rew '{m[0-9]+}'         # Same thing using rew (regex match filter)
+echo "Foo 123 Bar" | rew -e'(\d+)' '{1}'     # Same thing using rew (external regex)
+echo "Foo 123 Bar" | rew '{m\d+}'            # Same thing using rew (regex match filter)
 ```
 
 ## :rocket: Examples
