@@ -11,7 +11,6 @@ use termcolor::ColorChoice;
     after_help = "Use `-h` for short descriptions and `--help` for more details.",
     setting(AppSettings::ColoredHelp),
     setting(AppSettings::DeriveDisplayOrder),
-    setting(AppSettings::UnifiedHelpMessage),
     setting(AppSettings::DontCollapseArgsInUsage),
     verbatim_doc_comment,
 )]

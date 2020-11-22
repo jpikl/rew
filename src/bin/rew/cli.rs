@@ -12,7 +12,6 @@ use termcolor::ColorChoice;
     after_help = "Use `-h` for short descriptions and `--help` for more details.",
     setting(AppSettings::ColoredHelp),
     setting(AppSettings::DeriveDisplayOrder),
-    setting(AppSettings::UnifiedHelpMessage),
     setting(AppSettings::DontCollapseArgsInUsage),
 )]
 /// Rewrite FS paths according to a pattern
@@ -101,15 +100,6 @@ pub struct Cli {
     #[clap(short = 'p', long, conflicts_with = "diff", verbatim_doc_comment)]
     pub pretty: bool,
 
-    /// When to use colors
-    #[clap(
-        long,
-        value_name = "when",
-        possible_values = COLOR_VALUES,
-        parse(try_from_str = parse_color),
-    )]
-    pub color: Option<ColorChoice>,
-
     /// Regular expression matched against each input value
     #[clap(
         short = 'e',
@@ -145,9 +135,14 @@ pub struct Cli {
     #[clap(long, value_name = "char")]
     pub escape: Option<char>,
 
-    /// Print explanation of a given pattern
-    #[clap(long, requires = "pattern")]
-    pub explain: bool,
+    /// When to use colors
+    #[clap(
+    long,
+    value_name = "when",
+    possible_values = COLOR_VALUES,
+    parse(try_from_str = parse_color),
+    )]
+    pub color: Option<ColorChoice>,
 
     /// Print help information
     #[clap(short = 'h', long)]
@@ -160,6 +155,10 @@ pub struct Cli {
     /// Print filter reference
     #[clap(long)]
     pub help_filters: bool,
+
+    /// Print explanation of a given pattern
+    #[clap(long, requires = "pattern")]
+    pub explain: bool,
 
     /// Print version information
     #[clap(long)]
