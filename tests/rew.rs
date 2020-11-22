@@ -3,6 +3,7 @@ mod utils;
 
 use indoc::indoc;
 use predicates::prelude::*;
+use std::env;
 use std::path::Path;
 use utils::rew;
 
@@ -305,10 +306,11 @@ fn pattern_eval_error_at_end() {
         .code(4)
         .stdout(format!(
             "{}\n",
-            Path::new("Cargo.toml")
-                .canonicalize()
+            env::current_dir()
                 .unwrap()
-                .to_string_lossy()
+                .join(Path::new("Cargo.toml"))
+                .to_str()
+                .unwrap()
         ))
         .stderr(predicate::str::starts_with(
             "error: 'Canonical path' evaluation failed for value 'non-existent':",

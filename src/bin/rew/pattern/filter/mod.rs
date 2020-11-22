@@ -286,6 +286,7 @@ mod tests {
     use crate::pattern::parse::{Error, ErrorKind};
     use crate::utils::AnyString;
     use regex::Regex;
+    use std::path::MAIN_SEPARATOR;
 
     #[test]
     fn parse_absolute_path() {
@@ -686,7 +687,7 @@ mod tests {
     fn eval_absolute_path() {
         assert_eq!(
             Filter::AbsolutePath.eval(String::from("root/parent/file.ext"), &make_eval_context()),
-            Ok(String::from("current_dir/root/parent/file.ext"))
+            Ok(format!("current_dir{}root/parent/file.ext", MAIN_SEPARATOR))
         );
     }
 
@@ -709,7 +710,10 @@ mod tests {
                 String::from("root/parent/../new-parent/./dir/"),
                 &make_eval_context()
             ),
-            Ok(String::from("root/new-parent/dir"))
+            Ok(format!(
+                "root{}new-parent{}dir",
+                MAIN_SEPARATOR, MAIN_SEPARATOR
+            ))
         );
     }
 
