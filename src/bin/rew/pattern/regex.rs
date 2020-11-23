@@ -51,46 +51,50 @@ impl fmt::Display for RegexHolder {
 mod tests {
     use super::*;
 
-    #[test]
-    fn regex_holder_parse() {
-        let mut reader = Reader::from("\\d+");
-        assert_eq!(
-            RegexHolder::parse(&mut reader),
-            Ok(RegexHolder(Regex::new("\\d+").unwrap()))
-        );
-        assert_eq!(reader.position(), 3);
+    mod parse {
+        use super::*;
+
+        #[test]
+        fn empty() {
+            let mut reader = Reader::from("");
+            assert_eq!(
+                RegexHolder::parse(&mut reader),
+                Err(Error {
+                    kind: ErrorKind::ExpectedRegex,
+                    range: 0..0,
+                })
+            );
+            assert_eq!(reader.position(), 0);
+        }
+
+        #[test]
+        fn valid() {
+            let mut reader = Reader::from("\\d+");
+            assert_eq!(
+                RegexHolder::parse(&mut reader),
+                Ok(RegexHolder(Regex::new("\\d+").unwrap()))
+            );
+            assert_eq!(reader.position(), 3);
+        }
+
+        #[test]
+        fn invalid() {
+            let mut reader = Reader::from("[0-9");
+            assert_eq!(
+                RegexHolder::parse(&mut reader),
+                Err(Error {
+                    kind: ErrorKind::RegexInvalid(AnyString(String::from(
+                        "This string is not compared by assertion"
+                    ))),
+                    range: 0..4,
+                })
+            );
+            assert_eq!(reader.position(), 4);
+        }
     }
 
     #[test]
-    fn regex_holder_parse_empty() {
-        let mut reader = Reader::from("");
-        assert_eq!(
-            RegexHolder::parse(&mut reader),
-            Err(Error {
-                kind: ErrorKind::ExpectedRegex,
-                range: 0..0,
-            })
-        );
-        assert_eq!(reader.position(), 0);
-    }
-
-    #[test]
-    fn regex_holder_parse_invalid() {
-        let mut reader = Reader::from("[0-9");
-        assert_eq!(
-            RegexHolder::parse(&mut reader),
-            Err(Error {
-                kind: ErrorKind::RegexInvalid(AnyString(String::from(
-                    "This string is not compared by assertion"
-                ))),
-                range: 0..4,
-            })
-        );
-        assert_eq!(reader.position(), 4);
-    }
-
-    #[test]
-    fn regex_holder_eq() {
+    fn partial_eq() {
         assert_eq!(
             RegexHolder(Regex::new("[a-z]+").unwrap()),
             RegexHolder(Regex::new("[a-z]+").unwrap())
@@ -102,7 +106,7 @@ mod tests {
     }
 
     #[test]
-    fn regex_holder_display() {
+    fn display() {
         assert_eq!(
             RegexHolder(Regex::new("[a-z]+").unwrap()).to_string(),
             String::from("[a-z]+")

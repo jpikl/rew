@@ -199,292 +199,309 @@ mod tests {
     use crate::pattern::substitution::Substitution;
     use crate::pattern::testing::make_parsed;
 
-    #[test]
-    fn item_display() {
-        assert_eq!(
-            Item::Constant(String::from("abc")).to_string(),
-            "Constant 'abc'"
-        );
+    mod item_display {
+        use super::*;
 
-        assert_eq!(Item::Expression(Vec::new()).to_string(), "Empty expression");
+        #[test]
+        fn constant() {
+            assert_eq!(
+                Item::Constant(String::from("abc")).to_string(),
+                "Constant 'abc'"
+            );
+        }
 
-        assert_eq!(
-            Item::Expression(vec![make_parsed(Filter::ToUppercase)]).to_string(),
-            "Expression with a filter"
-        );
+        #[test]
+        fn empty_expression() {
+            assert_eq!(Item::Expression(Vec::new()).to_string(), "Empty expression");
+        }
 
-        assert_eq!(
-            Item::Expression(vec![
-                make_parsed(Filter::ToUppercase),
-                make_parsed(Filter::Trim)
-            ])
-            .to_string(),
-            "Expression with 2 filters"
-        );
+        #[test]
+        fn single_filter_expression() {
+            assert_eq!(
+                Item::Expression(vec![make_parsed(Filter::ToUppercase)]).to_string(),
+                "Expression with a filter"
+            );
+        }
+
+        #[test]
+        fn multi_filter_expression() {
+            assert_eq!(
+                Item::Expression(vec![
+                    make_parsed(Filter::ToUppercase),
+                    make_parsed(Filter::Trim)
+                ])
+                .to_string(),
+                "Expression with 2 filters"
+            );
+        }
     }
 
-    #[test]
-    fn parse_empty() {
-        assert_eq!(Parser::from("").parse_items(), Ok(Vec::new()));
-    }
+    mod parse {
+        use super::*;
 
-    #[test]
-    fn parse_constant() {
-        assert_eq!(
-            Parser::from("a").parse_items(),
-            Ok(vec![Parsed {
-                value: Item::Constant(String::from("a")),
-                range: 0..1,
-            }])
-        );
-    }
+        #[test]
+        fn empty() {
+            assert_eq!(Parser::from("").parse_items(), Ok(Vec::new()));
+        }
 
-    #[test]
-    fn parse_pipe_outside_expr() {
-        assert_eq!(
-            Parser::from("|").parse_items(),
-            Err(Error {
-                kind: ErrorKind::PipeOutsideExpr,
-                range: 0..1,
-            })
-        );
-    }
+        #[test]
+        fn constant() {
+            assert_eq!(
+                Parser::from("a").parse_items(),
+                Ok(vec![Parsed {
+                    value: Item::Constant(String::from("a")),
+                    range: 0..1,
+                }])
+            );
+        }
 
-    #[test]
-    fn parse_unmatched_expr_end() {
-        assert_eq!(
-            Parser::from("}").parse_items(),
-            Err(Error {
-                kind: ErrorKind::UnmatchedExprEnd,
-                range: 0..1,
-            })
-        );
-    }
+        #[test]
+        fn pipe_outside_expr() {
+            assert_eq!(
+                Parser::from("|").parse_items(),
+                Err(Error {
+                    kind: ErrorKind::PipeOutsideExpr,
+                    range: 0..1,
+                })
+            );
+        }
 
-    #[test]
-    fn parse_unmatched_expr_start() {
-        assert_eq!(
-            Parser::from("{").parse_items(),
-            Err(Error {
-                kind: ErrorKind::UnmatchedExprStart,
-                range: 0..1,
-            })
-        );
-    }
+        #[test]
+        fn unmatched_expr_end() {
+            assert_eq!(
+                Parser::from("}").parse_items(),
+                Err(Error {
+                    kind: ErrorKind::UnmatchedExprEnd,
+                    range: 0..1,
+                })
+            );
+        }
 
-    #[test]
-    fn parse_filter_after_expr_start() {
-        assert_eq!(
-            Parser::from("{|").parse_items(),
-            Err(Error {
-                kind: ErrorKind::ExpectedFilterOrExprEnd,
-                range: 1..2,
-            })
-        );
-    }
+        #[test]
+        fn unmatched_expr_start() {
+            assert_eq!(
+                Parser::from("{").parse_items(),
+                Err(Error {
+                    kind: ErrorKind::UnmatchedExprStart,
+                    range: 0..1,
+                })
+            );
+        }
 
-    #[test]
-    fn parse_empty_expr() {
-        assert_eq!(
-            Parser::from("{}").parse_items(),
-            Ok(vec![Parsed {
-                value: Item::Expression(Vec::new()),
-                range: 0..2,
-            }])
-        );
-    }
-
-    #[test]
-    fn parse_missing_pipe_or_expr_end() {
-        assert_eq!(
-            Parser::from("{f").parse_items(),
-            Err(Error {
-                kind: ErrorKind::UnmatchedExprStart,
-                range: 0..1,
-            })
-        );
-    }
-
-    #[test]
-    fn parse_expr_start_after_filter() {
-        assert_eq!(
-            Parser::from("{f{").parse_items(),
-            Err(Error {
-                kind: ErrorKind::ExprStartInsideExpr,
-                range: 2..3,
-            })
-        );
-    }
-
-    #[test]
-    fn parse_expr_single_filter() {
-        assert_eq!(
-            Parser::from("{f}").parse_items(),
-            Ok(vec![Parsed {
-                value: Item::Expression(vec![Parsed {
-                    value: Filter::FileName,
+        #[test]
+        fn filter_after_expr_start() {
+            assert_eq!(
+                Parser::from("{|").parse_items(),
+                Err(Error {
+                    kind: ErrorKind::ExpectedFilterOrExprEnd,
                     range: 1..2,
-                }]),
-                range: 0..3,
-            }])
-        );
-    }
+                })
+            );
+        }
 
-    #[test]
-    fn parse_filter_after_filter() {
-        assert_eq!(
-            Parser::from("{fg").parse_items(),
-            Err(Error {
-                kind: ErrorKind::ExpectedPipeOrExprEnd,
-                range: 2..3,
-            })
-        );
-    }
+        #[test]
+        fn empty_expr() {
+            assert_eq!(
+                Parser::from("{}").parse_items(),
+                Ok(vec![Parsed {
+                    value: Item::Expression(Vec::new()),
+                    range: 0..2,
+                }])
+            );
+        }
 
-    #[test]
-    fn parse_missing_filter_after_pipe() {
-        assert_eq!(
-            Parser::from("{f|").parse_items(),
-            Err(Error {
-                kind: ErrorKind::ExpectedFilter,
-                range: 3..3,
-            })
-        );
-    }
+        #[test]
+        fn missing_pipe_or_expr_end() {
+            assert_eq!(
+                Parser::from("{f").parse_items(),
+                Err(Error {
+                    kind: ErrorKind::UnmatchedExprStart,
+                    range: 0..1,
+                })
+            );
+        }
 
-    #[test]
-    fn parse_pipe_after_pipe() {
-        assert_eq!(
-            Parser::from("{f||").parse_items(),
-            Err(Error {
-                kind: ErrorKind::ExpectedFilter,
-                range: 3..4,
-            })
-        );
-    }
+        #[test]
+        fn expr_start_after_filter() {
+            assert_eq!(
+                Parser::from("{f{").parse_items(),
+                Err(Error {
+                    kind: ErrorKind::ExprStartInsideExpr,
+                    range: 2..3,
+                })
+            );
+        }
 
-    #[test]
-    fn parse_expr_end_after_pipe() {
-        assert_eq!(
-            Parser::from("{f|}").parse_items(),
-            Err(Error {
-                kind: ErrorKind::ExpectedFilter,
-                range: 3..4,
-            })
-        );
-    }
-
-    #[test]
-    fn parse_missing_pipe_or_expr_end_error_2() {
-        assert_eq!(
-            Parser::from("{f|l").parse_items(),
-            Err(Error {
-                kind: ErrorKind::UnmatchedExprStart,
-                range: 0..1,
-            })
-        );
-    }
-
-    #[test]
-    fn parse_filter_after_filter_error_2() {
-        assert_eq!(
-            Parser::from("{f|ll").parse_items(),
-            Err(Error {
-                kind: ErrorKind::ExpectedPipeOrExprEnd,
-                range: 4..5,
-            })
-        );
-    }
-
-    #[test]
-    fn parse_invalid_filter() {
-        assert_eq!(
-            Parser::from("{n2-1}").parse_items(),
-            Err(Error {
-                kind: ErrorKind::RangeStartOverEnd(String::from("2"), String::from("1")),
-                range: 2..5,
-            })
-        );
-    }
-
-    #[test]
-    fn parse_expr_multiple_filters() {
-        assert_eq!(
-            Parser::from("{e|t|n1-3}").parse_items(),
-            Ok(vec![Parsed {
-                value: Item::Expression(vec![
-                    Parsed {
-                        value: Filter::Extension,
+        #[test]
+        fn expr_single_filter() {
+            assert_eq!(
+                Parser::from("{f}").parse_items(),
+                Ok(vec![Parsed {
+                    value: Item::Expression(vec![Parsed {
+                        value: Filter::FileName,
                         range: 1..2,
-                    },
-                    Parsed {
-                        value: Filter::Trim,
-                        range: 3..4,
-                    },
-                    Parsed {
-                        value: Filter::Substring(IndexRange::new(0, Some(2))),
-                        range: 5..9,
-                    },
-                ]),
-                range: 0..10,
-            }])
-        );
-    }
+                    }]),
+                    range: 0..3,
+                }])
+            );
+        }
 
-    #[test]
-    fn parse_complex_pattern() {
-        assert_eq!(
-            Parser::from("image_{c|<3:0}.{e|l|r_e}2").parse_items(),
-            Ok(vec![
-                Parsed {
-                    value: Item::Constant(String::from("image_")),
-                    range: 0..6,
-                },
-                Parsed {
-                    value: Item::Expression(vec![
-                        Parsed {
-                            value: Filter::LocalCounter,
-                            range: 7..8,
-                        },
-                        Parsed {
-                            value: Filter::LeftPad(Padding::Repeated(Repetition {
-                                count: 3,
-                                value: String::from("0")
-                            })),
-                            range: 9..13,
-                        }
-                    ]),
-                    range: 6..14,
-                },
-                Parsed {
-                    value: Item::Constant(String::from(".")),
-                    range: 14..15,
-                },
-                Parsed {
+        #[test]
+        fn filter_after_filter() {
+            assert_eq!(
+                Parser::from("{fg").parse_items(),
+                Err(Error {
+                    kind: ErrorKind::ExpectedPipeOrExprEnd,
+                    range: 2..3,
+                })
+            );
+        }
+
+        #[test]
+        fn missing_filter_after_pipe() {
+            assert_eq!(
+                Parser::from("{f|").parse_items(),
+                Err(Error {
+                    kind: ErrorKind::ExpectedFilter,
+                    range: 3..3,
+                })
+            );
+        }
+
+        #[test]
+        fn pipe_after_pipe() {
+            assert_eq!(
+                Parser::from("{f||").parse_items(),
+                Err(Error {
+                    kind: ErrorKind::ExpectedFilter,
+                    range: 3..4,
+                })
+            );
+        }
+
+        #[test]
+        fn expr_end_after_pipe() {
+            assert_eq!(
+                Parser::from("{f|}").parse_items(),
+                Err(Error {
+                    kind: ErrorKind::ExpectedFilter,
+                    range: 3..4,
+                })
+            );
+        }
+
+        #[test]
+        fn missing_pipe_or_expr_end_2() {
+            assert_eq!(
+                Parser::from("{f|l").parse_items(),
+                Err(Error {
+                    kind: ErrorKind::UnmatchedExprStart,
+                    range: 0..1,
+                })
+            );
+        }
+
+        #[test]
+        fn filter_after_filter_2() {
+            assert_eq!(
+                Parser::from("{f|ll").parse_items(),
+                Err(Error {
+                    kind: ErrorKind::ExpectedPipeOrExprEnd,
+                    range: 4..5,
+                })
+            );
+        }
+
+        #[test]
+        fn invalid_filter() {
+            assert_eq!(
+                Parser::from("{n2-1}").parse_items(),
+                Err(Error {
+                    kind: ErrorKind::RangeStartOverEnd(String::from("2"), String::from("1")),
+                    range: 2..5,
+                })
+            );
+        }
+
+        #[test]
+        fn expr_multiple_filters() {
+            assert_eq!(
+                Parser::from("{e|t|n1-3}").parse_items(),
+                Ok(vec![Parsed {
                     value: Item::Expression(vec![
                         Parsed {
                             value: Filter::Extension,
-                            range: 16..17,
+                            range: 1..2,
                         },
                         Parsed {
-                            value: Filter::ToLowercase,
-                            range: 18..19,
+                            value: Filter::Trim,
+                            range: 3..4,
                         },
                         Parsed {
-                            value: Filter::ReplaceFirst(Substitution {
-                                target: 'e'.to_string(),
-                                replacement: String::new(),
-                            }),
-                            range: 20..23,
+                            value: Filter::Substring(IndexRange::new(0, Some(2))),
+                            range: 5..9,
                         },
                     ]),
-                    range: 15..24,
-                },
-                Parsed {
-                    value: Item::Constant(String::from("2")),
-                    range: 24..25,
-                },
-            ])
-        );
+                    range: 0..10,
+                }])
+            );
+        }
+
+        #[test]
+        fn complex_pattern() {
+            assert_eq!(
+                Parser::from("image_{c|<3:0}.{e|l|r_e}2").parse_items(),
+                Ok(vec![
+                    Parsed {
+                        value: Item::Constant(String::from("image_")),
+                        range: 0..6,
+                    },
+                    Parsed {
+                        value: Item::Expression(vec![
+                            Parsed {
+                                value: Filter::LocalCounter,
+                                range: 7..8,
+                            },
+                            Parsed {
+                                value: Filter::LeftPad(Padding::Repeated(Repetition {
+                                    count: 3,
+                                    value: String::from("0")
+                                })),
+                                range: 9..13,
+                            }
+                        ]),
+                        range: 6..14,
+                    },
+                    Parsed {
+                        value: Item::Constant(String::from(".")),
+                        range: 14..15,
+                    },
+                    Parsed {
+                        value: Item::Expression(vec![
+                            Parsed {
+                                value: Filter::Extension,
+                                range: 16..17,
+                            },
+                            Parsed {
+                                value: Filter::ToLowercase,
+                                range: 18..19,
+                            },
+                            Parsed {
+                                value: Filter::ReplaceFirst(Substitution {
+                                    target: 'e'.to_string(),
+                                    replacement: String::new(),
+                                }),
+                                range: 20..23,
+                            },
+                        ]),
+                        range: 15..24,
+                    },
+                    Parsed {
+                        value: Item::Constant(String::from("2")),
+                        range: 24..25,
+                    },
+                ])
+            );
+        }
     }
 }

@@ -187,160 +187,273 @@ impl fmt::Display for ErrorKind {
 mod tests {
     use super::*;
 
-    #[test]
-    fn error_range() {
-        assert_eq!(
-            Error {
-                kind: ErrorKind::ExpectedNumber,
-                range: 1..2
-            }
-            .range(),
-            &(1..2)
-        )
+    mod error {
+        use super::*;
+
+        #[test]
+        fn range() {
+            assert_eq!(
+                Error {
+                    kind: ErrorKind::ExpectedNumber,
+                    range: 1..2
+                }
+                .range(),
+                &(1..2)
+            )
+        }
+
+        #[test]
+        fn display() {
+            assert_eq!(
+                Error {
+                    kind: ErrorKind::ExpectedNumber,
+                    range: 1..2
+                }
+                .to_string(),
+                "Invalid pattern: Expected number"
+            );
+        }
     }
 
-    #[test]
-    fn error_display() {
-        assert_eq!(
-            Error {
-                kind: ErrorKind::ExpectedNumber,
-                range: 1..2
-            }
-            .to_string(),
-            "Invalid pattern: Expected number"
-        );
-    }
+    mod error_kind_display {
+        use super::*;
 
-    #[test]
-    fn error_kind_display() {
-        assert_eq!(
-            ErrorKind::ExpectedFilter.to_string(),
-            "Expected filter after '|'"
-        );
-        assert_eq!(ErrorKind::ExpectedNumber.to_string(), "Expected number");
-        assert_eq!(
-            ErrorKind::ExpectedFilterOrExprEnd.to_string(),
-            "Expected filter or closing '}'"
-        );
-        assert_eq!(
-            ErrorKind::ExpectedPipeOrExprEnd.to_string(),
-            "Expected '|' or closing '}'"
-        );
-        assert_eq!(
-            ErrorKind::ExpectedRange.to_string(),
-            "Filter requires range 'A-B' as a parameter"
-        );
-        assert_eq!(
-            ErrorKind::ExpectedRangeDelimiter(None).to_string(),
-            "Expected range delimiter '-'"
-        );
-        assert_eq!(
-            ErrorKind::ExpectedRangeDelimiter(Some(Char::Raw('x'))).to_string(),
-            "Expected range delimiter '-' but got 'x'"
-        );
-        assert_eq!(
-            ErrorKind::ExpectedRangeDelimiter(Some(Char::Escaped('x', ['#', 'y']))).to_string(),
-            "Expected range delimiter '-' but got escape sequence '#y'"
-        );
-        assert_eq!(
-            ErrorKind::ExpectedRegex.to_string(),
-            "Filter requires regular expression as a parameter"
-        );
-        assert_eq!(
-            ErrorKind::ExpectedRepetition.to_string(),
-            "Filter requires repetition 'N:V' as a parameter"
-        );
-        assert_eq!(
-            ErrorKind::ExpectedSubstitution.to_string(),
-            "Filter requires substitution ':A:B' as a parameter"
-        );
-        assert_eq!(
-            ErrorKind::ExprStartInsideExpr.to_string(),
-            "Unescaped '{' inside expression"
-        );
-        assert_eq!(
-            ErrorKind::NumberOverflow(String::from("255")).to_string(),
-            "Cannot parse value greater than 255"
-        );
-        assert_eq!(
-            ErrorKind::PaddingPrefixInvalid('<', None).to_string(),
-            "Expected '<' prefix or number"
-        );
-        assert_eq!(
-            ErrorKind::PaddingPrefixInvalid('<', Some(Char::Raw('x'))).to_string(),
-            "Expected '<' prefix or number but got 'x'"
-        );
-        assert_eq!(
-            ErrorKind::PaddingPrefixInvalid('<', Some(Char::Escaped('x', ['#', 'y']))).to_string(),
-            "Expected '<' prefix or number but got escape sequence '#y'"
-        );
-        assert_eq!(
-            ErrorKind::PipeOutsideExpr.to_string(),
-            "Unescaped '|' outside expression"
-        );
-        assert_eq!(
-            ErrorKind::RangeIndexZero.to_string(),
-            "Range indices start from 1, not 0"
-        );
-        assert_eq!(
-            ErrorKind::RangeInvalid(String::from("abc")).to_string(),
-            "Invalid range 'abc'"
-        );
-        assert_eq!(
-            ErrorKind::RangeStartOverEnd(String::from("2"), String::from("1")).to_string(),
-            "Range start (2) is greater than end (1)"
-        );
-        assert_eq!(
-            ErrorKind::RegexCaptureZero.to_string(),
-            "Regular expression captures start from 1, not 0"
-        );
-        assert_eq!(
-            ErrorKind::RegexInvalid(AnyString(String::from("abc"))).to_string(),
-            "Invalid regular expression: abc"
-        );
-        assert_eq!(
-            ErrorKind::RepetitionDigitDelimiter('0').to_string(),
-            "Repetition delimiter should not be a digit but is '0'"
-        );
-        assert_eq!(
-            ErrorKind::RepetitionWithoutDelimiter.to_string(),
-            "Repetition is missing delimiter after number"
-        );
-        assert_eq!(
-            ErrorKind::SubstitutionWithoutTarget(Char::Raw('_')).to_string(),
-            "Substitution is missing value after delimiter '_'"
-        );
-        assert_eq!(
-            ErrorKind::SubstitutionWithoutTarget(Char::Escaped('|', ['#', '|'])).to_string(),
-            "Substitution is missing value after delimiter '#|' (escape sequence)"
-        );
-        assert_eq!(
-            ErrorKind::SubstitutionRegexInvalid(AnyString(String::from("abc"))).to_string(),
-            "Invalid regular expression in substitution: abc"
-        );
-        assert_eq!(
-            ErrorKind::UnknownEscapeSequence(['#', 'x']).to_string(),
-            "Unknown escape sequence '#x'"
-        );
-        assert_eq!(
-            ErrorKind::UnknownFilter(Char::Raw('x')).to_string(),
-            "Unknown filter 'x'"
-        );
-        assert_eq!(
-            ErrorKind::UnknownFilter(Char::Escaped('x', ['#', 'y'])).to_string(),
-            "Unknown filter 'x' written as escape sequence '#y'"
-        );
-        assert_eq!(
-            ErrorKind::UnmatchedExprEnd.to_string(),
-            "No matching '{' before expression end"
-        );
-        assert_eq!(
-            ErrorKind::UnmatchedExprStart.to_string(),
-            "No matching '}' after expression start"
-        );
-        assert_eq!(
-            ErrorKind::UnterminatedEscapeSequence('#').to_string(),
-            "Unterminated escape sequence '#'"
-        );
+        #[test]
+        fn expected_filter() {
+            assert_eq!(
+                ErrorKind::ExpectedFilter.to_string(),
+                "Expected filter after '|'"
+            );
+        }
+
+        #[test]
+        fn expected_number() {
+            assert_eq!(ErrorKind::ExpectedNumber.to_string(), "Expected number");
+        }
+
+        #[test]
+        fn expected_filter_or_expr_end() {
+            assert_eq!(
+                ErrorKind::ExpectedFilterOrExprEnd.to_string(),
+                "Expected filter or closing '}'"
+            );
+        }
+
+        #[test]
+        fn expected_pipe_or_expr_end() {
+            assert_eq!(
+                ErrorKind::ExpectedPipeOrExprEnd.to_string(),
+                "Expected '|' or closing '}'"
+            );
+        }
+
+        #[test]
+        fn expected_range() {
+            assert_eq!(
+                ErrorKind::ExpectedRange.to_string(),
+                "Filter requires range 'A-B' as a parameter"
+            );
+        }
+
+        #[test]
+        fn expected_range_delimiter() {
+            assert_eq!(
+                ErrorKind::ExpectedRangeDelimiter(None).to_string(),
+                "Expected range delimiter '-'"
+            );
+            assert_eq!(
+                ErrorKind::ExpectedRangeDelimiter(Some(Char::Raw('x'))).to_string(),
+                "Expected range delimiter '-' but got 'x'"
+            );
+            assert_eq!(
+                ErrorKind::ExpectedRangeDelimiter(Some(Char::Escaped('x', ['#', 'y']))).to_string(),
+                "Expected range delimiter '-' but got escape sequence '#y'"
+            );
+        }
+
+        #[test]
+        fn expected_regex() {
+            assert_eq!(
+                ErrorKind::ExpectedRegex.to_string(),
+                "Filter requires regular expression as a parameter"
+            );
+        }
+
+        #[test]
+        fn expected_repetition() {
+            assert_eq!(
+                ErrorKind::ExpectedRepetition.to_string(),
+                "Filter requires repetition 'N:V' as a parameter"
+            );
+        }
+
+        #[test]
+        fn expected_substitution() {
+            assert_eq!(
+                ErrorKind::ExpectedSubstitution.to_string(),
+                "Filter requires substitution ':A:B' as a parameter"
+            );
+        }
+
+        #[test]
+        fn expr_start_inside_expr() {
+            assert_eq!(
+                ErrorKind::ExprStartInsideExpr.to_string(),
+                "Unescaped '{' inside expression"
+            );
+        }
+
+        #[test]
+        fn number_overflow() {
+            assert_eq!(
+                ErrorKind::NumberOverflow(String::from("255")).to_string(),
+                "Cannot parse value greater than 255"
+            );
+        }
+
+        #[test]
+        fn padding_prefix_invalid() {
+            assert_eq!(
+                ErrorKind::PaddingPrefixInvalid('<', None).to_string(),
+                "Expected '<' prefix or number"
+            );
+            assert_eq!(
+                ErrorKind::PaddingPrefixInvalid('<', Some(Char::Raw('x'))).to_string(),
+                "Expected '<' prefix or number but got 'x'"
+            );
+            assert_eq!(
+                ErrorKind::PaddingPrefixInvalid('<', Some(Char::Escaped('x', ['#', 'y'])))
+                    .to_string(),
+                "Expected '<' prefix or number but got escape sequence '#y'"
+            );
+        }
+
+        #[test]
+        fn pipe_outside_expr() {
+            assert_eq!(
+                ErrorKind::PipeOutsideExpr.to_string(),
+                "Unescaped '|' outside expression"
+            );
+        }
+
+        #[test]
+        fn range_index_zero() {
+            assert_eq!(
+                ErrorKind::RangeIndexZero.to_string(),
+                "Range indices start from 1, not 0"
+            );
+        }
+
+        #[test]
+        fn range_invalid() {
+            assert_eq!(
+                ErrorKind::RangeInvalid(String::from("abc")).to_string(),
+                "Invalid range 'abc'"
+            );
+        }
+
+        #[test]
+        fn range_start_over_end() {
+            assert_eq!(
+                ErrorKind::RangeStartOverEnd(String::from("2"), String::from("1")).to_string(),
+                "Range start (2) is greater than end (1)"
+            );
+        }
+
+        #[test]
+        fn regex_capture_zero() {
+            assert_eq!(
+                ErrorKind::RegexCaptureZero.to_string(),
+                "Regular expression captures start from 1, not 0"
+            );
+        }
+
+        #[test]
+        fn regex_invalid() {
+            assert_eq!(
+                ErrorKind::RegexInvalid(AnyString(String::from("abc"))).to_string(),
+                "Invalid regular expression: abc"
+            );
+        }
+
+        #[test]
+        fn repetition_digit_delimiter() {
+            assert_eq!(
+                ErrorKind::RepetitionDigitDelimiter('0').to_string(),
+                "Repetition delimiter should not be a digit but is '0'"
+            );
+        }
+
+        #[test]
+        fn repetition_without_delimiter() {
+            assert_eq!(
+                ErrorKind::RepetitionWithoutDelimiter.to_string(),
+                "Repetition is missing delimiter after number"
+            );
+        }
+
+        #[test]
+        fn substitution_without_target() {
+            assert_eq!(
+                ErrorKind::SubstitutionWithoutTarget(Char::Raw('_')).to_string(),
+                "Substitution is missing value after delimiter '_'"
+            );
+            assert_eq!(
+                ErrorKind::SubstitutionWithoutTarget(Char::Escaped('|', ['#', '|'])).to_string(),
+                "Substitution is missing value after delimiter '#|' (escape sequence)"
+            );
+        }
+
+        #[test]
+        fn substitution_regex_invalid() {
+            assert_eq!(
+                ErrorKind::SubstitutionRegexInvalid(AnyString(String::from("abc"))).to_string(),
+                "Invalid regular expression in substitution: abc"
+            );
+        }
+
+        #[test]
+        fn unknown_escape_sequence() {
+            assert_eq!(
+                ErrorKind::UnknownEscapeSequence(['#', 'x']).to_string(),
+                "Unknown escape sequence '#x'"
+            );
+        }
+
+        #[test]
+        fn unknown_filter() {
+            assert_eq!(
+                ErrorKind::UnknownFilter(Char::Raw('x')).to_string(),
+                "Unknown filter 'x'"
+            );
+            assert_eq!(
+                ErrorKind::UnknownFilter(Char::Escaped('x', ['#', 'y'])).to_string(),
+                "Unknown filter 'x' written as escape sequence '#y'"
+            );
+        }
+
+        #[test]
+        fn unmatched_exprt_end() {
+            assert_eq!(
+                ErrorKind::UnmatchedExprEnd.to_string(),
+                "No matching '{' before expression end"
+            );
+        }
+
+        #[test]
+        fn unmatched_exprt_start() {
+            assert_eq!(
+                ErrorKind::UnmatchedExprStart.to_string(),
+                "No matching '}' after expression start"
+            );
+        }
+
+        #[test]
+        fn unterminated_escape_sequence() {
+            assert_eq!(
+                ErrorKind::UnterminatedEscapeSequence('#').to_string(),
+                "Unterminated escape sequence '#'"
+            );
+        }
     }
 }

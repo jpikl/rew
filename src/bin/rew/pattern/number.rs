@@ -119,14 +119,14 @@ mod tests {
         }
 
         #[test]
-        fn zero_ignore_remaining_zeros() {
+        fn zero_then_zero() {
             let mut reader = Reader::from("00");
             assert_eq!(parse_number(&mut reader), Ok(0));
             assert_eq!(reader.position(), 1);
         }
 
         #[test]
-        fn zero_ignore_remaining_alpha() {
+        fn zero_then_alpha() {
             let mut reader = Reader::from("0a");
             assert_eq!(parse_number(&mut reader), Ok(0));
             assert_eq!(reader.position(), 1);
@@ -140,7 +140,7 @@ mod tests {
         }
 
         #[test]
-        fn single_digit_ignore_remaining_alpha() {
+        fn single_digit_then_alpha() {
             let mut reader = Reader::from("1a");
             assert_eq!(parse_number(&mut reader), Ok(1));
             assert_eq!(reader.position(), 1);
@@ -154,7 +154,7 @@ mod tests {
         }
 
         #[test]
-        fn multiple_digits_ignore_remaining_alpha() {
+        fn multiple_digits_then_alpha() {
             let mut reader = Reader::from("1234567890a");
             assert_eq!(parse_number(&mut reader), Ok(1_234_567_890));
             assert_eq!(reader.position(), 10);

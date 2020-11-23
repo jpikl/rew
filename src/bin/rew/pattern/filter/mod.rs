@@ -318,7 +318,7 @@ mod tests {
         }
 
         #[test]
-        fn remaining_chars() {
+        fn chars_after() {
             let mut reader = Reader::from("a_");
             Filter::parse(&mut reader).unwrap();
             assert_eq!(reader.position(), 1);

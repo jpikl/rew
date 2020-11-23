@@ -92,27 +92,23 @@ mod tests {
         }
     }
 
-    mod error_kind {
+    mod error_kind_display {
         use super::*;
 
-        mod display {
-            use super::*;
+        #[test]
+        fn input_not_utf8() {
+            assert_eq!(
+                ErrorKind::InputNotUtf8.to_string(),
+                "Input does not have UTF-8 encoding"
+            );
+        }
 
-            #[test]
-            fn input_not_utf8() {
-                assert_eq!(
-                    ErrorKind::InputNotUtf8.to_string(),
-                    "Input does not have UTF-8 encoding"
-                );
-            }
-
-            #[test]
-            fn canonicalization_failed() {
-                assert_eq!(
-                    ErrorKind::CanonicalizationFailed(AnyString(String::from("abc"))).to_string(),
-                    "Path canonicalization failed: abc"
-                );
-            }
+        #[test]
+        fn canonicalization_failed() {
+            assert_eq!(
+                ErrorKind::CanonicalizationFailed(AnyString(String::from("abc"))).to_string(),
+                "Path canonicalization failed: abc"
+            );
         }
     }
 }

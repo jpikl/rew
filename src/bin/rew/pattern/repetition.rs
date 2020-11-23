@@ -52,83 +52,87 @@ mod tests {
     use super::*;
     use crate::pattern::parse::{Error, ErrorKind};
     use crate::pattern::reader::Reader;
+    
+    mod parse {
+        use super::*;
 
-    #[test]
-    fn parse_empty() {
-        let mut reader = Reader::from("");
-        assert_eq!(
-            Repetition::parse(&mut reader),
-            Err(Error {
-                kind: ErrorKind::ExpectedRepetition,
-                range: 0..0
-            })
-        );
-        assert_eq!(reader.position(), 0);
-    }
+        #[test]
+        fn empty() {
+            let mut reader = Reader::from("");
+            assert_eq!(
+                Repetition::parse(&mut reader),
+                Err(Error {
+                    kind: ErrorKind::ExpectedRepetition,
+                    range: 0..0
+                })
+            );
+            assert_eq!(reader.position(), 0);
+        }
 
-    #[test]
-    fn parse_invalid_count() {
-        let mut reader = Reader::from("ab");
-        assert_eq!(
-            Repetition::parse(&mut reader),
-            Err(Error {
-                kind: ErrorKind::ExpectedNumber,
-                range: 0..2
-            })
-        );
-        assert_eq!(reader.position(), 0);
-    }
+        #[test]
+        fn invalid_count() {
+            let mut reader = Reader::from("ab");
+            assert_eq!(
+                Repetition::parse(&mut reader),
+                Err(Error {
+                    kind: ErrorKind::ExpectedNumber,
+                    range: 0..2
+                })
+            );
+            assert_eq!(reader.position(), 0);
+        }
 
-    #[test]
-    fn parse_missing_delimiter() {
-        let mut reader = Reader::from("12");
-        assert_eq!(
-            Repetition::parse(&mut reader),
-            Err(Error {
-                kind: ErrorKind::RepetitionWithoutDelimiter,
-                range: 2..2
-            })
-        );
-        assert_eq!(reader.position(), 2);
-    }
+        #[test]
+        fn missing_delimiter() {
+            let mut reader = Reader::from("12");
+            assert_eq!(
+                Repetition::parse(&mut reader),
+                Err(Error {
+                    kind: ErrorKind::RepetitionWithoutDelimiter,
+                    range: 2..2
+                })
+            );
+            assert_eq!(reader.position(), 2);
+        }
 
-    #[test]
-    fn parse_digit_delimiter() {
-        let mut reader = Reader::from("010");
-        assert_eq!(
-            Repetition::parse(&mut reader),
-            Err(Error {
-                kind: ErrorKind::RepetitionDigitDelimiter('1'),
-                range: 1..2
-            })
-        );
-        assert_eq!(reader.position(), 2);
-    }
+        #[test]
+        fn digit_delimiter() {
+            let mut reader = Reader::from("010");
+            assert_eq!(
+                Repetition::parse(&mut reader),
+                Err(Error {
+                    kind: ErrorKind::RepetitionDigitDelimiter('1'),
+                    range: 1..2
+                })
+            );
+            assert_eq!(reader.position(), 2);
+        }
 
-    #[test]
-    fn parse_no_value() {
-        let mut reader = Reader::from("12:");
-        assert_eq!(
-            Repetition::parse(&mut reader),
-            Ok(Repetition {
-                count: 12,
-                value: String::new()
-            })
-        );
-        assert_eq!(reader.position(), 3);
-    }
+        #[test]
+        fn empty_value() {
+            let mut reader = Reader::from("12:");
+            assert_eq!(
+                Repetition::parse(&mut reader),
+                Ok(Repetition {
+                    count: 12,
+                    value: String::new()
+                })
+            );
+            assert_eq!(reader.position(), 3);
+        }
 
-    #[test]
-    fn parse_some_value() {
-        let mut reader = Reader::from("12:ab");
-        assert_eq!(
-            Repetition::parse(&mut reader),
-            Ok(Repetition {
-                count: 12,
-                value: String::from("ab")
-            })
-        );
-        assert_eq!(reader.position(), 5);
+        #[test]
+        fn nonempty_value() {
+            let mut reader = Reader::from("12:ab");
+            assert_eq!(
+                Repetition::parse(&mut reader),
+                Ok(Repetition {
+                    count: 12,
+                    value: String::from("ab")
+                })
+            );
+            assert_eq!(reader.position(), 5);
+        }
     }
 
     #[test]

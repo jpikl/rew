@@ -87,109 +87,102 @@ mod tests {
     use crate::pattern::char::Char;
 
     #[test]
-    fn position_starts_at_zero() {
-        assert_eq!(make_empty_reader().position(), 0);
-        assert_eq!(make_reader().position(), 0);
-    }
-
-    #[test]
-    fn position_returns_values_at_indices() {
+    fn position() {
         let mut reader = make_reader();
+        assert_eq!(reader.position(), 0);
+
         reader.seek_to(0);
         assert_eq!(reader.position(), 0);
+
         reader.seek_to(1);
         assert_eq!(reader.position(), 1);
+
         reader.seek_to(2);
         assert_eq!(reader.position(), 3);
+
         reader.seek_to(3);
         assert_eq!(reader.position(), 5);
     }
 
     #[test]
-    fn end_returns_last_position() {
-        assert_eq!(make_empty_reader().end(), 0);
+    fn end() {
         assert_eq!(make_reader().end(), 5);
     }
 
     #[test]
-    fn seek_increments_position() {
+    fn seek() {
         let mut reader = make_reader();
-        assert_eq!(reader.position(), 0);
+
         reader.seek();
         assert_eq!(reader.position(), 1);
+
         reader.seek();
         assert_eq!(reader.position(), 3);
+
         reader.seek();
         assert_eq!(reader.position(), 5);
+
         reader.seek();
         assert_eq!(reader.position(), 5);
     }
 
     #[test]
-    fn seek_to_end_moves_position_to_end() {
+    fn seek_to_end() {
         let mut reader = make_reader();
-        assert_eq!(reader.position(), 0);
+
         reader.seek_to_end();
         assert_eq!(reader.position(), 5);
+
         reader.seek_to_end();
         assert_eq!(reader.position(), 5);
     }
 
     #[test]
-    fn peek_returns_none_for_empty() {
-        assert_eq!(make_empty_reader().peek(), None);
-    }
-
-    #[test]
-    fn peek_returns_chars_at_indices() {
+    fn peek() {
         let mut reader = make_reader();
+
         reader.seek_to(0);
         assert_eq!(reader.peek(), Some(&Char::Raw('a')));
+        assert_eq!(reader.position(), 0);
+
         reader.seek_to(1);
         assert_eq!(reader.peek(), Some(&Char::Escaped('b', ['x', 'y'])));
+        assert_eq!(reader.position(), 1);
+
         reader.seek_to(2);
         assert_eq!(reader.peek(), Some(&Char::Raw('č')));
+        assert_eq!(reader.position(), 3);
+
         reader.seek_to(3);
         assert_eq!(reader.peek(), None);
+        assert_eq!(reader.position(), 5);
     }
 
     #[test]
-    fn peek_does_not_change_position() {
-        let reader = make_reader();
-        assert_eq!(reader.position(), 0);
-        reader.peek();
-        assert_eq!(reader.position(), 0);
-    }
-
-    #[test]
-    fn peek_char_returns_none_for_empty() {
-        assert_eq!(make_empty_reader().peek_char(), None);
-    }
-
-    #[test]
-    fn peek_char_returns_char_values_at_indices() {
+    fn peek_char() {
         let mut reader = make_reader();
+
         reader.seek_to(0);
         assert_eq!(reader.peek_char(), Some('a'));
+        assert_eq!(reader.position(), 0);
+
         reader.seek_to(1);
         assert_eq!(reader.peek_char(), Some('b'));
+        assert_eq!(reader.position(), 1);
+
         reader.seek_to(2);
         assert_eq!(reader.peek_char(), Some('č'));
+        assert_eq!(reader.position(), 3);
+
         reader.seek_to(3);
         assert_eq!(reader.peek_char(), None);
+        assert_eq!(reader.position(), 5);
     }
 
     #[test]
-    fn peek_char_does_not_change_position() {
-        let reader = make_reader();
-        assert_eq!(reader.position(), 0);
-        reader.peek_char();
-        assert_eq!(reader.position(), 0);
-    }
-
-    #[test]
-    fn peek_to_end_returns_remaining_chars() {
+    fn peek_to_end() {
         let mut reader = make_reader();
+
         reader.seek_to(0);
         assert_eq!(
             reader.peek_to_end(),
@@ -199,84 +192,62 @@ mod tests {
                 Char::Raw('č')
             ]
         );
+        assert_eq!(reader.position(), 0);
+
         reader.seek_to(1);
         assert_eq!(
             reader.peek_to_end(),
             [Char::Escaped('b', ['x', 'y']), Char::Raw('č')]
         );
+        assert_eq!(reader.position(), 1);
+
         reader.seek_to(2);
         assert_eq!(reader.peek_to_end(), [Char::Raw('č')]);
+        assert_eq!(reader.position(), 3);
+
         reader.seek_to(3);
         assert_eq!(reader.peek_to_end(), []);
+        assert_eq!(reader.position(), 5);
     }
 
     #[test]
-    fn peek_to_end_does_not_change_position() {
-        let reader = make_reader();
-        assert_eq!(reader.position(), 0);
-        reader.peek_to_end();
-        assert_eq!(reader.position(), 0);
-    }
-
-    #[test]
-    fn read_returns_none_for_empty() {
-        assert_eq!(make_empty_reader().read(), None);
-    }
-
-    #[test]
-    fn read_consumes_chars() {
+    fn read() {
         let mut reader = make_reader();
+
         assert_eq!(reader.read(), Some(&Char::Raw('a')));
+        assert_eq!(reader.position(), 1);
+
         assert_eq!(reader.read(), Some(&Char::Escaped('b', ['x', 'y'])));
+        assert_eq!(reader.position(), 3);
+
         assert_eq!(reader.read(), Some(&Char::Raw('č')));
+        assert_eq!(reader.position(), 5);
+
         assert_eq!(reader.read(), None);
-    }
-
-    #[test]
-    fn read_increments_position() {
-        let mut reader = make_reader();
-        assert_eq!(reader.position(), 0);
-        reader.read();
-        assert_eq!(reader.position(), 1);
-        reader.read();
-        assert_eq!(reader.position(), 3);
-        reader.read();
-        assert_eq!(reader.position(), 5);
-        reader.read();
         assert_eq!(reader.position(), 5);
     }
 
     #[test]
-    fn read_char_returns_none_for_empty() {
-        assert_eq!(make_empty_reader().read_char(), None);
-    }
-
-    #[test]
-    fn read_char_consumes_char_values() {
+    fn read_char() {
         let mut reader = make_reader();
+
         assert_eq!(reader.read_char(), Some('a'));
-        assert_eq!(reader.read_char(), Some('b'));
-        assert_eq!(reader.read_char(), Some('č'));
-        assert_eq!(reader.read_char(), None);
-    }
-
-    #[test]
-    fn read_char_increments_position() {
-        let mut reader = make_reader();
-        assert_eq!(reader.position(), 0);
-        reader.read_char();
         assert_eq!(reader.position(), 1);
-        reader.read_char();
+
+        assert_eq!(reader.read_char(), Some('b'));
         assert_eq!(reader.position(), 3);
-        reader.read_char();
+
+        assert_eq!(reader.read_char(), Some('č'));
         assert_eq!(reader.position(), 5);
-        reader.read_char();
+
+        assert_eq!(reader.read_char(), None);
         assert_eq!(reader.position(), 5);
     }
 
     #[test]
-    fn read_to_end_returns_remaining_chars() {
+    fn read_to_end() {
         let mut reader = make_reader();
+
         reader.seek_to(0);
         assert_eq!(
             reader.read_to_end(),
@@ -286,32 +257,36 @@ mod tests {
                 Char::Raw('č')
             ]
         );
-        assert_eq!(reader.read_to_end(), []);
+        assert_eq!(reader.position(), 5);
+
         reader.seek_to(1);
         assert_eq!(
             reader.read_to_end(),
             [Char::Escaped('b', ['x', 'y']), Char::Raw('č')]
         );
-        assert_eq!(reader.read_to_end(), []);
+        assert_eq!(reader.position(), 5);
+
         reader.seek_to(2);
         assert_eq!(reader.read_to_end(), [Char::Raw('č')]);
-        assert_eq!(reader.read_to_end(), []);
+        assert_eq!(reader.position(), 5);
+
         reader.seek_to(3);
         assert_eq!(reader.read_to_end(), []);
+        assert_eq!(reader.position(), 5);
     }
 
     #[test]
-    fn read_to_end_moves_position_to_end() {
-        let mut reader = make_reader();
-        assert_eq!(reader.position(), 0);
-        reader.read_to_end();
-        assert_eq!(reader.position(), 5);
-        reader.read_to_end();
-        assert_eq!(reader.position(), 5);
-    }
+    fn sum_len_utf8() {
+        use super::*;
 
-    fn make_empty_reader() -> Reader<Char> {
-        Reader::new(Vec::new())
+        assert_eq!(
+            sum_len_utf8(&[
+                Char::Raw('a'),
+                Char::Raw('á'),
+                Char::Escaped('\n', ['#', 'n'])
+            ]),
+            5
+        );
     }
 
     fn make_reader() -> Reader<Char> {
