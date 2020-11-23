@@ -136,7 +136,7 @@ fn custom_output_delimiter() {
 }
 
 #[test]
-fn custom_no_trailing_output_delimiter() {
+fn custom_output_no_trailing_delimiter() {
     rew()
         .arg("--print=;")
         .arg("--no-trailing-delimiter")
@@ -237,7 +237,7 @@ fn regex() {
 }
 
 #[test]
-fn regex_file_name() {
+fn regex_filename() {
     rew()
         .arg("--regex-filename=(\\d+)")
         .arg("{1}")
@@ -249,7 +249,7 @@ fn regex_file_name() {
 }
 
 #[test]
-fn non_utf8_input_errpr() {
+fn non_utf8_input() {
     rew()
         .write_stdin(&[0x66, 0x6f, 0x80, 0x6f][..])
         .assert()
@@ -260,7 +260,7 @@ fn non_utf8_input_errpr() {
 }
 
 #[test]
-fn pattern_parse() {
+fn parse_error() {
     rew()
         .arg("{")
         .assert()
@@ -276,7 +276,7 @@ fn pattern_parse() {
 }
 
 #[test]
-fn pattern_eval() {
+fn eval_error() {
     rew()
         .arg("{A}")
         .write_stdin(indoc! {"
@@ -293,7 +293,7 @@ fn pattern_eval() {
 }
 
 #[test]
-fn pattern_eval_error_at_end() {
+fn eval_error_at_end() {
     rew()
         .arg("--fail-at-end")
         .arg("{A}")
@@ -338,7 +338,7 @@ fn help_filters() {
 }
 
 #[test]
-fn explanation() {
+fn explain() {
     rew()
         .arg("--explain")
         .arg("_")
