@@ -106,7 +106,7 @@ mod tests {
     use assert_fs::prelude::*;
     use assert_fs::{NamedTempFile, TempDir};
     use fs_extra::error::ErrorKind;
-    use ntest::timeout;
+    use ntest::*;
 
     #[test]
     fn same_dir_and_file_copy_options() {

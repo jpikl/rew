@@ -60,43 +60,59 @@ impl fmt::Display for ErrorKind {
 mod tests {
     use super::*;
 
-    #[test]
-    fn error_range() {
-        assert_eq!(
-            Error {
-                kind: ErrorKind::InputNotUtf8,
-                cause: &Filter::AbsolutePath,
-                value: String::from("abc"),
-                range: &(1..2)
-            }
-            .range(),
-            &(1..2)
-        )
+    mod error {
+        use super::*;
+
+        #[test]
+        fn range() {
+            assert_eq!(
+                Error {
+                    kind: ErrorKind::InputNotUtf8,
+                    cause: &Filter::AbsolutePath,
+                    value: String::from("abc"),
+                    range: &(1..2)
+                }
+                .range(),
+                &(1..2)
+            )
+        }
+
+        #[test]
+        fn display() {
+            assert_eq!(
+                Error {
+                    kind: ErrorKind::InputNotUtf8,
+                    cause: &Filter::AbsolutePath,
+                    value: String::from("abc"),
+                    range: &(1..2)
+                }
+                    .to_string(),
+                "'Absolute path' evaluation failed for value 'abc': Input does not have UTF-8 encoding"
+            );
+        }
     }
 
-    #[test]
-    fn error_display() {
-        assert_eq!(
-            Error {
-                kind: ErrorKind::InputNotUtf8,
-                cause: &Filter::AbsolutePath,
-                value: String::from("abc"),
-                range: &(1..2)
-            }
-            .to_string(),
-            "'Absolute path' evaluation failed for value 'abc': Input does not have UTF-8 encoding"
-        );
-    }
+    mod error_kind {
+        use super::*;
 
-    #[test]
-    fn error_kind_display() {
-        assert_eq!(
-            ErrorKind::InputNotUtf8.to_string(),
-            "Input does not have UTF-8 encoding"
-        );
-        assert_eq!(
-            ErrorKind::CanonicalizationFailed(AnyString(String::from("abc"))).to_string(),
-            "Path canonicalization failed: abc"
-        );
+        mod display {
+            use super::*;
+
+            #[test]
+            fn input_not_utf8() {
+                assert_eq!(
+                    ErrorKind::InputNotUtf8.to_string(),
+                    "Input does not have UTF-8 encoding"
+                );
+            }
+
+            #[test]
+            fn canonicalization_failed() {
+                assert_eq!(
+                    ErrorKind::CanonicalizationFailed(AnyString(String::from("abc"))).to_string(),
+                    "Path canonicalization failed: abc"
+                );
+            }
+        }
     }
 }

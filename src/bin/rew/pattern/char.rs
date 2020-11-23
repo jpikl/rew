@@ -54,31 +54,39 @@ impl AsChar for Char {
 mod tests {
     use super::*;
 
-    #[test]
-    fn raw_from_char() {
-        assert_eq!(Char::from('a'), Char::Raw('a'));
+    mod raw {
+        use super::*;
+
+        #[test]
+        fn from_char() {
+            assert_eq!(Char::from('a'), Char::Raw('a'));
+        }
+
+        #[test]
+        fn as_char() {
+            assert_eq!(Char::Raw('a').as_char(), 'a');
+        }
+
+        #[test]
+        fn len_utf8() {
+            assert_eq!(Char::Raw('a').len_utf8(), 1);
+            assert_eq!(Char::Raw('á').len_utf8(), 2);
+        }
     }
 
-    #[test]
-    fn raw_as_char() {
-        assert_eq!(Char::Raw('a').as_char(), 'a');
-    }
+    mod escaped {
+        use super::*;
 
-    #[test]
-    fn raw_len_utf8() {
-        assert_eq!(Char::Raw('a').len_utf8(), 1);
-        assert_eq!(Char::Raw('á').len_utf8(), 2);
-    }
+        #[test]
+        fn as_char() {
+            assert_eq!(Char::Escaped('a', ['b', 'c']).as_char(), 'a');
+        }
 
-    #[test]
-    fn escaped_as_char() {
-        assert_eq!(Char::Escaped('a', ['b', 'c']).as_char(), 'a');
-    }
-
-    #[test]
-    fn escaped_len_utf8() {
-        assert_eq!(Char::Escaped('a', ['b', 'c']).len_utf8(), 2);
-        assert_eq!(Char::Escaped('a', ['á', 'č']).len_utf8(), 4);
+        #[test]
+        fn len_utf8() {
+            assert_eq!(Char::Escaped('a', ['b', 'c']).len_utf8(), 2);
+            assert_eq!(Char::Escaped('a', ['á', 'č']).len_utf8(), 4);
+        }
     }
 
     #[test]

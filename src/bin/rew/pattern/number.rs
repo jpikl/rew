@@ -82,104 +82,108 @@ mod tests {
         assert_eq!(get_bits::<u128>(), 128);
     }
 
-    #[test]
-    fn parse_empty() {
-        let mut reader = Reader::from("");
-        assert_eq!(
-            parse_number::<usize, _>(&mut reader),
-            Err(Error {
-                kind: ErrorKind::ExpectedNumber,
-                range: 0..0,
-            })
-        );
-        assert_eq!(reader.position(), 0);
-    }
+    mod parse_number {
+        use super::*;
 
-    #[test]
-    fn parse_no_digits() {
-        let mut reader = Reader::from("ab");
-        assert_eq!(
-            parse_number::<usize, _>(&mut reader),
-            Err(Error {
-                kind: ErrorKind::ExpectedNumber,
-                range: 0..2,
-            })
-        );
-        assert_eq!(reader.position(), 0);
-    }
+        #[test]
+        fn empty() {
+            let mut reader = Reader::from("");
+            assert_eq!(
+                parse_number::<usize, _>(&mut reader),
+                Err(Error {
+                    kind: ErrorKind::ExpectedNumber,
+                    range: 0..0,
+                })
+            );
+            assert_eq!(reader.position(), 0);
+        }
 
-    #[test]
-    fn parse_zero() {
-        let mut reader = Reader::from("0");
-        assert_eq!(parse_number(&mut reader), Ok(0));
-        assert_eq!(reader.position(), 1);
-    }
+        #[test]
+        fn alpha() {
+            let mut reader = Reader::from("ab");
+            assert_eq!(
+                parse_number::<usize, _>(&mut reader),
+                Err(Error {
+                    kind: ErrorKind::ExpectedNumber,
+                    range: 0..2,
+                })
+            );
+            assert_eq!(reader.position(), 0);
+        }
 
-    #[test]
-    fn parse_zero_ignore_rest() {
-        let mut reader = Reader::from("0a");
-        assert_eq!(parse_number(&mut reader), Ok(0));
-        assert_eq!(reader.position(), 1);
-    }
+        #[test]
+        fn zero() {
+            let mut reader = Reader::from("0");
+            assert_eq!(parse_number(&mut reader), Ok(0));
+            assert_eq!(reader.position(), 1);
+        }
 
-    #[test]
-    fn parse_zero_ignore_following_zeros() {
-        let mut reader = Reader::from("00");
-        assert_eq!(parse_number(&mut reader), Ok(0));
-        assert_eq!(reader.position(), 1);
-    }
+        #[test]
+        fn zero_ignore_remaining_zeros() {
+            let mut reader = Reader::from("00");
+            assert_eq!(parse_number(&mut reader), Ok(0));
+            assert_eq!(reader.position(), 1);
+        }
 
-    #[test]
-    fn parse_single_digit() {
-        let mut reader = Reader::from("1");
-        assert_eq!(parse_number(&mut reader), Ok(1));
-        assert_eq!(reader.position(), 1);
-    }
+        #[test]
+        fn zero_ignore_remaining_alpha() {
+            let mut reader = Reader::from("0a");
+            assert_eq!(parse_number(&mut reader), Ok(0));
+            assert_eq!(reader.position(), 1);
+        }
 
-    #[test]
-    fn parse_single_digit_ignore_rest() {
-        let mut reader = Reader::from("1a");
-        assert_eq!(parse_number(&mut reader), Ok(1));
-        assert_eq!(reader.position(), 1);
-    }
+        #[test]
+        fn single_digit() {
+            let mut reader = Reader::from("1");
+            assert_eq!(parse_number(&mut reader), Ok(1));
+            assert_eq!(reader.position(), 1);
+        }
 
-    #[test]
-    fn parse_multiple_digits() {
-        let mut reader = Reader::from("1234567890");
-        assert_eq!(parse_number(&mut reader), Ok(1_234_567_890));
-        assert_eq!(reader.position(), 10);
-    }
+        #[test]
+        fn single_digit_ignore_remaining_alpha() {
+            let mut reader = Reader::from("1a");
+            assert_eq!(parse_number(&mut reader), Ok(1));
+            assert_eq!(reader.position(), 1);
+        }
 
-    #[test]
-    fn parse_multiple_digits_ignore_rest() {
-        let mut reader = Reader::from("1234567890a");
-        assert_eq!(parse_number(&mut reader), Ok(1_234_567_890));
-        assert_eq!(reader.position(), 10);
-    }
+        #[test]
+        fn multiple_digits() {
+            let mut reader = Reader::from("1234567890");
+            assert_eq!(parse_number(&mut reader), Ok(1_234_567_890));
+            assert_eq!(reader.position(), 10);
+        }
 
-    #[test]
-    fn parse_mul_overflow() {
-        let mut reader = Reader::from("25500");
-        assert_eq!(
-            parse_number::<u8, _>(&mut reader),
-            Err(Error {
-                kind: ErrorKind::NumberOverflow(String::from("255")),
-                range: 0..4
-            })
-        );
-        assert_eq!(reader.position(), 4);
-    }
+        #[test]
+        fn multiple_digits_ignore_remaining_alpha() {
+            let mut reader = Reader::from("1234567890a");
+            assert_eq!(parse_number(&mut reader), Ok(1_234_567_890));
+            assert_eq!(reader.position(), 10);
+        }
 
-    #[test]
-    fn parse_add_overflow() {
-        let mut reader = Reader::from("2560");
-        assert_eq!(
-            parse_number::<u8, _>(&mut reader),
-            Err(Error {
-                kind: ErrorKind::NumberOverflow(String::from("255")),
-                range: 0..3
-            })
-        );
-        assert_eq!(reader.position(), 3);
+        #[test]
+        fn mul_overflow() {
+            let mut reader = Reader::from("25500");
+            assert_eq!(
+                parse_number::<u8, _>(&mut reader),
+                Err(Error {
+                    kind: ErrorKind::NumberOverflow(String::from("255")),
+                    range: 0..4
+                })
+            );
+            assert_eq!(reader.position(), 4);
+        }
+
+        #[test]
+        fn add_overflow() {
+            let mut reader = Reader::from("2560");
+            assert_eq!(
+                parse_number::<u8, _>(&mut reader),
+                Err(Error {
+                    kind: ErrorKind::NumberOverflow(String::from("255")),
+                    range: 0..3
+                })
+            );
+            assert_eq!(reader.position(), 3);
+        }
     }
 }

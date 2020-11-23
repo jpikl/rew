@@ -107,7 +107,7 @@ impl fmt::Debug for OutputChunk {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ntest::assert_true;
+    use ntest::*;
 
     #[test]
     fn unpacks_io() {

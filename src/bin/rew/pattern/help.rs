@@ -296,19 +296,22 @@ pub fn write_filters_help<O: Write + WriteColor>(output: &mut O) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use common::testing::ColoredOuput;
-    use ntest::assert_false;
+    use ntest::*;
 
     #[test]
-    fn writes_pattern_help() {
+    fn write_pattern_help() {
+        use super::*;
+
         let mut ouput = ColoredOuput::new();
         write_pattern_help(&mut ouput).unwrap();
         assert_false!(ouput.chunks().is_empty());
     }
 
     #[test]
-    fn writes_filters_help() {
+    fn write_filters_help() {
+        use super::*;
+
         let mut ouput = ColoredOuput::new();
         write_filters_help(&mut ouput).unwrap();
         assert_false!(ouput.chunks().is_empty());

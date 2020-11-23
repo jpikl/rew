@@ -113,7 +113,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn empty_input() {
+    fn empty() {
         let mut lexer = Lexer::new("");
         assert_eq!(lexer.read_token(), Ok(None));
     }
@@ -466,7 +466,7 @@ mod tests {
     }
 
     #[test]
-    fn various_tokens_and_custom_escapes() {
+    fn various_tokens_custom_escape() {
         let mut lexer = Lexer::new(r"a{|}bc\{de\|fg\}hi\n\r\t\0\\");
         lexer.set_escape('\\');
         assert_eq!(

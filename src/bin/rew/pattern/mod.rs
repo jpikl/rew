@@ -102,242 +102,257 @@ impl Pattern {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::pattern::filter::Filter;
-    use crate::pattern::parse::Parsed;
-    use crate::pattern::range::IndexRange;
-    use crate::pattern::substitution::Substitution;
-    use crate::pattern::testing::{make_eval_context, make_parsed};
+    use super::filter::Filter;
+    use super::parse::Parsed;
+    use super::parser::Item;
+    use super::range::IndexRange;
+    use super::substitution::Substitution;
+    use super::testing::{make_eval_context, make_parsed};
+    use super::Pattern;
     use crate::utils::AnyString;
-    use ntest::{assert_false, assert_true};
+    use ntest::*;
 
-    #[test]
-    fn parse_default_escape() {
-        assert_eq!(
-            Pattern::parse("_#{{f|l}#}_", None),
-            Ok(Pattern {
-                source: String::from("_#{{f|l}#}_"),
+    mod parse {
+        use super::super::parse::{Error, ErrorKind, Parsed};
+        use super::*;
+
+        #[test]
+        fn invalid() {
+            assert_eq!(
+                Pattern::parse("{", None),
+                Err(Error {
+                    kind: ErrorKind::UnmatchedExprStart,
+                    range: 0..1
+                })
+            )
+        }
+
+        #[test]
+        fn default_escape() {
+            assert_eq!(
+                Pattern::parse("_#{{f|l}#}_", None),
+                Ok(Pattern {
+                    source: String::from("_#{{f|l}#}_"),
+                    items: vec![
+                        Parsed {
+                            value: Item::Constant(String::from("_{")),
+                            range: 0..3,
+                        },
+                        Parsed {
+                            value: Item::Expression(vec![
+                                Parsed {
+                                    value: Filter::FileName,
+                                    range: 4..5,
+                                },
+                                Parsed {
+                                    value: Filter::ToLowercase,
+                                    range: 6..7,
+                                }
+                            ]),
+                            range: 3..8,
+                        },
+                        Parsed {
+                            value: Item::Constant(String::from("}_")),
+                            range: 8..11,
+                        },
+                    ]
+                })
+            )
+        }
+
+        #[test]
+        fn custom_escape() {
+            assert_eq!(
+                Pattern::parse("_\\{{f|l}\\}_", Some('\\')),
+                Ok(Pattern {
+                    source: String::from("_\\{{f|l}\\}_"),
+                    items: vec![
+                        Parsed {
+                            value: Item::Constant(String::from("_{")),
+                            range: 0..3,
+                        },
+                        Parsed {
+                            value: Item::Expression(vec![
+                                Parsed {
+                                    value: Filter::FileName,
+                                    range: 4..5,
+                                },
+                                Parsed {
+                                    value: Filter::ToLowercase,
+                                    range: 6..7,
+                                }
+                            ]),
+                            range: 3..8,
+                        },
+                        Parsed {
+                            value: Item::Constant(String::from("}_")),
+                            range: 8..11,
+                        },
+                    ]
+                })
+            )
+        }
+    }
+
+    mod uses {
+        use super::*;
+
+        #[test]
+        fn none() {
+            let pattern = Pattern {
+                source: String::new(),
                 items: vec![
-                    Parsed {
-                        value: Item::Constant(String::from("_{")),
-                        range: 0..3,
-                    },
-                    Parsed {
-                        value: Item::Expression(vec![
-                            Parsed {
-                                value: Filter::FileName,
-                                range: 4..5,
-                            },
-                            Parsed {
-                                value: Filter::ToLowercase,
-                                range: 6..7,
-                            }
-                        ]),
-                        range: 3..8,
-                    },
-                    Parsed {
-                        value: Item::Constant(String::from("}_")),
-                        range: 8..11,
-                    },
-                ]
-            })
-        )
+                    make_parsed(Item::Constant(String::from("a"))),
+                    make_parsed(Item::Expression(vec![make_parsed(Filter::FileName)])),
+                ],
+            };
+            assert_false!(pattern.uses_local_counter());
+            assert_false!(pattern.uses_global_counter());
+            assert_false!(pattern.uses_regex_capture());
+        }
+
+        #[test]
+        fn local_counter() {
+            let pattern = Pattern {
+                source: String::new(),
+                items: vec![make_parsed(Item::Expression(vec![make_parsed(
+                    Filter::LocalCounter,
+                )]))],
+            };
+            assert_true!(pattern.uses_local_counter());
+        }
+
+        #[test]
+        fn global_counter() {
+            let pattern = Pattern {
+                source: String::new(),
+                items: vec![make_parsed(Item::Expression(vec![make_parsed(
+                    Filter::GlobalCounter,
+                )]))],
+            };
+            assert_true!(pattern.uses_global_counter());
+        }
+
+        #[test]
+        fn regex_capture() {
+            let pattern = Pattern {
+                source: String::new(),
+                items: vec![make_parsed(Item::Expression(vec![make_parsed(
+                    Filter::RegexCapture(1),
+                )]))],
+            };
+            assert_true!(pattern.uses_regex_capture());
+        }
     }
 
-    #[test]
-    fn parse_custom_escape() {
-        assert_eq!(
-            Pattern::parse("_\\{{f|l}\\}_", Some('\\')),
-            Ok(Pattern {
-                source: String::from("_\\{{f|l}\\}_"),
-                items: vec![
-                    Parsed {
-                        value: Item::Constant(String::from("_{")),
-                        range: 0..3,
-                    },
-                    Parsed {
-                        value: Item::Expression(vec![
-                            Parsed {
-                                value: Filter::FileName,
-                                range: 4..5,
-                            },
-                            Parsed {
-                                value: Filter::ToLowercase,
-                                range: 6..7,
-                            }
-                        ]),
-                        range: 3..8,
-                    },
-                    Parsed {
-                        value: Item::Constant(String::from("}_")),
-                        range: 8..11,
-                    },
-                ]
-            })
-        )
-    }
+    mod eval {
+        use super::super::eval::{Error, ErrorKind};
+        use super::*;
 
-    #[test]
-    fn parse() {
-        assert_eq!(
-            Pattern::parse("{", None),
-            Err(parse::Error {
-                kind: parse::ErrorKind::UnmatchedExprStart,
-                range: 0..1
-            })
-        )
-    }
+        #[test]
+        fn constant() {
+            let pattern = Pattern {
+                source: String::new(),
+                items: vec![make_parsed(Item::Constant(String::from("abc")))],
+            };
+            assert_eq!(
+                pattern.eval("", &make_eval_context()),
+                Ok(String::from("abc"))
+            );
+        }
 
-    #[test]
-    fn uses_none() {
-        let pattern = Pattern {
-            source: String::new(),
-            items: vec![
-                make_parsed(Item::Constant(String::from("a"))),
-                make_parsed(Item::Expression(vec![make_parsed(Filter::FileName)])),
-            ],
-        };
-        assert_false!(pattern.uses_local_counter());
-        assert_false!(pattern.uses_global_counter());
-        assert_false!(pattern.uses_regex_capture());
-    }
+        #[test]
+        fn empty_expression() {
+            let pattern = Pattern {
+                source: String::new(),
+                items: vec![make_parsed(Item::Expression(vec![]))],
+            };
+            assert_eq!(
+                pattern.eval("dir/file.ext", &make_eval_context()),
+                Ok(String::from("dir/file.ext"))
+            );
+        }
 
-    #[test]
-    fn uses_local_counter() {
-        let pattern = Pattern {
-            source: String::new(),
-            items: vec![make_parsed(Item::Expression(vec![make_parsed(
-                Filter::LocalCounter,
-            )]))],
-        };
-        assert_true!(pattern.uses_local_counter());
-    }
+        #[test]
+        fn single_filter_expression() {
+            let pattern = Pattern {
+                source: String::new(),
+                items: vec![make_parsed(Item::Expression(vec![make_parsed(
+                    Filter::FileName,
+                )]))],
+            };
+            assert_eq!(
+                pattern.eval("dir/file.ext", &make_eval_context()),
+                Ok(String::from("file.ext"))
+            );
+        }
 
-    #[test]
-    fn uses_global_counter() {
-        let pattern = Pattern {
-            source: String::new(),
-            items: vec![make_parsed(Item::Expression(vec![make_parsed(
-                Filter::GlobalCounter,
-            )]))],
-        };
-        assert_true!(pattern.uses_global_counter());
-    }
-
-    #[test]
-    fn uses_regex_capture() {
-        let pattern = Pattern {
-            source: String::new(),
-            items: vec![make_parsed(Item::Expression(vec![make_parsed(
-                Filter::RegexCapture(1),
-            )]))],
-        };
-        assert_true!(pattern.uses_regex_capture());
-    }
-
-    #[test]
-    fn eval_constant() {
-        let pattern = Pattern {
-            source: String::new(),
-            items: vec![make_parsed(Item::Constant(String::from("abc")))],
-        };
-        assert_eq!(
-            pattern.eval("", &make_eval_context()),
-            Ok(String::from("abc"))
-        );
-    }
-
-    #[test]
-    fn eval_empty_expression() {
-        let pattern = Pattern {
-            source: String::new(),
-            items: vec![make_parsed(Item::Expression(vec![]))],
-        };
-        assert_eq!(
-            pattern.eval("dir/file.ext", &make_eval_context()),
-            Ok(String::from("dir/file.ext"))
-        );
-    }
-
-    #[test]
-    fn eval_single_filter_expression() {
-        let pattern = Pattern {
-            source: String::new(),
-            items: vec![make_parsed(Item::Expression(vec![make_parsed(
-                Filter::FileName,
-            )]))],
-        };
-        assert_eq!(
-            pattern.eval("dir/file.ext", &make_eval_context()),
-            Ok(String::from("file.ext"))
-        );
-    }
-
-    #[test]
-    fn eval_multi_filter_expression() {
-        let pattern = Pattern {
-            source: String::new(),
-            items: vec![make_parsed(Item::Expression(vec![
-                make_parsed(Filter::FileName),
-                make_parsed(Filter::ToUppercase),
-            ]))],
-        };
-        assert_eq!(
-            pattern.eval("dir/file.ext", &make_eval_context()),
-            Ok(String::from("FILE.EXT"))
-        );
-    }
-
-    #[test]
-    fn eval_multi_constant_and_filter_expressions() {
-        let pattern = Pattern {
-            source: String::new(),
-            items: vec![
-                make_parsed(Item::Constant(String::from("prefix_"))),
-                make_parsed(Item::Expression(vec![
-                    make_parsed(Filter::BaseName),
-                    make_parsed(Filter::Substring(IndexRange::new(0, Some(2)))),
-                ])),
-                make_parsed(Item::Constant(String::from("_"))),
-                make_parsed(Item::Expression(vec![make_parsed(Filter::LocalCounter)])),
-                make_parsed(Item::Constant(String::from("_"))),
-                make_parsed(Item::Expression(vec![make_parsed(Filter::GlobalCounter)])),
-                make_parsed(Item::Constant(String::from("."))),
-                make_parsed(Item::Expression(vec![
-                    make_parsed(Filter::Extension),
+        #[test]
+        fn multi_filter_expression() {
+            let pattern = Pattern {
+                source: String::new(),
+                items: vec![make_parsed(Item::Expression(vec![
+                    make_parsed(Filter::FileName),
                     make_parsed(Filter::ToUppercase),
-                    make_parsed(Filter::ReplaceAll(Substitution {
-                        target: String::from("X"),
-                        replacement: String::from(""),
-                    })),
-                ])),
-            ],
-        };
-        assert_eq!(
-            pattern.eval("dir/file.ext", &make_eval_context()),
-            Ok(String::from("prefix_fil_1_2.ET"))
-        );
-    }
+                ]))],
+            };
+            assert_eq!(
+                pattern.eval("dir/file.ext", &make_eval_context()),
+                Ok(String::from("FILE.EXT"))
+            );
+        }
 
-    #[test]
-    fn eval_filter() {
-        let pattern = Pattern {
-            source: String::new(),
-            items: vec![make_parsed(Item::Expression(vec![Parsed {
-                value: Filter::CanonicalPath,
-                range: 1..2,
-            }]))],
-        };
-        assert_eq!(
-            pattern.eval("dir/file.ext", &make_eval_context()),
-            Err(eval::Error {
-                kind: eval::ErrorKind::CanonicalizationFailed(AnyString(String::from(
-                    "This string is not compared by assertion"
-                ))),
-                value: String::from("dir/file.ext"),
-                cause: &Filter::CanonicalPath,
-                range: &(1..2usize),
-            })
-        );
+        #[test]
+        fn multi_constant_and_filter_expressions() {
+            let pattern = Pattern {
+                source: String::new(),
+                items: vec![
+                    make_parsed(Item::Constant(String::from("prefix_"))),
+                    make_parsed(Item::Expression(vec![
+                        make_parsed(Filter::BaseName),
+                        make_parsed(Filter::Substring(IndexRange::new(0, Some(2)))),
+                    ])),
+                    make_parsed(Item::Constant(String::from("_"))),
+                    make_parsed(Item::Expression(vec![make_parsed(Filter::LocalCounter)])),
+                    make_parsed(Item::Constant(String::from("_"))),
+                    make_parsed(Item::Expression(vec![make_parsed(Filter::GlobalCounter)])),
+                    make_parsed(Item::Constant(String::from("."))),
+                    make_parsed(Item::Expression(vec![
+                        make_parsed(Filter::Extension),
+                        make_parsed(Filter::ToUppercase),
+                        make_parsed(Filter::ReplaceAll(Substitution {
+                            target: String::from("X"),
+                            replacement: String::from(""),
+                        })),
+                    ])),
+                ],
+            };
+            assert_eq!(
+                pattern.eval("dir/file.ext", &make_eval_context()),
+                Ok(String::from("prefix_fil_1_2.ET"))
+            );
+        }
+
+        #[test]
+        fn failure() {
+            let pattern = Pattern {
+                source: String::new(),
+                items: vec![make_parsed(Item::Expression(vec![Parsed {
+                    value: Filter::CanonicalPath,
+                    range: 1..2,
+                }]))],
+            };
+            assert_eq!(
+                pattern.eval("dir/file.ext", &make_eval_context()),
+                Err(Error {
+                    kind: ErrorKind::CanonicalizationFailed(AnyString(String::from(
+                        "This string is not compared by assertion"
+                    ))),
+                    value: String::from("dir/file.ext"),
+                    cause: &Filter::CanonicalPath,
+                    range: &(1..2usize),
+                })
+            );
+        }
     }
 }

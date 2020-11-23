@@ -47,7 +47,7 @@ mod tests {
     use common::testing::{ColoredOuput, OutputChunk};
 
     #[test]
-    fn explain_empty() {
+    fn empty() {
         let pattern = Pattern {
             source: String::new(),
             items: Vec::new(),
@@ -60,7 +60,7 @@ mod tests {
     }
 
     #[test]
-    fn explain_complex() {
+    fn complex() {
         let pattern = Pattern {
             source: String::from("_{f|t}"),
             items: vec![

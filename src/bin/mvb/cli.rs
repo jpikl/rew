@@ -94,7 +94,7 @@ impl TransferOptions for Cli {
 mod tests {
     use super::*;
     use claim::*;
-    use ntest::assert_true;
+    use ntest::*;
 
     #[test]
     fn init() {
