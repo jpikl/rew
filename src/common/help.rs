@@ -26,21 +26,20 @@ pub fn highlight_help<O: Write + WriteColor>(output: &mut O, text: &str) -> Resu
         } else if in_heading {
             output.set_color(&spec_color(PRIMARY_COLOR))?;
             write!(output, "{}", line)?;
-        } else if line.starts_with(PADDED_BLOCK_PREFIX) {
+        } else if let Some(block) = line.strip_prefix(PADDED_BLOCK_PREFIX) {
             write!(output, "{}", PADDED_BLOCK_PREFIX)?;
-            let block = &line[PADDED_BLOCK_PREFIX.len()..];
 
-            if block.starts_with(SHELL_PREFIX) {
+            if let Some(command) = block.strip_prefix(SHELL_PREFIX) {
                 output.set_color(&spec_color(SECONDARY_COLOR))?;
                 write!(output, "{}", SHELL_PREFIX)?;
                 output.set_color(&spec_color(CODE_COLOR))?;
 
-                if let Some(comment_index) = block.rfind(COMMENT_CHAR) {
-                    write!(output, "{}", &block[SHELL_PREFIX.len()..comment_index])?;
+                if let Some(comment_index) = command.rfind(COMMENT_CHAR) {
+                    write!(output, "{}", &command[..comment_index])?;
                     output.reset()?;
-                    write!(output, "{}", &block[comment_index..])?;
+                    write!(output, "{}", &command[comment_index..])?;
                 } else {
-                    write!(output, "{}", &block[SHELL_PREFIX.len()..])?;
+                    write!(output, "{}", command)?;
                 }
             } else if block.starts_with(SIMPLE_LINE_PREFIX) {
                 in_padded_block_after_line = true;
