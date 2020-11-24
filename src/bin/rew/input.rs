@@ -34,7 +34,7 @@ mod tests {
     use common::testing::unpack_io_error;
 
     #[test]
-    fn values_from_args() {
+    fn args() {
         let args = vec![String::from("a"), String::from("b")];
         let mut values: Values<&[u8]> = Values::from_args(&args);
         assert_eq!(values.next().map_err(unpack_io_error), Ok(Some("a")));
@@ -43,7 +43,7 @@ mod tests {
     }
 
     #[test]
-    fn values_from_stdin() {
+    fn stdin() {
         let mut values = Values::from_stdin(&b"a\nb"[..], Delimiter::Newline);
         assert_eq!(values.next().map_err(unpack_io_error), Ok(Some("a")));
         assert_eq!(values.next().map_err(unpack_io_error), Ok(Some("b")));

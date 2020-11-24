@@ -187,26 +187,38 @@ mod tests {
     use claim::*;
 
     #[test]
-    fn init() {
-        assert_ok!(Cli::try_parse_from(&["rew", "pattern"]));
+    fn default() {
+        assert_ok!(Cli::try_parse_from(&["rew"]));
     }
 
     #[test]
     fn color() {
-        let cli = Cli::try_parse_from(&["rew", "pattern", "--color=always"]).unwrap();
+        let cli = Cli::try_parse_from(&["rew", "--color=always"]).unwrap();
         assert_eq!(Options::color(&cli), Some(ColorChoice::Always));
     }
 
-    #[test]
-    fn parses_single_byte_char() {
-        assert_eq!(parse_single_byte_char("a"), Ok(b'a'));
-        assert_eq!(
-            parse_single_byte_char("á"),
-            Err("multi-byte characters are not supported",)
-        );
-        assert_eq!(
-            parse_single_byte_char("aa"),
-            Err("value must be a single character")
-        );
+    mod parse_single_byte_char {
+        use super::*;
+
+        #[test]
+        fn single_byte() {
+            assert_eq!(parse_single_byte_char("a"), Ok(b'a'));
+        }
+
+        #[test]
+        fn multi_byte() {
+            assert_eq!(
+                parse_single_byte_char("á"),
+                Err("multi-byte characters are not supported",)
+            );
+        }
+
+        #[test]
+        fn multi_char() {
+            assert_eq!(
+                parse_single_byte_char("aa"),
+                Err("value must be a single character")
+            );
+        }
     }
 }

@@ -110,111 +110,123 @@ impl LocalGenerator {
 mod tests {
     use super::*;
 
-    #[test]
-    fn config_default() {
-        let config = Config::default();
-        assert_eq!(config.init, INIT_DEFAULT);
-        assert_eq!(config.step, STEP_DEFAULT);
+    mod config {
+        use super::*;
+
+        #[test]
+        fn default() {
+            let config = Config::default();
+            assert_eq!(config.init, INIT_DEFAULT);
+            assert_eq!(config.step, STEP_DEFAULT);
+        }
+
+        #[test]
+        fn from_valid_str() {
+            assert_eq!(
+                Config::from_str("12"),
+                Ok(Config {
+                    init: 12,
+                    step: STEP_DEFAULT
+                })
+            );
+
+            assert_eq!(Config::from_str("12:34"), Ok(Config { init: 12, step: 34 }));
+        }
+
+        #[test]
+        fn from_invalid_str() {
+            assert_eq!(Config::from_str(""), Err(INIT_ERROR));
+            assert_eq!(Config::from_str(":"), Err(INIT_ERROR));
+            assert_eq!(Config::from_str(":34"), Err(INIT_ERROR));
+            assert_eq!(Config::from_str(":cd"), Err(INIT_ERROR));
+            assert_eq!(Config::from_str("12:"), Err(STEP_ERROR));
+            assert_eq!(Config::from_str("12:cd"), Err(STEP_ERROR));
+            assert_eq!(Config::from_str("ab"), Err(INIT_ERROR));
+            assert_eq!(Config::from_str("ab:"), Err(INIT_ERROR));
+            assert_eq!(Config::from_str("ab:34"), Err(INIT_ERROR));
+            assert_eq!(Config::from_str("ab:cd"), Err(INIT_ERROR));
+        }
     }
 
-    #[test]
-    fn config_from_str() {
-        assert_eq!(
-            Config::from_str("12"),
-            Ok(Config {
-                init: 12,
-                step: STEP_DEFAULT
-            })
-        );
+    mod global_generator {
+        use super::*;
 
-        assert_eq!(Config::from_str("12:34"), Ok(Config { init: 12, step: 34 }));
+        #[test]
+        fn from_config() {
+            assert_eq!(
+                GlobalGenerator::new(12, 34),
+                GlobalGenerator::from(&Config { init: 12, step: 34 })
+            );
+        }
+
+        #[test]
+        fn start_zero_increment_one() {
+            let mut counter = GlobalGenerator::new(0, 1);
+            assert_eq!(counter.next(), 0);
+            assert_eq!(counter.next(), 1);
+            assert_eq!(counter.next(), 2);
+        }
+
+        #[test]
+        fn start_one_increment_ten() {
+            let mut counter = GlobalGenerator::new(1, 10);
+            assert_eq!(counter.next(), 1);
+            assert_eq!(counter.next(), 11);
+            assert_eq!(counter.next(), 21);
+        }
     }
 
-    #[test]
-    fn config_from_str_errors() {
-        assert_eq!(Config::from_str(""), Err(INIT_ERROR));
-        assert_eq!(Config::from_str(":"), Err(INIT_ERROR));
-        assert_eq!(Config::from_str(":34"), Err(INIT_ERROR));
-        assert_eq!(Config::from_str(":cd"), Err(INIT_ERROR));
-        assert_eq!(Config::from_str("12:"), Err(STEP_ERROR));
-        assert_eq!(Config::from_str("12:cd"), Err(STEP_ERROR));
-        assert_eq!(Config::from_str("ab"), Err(INIT_ERROR));
-        assert_eq!(Config::from_str("ab:"), Err(INIT_ERROR));
-        assert_eq!(Config::from_str("ab:34"), Err(INIT_ERROR));
-        assert_eq!(Config::from_str("ab:cd"), Err(INIT_ERROR));
-    }
+    mod local_generator {
+        use super::*;
 
-    #[test]
-    fn global_from_config() {
-        assert_eq!(
-            GlobalGenerator::new(12, 34),
-            GlobalGenerator::from(&Config { init: 12, step: 34 })
-        );
-    }
+        #[test]
+        fn from_config() {
+            assert_eq!(
+                LocalGenerator::new(12, 34),
+                LocalGenerator::from(&Config { init: 12, step: 34 })
+            );
+        }
 
-    #[test]
-    fn global_from_zero_per_one() {
-        let mut counter = GlobalGenerator::new(0, 1);
-        assert_eq!(counter.next(), 0);
-        assert_eq!(counter.next(), 1);
-        assert_eq!(counter.next(), 2);
-    }
+        #[test]
+        fn start_zero_increment_one() {
+            let path_1 = "dir/subdir/file.ext";
+            let path_2 = "dir/subdir";
+            let path_3 = "dir";
+            let mut counter = LocalGenerator::new(0, 1);
 
-    #[test]
-    fn global_from_one_per_ten() {
-        let mut counter = GlobalGenerator::new(1, 10);
-        assert_eq!(counter.next(), 1);
-        assert_eq!(counter.next(), 11);
-        assert_eq!(counter.next(), 21);
-    }
+            assert_eq!(counter.next(path_1), 0);
+            assert_eq!(counter.next(path_1), 1);
+            assert_eq!(counter.next(path_1), 2);
 
-    #[test]
-    fn local_from_config() {
-        assert_eq!(
-            LocalGenerator::new(12, 34),
-            LocalGenerator::from(&Config { init: 12, step: 34 })
-        );
-    }
+            assert_eq!(counter.next(path_2), 0);
+            assert_eq!(counter.next(path_3), 0);
 
-    #[test]
-    fn local_from_zero_per_one() {
-        let path_1 = "dir/subdir/file.ext";
-        let path_2 = "dir/subdir";
-        let path_3 = "dir";
-        let mut counter = LocalGenerator::new(0, 1);
+            assert_eq!(counter.next(path_2), 1);
+            assert_eq!(counter.next(path_3), 1);
 
-        assert_eq!(counter.next(path_1), 0);
-        assert_eq!(counter.next(path_1), 1);
-        assert_eq!(counter.next(path_1), 2);
+            assert_eq!(counter.next(path_2), 2);
+            assert_eq!(counter.next(path_3), 2);
+        }
 
-        assert_eq!(counter.next(path_2), 0);
-        assert_eq!(counter.next(path_3), 0);
+        #[test]
+        fn start_one_increment_ten() {
+            let path_1 = "dir/subdir/file.ext";
+            let path_2 = "dir/subdir";
+            let path_3 = "dir";
+            let mut counter = LocalGenerator::new(1, 10);
 
-        assert_eq!(counter.next(path_2), 1);
-        assert_eq!(counter.next(path_3), 1);
+            assert_eq!(counter.next(path_1), 1);
+            assert_eq!(counter.next(path_1), 11);
+            assert_eq!(counter.next(path_1), 21);
 
-        assert_eq!(counter.next(path_2), 2);
-        assert_eq!(counter.next(path_3), 2);
-    }
+            assert_eq!(counter.next(path_2), 1);
+            assert_eq!(counter.next(path_3), 1);
 
-    #[test]
-    fn local_from_one_per_ten() {
-        let path_1 = "dir/subdir/file.ext";
-        let path_2 = "dir/subdir";
-        let path_3 = "dir";
-        let mut counter = LocalGenerator::new(1, 10);
+            assert_eq!(counter.next(path_2), 11);
+            assert_eq!(counter.next(path_3), 11);
 
-        assert_eq!(counter.next(path_1), 1);
-        assert_eq!(counter.next(path_1), 11);
-        assert_eq!(counter.next(path_1), 21);
-
-        assert_eq!(counter.next(path_2), 1);
-        assert_eq!(counter.next(path_3), 1);
-
-        assert_eq!(counter.next(path_2), 11);
-        assert_eq!(counter.next(path_3), 11);
-
-        assert_eq!(counter.next(path_2), 21);
-        assert_eq!(counter.next(path_3), 21);
+            assert_eq!(counter.next(path_2), 21);
+            assert_eq!(counter.next(path_3), 21);
+        }
     }
 }

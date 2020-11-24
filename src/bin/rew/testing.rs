@@ -15,11 +15,11 @@ pub fn make_non_utf8_os_string() -> OsString {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use claim::*;
 
     #[test]
-    fn makes_non_utf8_os_string() {
+    fn make_non_utf8_os_string() {
+        use super::*;
         assert_none!(make_non_utf8_os_string().to_str());
     }
 }

@@ -115,79 +115,89 @@ pub fn highlight_range<O: Write + WriteColor>(
 mod tests {
     use super::*;
     use common::testing::{ColoredOuput, OutputChunk};
-    use std::fmt;
-    use std::ops::Range;
 
-    #[test]
-    fn standard_mode_no_delimiter() {
-        let mut output = ColoredOuput::new();
-        let mut values = Values::new(&mut output, Mode::Standard, "");
-        write_values(&mut values);
-        assert_eq!(output.chunks(), &[OutputChunk::plain("bd")])
+    mod standard_mode {
+        use super::*;
+
+        #[test]
+        fn no_delimiter() {
+            let mut output = ColoredOuput::new();
+            let mut values = Values::new(&mut output, Mode::Standard, "");
+            write_values(&mut values);
+            assert_eq!(output.chunks(), &[OutputChunk::plain("bd")])
+        }
+
+        #[test]
+        fn newline_delimiter() {
+            let mut output = ColoredOuput::new();
+            let mut values = Values::new(&mut output, Mode::Standard, "\n");
+            write_values(&mut values);
+            assert_eq!(output.chunks(), &[OutputChunk::plain("b\nd\n")])
+        }
+
+        #[test]
+        fn nul_delimiter() {
+            let mut output = ColoredOuput::new();
+            let mut values = Values::new(&mut output, Mode::Standard, "\0");
+            write_values(&mut values);
+            assert_eq!(output.chunks(), &[OutputChunk::plain("b\0d\0")])
+        }
     }
 
-    #[test]
-    fn standard_mode_newline_delimiter() {
-        let mut output = ColoredOuput::new();
-        let mut values = Values::new(&mut output, Mode::Standard, "\n");
-        write_values(&mut values);
-        assert_eq!(output.chunks(), &[OutputChunk::plain("b\nd\n")])
+    mod standard_mode_no_trailing_delimiter {
+        use super::*;
+
+        #[test]
+        fn no_delimiter() {
+            let mut output = ColoredOuput::new();
+            let mut values = Values::new(&mut output, Mode::StandardNoTrailingDelimiter, "");
+            write_values(&mut values);
+            assert_eq!(output.chunks(), &[OutputChunk::plain("bd")])
+        }
+
+        #[test]
+        fn newline_delimiter() {
+            let mut output = ColoredOuput::new();
+            let mut values = Values::new(&mut output, Mode::StandardNoTrailingDelimiter, "\n");
+            write_values(&mut values);
+            assert_eq!(output.chunks(), &[OutputChunk::plain("b\nd")])
+        }
+
+        #[test]
+        fn nul_delimiter() {
+            let mut output = ColoredOuput::new();
+            let mut values = Values::new(&mut output, Mode::StandardNoTrailingDelimiter, "\0");
+            write_values(&mut values);
+            assert_eq!(output.chunks(), &[OutputChunk::plain("b\0d")])
+        }
     }
 
-    #[test]
-    fn standard_mode_nul_delimiter() {
-        let mut output = ColoredOuput::new();
-        let mut values = Values::new(&mut output, Mode::Standard, "\0");
-        write_values(&mut values);
-        assert_eq!(output.chunks(), &[OutputChunk::plain("b\0d\0")])
-    }
+    mod diff_mode {
+        use super::*;
 
-    #[test]
-    fn standard_mode_with_ntr_no_delimiter() {
-        let mut output = ColoredOuput::new();
-        let mut values = Values::new(&mut output, Mode::StandardNoTrailingDelimiter, "");
-        write_values(&mut values);
-        assert_eq!(output.chunks(), &[OutputChunk::plain("bd")])
-    }
+        #[test]
+        fn no_delimiter() {
+            let mut output = ColoredOuput::new();
+            let mut values = Values::new(&mut output, Mode::Diff, "");
+            write_values(&mut values);
+            assert_eq!(output.chunks(), &[OutputChunk::plain("<a>b<c>d")])
+        }
 
-    #[test]
-    fn standard_mode_with_ntr_newline_delimiter() {
-        let mut output = ColoredOuput::new();
-        let mut values = Values::new(&mut output, Mode::StandardNoTrailingDelimiter, "\n");
-        write_values(&mut values);
-        assert_eq!(output.chunks(), &[OutputChunk::plain("b\nd")])
-    }
+        #[test]
+        fn newline_delimiter() {
+            let mut output = ColoredOuput::new();
+            let mut values = Values::new(&mut output, Mode::Diff, "\n");
+            write_values(&mut values);
+            assert_eq!(output.chunks(), &[OutputChunk::plain("<a\n>b\n<c\n>d\n")])
+        }
 
-    #[test]
-    fn standard_mode_with_ntr_nul_delimiter() {
-        let mut output = ColoredOuput::new();
-        let mut values = Values::new(&mut output, Mode::StandardNoTrailingDelimiter, "\0");
-        write_values(&mut values);
-        assert_eq!(output.chunks(), &[OutputChunk::plain("b\0d")])
-    }
-
-    #[test]
-    fn diff_mode_no_delimiter() {
-        let mut output = ColoredOuput::new();
-        let mut values = Values::new(&mut output, Mode::Diff, "");
-        write_values(&mut values);
-        assert_eq!(output.chunks(), &[OutputChunk::plain("<a>b<c>d")])
-    }
-
-    #[test]
-    fn diff_mode_newline_delimiter() {
-        let mut output = ColoredOuput::new();
-        let mut values = Values::new(&mut output, Mode::Diff, "\n");
-        write_values(&mut values);
-        assert_eq!(output.chunks(), &[OutputChunk::plain("<a\n>b\n<c\n>d\n")])
-    }
-
-    #[test]
-    fn diff_mode_null_delimiter() {
-        let mut output = ColoredOuput::new();
-        let mut values = Values::new(&mut output, Mode::Diff, "\0");
-        write_values(&mut values);
-        assert_eq!(output.chunks(), &[OutputChunk::plain("<a\0>b\0<c\0>d\0")])
+        #[test]
+        fn null_delimiter() {
+            let mut output = ColoredOuput::new();
+            let mut values = Values::new(&mut output, Mode::Diff, "\0");
+            write_values(&mut values);
+            assert_eq!(output.chunks(), &[OutputChunk::plain("<a\0>b\0<c\0>d\0")])
+        }
     }
 
     #[test]
@@ -195,6 +205,7 @@ mod tests {
         let mut output = ColoredOuput::new();
         let mut values = Values::new(&mut output, Mode::Pretty, "ignored");
         write_values(&mut values);
+
         assert_eq!(
             output.chunks(),
             &[
@@ -214,7 +225,10 @@ mod tests {
     }
 
     #[test]
-    fn writes_pattern() {
+    fn write_pattern() {
+        use super::*;
+        use std::fmt;
+
         #[derive(Debug)]
         struct CustomError {}
         impl Error for CustomError {}
@@ -248,7 +262,9 @@ mod tests {
     }
 
     #[test]
-    fn highlights_range() {
+    fn highlight_range() {
+        use super::*;
+
         let mut output = ColoredOuput::new();
         highlight_range(&mut output, "abcde", &(1..4), Color::Green).unwrap();
 

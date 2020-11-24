@@ -97,7 +97,7 @@ mod tests {
     use ntest::*;
 
     #[test]
-    fn init() {
+    fn default() {
         assert_ok!(Cli::try_parse_from(&["cpb"]));
     }
 

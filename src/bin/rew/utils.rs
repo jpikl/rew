@@ -26,14 +26,18 @@ pub trait HasRange {
 mod tests {
     use super::*;
 
-    #[test]
-    fn any_string_eq() {
-        assert_eq!(AnyString(String::from("a")), AnyString(String::from("a")));
-        assert_eq!(AnyString(String::from("a")), AnyString(String::from("b")));
-    }
+    mod any_string {
+        use super::*;
 
-    #[test]
-    fn any_string_display() {
-        assert_eq!(AnyString(String::from("abc")).to_string(), "abc");
+        #[test]
+        fn partial_eq() {
+            assert_eq!(AnyString(String::from("a")), AnyString(String::from("a")));
+            assert_eq!(AnyString(String::from("a")), AnyString(String::from("b")));
+        }
+
+        #[test]
+        fn display() {
+            assert_eq!(AnyString(String::from("abc")).to_string(), "abc");
+        }
     }
 }
