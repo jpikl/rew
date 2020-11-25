@@ -70,20 +70,10 @@ mod tests {
     use std::io::{Read, Write};
 
     #[test]
-    fn io_stdin() {
+    fn io() {
         let io = Io::new(ColorChoice::Never);
         assert_ok!(io.stdin().read_exact(&mut []));
-    }
-
-    #[test]
-    fn io_stdout() {
-        let io = Io::new(ColorChoice::Never);
         assert_ok!(io.stdout().flush());
-    }
-
-    #[test]
-    fn io_stderr() {
-        let io = Io::new(ColorChoice::Never);
         assert_ok!(io.stderr().flush());
     }
 }

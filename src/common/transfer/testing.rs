@@ -11,10 +11,10 @@ pub fn debug_fse_error_kind(error_kind: ErrorKind) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     #[test]
-    fn unpacks_fse() {
+    fn unpack_fse_error() {
+        use super::*;
+
         assert_eq!(
             unpack_fse_error(Error::new(ErrorKind::Other, "test")),
             (debug_fse_error_kind(ErrorKind::Other), String::from("test"))
@@ -22,7 +22,9 @@ mod tests {
     }
 
     #[test]
-    fn debugs_fse_error_kind() {
+    fn debug_fse_error_kind() {
+        use super::*;
+
         assert_eq!(
             debug_fse_error_kind(ErrorKind::Other),
             String::from("ErrorKind::Other")

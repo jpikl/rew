@@ -110,79 +110,105 @@ mod tests {
     use ntest::*;
 
     #[test]
-    fn unpacks_io() {
+    fn unpack_io_error() {
+        use super::*;
+
         assert_eq!(
             unpack_io_error(Error::new(ErrorKind::Other, "test")),
             (ErrorKind::Other, String::from("test"))
         );
     }
 
-    #[test]
-    fn output_supports_color() {
-        assert_true!(ColoredOuput::new().supports_color());
+    mod colored_output {
+        use super::*;
+
+        #[test]
+        fn supports_color() {
+            assert_true!(ColoredOuput::new().supports_color());
+        }
+
+        #[test]
+        fn write() {
+            let mut output = ColoredOuput::new();
+
+            write!(output, "a").unwrap();
+            write!(output, "b").unwrap();
+            output.set_color(&spec_color(Color::Red)).unwrap();
+            write!(output, "c").unwrap();
+            write!(output, "d").unwrap();
+            output.set_color(&spec_bold_color(Color::Blue)).unwrap();
+            write!(output, "e").unwrap();
+            write!(output, "f").unwrap();
+            output.reset().unwrap();
+            write!(output, "g").unwrap();
+            output.flush().unwrap();
+
+            assert_eq!(
+                output.chunks,
+                &[
+                    OutputChunk::plain("ab"),
+                    OutputChunk::color(Color::Red, "cd"),
+                    OutputChunk::bold_color(Color::Blue, "ef"),
+                    OutputChunk::plain("g"),
+                ]
+            );
+        }
     }
 
-    #[test]
-    fn output_write() {
-        let mut output = ColoredOuput::new();
+    mod output_chunk {
+        use super::*;
 
-        write!(output, "a").unwrap();
-        write!(output, "b").unwrap();
-        output.set_color(&spec_color(Color::Red)).unwrap();
-        write!(output, "c").unwrap();
-        write!(output, "d").unwrap();
-        output.set_color(&spec_bold_color(Color::Blue)).unwrap();
-        write!(output, "e").unwrap();
-        write!(output, "f").unwrap();
-        output.reset().unwrap();
-        write!(output, "g").unwrap();
-        output.flush().unwrap();
+        mod init {
+            use super::*;
 
-        assert_eq!(
-            output.chunks,
-            &[
-                OutputChunk::plain("ab"),
-                OutputChunk::color(Color::Red, "cd"),
-                OutputChunk::bold_color(Color::Blue, "ef"),
-                OutputChunk::plain("g"),
-            ]
-        );
-    }
+            #[test]
+            fn plain() {
+                let chunk = OutputChunk::plain("ab");
+                assert_eq!(chunk.spec, ColorSpec::new());
+                assert_eq!(chunk.value, "ab");
+            }
 
-    #[test]
-    fn output_chunk_plain() {
-        let chunk = OutputChunk::plain("ab");
-        assert_eq!(chunk.spec, ColorSpec::new());
-        assert_eq!(chunk.value, "ab");
-    }
+            #[test]
+            fn color() {
+                let chunk = OutputChunk::color(Color::Red, "cd");
+                assert_eq!(chunk.spec, spec_color(Color::Red));
+                assert_eq!(chunk.value, "cd");
+            }
 
-    #[test]
-    fn output_chunk_color() {
-        let chunk = OutputChunk::color(Color::Red, "cd");
-        assert_eq!(chunk.spec, spec_color(Color::Red));
-        assert_eq!(chunk.value, "cd");
-    }
+            #[test]
+            fn bold_color() {
+                let chunk = OutputChunk::bold_color(Color::Blue, "ef");
+                assert_eq!(chunk.spec, spec_bold_color(Color::Blue));
+                assert_eq!(chunk.value, "ef");
+            }
+        }
 
-    #[test]
-    fn output_chunk_bold_color() {
-        let chunk = OutputChunk::bold_color(Color::Blue, "ef");
-        assert_eq!(chunk.spec, spec_bold_color(Color::Blue));
-        assert_eq!(chunk.value, "ef");
-    }
+        mod display {
+            use super::*;
 
-    #[test]
-    fn output_chunk_display() {
-        assert_eq!(
-            format!("{:?}", OutputChunk::plain("a\nb")),
-            r#"OutputChunk::plain("a\\nb")"#
-        );
-        assert_eq!(
-            format!("{:?}", OutputChunk::color(Color::Red, "c\nd")),
-            r#"OutputChunk::color(Color::Red, "c\\nd")"#
-        );
-        assert_eq!(
-            format!("{:?}", OutputChunk::bold_color(Color::Blue, "e\nf")),
-            r#"OutputChunk::bold_color(Color::Blue, "e\\nf")"#
-        );
+            #[test]
+            fn plain() {
+                assert_eq!(
+                    format!("{:?}", OutputChunk::plain("a\nb")),
+                    r#"OutputChunk::plain("a\\nb")"#
+                );
+            }
+
+            #[test]
+            fn color() {
+                assert_eq!(
+                    format!("{:?}", OutputChunk::color(Color::Red, "c\nd")),
+                    r#"OutputChunk::color(Color::Red, "c\\nd")"#
+                );
+            }
+
+            #[test]
+            fn bold_color() {
+                assert_eq!(
+                    format!("{:?}", OutputChunk::bold_color(Color::Blue, "e\nf")),
+                    r#"OutputChunk::bold_color(Color::Blue, "e\\nf")"#
+                );
+            }
+        }
     }
 }

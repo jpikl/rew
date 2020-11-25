@@ -85,12 +85,13 @@ fn highlight_code<O: Write + WriteColor>(output: &mut O, line: &str) -> Result<(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::testing::{ColoredOuput, OutputChunk};
     use indoc::indoc;
 
     #[test]
-    fn highlights_help() {
+    fn highlight_help() {
+        use super::*;
+
         let help = indoc! {"
             =========
              Heading

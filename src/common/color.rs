@@ -46,39 +46,53 @@ pub fn spec_bold_color(color: Color) -> ColorSpec {
 mod tests {
     use super::*;
 
-    #[test]
-    fn parses_color() {
-        assert_eq!(parse_color(COLOR_ALWAYS), Ok(ColorChoice::Always));
-        assert_eq!(parse_color(COLOR_ANSI), Ok(ColorChoice::AlwaysAnsi));
-        assert_eq!(parse_color(COLOR_AUTO), Ok(ColorChoice::Auto));
-        assert_eq!(parse_color(COLOR_NEVER), Ok(ColorChoice::Never));
+    mod parse_color {
+        use super::*;
+
+        #[test]
+        fn valid() {
+            assert_eq!(parse_color(COLOR_ALWAYS), Ok(ColorChoice::Always));
+            assert_eq!(parse_color(COLOR_ANSI), Ok(ColorChoice::AlwaysAnsi));
+            assert_eq!(parse_color(COLOR_AUTO), Ok(ColorChoice::Auto));
+            assert_eq!(parse_color(COLOR_NEVER), Ok(ColorChoice::Never));
+        }
+
+        #[test]
+        fn invalid() {
+            assert_eq!(parse_color(""), Err("invalid value"));
+            assert_eq!(parse_color("x"), Err("invalid value"));
+        }
+    }
+
+    mod detect_color {
+        use super::*;
+
+        #[test]
+        fn selected() {
+            assert_eq!(detect_color(Some(ColorChoice::Never)), ColorChoice::Never);
+            assert_eq!(detect_color(Some(ColorChoice::Always)), ColorChoice::Always);
+            assert_eq!(
+                detect_color(Some(ColorChoice::AlwaysAnsi)),
+                ColorChoice::AlwaysAnsi
+            );
+        }
+
+        #[test]
+        fn auto() {
+            let color = if atty::is(atty::Stream::Stdout) {
+                ColorChoice::Auto
+            } else {
+                ColorChoice::Never
+            };
+            assert_eq!(detect_color(None), color);
+            assert_eq!(detect_color(Some(ColorChoice::Auto)), color);
+        }
     }
 
     #[test]
-    fn parses_invalid_color() {
-        assert_eq!(parse_color(""), Err("invalid value"));
-        assert_eq!(parse_color("x"), Err("invalid value"));
-    }
+    fn spec_color() {
+        use super::*;
 
-    #[test]
-    fn detects_color() {
-        let auto_color = if atty::is(atty::Stream::Stdout) {
-            ColorChoice::Auto
-        } else {
-            ColorChoice::Never
-        };
-        assert_eq!(detect_color(None), auto_color);
-        assert_eq!(detect_color(Some(ColorChoice::Auto)), auto_color);
-        assert_eq!(detect_color(Some(ColorChoice::Never)), ColorChoice::Never);
-        assert_eq!(detect_color(Some(ColorChoice::Always)), ColorChoice::Always);
-        assert_eq!(
-            detect_color(Some(ColorChoice::AlwaysAnsi)),
-            ColorChoice::AlwaysAnsi
-        );
-    }
-
-    #[test]
-    fn specs_color() {
         assert_eq!(
             &spec_color(Color::Red),
             ColorSpec::new().set_fg(Some(Color::Red))
@@ -86,7 +100,9 @@ mod tests {
     }
 
     #[test]
-    fn specs_bold_color() {
+    fn spec_bold_color() {
+        use super::*;
+
         assert_eq!(
             &spec_bold_color(Color::Red),
             ColorSpec::new().set_fg(Some(Color::Red)).set_bold(true)

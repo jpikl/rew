@@ -57,7 +57,7 @@ pub mod tests {
     use crate::testing::{ColoredOuput, OutputChunk};
 
     #[test]
-    fn transfer_log_begins_move() {
+    fn begin_transfer_move() {
         let mut output = ColoredOuput::new();
         TransferLog::new(&mut output)
             .begin_transfer(TransferMode::Move, &Path::new("a/b.c"), &Path::new("d/e.f"))
@@ -75,7 +75,7 @@ pub mod tests {
     }
 
     #[test]
-    fn transfer_log_begins_copy() {
+    fn begin_transfer_copy() {
         let mut output = ColoredOuput::new();
         TransferLog::new(&mut output)
             .begin_transfer(TransferMode::Copy, &Path::new("a/b.c"), &Path::new("d/e.f"))
@@ -93,7 +93,7 @@ pub mod tests {
     }
 
     #[test]
-    fn transfer_log_ends_with_success() {
+    fn end_with_success() {
         let mut output = ColoredOuput::new();
         TransferLog::new(&mut output).end_with_success().unwrap();
         assert_eq!(
@@ -106,7 +106,7 @@ pub mod tests {
     }
 
     #[test]
-    fn transfer_log_ends_with_failure() {
+    fn end_with_failure() {
         let mut output = ColoredOuput::new();
         TransferLog::new(&mut output).end_with_failure().unwrap();
         assert_eq!(

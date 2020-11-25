@@ -71,145 +71,165 @@ mod tests {
     use super::*;
     use crate::testing::unpack_io_error;
 
-    #[test]
-    fn splitter_newline_delimiter_empty() {
-        let mut splitter = Splitter::new(&[][..], Delimiter::Newline);
-        assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
+    mod newline_delimiter {
+        use super::*;
+
+        #[test]
+        fn empty() {
+            let mut splitter = Splitter::new(&[][..], Delimiter::Newline);
+            assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
+        }
+
+        mod lf_only {
+            use super::*;
+
+            #[test]
+            fn between() {
+                let mut splitter = Splitter::new(&b"abc\0\n\0def"[..], Delimiter::Newline);
+                assert_eq!(
+                    splitter.read().map_err(unpack_io_error),
+                    Ok(Some(("abc\0", 5)))
+                );
+                assert_eq!(
+                    splitter.read().map_err(unpack_io_error),
+                    Ok(Some(("\0def", 4)))
+                );
+                assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
+            }
+
+            #[test]
+            fn between_and_end() {
+                let mut splitter = Splitter::new(&b"abc\0\n\0def\n"[..], Delimiter::Newline);
+                assert_eq!(
+                    splitter.read().map_err(unpack_io_error),
+                    Ok(Some(("abc\0", 5)))
+                );
+                assert_eq!(
+                    splitter.read().map_err(unpack_io_error),
+                    Ok(Some(("\0def", 5)))
+                );
+                assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
+            }
+
+            #[test]
+            fn consecutive() {
+                let mut splitter = Splitter::new(&b"\n\n"[..], Delimiter::Newline);
+                assert_eq!(splitter.read().map_err(unpack_io_error), Ok(Some(("", 1))));
+                assert_eq!(splitter.read().map_err(unpack_io_error), Ok(Some(("", 1))));
+                assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
+            }
+        }
+
+        mod cr_and_lf {
+            use super::*;
+
+            #[test]
+            fn between() {
+                let mut splitter = Splitter::new(&b"abc\0\r\n\0def"[..], Delimiter::Newline);
+                assert_eq!(
+                    splitter.read().map_err(unpack_io_error),
+                    Ok(Some(("abc\0", 6)))
+                );
+                assert_eq!(
+                    splitter.read().map_err(unpack_io_error),
+                    Ok(Some(("\0def", 4)))
+                );
+                assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
+            }
+
+            #[test]
+            fn between_and_end() {
+                let mut splitter = Splitter::new(&b"abc\0\r\n\0def\r\n"[..], Delimiter::Newline);
+                assert_eq!(
+                    splitter.read().map_err(unpack_io_error),
+                    Ok(Some(("abc\0", 6)))
+                );
+                assert_eq!(
+                    splitter.read().map_err(unpack_io_error),
+                    Ok(Some(("\0def", 6)))
+                );
+                assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
+            }
+
+            #[test]
+            fn consecutive() {
+                let mut splitter = Splitter::new(&b"\r\n\n\r\n"[..], Delimiter::Newline);
+                assert_eq!(splitter.read().map_err(unpack_io_error), Ok(Some(("", 2))));
+                assert_eq!(splitter.read().map_err(unpack_io_error), Ok(Some(("", 1))));
+                assert_eq!(splitter.read().map_err(unpack_io_error), Ok(Some(("", 2))));
+                assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
+            }
+        }
+    }
+
+    mod byte_delimiter {
+        use super::*;
+
+        #[test]
+        fn empty() {
+            let mut splitter = Splitter::new(&[][..], Delimiter::Byte(0));
+            assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
+        }
+
+        #[test]
+        fn between() {
+            let mut splitter = Splitter::new(&b"abc\n\0\ndef"[..], Delimiter::Byte(0));
+            assert_eq!(
+                splitter.read().map_err(unpack_io_error),
+                Ok(Some(("abc\n", 5)))
+            );
+            assert_eq!(
+                splitter.read().map_err(unpack_io_error),
+                Ok(Some(("\ndef", 4)))
+            );
+            assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
+        }
+
+        #[test]
+        fn between_and_end() {
+            let mut splitter = Splitter::new(&b"abc\n\0\ndef\0"[..], Delimiter::Byte(0));
+            assert_eq!(
+                splitter.read().map_err(unpack_io_error),
+                Ok(Some(("abc\n", 5)))
+            );
+            assert_eq!(
+                splitter.read().map_err(unpack_io_error),
+                Ok(Some(("\ndef", 5)))
+            );
+            assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
+        }
+
+        #[test]
+        fn consecutive() {
+            let mut splitter = Splitter::new(&b"\0\0"[..], Delimiter::Byte(0));
+            assert_eq!(splitter.read().map_err(unpack_io_error), Ok(Some(("", 1))));
+            assert_eq!(splitter.read().map_err(unpack_io_error), Ok(Some(("", 1))));
+            assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
+        }
+    }
+
+    mod none_delimiter {
+        use super::*;
+
+        #[test]
+        fn empty() {
+            let mut splitter = Splitter::new(&[][..], Delimiter::None);
+            assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
+        }
+
+        #[test]
+        fn nonempty() {
+            let mut splitter = Splitter::new(&b"abc\n\0def"[..], Delimiter::None);
+            assert_eq!(
+                splitter.read().map_err(unpack_io_error),
+                Ok(Some(("abc\n\0def", 8)))
+            );
+            assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
+        }
     }
 
     #[test]
-    fn splitter_newline_delimiter_lf_between() {
-        let mut splitter = Splitter::new(&b"abc\0\n\0def"[..], Delimiter::Newline);
-        assert_eq!(
-            splitter.read().map_err(unpack_io_error),
-            Ok(Some(("abc\0", 5)))
-        );
-        assert_eq!(
-            splitter.read().map_err(unpack_io_error),
-            Ok(Some(("\0def", 4)))
-        );
-        assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
-    }
-
-    #[test]
-    fn splitter_newline_delimiter_lf_end() {
-        let mut splitter = Splitter::new(&b"abc\0\n\0def\n"[..], Delimiter::Newline);
-        assert_eq!(
-            splitter.read().map_err(unpack_io_error),
-            Ok(Some(("abc\0", 5)))
-        );
-        assert_eq!(
-            splitter.read().map_err(unpack_io_error),
-            Ok(Some(("\0def", 5)))
-        );
-        assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
-    }
-
-    #[test]
-    fn splitter_newline_delimiter_lf_consecutive() {
-        let mut splitter = Splitter::new(&b"\n\n"[..], Delimiter::Newline);
-        assert_eq!(splitter.read().map_err(unpack_io_error), Ok(Some(("", 1))));
-        assert_eq!(splitter.read().map_err(unpack_io_error), Ok(Some(("", 1))));
-        assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
-    }
-
-    #[test]
-    fn splitter_newline_delimiter_crlf_between() {
-        let mut splitter = Splitter::new(&b"abc\0\r\n\0def"[..], Delimiter::Newline);
-        assert_eq!(
-            splitter.read().map_err(unpack_io_error),
-            Ok(Some(("abc\0", 6)))
-        );
-        assert_eq!(
-            splitter.read().map_err(unpack_io_error),
-            Ok(Some(("\0def", 4)))
-        );
-        assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
-    }
-
-    #[test]
-    fn splitter_newline_delimiter_crlf_end() {
-        let mut splitter = Splitter::new(&b"abc\0\r\n\0def\r\n"[..], Delimiter::Newline);
-        assert_eq!(
-            splitter.read().map_err(unpack_io_error),
-            Ok(Some(("abc\0", 6)))
-        );
-        assert_eq!(
-            splitter.read().map_err(unpack_io_error),
-            Ok(Some(("\0def", 6)))
-        );
-        assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
-    }
-
-    #[test]
-    fn splitter_newline_delimiter_crlf_consecutive() {
-        let mut splitter = Splitter::new(&b"\r\n\n\r\n"[..], Delimiter::Newline);
-        assert_eq!(splitter.read().map_err(unpack_io_error), Ok(Some(("", 2))));
-        assert_eq!(splitter.read().map_err(unpack_io_error), Ok(Some(("", 1))));
-        assert_eq!(splitter.read().map_err(unpack_io_error), Ok(Some(("", 2))));
-        assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
-    }
-
-    #[test]
-    fn splitter_byte_delimiter_empty() {
-        let mut splitter = Splitter::new(&[][..], Delimiter::Byte(0));
-        assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
-    }
-
-    #[test]
-    fn splitter_byte_delimiter_between() {
-        let mut splitter = Splitter::new(&b"abc\n\0\ndef"[..], Delimiter::Byte(0));
-        assert_eq!(
-            splitter.read().map_err(unpack_io_error),
-            Ok(Some(("abc\n", 5)))
-        );
-        assert_eq!(
-            splitter.read().map_err(unpack_io_error),
-            Ok(Some(("\ndef", 4)))
-        );
-        assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
-    }
-
-    #[test]
-    fn splitter_byte_delimiter_end() {
-        let mut splitter = Splitter::new(&b"abc\n\0\ndef\0"[..], Delimiter::Byte(0));
-        assert_eq!(
-            splitter.read().map_err(unpack_io_error),
-            Ok(Some(("abc\n", 5)))
-        );
-        assert_eq!(
-            splitter.read().map_err(unpack_io_error),
-            Ok(Some(("\ndef", 5)))
-        );
-        assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
-    }
-
-    #[test]
-    fn splitter_byte_delimiter_consecutive() {
-        let mut splitter = Splitter::new(&b"\0\0"[..], Delimiter::Byte(0));
-        assert_eq!(splitter.read().map_err(unpack_io_error), Ok(Some(("", 1))));
-        assert_eq!(splitter.read().map_err(unpack_io_error), Ok(Some(("", 1))));
-        assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
-    }
-
-    #[test]
-    fn splitter_none_delimiter_empty() {
-        let mut splitter = Splitter::new(&[][..], Delimiter::None);
-        assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
-    }
-
-    #[test]
-    fn splitter_none_delimiter() {
-        let mut splitter = Splitter::new(&b"abc\n\0def"[..], Delimiter::None);
-        assert_eq!(
-            splitter.read().map_err(unpack_io_error),
-            Ok(Some(("abc\n\0def", 8)))
-        );
-        assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
-    }
-
-    #[test]
-    fn splitter_utf8() {
+    fn non_utf8() {
         assert_eq!(
             Splitter::new(&[0, 159, 146, 150][..], Delimiter::None)
                 .read()

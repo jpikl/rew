@@ -1,5 +1,4 @@
 pub mod color;
-pub mod fs;
 pub mod help;
 pub mod input;
 pub mod output;
