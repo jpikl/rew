@@ -23,8 +23,8 @@ mod testing;
 pub enum Filter {
     // Path filters
     AbsolutePath,
-    CanonicalPath,
     NormalizedPath,
+    CanonicalPath,
     ParentDirectory,
     PathWithoutFileName,
     FileName,
@@ -83,8 +83,8 @@ impl Filter {
             match char.as_char() {
                 // Path filters
                 'a' => Ok(Self::AbsolutePath),
-                'A' => Ok(Self::CanonicalPath),
-                'h' => Ok(Self::NormalizedPath),
+                'p' => Ok(Self::NormalizedPath),
+                'P' => Ok(Self::CanonicalPath),
                 'd' => Ok(Self::ParentDirectory),
                 'D' => Ok(Self::PathWithoutFileName),
                 'f' => Ok(Self::FileName),
@@ -140,8 +140,8 @@ impl Filter {
         match self {
             // Path filters
             Self::AbsolutePath => path::get_absolute(value, context.current_dir),
-            Self::CanonicalPath => path::get_canonical(value, context.current_dir),
             Self::NormalizedPath => path::get_normalized(value),
+            Self::CanonicalPath => path::get_canonical(value, context.current_dir),
             Self::ParentDirectory => path::get_parent_directory(value),
             Self::PathWithoutFileName => path::get_path_without_file_name(value),
             Self::FileName => path::get_file_name(value),
@@ -209,8 +209,8 @@ impl fmt::Display for Filter {
         match self {
             // Path filters
             Self::AbsolutePath => write!(formatter, "Absolute path"),
-            Self::CanonicalPath => write!(formatter, "Canonical path"),
             Self::NormalizedPath => write!(formatter, "Normalized path"),
+            Self::CanonicalPath => write!(formatter, "Canonical path"),
             Self::ParentDirectory => write!(formatter, "Parent directory"),
             Self::PathWithoutFileName => write!(formatter, "Path without file name"),
             Self::FileName => write!(formatter, "File name"),
@@ -322,13 +322,13 @@ mod tests {
         }
 
         #[test]
-        fn canonical_path() {
-            assert_eq!(parse("A"), Ok(Filter::CanonicalPath));
+        fn normalized_path() {
+            assert_eq!(parse("p"), Ok(Filter::NormalizedPath));
         }
 
         #[test]
-        fn normalized_path() {
-            assert_eq!(parse("h"), Ok(Filter::NormalizedPath));
+        fn canonical_path() {
+            assert_eq!(parse("P"), Ok(Filter::CanonicalPath));
         }
 
         #[test]
@@ -699,18 +699,6 @@ mod tests {
         }
 
         #[test]
-        fn canonical_path() {
-            let current_dir = std::env::current_dir().unwrap();
-            let mut context = make_eval_context();
-            context.current_dir = &current_dir;
-
-            assert_eq!(
-                Filter::CanonicalPath.eval(String::from("Cargo.toml"), &context),
-                Ok(current_dir.join("Cargo.toml").to_str().unwrap().to_string())
-            );
-        }
-
-        #[test]
         fn normalized_path() {
             assert_eq!(
                 Filter::NormalizedPath.eval(
@@ -721,6 +709,18 @@ mod tests {
                     "root{}new-parent{}dir",
                     MAIN_SEPARATOR, MAIN_SEPARATOR
                 ))
+            );
+        }
+
+        #[test]
+        fn canonical_path() {
+            let current_dir = std::env::current_dir().unwrap();
+            let mut context = make_eval_context();
+            context.current_dir = &current_dir;
+
+            assert_eq!(
+                Filter::CanonicalPath.eval(String::from("Cargo.toml"), &context),
+                Ok(current_dir.join("Cargo.toml").to_str().unwrap().to_string())
             );
         }
 
@@ -1001,13 +1001,13 @@ mod tests {
         }
 
         #[test]
-        fn canonical_path() {
-            assert_eq!(Filter::CanonicalPath.to_string(), "Canonical path");
+        fn normalized_path() {
+            assert_eq!(Filter::NormalizedPath.to_string(), "Normalized path");
         }
 
         #[test]
-        fn normalized_path() {
-            assert_eq!(Filter::NormalizedPath.to_string(), "Normalized path");
+        fn canonical_path() {
+            assert_eq!(Filter::CanonicalPath.to_string(), "Canonical path");
         }
 
         #[test]

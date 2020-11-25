@@ -130,8 +130,8 @@ printf 'a\0b' | rew -z # Convert NUL bytes to newlines
 | Filter | Description            |
 | ------ | ---------------------- |
 | `a`    | Absolute path          |
-| `A`    | Canonical path         |
-| `h`    | Normalized path        |
+| `p`    | Normalized path        |
+| `P`    | Canonical path         |
 | `d`    | Parent directory       |
 | `D`    | Path without file name |
 | `f`    | File name              |
@@ -156,8 +156,8 @@ For working directory `/home/bob` and input `../alice/notes.txt`, filters would 
 | Filter | Output                         |
 | ------ | ------------------------------ |
 | `a`    | `/home/bob/../alice/notes.txt` |
-| `A`    | `/home/alice/notes.txt`        |
-| `h`    | `../alice/notes.txt`           |
+| `p`    | `../alice/notes.txt`           |
+| `P`    | `/home/alice/notes.txt`        |
 | `d`    | `../alice`                     |
 | `D`    | `../alice`                     |
 | `f`    | `notes.txt`                    |
@@ -167,7 +167,7 @@ For working directory `/home/bob` and input `../alice/notes.txt`, filters would 
 | `E`    | `.txt`                         |
 
 
-Normalized path `h` is constructed using the following rules:
+Normalized path `p` is constructed using the following rules:
 
 - On Windows, all `/` separators are converted to `\\`.
 - Consecutive path separators are collapsed into one.
@@ -193,7 +193,7 @@ Normalized path `h` is constructed using the following rules:
 | `a/./b`   | `a/b`  |   | `/a/./b`  | `/a/b` |
 | `a/../b`  | `b`    |   | `/a/../b` | `/b`   |
 
-Canonical path `A` works similarly to `h` but has some differences:
+Canonical path `P` works similarly to `p` but has some differences:
 
 - Evaluation will fail for a non-existent path.
 - Result will always be an absolute path.
@@ -289,8 +289,8 @@ echo 'a/b.c' | rew -E '([a-z])' '{1}' # Will print 'b'
 | `t`    | Trim white-spaces from both sides.     |
 | `u`    | Convert to uppercase.                  |
 | `l`    | Convert to lowercase.                  |
-| `a`    | Convert non-ASCII characters to ASCII. |
-| `A`    | Remove non-ASCII characters.           |
+| `i`    | Convert non-ASCII characters to ASCII. |
+| `I`    | Remove non-ASCII characters.           |
 | `<<M`  | Left pad with mask `M`.                |
 | `<N:M` | Left pad with `N` times repeated mask `M`.<br/>Any other non-digit than `:` can be also used as a delimiter. |
 | `>>M`  | Right pad with mask `M`.               |
@@ -468,7 +468,7 @@ find -name '*.txt'  | rew -b '{}.bak'  | cpb -v
 Copy `*.txt` files (keep directory structure) to the `~/Backup` directory.
 
 ```bash
-find -name '*.txt'  | rew -b "$HOME/Backup/{h}"  | cpb -v
+find -name '*.txt'  | rew -b "$HOME/Backup/{p}"  | cpb -v
 ```
 
 Copy `*.txt` files (flatten directory structure) to the `~/Backup` directory.

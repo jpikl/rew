@@ -278,7 +278,7 @@ fn parse_error() {
 #[test]
 fn eval_error() {
     rew()
-        .arg("{A}")
+        .arg("{P}")
         .write_stdin(indoc! {"
             non-existent
             Cargo.toml
@@ -296,7 +296,7 @@ fn eval_error() {
 fn eval_error_at_end() {
     rew()
         .arg("--fail-at-end")
-        .arg("{A}")
+        .arg("{P}")
         .write_stdin(indoc! {"
             non-existent
             Cargo.toml

@@ -66,8 +66,8 @@ const FILTERS_HELP: &str = indoc! {"
     FILTER    DESCRIPTION
     ---------------------------------------------------
     `a`         Absolute path
-    `A`         Canonical path
-    `h`         Normalized path
+    `p`         Normalized path
+    `P`         Canonical path
     `d`         Parent directory
     `D`         Path without file name
     `f`         File name
@@ -91,8 +91,8 @@ For working directory `/home/bob` and input `../alice/notes.txt`, filters would 
     FILTER    OUTPUT
     --------------------------------------
     `a`         /home/bob/../alice/notes.txt
-    `A`         /home/alice/notes.txt
-    `h`         ../alice/notes.txt
+    `p`         ../alice/notes.txt
+    `P`         /home/alice/notes.txt
     `d`         ../alice
     `D`         ../alice
     `f`         notes.txt
@@ -101,7 +101,7 @@ For working directory `/home/bob` and input `../alice/notes.txt`, filters would 
     `e`         txt
     `E`         .txt
 
-Normalized path `h` is constructed using the following rules:
+Normalized path `p` is constructed using the following rules:
 
  - On Windows, all `/` separators are converted to `\\`.
  - Consecutive path separators are collapsed into one.
@@ -127,7 +127,7 @@ Normalized path `h` is constructed using the following rules:
     a/./b      a/b           /a/./b     /a/b
     a/../b     b             /a/../b    /b
 
-Canonical path `A` works similarly to `h` but has some differences:
+Canonical path `P` works similarly to `p` but has some differences:
 
  - Evaluation will fail for a non-existent path.
  - Result will always be an absolute path.
