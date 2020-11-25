@@ -33,7 +33,10 @@ pub fn get_canonical(value: String, current_dir: &Path) -> Result {
     match absolute_path.normalize() {
         Ok(path_buf) => to_string(&path_buf).map(|mut result| {
             // Normalize unix vs windows behaviour
-            if cfg!(windows) && result.ends_with(MAIN_SEPARATOR) {
+            if cfg!(windows)
+                && result.ends_with(MAIN_SEPARATOR)
+                && !matches!(path_buf.components().last(), Some(Component::RootDir))
+            {
                 result.pop();
             }
             result
@@ -271,6 +274,15 @@ mod tests {
                     Ok(format!("{}/src", current_dir.to_str().unwrap(),))
                 );
             }
+
+            #[test]
+            fn root() {
+                let current_dir = std::env::current_dir().unwrap();
+                assert_eq!(
+                    get_canonical(String::from("/"), &current_dir),
+                    Ok(String::from("/"))
+                );
+            }
         }
 
         #[cfg(windows)]
@@ -283,6 +295,24 @@ mod tests {
                 assert_eq!(
                     get_canonical(String::from("src\\"), &current_dir),
                     Ok(format!("{}\\src", current_dir.to_str().unwrap()))
+                );
+            }
+
+            #[test]
+            fn root() {
+                let current_dir = std::env::current_dir().unwrap();
+                assert_eq!(
+                    get_canonical(String::from("C:\\"), &current_dir),
+                    Ok(String::from("C:\\"))
+                );
+            }
+
+            #[test]
+            fn prefix() {
+                let current_dir = std::env::current_dir().unwrap();
+                assert_eq!(
+                    get_canonical(String::from("C:"), &current_dir),
+                    Ok(String::from("C:\\"))
                 );
             }
         }
