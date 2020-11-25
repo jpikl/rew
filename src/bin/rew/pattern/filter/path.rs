@@ -66,6 +66,10 @@ pub fn get_normalized(value: String) -> Result {
     let mut normalized_value = String::new();
     let mut name_added = false;
 
+    if let Some(Component::Prefix(_)) = normalized_components.last() {
+        normalized_components.push(Component::RootDir);
+    }
+
     for component in normalized_components {
         match &component {
             Component::Prefix(_) | Component::RootDir => {
@@ -341,6 +345,7 @@ mod tests {
 
             #[test]
             fn absolute_separator() {
+                assert_normalized("/", "/");
                 assert_normalized("/abc", "/abc");
                 assert_normalized("/abc/", "/abc");
                 assert_normalized("/abc/def", "/abc/def");
@@ -441,6 +446,8 @@ mod tests {
 
             #[test]
             fn absolute_separator() {
+                assert_normalized("C:", "C:\\");
+                assert_normalized("C:\\", "C:\\");
                 assert_normalized("C:\\abc", "C:\\abc");
                 assert_normalized("C:\\abc\\", "C:\\abc");
                 assert_normalized("C:\\abc\\def", "C:\\abc\\def");
