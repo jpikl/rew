@@ -1,6 +1,6 @@
 [package]
 name = "rew"
-version = "1.0.0"
+version = "0.1.0"
 description = "A CLI tool that rewrites FS paths according to a pattern."
 keywords = ["tool", "command-line", "replace", "rename", "regex", "files"]
 authors = ["Jan Pikl <pikl.jan@gmail.com>"]
