@@ -52,7 +52,7 @@ mod tests {
     use super::*;
     use crate::pattern::parse::{Error, ErrorKind};
     use crate::pattern::reader::Reader;
-    
+
     mod parse {
         use super::*;
 

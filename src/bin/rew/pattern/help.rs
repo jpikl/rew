@@ -64,14 +64,15 @@ const FILTERS_HELP: &str = indoc! {"
 ========================================
 
     FILTER    DESCRIPTION
-    ----------------------------
+    ---------------------------------------------------
     `a`         Absolute path
     `A`         Canonical path
     `h`         Normalized path
-    `p`         Parent path
+    `d`         Parent directory
+    `D`         Path without file name
     `f`         File name
     `b`         Base name
-    `B`         Base name with path
+    `B`         Path without extension
     `e`         Extension
     `E`         Extension with dot
               Dot is not printed for missing extension.
@@ -92,7 +93,8 @@ For working directory `/home/bob` and input `../alice/notes.txt`, filters would 
     `a`         /home/bob/../alice/notes.txt
     `A`         /home/alice/notes.txt
     `h`         ../alice/notes.txt
-    `p`         ../alice
+    `d`         ../alice
+    `D`         ../alice
     `f`         notes.txt
     `b`         notes
     `B`         ../alice/notes
@@ -103,7 +105,7 @@ Normalized path `h` is constructed using the following rules:
 
  - On Windows, all `/` separators are converted to `\\`.
  - Consecutive path separators are collapsed into one.
- - Trailing path separator is removed.
+ - Trailing path separator is removed unless it represents root directory.
  - Unnecessary current directory `.` components are removed.
  - Parent directory `..` components are resolved where possible.
  - Initial `..` components in an absolute path are dropped.
@@ -128,8 +130,21 @@ Normalized path `h` is constructed using the following rules:
 Canonical path `A` works similarly to `h` but has some differences:
 
  - Evaluation will fail for a non-existent path.
- - The result will always be an absolute path.
+ - Result will always be an absolute path.
  - If path is a symbolic link, it will be resolved.
+ 
+Path without filename `D` removes last name component of a path.
+This might give different result than using parent directory `d`.
+ 
+    INPUT    {d}    {D}
+    -----------------------
+    /        /      /
+    /a       /      /
+    a/b      a      a
+    a        .      (empty)
+    ..       ../..  (empty)
+    .        ./..   (empty)
+    (empty)  ..     (empty)
 
 ========================================
  Substring filters

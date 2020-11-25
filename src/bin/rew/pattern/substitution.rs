@@ -136,7 +136,7 @@ mod tests {
             let mut reader = Reader::from("/a");
             assert_eq!(
                 parse_target_and_replacement(&mut reader),
-                Ok((String::from("a"), 1..2, String::from("")))
+                Ok((String::from("a"), 1..2, String::new()))
             );
             assert_eq!(reader.position(), 2)
         }
@@ -146,7 +146,7 @@ mod tests {
             let mut reader = Reader::from("/abc");
             assert_eq!(
                 parse_target_and_replacement(&mut reader),
-                Ok((String::from("abc"), 1..4, String::from("")))
+                Ok((String::from("abc"), 1..4, String::new()))
             );
             assert_eq!(reader.position(), 4);
         }
@@ -156,7 +156,7 @@ mod tests {
             let mut reader = Reader::from("/a/");
             assert_eq!(
                 parse_target_and_replacement(&mut reader),
-                Ok((String::from("a"), 1..2, String::from("")))
+                Ok((String::from("a"), 1..2, String::new()))
             );
             assert_eq!(reader.position(), 3);
         }
@@ -166,7 +166,7 @@ mod tests {
             let mut reader = Reader::from("/abc/");
             assert_eq!(
                 parse_target_and_replacement(&mut reader),
-                Ok((String::from("abc"), 1..4, String::from("")))
+                Ok((String::from("abc"), 1..4, String::new()))
             );
             assert_eq!(reader.position(), 5);
         }

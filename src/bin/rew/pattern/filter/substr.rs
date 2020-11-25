@@ -71,7 +71,7 @@ mod tests {
         fn from_over() {
             assert_eq!(
                 get_forward(String::from("ábčd"), 4, None),
-                Ok(String::from(""))
+                Ok(String::new())
             );
         }
 
@@ -79,7 +79,7 @@ mod tests {
         fn to_below() {
             assert_eq!(
                 get_forward(String::from("ábčd"), 0, Some(0)),
-                Ok(String::from(""))
+                Ok(String::new())
             );
         }
 
@@ -111,7 +111,7 @@ mod tests {
         fn from_first_to_below() {
             assert_eq!(
                 get_forward(String::from("ábčd"), 0, Some(0)),
-                Ok(String::from(""))
+                Ok(String::new())
             );
         }
 
@@ -151,7 +151,7 @@ mod tests {
         fn from_over_to_over() {
             assert_eq!(
                 get_forward(String::from("ábčd"), 4, Some(1)),
-                Ok(String::from(""))
+                Ok(String::new())
             );
         }
     }
@@ -184,7 +184,7 @@ mod tests {
         fn from_over() {
             assert_eq!(
                 get_backward(String::from("ábčd"), 4, None),
-                Ok(String::from(""))
+                Ok(String::new())
             );
         }
 
@@ -192,7 +192,7 @@ mod tests {
         fn to_below() {
             assert_eq!(
                 get_backward(String::from("ábčd"), 0, Some(0)),
-                Ok(String::from(""))
+                Ok(String::new())
             );
         }
 
@@ -224,7 +224,7 @@ mod tests {
         fn from_first_to_below() {
             assert_eq!(
                 get_backward(String::from("ábčd"), 0, Some(0)),
-                Ok(String::from(""))
+                Ok(String::new())
             );
         }
 
@@ -264,7 +264,7 @@ mod tests {
         fn from_over_to_over() {
             assert_eq!(
                 get_backward(String::from("ábčd"), 4, Some(1)),
-                Ok(String::from(""))
+                Ok(String::new())
             );
         }
 
@@ -273,7 +273,7 @@ mod tests {
             // Covers different evaluation branch than from_over_to_over
             assert_eq!(
                 get_backward(String::from("ábčd"), 5, Some(1)),
-                Ok(String::from(""))
+                Ok(String::new())
             );
         }
     }

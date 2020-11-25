@@ -127,16 +127,17 @@ printf 'a\0b' | rew -z # Convert NUL bytes to newlines
 
 ### :railway_track: Path filters
 
-| Filter | Description         |
-| ------ | ------------------- |
-| `a`    | Absolute path       |
-| `A`    | Canonical path      |
-| `h`    | Normalized path     |
-| `p`    | Parent path         |
-| `f`    | File name           |
-| `b`    | Base name           |
-| `B`    | Base name with path |
-| `e`    | Extension           |
+| Filter | Description            |
+| ------ | ---------------------- |
+| `a`    | Absolute path          |
+| `A`    | Canonical path         |
+| `h`    | Normalized path        |
+| `d`    | Parent directory       |
+| `D`    | Path without file name |
+| `f`    | File name              |
+| `b`    | Base name              |
+| `B`    | Path without extension |
+| `e`    | Extension              |
 | `E`    | Extension with dot<br/>Dot is not printed for missing extension. |
 
 Let us assume the following directory structure:
@@ -157,7 +158,8 @@ For working directory `/home/bob` and input `../alice/notes.txt`, filters would 
 | `a`    | `/home/bob/../alice/notes.txt` |
 | `A`    | `/home/alice/notes.txt`        |
 | `h`    | `../alice/notes.txt`           |
-| `p`    | `../alice`                     |
+| `d`    | `../alice`                     |
+| `D`    | `../alice`                     |
 | `f`    | `notes.txt`                    |
 | `b`    | `notes`                        |
 | `B`    | `../alice/notes`               |
@@ -169,7 +171,7 @@ Normalized path `h` is constructed using the following rules:
 
 - On Windows, all `/` separators are converted to `\\`.
 - Consecutive path separators are collapsed into one.
-- Trailing path separator is removed.
+- Trailing path separator is removed unless it represents root directory.
 - Unnecessary current directory `.` components are removed.
 - Parent directory `..` components are resolved where possible.
 - Initial `..` components in an absolute path are dropped.
@@ -194,8 +196,21 @@ Normalized path `h` is constructed using the following rules:
 Canonical path `A` works similarly to `h` but has some differences:
 
 - Evaluation will fail for a non-existent path.
-- The result will always be an absolute path.
+- Result will always be an absolute path.
 - If path is a symbolic link, it will be resolved.
+
+Path without filename `D` removes last name component of a path.
+This might give different result than using parent directory `d`.
+ 
+| Input     | `{d}`   | `{D}`     |
+| --------- | ------- | --------- |
+| `/`       | `/`     | `/`       |
+| `/a`      | `/`     | `/`       |
+| `a/b`     | `a`     | `a`       |
+| `a`       | `.`     | *(empty)* |
+| `..`      | `../..` | *(empty)* |
+| `.`       | `./..`  | *(empty)* |
+| *(empty)* | `..`    | *(empty)* |
 
 ### :ab: Substring filters
 
@@ -477,7 +492,7 @@ find -mindepth 2 -maxdepth 2 -type d | rew -b '{p}_{f}' | mvb -v
 Normalize base names of files to `file_001`, `file_002`, ...
 
 ```bash
-find -type f | rew -b '{p|h}/file_{C|<3:0}{E}' | mvb -v
+find -type f | rew -b '{d}/file_{C|<3:0}{E}' | mvb -v
 ```
 
 Print the first word of each line with removed diacritics (accents).

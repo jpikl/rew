@@ -322,7 +322,7 @@ mod tests {
                         make_parsed(Filter::ToUppercase),
                         make_parsed(Filter::ReplaceAll(Substitution {
                             target: String::from("X"),
-                            replacement: String::from(""),
+                            replacement: String::new(),
                         })),
                     ])),
                 ],

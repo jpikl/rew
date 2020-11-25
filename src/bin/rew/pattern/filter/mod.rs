@@ -25,10 +25,11 @@ pub enum Filter {
     AbsolutePath,
     CanonicalPath,
     NormalizedPath,
-    ParentPath,
+    ParentDirectory,
+    PathWithoutFileName,
     FileName,
     BaseName,
-    BaseNameWithPath,
+    PathWithoutExtension,
     Extension,
     ExtensionWithDot,
 
@@ -84,10 +85,11 @@ impl Filter {
                 'a' => Ok(Self::AbsolutePath),
                 'A' => Ok(Self::CanonicalPath),
                 'h' => Ok(Self::NormalizedPath),
-                'p' => Ok(Self::ParentPath),
+                'd' => Ok(Self::ParentDirectory),
+                'D' => Ok(Self::PathWithoutFileName),
                 'f' => Ok(Self::FileName),
                 'b' => Ok(Self::BaseName),
-                'B' => Ok(Self::BaseNameWithPath),
+                'B' => Ok(Self::PathWithoutExtension),
                 'e' => Ok(Self::Extension),
                 'E' => Ok(Self::ExtensionWithDot),
 
@@ -140,10 +142,11 @@ impl Filter {
             Self::AbsolutePath => path::get_absolute(value, context.current_dir),
             Self::CanonicalPath => path::get_canonical(value, context.current_dir),
             Self::NormalizedPath => path::get_normalized(value),
-            Self::ParentPath => path::get_parent_path(value),
+            Self::ParentDirectory => path::get_parent_directory(value),
+            Self::PathWithoutFileName => path::get_path_without_file_name(value),
             Self::FileName => path::get_file_name(value),
             Self::BaseName => path::get_base_name(value),
-            Self::BaseNameWithPath => path::get_base_name_with_path(value),
+            Self::PathWithoutExtension => path::get_path_without_extension(value),
             Self::Extension => path::get_extension(value),
             Self::ExtensionWithDot => path::get_extension_with_dot(value),
 
@@ -154,30 +157,22 @@ impl Filter {
             }
 
             // Replace filters
-            Self::ReplaceFirst(Substitution {
-                target,
-                replacement,
-            }) => string::replace_first(value, &target, &replacement),
-
-            Self::ReplaceAll(Substitution {
-                target,
-                replacement,
-            }) => string::replace_all(value, &target, &replacement),
+            Self::ReplaceFirst(subst) => {
+                string::replace_first(value, &subst.target, &subst.replacement)
+            }
+            Self::ReplaceAll(subst) => {
+                string::replace_all(value, &subst.target, &subst.replacement)
+            }
             Self::ReplaceEmpty(replacement) => string::replace_empty(value, &replacement),
 
             // Regex filters
             Self::RegexMatch(RegexHolder(regex)) => regex::get_match(value, &regex),
-
-            Self::RegexReplaceFirst(Substitution {
-                target: RegexHolder(regex),
-                replacement,
-            }) => regex::replace_first(value, &regex, &replacement),
-
-            Self::RegexReplaceAll(Substitution {
-                target: RegexHolder(regex),
-                replacement,
-            }) => regex::replace_all(value, &regex, &replacement),
-
+            Self::RegexReplaceFirst(subst) => {
+                regex::replace_first(value, &subst.target.0, &subst.replacement)
+            }
+            Self::RegexReplaceAll(subst) => {
+                regex::replace_all(value, &subst.target.0, &subst.replacement)
+            }
             Self::RegexCapture(number) => {
                 regex::get_capture(context.regex_captures.as_ref(), *number)
             }
@@ -188,18 +183,14 @@ impl Filter {
             Self::ToUppercase => format::to_uppercase(value),
             Self::ToAscii => format::to_ascii(value),
             Self::RemoveNonAscii => format::remove_non_ascii(value),
-
             Self::LeftPad(Padding::Fixed(padding)) => format::left_pad(value, &padding),
-            Self::LeftPad(Padding::Repeated(Repetition {
-                value: padding,
-                count,
-            })) => format::left_pad_repeat(value, &padding, *count),
-
+            Self::LeftPad(Padding::Repeated(repetition)) => {
+                format::left_pad_repeat(value, &repetition.value, repetition.count)
+            }
             Self::RightPad(Padding::Fixed(padding)) => format::right_pad(value, &padding),
-            Self::RightPad(Padding::Repeated(Repetition {
-                value: padding,
-                count,
-            })) => format::right_pad_repeat(value, &padding, *count),
+            Self::RightPad(Padding::Repeated(repetition)) => {
+                format::right_pad_repeat(value, &repetition.value, repetition.count)
+            }
 
             // Generators
             Self::Repeat(Repetition { value, count }) => generate::repetition(value, *count),
@@ -220,10 +211,11 @@ impl fmt::Display for Filter {
             Self::AbsolutePath => write!(formatter, "Absolute path"),
             Self::CanonicalPath => write!(formatter, "Canonical path"),
             Self::NormalizedPath => write!(formatter, "Normalized path"),
-            Self::ParentPath => write!(formatter, "Parent path"),
+            Self::ParentDirectory => write!(formatter, "Parent directory"),
+            Self::PathWithoutFileName => write!(formatter, "Path without file name"),
             Self::FileName => write!(formatter, "File name"),
             Self::BaseName => write!(formatter, "Base name"),
-            Self::BaseNameWithPath => write!(formatter, "Base name with path"),
+            Self::PathWithoutExtension => write!(formatter, "Path without extension"),
             Self::Extension => write!(formatter, "Extension"),
             Self::ExtensionWithDot => write!(formatter, "Extension with dot"),
 
@@ -340,8 +332,13 @@ mod tests {
         }
 
         #[test]
-        fn parent_path() {
-            assert_eq!(parse("p"), Ok(Filter::ParentPath));
+        fn parent_directory() {
+            assert_eq!(parse("d"), Ok(Filter::ParentDirectory));
+        }
+
+        #[test]
+        fn path_without_filename() {
+            assert_eq!(parse("D"), Ok(Filter::PathWithoutFileName));
         }
 
         #[test]
@@ -355,8 +352,8 @@ mod tests {
         }
 
         #[test]
-        fn base_name_with_path() {
-            assert_eq!(parse("B"), Ok(Filter::BaseNameWithPath));
+        fn path_without_extension() {
+            assert_eq!(parse("B"), Ok(Filter::PathWithoutExtension));
         }
 
         #[test]
@@ -428,7 +425,7 @@ mod tests {
                 parse("r/ab"),
                 Ok(Filter::ReplaceFirst(Substitution {
                     target: String::from("ab"),
-                    replacement: String::from(""),
+                    replacement: String::new(),
                 })),
             );
             assert_eq!(
@@ -453,7 +450,7 @@ mod tests {
                 parse("R/ab"),
                 Ok(Filter::ReplaceAll(Substitution {
                     target: String::from("ab"),
-                    replacement: String::from(""),
+                    replacement: String::new(),
                 })),
             );
             assert_eq!(
@@ -509,7 +506,7 @@ mod tests {
                 parse("s/[0-9]+"),
                 Ok(Filter::RegexReplaceFirst(Substitution {
                     target: RegexHolder(Regex::new("[0-9]+").unwrap()),
-                    replacement: String::from(""),
+                    replacement: String::new(),
                 })),
             );
             assert_eq!(
@@ -543,7 +540,7 @@ mod tests {
                 parse("S/[0-9]+"),
                 Ok(Filter::RegexReplaceAll(Substitution {
                     target: RegexHolder(Regex::new("[0-9]+").unwrap()),
-                    replacement: String::from(""),
+                    replacement: String::new(),
                 })),
             );
             assert_eq!(
@@ -728,9 +725,19 @@ mod tests {
         }
 
         #[test]
-        fn parent_path() {
+        fn parent_directory() {
             assert_eq!(
-                Filter::ParentPath.eval(String::from("root/parent/file.ext"), &make_eval_context()),
+                Filter::ParentDirectory
+                    .eval(String::from("root/parent/file.ext"), &make_eval_context()),
+                Ok(String::from("root/parent"))
+            );
+        }
+
+        #[test]
+        fn path_without_filename() {
+            assert_eq!(
+                Filter::PathWithoutFileName
+                    .eval(String::from("root/parent/file.ext"), &make_eval_context()),
                 Ok(String::from("root/parent"))
             );
         }
@@ -752,9 +759,9 @@ mod tests {
         }
 
         #[test]
-        fn base_name_with_path() {
+        fn path_without_extension() {
             assert_eq!(
-                Filter::BaseNameWithPath
+                Filter::PathWithoutExtension
                     .eval(String::from("root/parent/file.ext"), &make_eval_context()),
                 Ok(String::from("root/parent/file"))
             );
@@ -1004,8 +1011,16 @@ mod tests {
         }
 
         #[test]
-        fn parent_path() {
-            assert_eq!(Filter::ParentPath.to_string(), "Parent path");
+        fn parent_directory() {
+            assert_eq!(Filter::ParentDirectory.to_string(), "Parent directory");
+        }
+
+        #[test]
+        fn path_without_filename() {
+            assert_eq!(
+                Filter::PathWithoutFileName.to_string(),
+                "Path without file name"
+            );
         }
 
         #[test]
@@ -1019,8 +1034,11 @@ mod tests {
         }
 
         #[test]
-        fn base_name_with_path() {
-            assert_eq!(Filter::BaseNameWithPath.to_string(), "Base name with path");
+        fn path_without_extension() {
+            assert_eq!(
+                Filter::PathWithoutExtension.to_string(),
+                "Path without extension"
+            );
         }
 
         #[test]

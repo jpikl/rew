@@ -96,7 +96,7 @@ mod tests {
             let mut reader = Reader::from("<");
             assert_eq!(
                 Padding::parse(&mut reader, '<'),
-                Ok(Padding::Fixed(String::from("")))
+                Ok(Padding::Fixed(String::new()))
             );
             assert_eq!(reader.position(), 1);
         }
@@ -118,7 +118,7 @@ mod tests {
                 Padding::parse(&mut reader, '<'),
                 Ok(Padding::Repeated(Repetition {
                     count: 10,
-                    value: String::from("")
+                    value: String::new()
                 }))
             );
             assert_eq!(reader.position(), 3);

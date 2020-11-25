@@ -140,7 +140,7 @@ mod tests {
 
         #[test]
         fn empty_with_empty() {
-            assert_eq!(left_pad(String::from(""), ""), Ok(String::from("")));
+            assert_eq!(left_pad(String::new(), ""), Ok(String::new()));
         }
 
         #[test]
@@ -195,7 +195,7 @@ mod tests {
 
         #[test]
         fn empty_with_empty() {
-            assert_eq!(right_pad(String::from(""), ""), Ok(String::from("")));
+            assert_eq!(right_pad(String::new(), ""), Ok(String::new()));
         }
 
         #[test]
