@@ -127,17 +127,17 @@ printf 'a\0b' | rew -z # Convert NUL bytes to newlines
 
 ### :railway_track: Path filters
 
-| Filter | Description            |
-| ------ | ---------------------- |
-| `a`    | Absolute path          |
-| `p`    | Normalized path        |
-| `P`    | Canonical path         |
-| `d`    | Parent directory       |
-| `D`    | Path without file name |
-| `f`    | File name              |
-| `b`    | Base name              |
-| `B`    | Path without extension |
-| `e`    | Extension              |
+| Filter | Description                 |
+| ------ | --------------------------- |
+| `a`    | Absolute path               |
+| `p`    | Normalized path             |
+| `P`    | Canonical path              |
+| `d`    | Parent directory            |
+| `D`    | Path without last component |
+| `f`    | File name                   |
+| `b`    | Base name                   |
+| `B`    | Path without extension      |
+| `e`    | Extension                   |
 | `E`    | Extension with dot<br/>Dot is not printed for missing extension. |
 
 Let us assume the following directory structure:
@@ -199,8 +199,8 @@ Canonical path `P` works similarly to `p` but has some differences:
 - Result will always be an absolute path.
 - If path is a symbolic link, it will be resolved.
 
-Path without filename `D` removes last name component of a path.
-This might give different result than using parent directory `d`.
+Parent directory `d` might give a different result than `D` which removes last component of a path.
+Both of these filters preserve root directory.
  
 | Input     | `{d}`   | `{D}`     |
 | --------- | ------- | --------- |

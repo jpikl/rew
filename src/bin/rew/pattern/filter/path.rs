@@ -773,11 +773,86 @@ mod tests {
         }
 
         #[test]
-        fn some() {
+        fn name() {
             assert_eq!(
-                get_file_name(String::from("root/parent/file.ext")),
+                get_file_name(String::from("file.ext")),
                 Ok(String::from("file.ext"))
             );
+        }
+
+        #[test]
+        fn name_parent() {
+            assert_eq!(
+                get_file_name(String::from("dir/file.ext")),
+                Ok(String::from("file.ext"))
+            );
+        }
+
+        #[test]
+        fn dot() {
+            assert_eq!(get_file_name(String::from(".")), Ok(String::new()));
+        }
+
+        #[test]
+        fn dot_parent() {
+            assert_eq!(
+                get_file_name(String::from("./file.ext")),
+                Ok(String::from("file.ext"))
+            );
+        }
+
+        #[test]
+        fn double_dot() {
+            assert_eq!(get_file_name(String::from("..")), Ok(String::new()));
+        }
+
+        #[test]
+        fn double_dot_parent() {
+            assert_eq!(
+                get_file_name(String::from("../file.ext")),
+                Ok(String::from("file.ext"))
+            );
+        }
+
+        #[cfg(unix)]
+        mod unix {
+            use super::*;
+
+            #[test]
+            fn root() {
+                assert_eq!(get_file_name(String::from("/")), Ok(String::new()));
+            }
+
+            #[test]
+            fn root_parent() {
+                assert_eq!(
+                    get_file_name(String::from("/file.ext")),
+                    Ok(String::from("file.ext"))
+                );
+            }
+        }
+
+        #[cfg(windows)]
+        mod windows {
+            use super::*;
+
+            #[test]
+            fn root() {
+                assert_eq!(get_file_name(String::from("C:\\")), Ok(String::new()));
+            }
+
+            #[test]
+            fn root_parent() {
+                assert_eq!(
+                    get_file_name(String::from("C:\\file.ext")),
+                    Ok(String::from("file.ext"))
+                );
+            }
+
+            #[test]
+            fn prefix() {
+                assert_eq!(get_file_name(String::from("C:")), Ok(String::new()));
+            }
         }
     }
 

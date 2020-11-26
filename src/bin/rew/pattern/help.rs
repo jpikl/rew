@@ -69,7 +69,7 @@ const FILTERS_HELP: &str = indoc! {"
     `p`         Normalized path
     `P`         Canonical path
     `d`         Parent directory
-    `D`         Path without file name
+    `D`         Path without last component
     `f`         File name
     `b`         Base name
     `B`         Path without extension
@@ -133,8 +133,8 @@ Canonical path `P` works similarly to `p` but has some differences:
  - Result will always be an absolute path.
  - If path is a symbolic link, it will be resolved.
  
-Path without filename `D` removes last name component of a path.
-This might give different result than using parent directory `d`.
+Parent directory `d` might give a different result than `D` which removes last component of a path.
+Both of these filters preserve root directory.
  
     INPUT    {d}    {D}
     -----------------------
