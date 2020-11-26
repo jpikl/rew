@@ -101,16 +101,17 @@ Expression may contain one or more filters, delimited by `|`, which are consecut
 
 Character `#` starts an escape sequence.
 
-| Sequence | Description     |
-| -------- |---------------  |
-| `#n`     | New line        |
-| `#r`     | Carriage return |
-| `#t`     | Horizontal tab  |
-| `#0`     | Null            |
-| `#{`     | Escaped `{`     |
-| `#\|`    | Escaped `\|`    |
-| `#}`     | Escaped `{`     |
-| `##`     | Escaped `#`     |
+| Sequence | Description                |
+| -------- |--------------------------- |
+| `#/`     | System directory separator<br>`\` on Windows<br>`/` everywhere else  |
+| `#n`     | New line                   |
+| `#r`     | Carriage return            |
+| `#t`     | Horizontal tab             |
+| `#0`     | Null                       |
+| `#{`     | Escaped `{`                |
+| `#\|`    | Escaped `\|`               |
+| `#}`     | Escaped `{`                |
+| `##`     | Escaped `#`                |
 
 Use `--escape` option to set a different escape character.
 
@@ -175,8 +176,8 @@ For working directory `/home/bob` and input `../alice/notes.txt`, filters would 
 Normalized path `p` is constructed using the following rules:
 
 - On Windows, all `/` separators are converted to `\\`.
-- Consecutive path separators are collapsed into one.
-- Non-root trailing path separator is removed.
+- Consecutive directory separators are collapsed into one.
+- Non-root trailing directory separator is removed.
 - Unnecessary current directory `.` components are removed.
 - Parent directory `..` components are resolved where possible.
 - Initial `..` components in an absolute path are dropped.
@@ -206,7 +207,7 @@ Canonical path `P` works similarly to `p` but has some differences:
 
 Parent directory `d` might give a different result than `D` which removes last name of a path.
 Similarly, file name `f` might not be the same as last name `F` which is a complement of `D`.
- 
+
 | Input     | `{d}`   | `{D}`     | `{f}`     | `{F}`     |
 | --------- | ------- | --------- | ----------| ----------|
 | `/`       | `/`     | `/`       | *(empty)* | *(empty)* |

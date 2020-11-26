@@ -42,7 +42,10 @@ Use `--help-filters` flag to print filter reference.
 Character `#` starts an escape sequence.
 
     SEQUENCE    DESCRIPTION
-    ---------------------------
+    -------------------------------------
+    `#/`          System directory separator
+                `\` on Windows
+                `/` everywhere else
     `#n`          New line
     `#r`          Carriage return
     `#t`          Horizontal tab
@@ -108,8 +111,8 @@ For working directory `/home/bob` and input `../alice/notes.txt`, filters would 
 Normalized path `p` is constructed using the following rules:
 
  - On Windows, all `/` separators are converted to `\\`.
- - Consecutive path separators are collapsed into one.
- - Non-root trailing path separator is removed.
+ - Consecutive directory separators are collapsed into one.
+ - Non-root trailing directory separator is removed.
  - Unnecessary current directory `.` components are removed.
  - Parent directory `..` components are resolved where possible.
  - Initial `..` components in an absolute path are dropped.

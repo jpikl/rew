@@ -1,7 +1,8 @@
 use crate::pattern::char::Char;
 use crate::pattern::parse::{Error, ErrorKind, Parsed, Result};
 use crate::pattern::reader::Reader;
-use crate::pattern::symbols::{CR, ESCAPE, EXPR_END, EXPR_START, LF, NUL, PIPE, TAB};
+use crate::pattern::symbols::{CR, ESCAPE, EXPR_END, EXPR_START, LF, NUL, PIPE, SEP, TAB};
+use std::path::MAIN_SEPARATOR;
 use std::result;
 
 #[derive(Debug, PartialEq)]
@@ -94,6 +95,7 @@ impl Lexer {
                 EXPR_START => EXPR_START,
                 EXPR_END => EXPR_END,
                 PIPE => PIPE,
+                SEP => MAIN_SEPARATOR,
                 LF => '\n',
                 CR => '\r',
                 TAB => '\t',
@@ -216,6 +218,22 @@ mod tests {
             lexer.read_token(),
             Ok(Some(Parsed {
                 value: Token::Raw(vec![Char::Escaped('|', ['#', '|'])]),
+                range: 0..2,
+            }))
+        );
+        assert_eq!(lexer.read_token(), Ok(None));
+    }
+
+    #[test]
+    fn escaped_separator() {
+        let mut lexer = Lexer::new("#/");
+        assert_eq!(
+            lexer.read_token(),
+            Ok(Some(Parsed {
+                value: Token::Raw(vec![Char::Escaped(
+                    if cfg!(windows) { '\\' } else { '/' },
+                    ['#', '/']
+                )]),
                 range: 0..2,
             }))
         );
