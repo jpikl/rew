@@ -69,7 +69,7 @@ const FILTERS_HELP: &str = indoc! {"
     `p`         Normalized path
     `P`         Canonical path
     `d`         Parent directory
-    `D`         Path without last component
+    `D`         Path without last name
     `f`         File name
     `b`         Base name
     `B`         Path without extension
@@ -105,7 +105,7 @@ Normalized path `p` is constructed using the following rules:
 
  - On Windows, all `/` separators are converted to `\\`.
  - Consecutive path separators are collapsed into one.
- - Trailing path separator is removed unless it represents root directory.
+ - Non-root trailing path separator is removed.
  - Unnecessary current directory `.` components are removed.
  - Parent directory `..` components are resolved where possible.
  - Initial `..` components in an absolute path are dropped.
@@ -133,18 +133,18 @@ Canonical path `P` works similarly to `p` but has some differences:
  - Result will always be an absolute path.
  - If path is a symbolic link, it will be resolved.
  
-Parent directory `d` might give a different result than `D` which removes last component of a path.
-Both of these filters preserve root directory.
+Parent directory `d` might give a different result than `D` which removes last name of a path.
+Similarly, file name `f` might not be the same as last name `F` which is a complement of `D`.
  
-    INPUT    {d}    {D}
-    -----------------------
-    /        /      /
-    /a       /      /
-    a/b      a      a
-    a        .      (empty)
-    ..       ../..  (empty)
-    .        ./..   (empty)
-    (empty)  ..     (empty)
+    INPUT      {d}      {D}        {f}        {F}     
+    --------------------------------------------------
+    /          /        /          (empty)    (empty) 
+    /a         /        /          a          a       
+    a/b        a        a          b          b       
+    a          .        (empty)    a          a       
+    ..         ../..    (empty)    (empty)    ..      
+    .          ./..     (empty)    (empty)    .       
+    (empty)    ..       (empty)    (empty)    (empty) 
 
 ========================================
  Substring filters

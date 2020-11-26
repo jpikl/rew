@@ -127,17 +127,18 @@ printf 'a\0b' | rew -z # Convert NUL bytes to newlines
 
 ### :railway_track: Path filters
 
-| Filter | Description                 |
-| ------ | --------------------------- |
-| `a`    | Absolute path               |
-| `p`    | Normalized path             |
-| `P`    | Canonical path              |
-| `d`    | Parent directory            |
-| `D`    | Path without last component |
-| `f`    | File name                   |
-| `b`    | Base name                   |
-| `B`    | Path without extension      |
-| `e`    | Extension                   |
+| Filter | Description             |
+| ------ | ----------------------- |
+| `a`    | Absolute path           |
+| `p`    | Normalized path         |
+| `P`    | Canonical path          |
+| `d`    | Parent directory        |
+| `D`    | Path without last name  |
+| `f`    | File name               |
+| `F`    | Last name               |
+| `b`    | Base name               |
+| `B`    | Path without extension  |
+| `e`    | Extension               |
 | `E`    | Extension with dot<br/>Dot is not printed for missing extension. |
 
 Let us assume the following directory structure:
@@ -161,6 +162,7 @@ For working directory `/home/bob` and input `../alice/notes.txt`, filters would 
 | `d`    | `../alice`                     |
 | `D`    | `../alice`                     |
 | `f`    | `notes.txt`                    |
+| `F`    | `notes.txt`                    |
 | `b`    | `notes`                        |
 | `B`    | `../alice/notes`               |
 | `e`    | `txt`                          |
@@ -171,7 +173,7 @@ Normalized path `p` is constructed using the following rules:
 
 - On Windows, all `/` separators are converted to `\\`.
 - Consecutive path separators are collapsed into one.
-- Trailing path separator is removed unless it represents root directory.
+- Non-root trailing path separator is removed.
 - Unnecessary current directory `.` components are removed.
 - Parent directory `..` components are resolved where possible.
 - Initial `..` components in an absolute path are dropped.
@@ -199,18 +201,18 @@ Canonical path `P` works similarly to `p` but has some differences:
 - Result will always be an absolute path.
 - If path is a symbolic link, it will be resolved.
 
-Parent directory `d` might give a different result than `D` which removes last component of a path.
-Both of these filters preserve root directory.
+Parent directory `d` might give a different result than `D` which removes last name of a path.
+Similarly, file name `f` might not be the same as last name `F` which is a complement of `D`.
  
-| Input     | `{d}`   | `{D}`     |
-| --------- | ------- | --------- |
-| `/`       | `/`     | `/`       |
-| `/a`      | `/`     | `/`       |
-| `a/b`     | `a`     | `a`       |
-| `a`       | `.`     | *(empty)* |
-| `..`      | `../..` | *(empty)* |
-| `.`       | `./..`  | *(empty)* |
-| *(empty)* | `..`    | *(empty)* |
+| Input     | `{d}`   | `{D}`     | `{f}`     | `{F}`     |
+| --------- | ------- | --------- | ----------| ----------|
+| `/`       | `/`     | `/`       | *(empty)* | *(empty)* |
+| `/a`      | `/`     | `/`       | `a`       | `a`       |
+| `a/b`     | `a`     | `a`       | `b`       | `b`       |
+| `a`       | `.`     | *(empty)* | `a`       | `a`       |
+| `..`      | `../..` | *(empty)* | *(empty)* | `..`      |
+| `.`       | `./..`  | *(empty)* | *(empty)* | `.`       |
+| *(empty)* | `..`    | *(empty)* | *(empty)* | *(empty)* |
 
 ### :ab: Substring filters
 

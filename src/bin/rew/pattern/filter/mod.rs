@@ -26,8 +26,9 @@ pub enum Filter {
     NormalizedPath,
     CanonicalPath,
     ParentDirectory,
-    PathWithoutLastComponent,
+    PathWithoutLastName,
     FileName,
+    LastName,
     BaseName,
     PathWithoutExtension,
     Extension,
@@ -86,8 +87,9 @@ impl Filter {
                 'p' => Ok(Self::NormalizedPath),
                 'P' => Ok(Self::CanonicalPath),
                 'd' => Ok(Self::ParentDirectory),
-                'D' => Ok(Self::PathWithoutLastComponent),
+                'D' => Ok(Self::PathWithoutLastName),
                 'f' => Ok(Self::FileName),
+                'F' => Ok(Self::LastName),
                 'b' => Ok(Self::BaseName),
                 'B' => Ok(Self::PathWithoutExtension),
                 'e' => Ok(Self::Extension),
@@ -143,8 +145,9 @@ impl Filter {
             Self::NormalizedPath => path::get_normalized(value),
             Self::CanonicalPath => path::get_canonical(value, context.current_dir),
             Self::ParentDirectory => path::get_parent_directory(value),
-            Self::PathWithoutLastComponent => path::get_without_last_component(value),
+            Self::PathWithoutLastName => path::get_without_last_name(value),
             Self::FileName => path::get_file_name(value),
+            Self::LastName => path::get_last_name(value),
             Self::BaseName => path::get_base_name(value),
             Self::PathWithoutExtension => path::get_without_extension(value),
             Self::Extension => path::get_extension(value),
@@ -212,8 +215,9 @@ impl fmt::Display for Filter {
             Self::NormalizedPath => write!(formatter, "Normalized path"),
             Self::CanonicalPath => write!(formatter, "Canonical path"),
             Self::ParentDirectory => write!(formatter, "Parent directory"),
-            Self::PathWithoutLastComponent => write!(formatter, "Path without last component"),
+            Self::PathWithoutLastName => write!(formatter, "Path without last name"),
             Self::FileName => write!(formatter, "File name"),
+            Self::LastName => write!(formatter, "Last name"),
             Self::BaseName => write!(formatter, "Base name"),
             Self::PathWithoutExtension => write!(formatter, "Path without extension"),
             Self::Extension => write!(formatter, "Extension"),
@@ -338,7 +342,7 @@ mod tests {
 
         #[test]
         fn path_without_filename() {
-            assert_eq!(parse("D"), Ok(Filter::PathWithoutLastComponent));
+            assert_eq!(parse("D"), Ok(Filter::PathWithoutLastName));
         }
 
         #[test]
@@ -736,7 +740,7 @@ mod tests {
         #[test]
         fn path_without_filename() {
             assert_eq!(
-                Filter::PathWithoutLastComponent
+                Filter::PathWithoutLastName
                     .eval(String::from("root/parent/file.ext"), &make_eval_context()),
                 Ok(String::from("root/parent"))
             );
@@ -1018,8 +1022,8 @@ mod tests {
         #[test]
         fn path_without_filename() {
             assert_eq!(
-                Filter::PathWithoutLastComponent.to_string(),
-                "Path without last component"
+                Filter::PathWithoutLastName.to_string(),
+                "Path without last name"
             );
         }
 
