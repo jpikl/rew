@@ -127,19 +127,21 @@ printf 'a\0b' | rew -z # Convert NUL bytes to newlines
 
 ### :railway_track: Path filters
 
-| Filter | Description             |
-| ------ | ----------------------- |
-| `a`    | Absolute path           |
-| `p`    | Normalized path         |
-| `P`    | Canonical path          |
-| `d`    | Parent directory        |
-| `D`    | Path without last name  |
-| `f`    | File name               |
-| `F`    | Last name               |
-| `b`    | Base name               |
-| `B`    | Path without extension  |
-| `e`    | Extension               |
+| Filter | Description               |
+| ------ | ------------------------- |
+| `a`    | Absolute path             |
+| `p`    | Normalized path           |
+| `P`    | Canonical path            |
+| `d`    | Parent directory          |
+| `D`    | Remove last name          |
+| `f`    | File name                 |
+| `F`    | Last name                 |
+| `b`    | Base name                 |
+| `B`    | Remove extension          |
+| `e`    | Extension                 |
 | `E`    | Extension with dot<br/>Dot is not printed for missing extension. |
+| `z`    | Ensure trailing separator |
+| `Z`    | Remove trailing separator |
 
 Let us assume the following directory structure:
 
@@ -167,7 +169,8 @@ For working directory `/home/bob` and input `../alice/notes.txt`, filters would 
 | `B`    | `../alice/notes`               |
 | `e`    | `txt`                          |
 | `E`    | `.txt`                         |
-
+| `z`    | `../alice/notes.txt/`          |
+| `Z`    | `../alice/notes.txt`           |
 
 Normalized path `p` is constructed using the following rules:
 

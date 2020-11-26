@@ -69,13 +69,15 @@ const FILTERS_HELP: &str = indoc! {"
     `p`         Normalized path
     `P`         Canonical path
     `d`         Parent directory
-    `D`         Path without last name
+    `D`         Remove last name
     `f`         File name
     `b`         Base name
-    `B`         Path without extension
+    `B`         Remove extension
     `e`         Extension
     `E`         Extension with dot
               Dot is not printed for missing extension.
+    `z`         Ensure trailing separator
+    `Z`         Remove trailing separator
 
 Let us assume the following directory structure:
 
@@ -100,6 +102,8 @@ For working directory `/home/bob` and input `../alice/notes.txt`, filters would 
     `B`         ../alice/notes
     `e`         txt
     `E`         .txt
+    `z`         ../alice/notes.txt/
+    `Z`         ../alice/notes.txt
 
 Normalized path `p` is constructed using the following rules:
 

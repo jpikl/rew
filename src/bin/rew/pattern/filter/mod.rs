@@ -26,13 +26,15 @@ pub enum Filter {
     NormalizedPath,
     CanonicalPath,
     ParentDirectory,
-    PathWithoutLastName,
+    RemoveLastName,
     FileName,
     LastName,
     BaseName,
-    PathWithoutExtension,
+    RemoveExtension,
     Extension,
     ExtensionWithDot,
+    EnsureTrailingSeparator,
+    RemoveTrailingSeparator,
 
     // Substring filters
     Substring(IndexRange),
@@ -87,13 +89,15 @@ impl Filter {
                 'p' => Ok(Self::NormalizedPath),
                 'P' => Ok(Self::CanonicalPath),
                 'd' => Ok(Self::ParentDirectory),
-                'D' => Ok(Self::PathWithoutLastName),
+                'D' => Ok(Self::RemoveLastName),
                 'f' => Ok(Self::FileName),
                 'F' => Ok(Self::LastName),
                 'b' => Ok(Self::BaseName),
-                'B' => Ok(Self::PathWithoutExtension),
+                'B' => Ok(Self::RemoveExtension),
                 'e' => Ok(Self::Extension),
                 'E' => Ok(Self::ExtensionWithDot),
+                'z' => Ok(Self::EnsureTrailingSeparator),
+                'Z' => Ok(Self::RemoveTrailingSeparator),
 
                 // Substring filters
                 'n' => Ok(Self::Substring(IndexRange::parse(reader)?)),
@@ -145,13 +149,15 @@ impl Filter {
             Self::NormalizedPath => path::get_normalized(value),
             Self::CanonicalPath => path::get_canonical(value, context.current_dir),
             Self::ParentDirectory => path::get_parent_directory(value),
-            Self::PathWithoutLastName => path::get_without_last_name(value),
+            Self::RemoveLastName => path::get_without_last_name(value),
             Self::FileName => path::get_file_name(value),
             Self::LastName => path::get_last_name(value),
             Self::BaseName => path::get_base_name(value),
-            Self::PathWithoutExtension => path::get_without_extension(value),
+            Self::RemoveExtension => path::get_without_extension(value),
             Self::Extension => path::get_extension(value),
             Self::ExtensionWithDot => path::get_extension_with_dot(value),
+            Self::EnsureTrailingSeparator => path::ensure_trailing_separator(value),
+            Self::RemoveTrailingSeparator => path::remove_trailing_separator(value),
 
             // Substring filters
             Self::Substring(range) => substr::get_forward(value, range.start(), range.length()),
@@ -215,13 +221,15 @@ impl fmt::Display for Filter {
             Self::NormalizedPath => write!(formatter, "Normalized path"),
             Self::CanonicalPath => write!(formatter, "Canonical path"),
             Self::ParentDirectory => write!(formatter, "Parent directory"),
-            Self::PathWithoutLastName => write!(formatter, "Path without last name"),
+            Self::RemoveLastName => write!(formatter, "Remove last name"),
             Self::FileName => write!(formatter, "File name"),
             Self::LastName => write!(formatter, "Last name"),
             Self::BaseName => write!(formatter, "Base name"),
-            Self::PathWithoutExtension => write!(formatter, "Path without extension"),
+            Self::RemoveExtension => write!(formatter, "Remove extension"),
             Self::Extension => write!(formatter, "Extension"),
             Self::ExtensionWithDot => write!(formatter, "Extension with dot"),
+            Self::EnsureTrailingSeparator => write!(formatter, "Ensure trailing separator"),
+            Self::RemoveTrailingSeparator => write!(formatter, "Remove trailing separator"),
 
             // Substring filters
             Self::Substring(range) => write!(formatter, "Substring from {}", range),
@@ -341,8 +349,8 @@ mod tests {
         }
 
         #[test]
-        fn path_without_filename() {
-            assert_eq!(parse("D"), Ok(Filter::PathWithoutLastName));
+        fn remove_file_name() {
+            assert_eq!(parse("D"), Ok(Filter::RemoveLastName));
         }
 
         #[test]
@@ -356,8 +364,8 @@ mod tests {
         }
 
         #[test]
-        fn path_without_extension() {
-            assert_eq!(parse("B"), Ok(Filter::PathWithoutExtension));
+        fn remove_extension() {
+            assert_eq!(parse("B"), Ok(Filter::RemoveExtension));
         }
 
         #[test]
@@ -368,6 +376,16 @@ mod tests {
         #[test]
         fn extension_with_dot() {
             assert_eq!(parse("E"), Ok(Filter::ExtensionWithDot));
+        }
+
+        #[test]
+        fn ensure_trailing_separator() {
+            assert_eq!(parse("z"), Ok(Filter::EnsureTrailingSeparator));
+        }
+
+        #[test]
+        fn remove_trailing_separator() {
+            assert_eq!(parse("Z"), Ok(Filter::RemoveTrailingSeparator));
         }
 
         #[test]
@@ -738,9 +756,9 @@ mod tests {
         }
 
         #[test]
-        fn path_without_filename() {
+        fn remove_file_name() {
             assert_eq!(
-                Filter::PathWithoutLastName
+                Filter::RemoveLastName
                     .eval(String::from("root/parent/file.ext"), &make_eval_context()),
                 Ok(String::from("root/parent"))
             );
@@ -763,9 +781,9 @@ mod tests {
         }
 
         #[test]
-        fn path_without_extension() {
+        fn remove_extension() {
             assert_eq!(
-                Filter::PathWithoutExtension
+                Filter::RemoveExtension
                     .eval(String::from("root/parent/file.ext"), &make_eval_context()),
                 Ok(String::from("root/parent/file"))
             );
@@ -785,6 +803,24 @@ mod tests {
                 Filter::ExtensionWithDot
                     .eval(String::from("root/parent/file.ext"), &make_eval_context()),
                 Ok(String::from(".ext"))
+            );
+        }
+
+        #[test]
+        fn ensure_trailing_separator() {
+            assert_eq!(
+                Filter::EnsureTrailingSeparator
+                    .eval(String::from("root/parent"), &make_eval_context()),
+                Ok(String::from(format!("root/parent{}", MAIN_SEPARATOR)))
+            );
+        }
+
+        #[test]
+        fn remove_trailing_separator() {
+            assert_eq!(
+                Filter::RemoveTrailingSeparator
+                    .eval(String::from("root/parent/"), &make_eval_context()),
+                Ok(String::from("root/parent"))
             );
         }
 
@@ -1020,11 +1056,8 @@ mod tests {
         }
 
         #[test]
-        fn path_without_filename() {
-            assert_eq!(
-                Filter::PathWithoutLastName.to_string(),
-                "Path without last name"
-            );
+        fn remove_file_name() {
+            assert_eq!(Filter::RemoveLastName.to_string(), "Remove last name");
         }
 
         #[test]
@@ -1038,11 +1071,8 @@ mod tests {
         }
 
         #[test]
-        fn path_without_extension() {
-            assert_eq!(
-                Filter::PathWithoutExtension.to_string(),
-                "Path without extension"
-            );
+        fn remove_extension() {
+            assert_eq!(Filter::RemoveExtension.to_string(), "Remove extension");
         }
 
         #[test]
@@ -1051,8 +1081,24 @@ mod tests {
         }
 
         #[test]
-        fn extension_with_dor() {
+        fn extension_with_dot() {
             assert_eq!(Filter::ExtensionWithDot.to_string(), "Extension with dot");
+        }
+
+        #[test]
+        fn ensure_trailing_separator() {
+            assert_eq!(
+                Filter::EnsureTrailingSeparator.to_string(),
+                "Ensure trailing separator"
+            );
+        }
+
+        #[test]
+        fn remove_trailing_separator() {
+            assert_eq!(
+                Filter::RemoveTrailingSeparator.to_string(),
+                "Remove trailing separator"
+            );
         }
 
         #[test]
