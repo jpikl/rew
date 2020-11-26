@@ -121,7 +121,7 @@ pub fn get_parent_directory(value: String) -> Result {
     }
 }
 
-pub fn get_path_without_file_name(value: String) -> Result {
+pub fn get_without_last_component(value: String) -> Result {
     if let Some(parent) = Path::new(&value).parent() {
         to_string(parent)
     } else {
@@ -137,7 +137,7 @@ pub fn get_base_name(value: String) -> Result {
     opt_to_string(Path::new(&value).file_stem())
 }
 
-pub fn get_path_without_extension(mut value: String) -> Result {
+pub fn get_without_extension(mut value: String) -> Result {
     if let Some(extension_len) = Path::new(&value).extension().map(OsStr::len) {
         value.replace_range((value.len() - extension_len - 1).., "");
     }
@@ -657,18 +657,18 @@ mod tests {
         }
     }
 
-    mod get_path_without_file_name {
+    mod get_without_last_component {
         use super::*;
 
         #[test]
         fn empty() {
-            assert_eq!(get_path_without_file_name(String::new()), Ok(String::new()));
+            assert_eq!(get_without_last_component(String::new()), Ok(String::new()));
         }
 
         #[test]
         fn name() {
             assert_eq!(
-                get_path_without_file_name(String::from("file.ext")),
+                get_without_last_component(String::from("file.ext")),
                 Ok(String::new())
             );
         }
@@ -676,7 +676,7 @@ mod tests {
         #[test]
         fn name_parent() {
             assert_eq!(
-                get_path_without_file_name(String::from("dir/file.ext")),
+                get_without_last_component(String::from("dir/file.ext")),
                 Ok(String::from("dir"))
             );
         }
@@ -684,7 +684,7 @@ mod tests {
         #[test]
         fn dot() {
             assert_eq!(
-                get_path_without_file_name(String::from(".")),
+                get_without_last_component(String::from(".")),
                 Ok(String::new())
             );
         }
@@ -692,7 +692,7 @@ mod tests {
         #[test]
         fn dot_parent() {
             assert_eq!(
-                get_path_without_file_name(String::from("./file.ext")),
+                get_without_last_component(String::from("./file.ext")),
                 Ok(String::from("."))
             );
         }
@@ -700,7 +700,7 @@ mod tests {
         #[test]
         fn double_dot() {
             assert_eq!(
-                get_path_without_file_name(String::from("..")),
+                get_without_last_component(String::from("..")),
                 Ok(String::new())
             );
         }
@@ -708,7 +708,7 @@ mod tests {
         #[test]
         fn double_dot_parent() {
             assert_eq!(
-                get_path_without_file_name(String::from("../file.ext")),
+                get_without_last_component(String::from("../file.ext")),
                 Ok(String::from(".."))
             );
         }
@@ -720,7 +720,7 @@ mod tests {
             #[test]
             fn root() {
                 assert_eq!(
-                    get_path_without_file_name(String::from("/")),
+                    get_without_last_component(String::from("/")),
                     Ok(String::from("/"))
                 );
             }
@@ -728,7 +728,7 @@ mod tests {
             #[test]
             fn root_parent() {
                 assert_eq!(
-                    get_path_without_file_name(String::from("/file.ext")),
+                    get_without_last_component(String::from("/file.ext")),
                     Ok(String::from("/"))
                 );
             }
@@ -741,7 +741,7 @@ mod tests {
             #[test]
             fn root() {
                 assert_eq!(
-                    get_path_without_file_name(String::from("C:\\")),
+                    get_without_last_component(String::from("C:\\")),
                     Ok(String::from("C:\\"))
                 );
             }
@@ -749,7 +749,7 @@ mod tests {
             #[test]
             fn root_parent() {
                 assert_eq!(
-                    get_path_without_file_name(String::from("C:\\file.ext")),
+                    get_without_last_component(String::from("C:\\file.ext")),
                     Ok(String::from("C:\\"))
                 );
             }
@@ -757,7 +757,7 @@ mod tests {
             #[test]
             fn prefix() {
                 assert_eq!(
-                    get_path_without_file_name(String::from("C:")),
+                    get_without_last_component(String::from("C:")),
                     Ok(String::from("C:"))
                 );
             }
@@ -881,18 +881,18 @@ mod tests {
         }
     }
 
-    mod get_path_without_extension {
+    mod get_without_extension {
         use super::*;
 
         #[test]
         fn empty() {
-            assert_eq!(get_path_without_extension(String::new()), Ok(String::new()));
+            assert_eq!(get_without_extension(String::new()), Ok(String::new()));
         }
 
         #[test]
         fn no_extension() {
             assert_eq!(
-                get_path_without_extension(String::from("root/parent/file")),
+                get_without_extension(String::from("root/parent/file")),
                 Ok(String::from("root/parent/file"))
             );
         }
@@ -900,7 +900,7 @@ mod tests {
         #[test]
         fn with_extension() {
             assert_eq!(
-                get_path_without_extension(String::from("root/parent/file.ext")),
+                get_without_extension(String::from("root/parent/file.ext")),
                 Ok(String::from("root/parent/file"))
             );
         }

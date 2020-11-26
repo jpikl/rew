@@ -143,10 +143,10 @@ impl Filter {
             Self::NormalizedPath => path::get_normalized(value),
             Self::CanonicalPath => path::get_canonical(value, context.current_dir),
             Self::ParentDirectory => path::get_parent_directory(value),
-            Self::PathWithoutLastComponent => path::get_path_without_file_name(value),
+            Self::PathWithoutLastComponent => path::get_without_last_component(value),
             Self::FileName => path::get_file_name(value),
             Self::BaseName => path::get_base_name(value),
-            Self::PathWithoutExtension => path::get_path_without_extension(value),
+            Self::PathWithoutExtension => path::get_without_extension(value),
             Self::Extension => path::get_extension(value),
             Self::ExtensionWithDot => path::get_extension_with_dot(value),
 
