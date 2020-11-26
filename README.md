@@ -259,7 +259,7 @@ Examples:
 
 | Filter        | Description                                      |
 | ------------- | ------------------------------------------------ |
-| `mE`          | Match of regular expression `E`.                 |
+| `=E`          | Match of regular expression `E`.                 |
 | `s:X:Y`       | Replace first match of regular expression `X` with `Y`.<br/>`Y` can reference capture groups from `X` using `$1`, `$2`, ...<br/>Any other character than `:` can be also used as a delimiter. |
 | `s:X`         | Remove first match of regular expression `X`.<br/>Equivalent to `s:X:`. |
 | `S`           | Same as `s` but replaces/removes all matches.    |
@@ -269,7 +269,7 @@ Examples:
 
 | Input     |  Filter            | Output  |
 | --------- | -------------------| ------- |
-| `12_34`   |  `m\d+`            | `12`    |
+| `12_34`   |  `=\d+`            | `12`    |
 | `12_34`   |  `s:\d+:x`         | `x_34`  |
 | `12_34`   |  `S:\d+:x`         | `x_x`   |
 | `12_34`   |  `s:(\d)(\d):$2$1` | `21_34` |
@@ -434,7 +434,7 @@ echo "foo 123 bar" | sed -E 's/[^0-9]*([0-9]+).*/\1/' # Extract first number usi
 echo "foo 123 bar" | sd '\D*(\d+).*' '$1'    # Same thing using sd
 echo "Foo 123 Bar" | rew '{s:\D*(\d+).*:$1}' # Same thing using rew (regex replace filter)
 echo "Foo 123 Bar" | rew -e'(\d+)' '{1}'     # Same thing using rew (external regex)
-echo "Foo 123 Bar" | rew '{m\d+}'            # Same thing using rew (regex match filter)
+echo "Foo 123 Bar" | rew '{=\d+}'            # Same thing using rew (regex match filter)
 ```
 
 ## :rocket: Examples
@@ -500,7 +500,7 @@ find -type f | rew -b '{d}/file_{C|<3:0}{E}' | mvb -v
 Print the first word of each line with removed diacritics (accents).
 
 ```bash
-rew '{m\S+|i}' <input.txt
+rew '{=\S+|i}' <input.txt
 ```
 
 Swap the first and second column in a CSV file.

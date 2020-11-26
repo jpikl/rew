@@ -105,7 +105,7 @@ impl Filter {
                 '?' => Ok(Self::ReplaceEmpty(Char::join(reader.read_to_end()))),
 
                 // Regex filters
-                'm' => Ok(Self::RegexMatch(RegexHolder::parse(reader)?)),
+                '=' => Ok(Self::RegexMatch(RegexHolder::parse(reader)?)),
                 's' => Ok(Self::RegexReplaceFirst(Substitution::parse_regex(reader)?)),
                 'S' => Ok(Self::RegexReplaceAll(Substitution::parse_regex(reader)?)),
 
@@ -474,20 +474,20 @@ mod tests {
         #[test]
         fn regex_match() {
             assert_eq!(
-                parse("m"),
+                parse("="),
                 Err(Error {
                     kind: ErrorKind::ExpectedRegex,
                     range: 1..1,
                 }),
             );
             assert_eq!(
-                parse("m[0-9]+"),
+                parse("=[0-9]+"),
                 Ok(Filter::RegexMatch(RegexHolder(
                     Regex::new("[0-9]+").unwrap()
                 ))),
             );
             assert_eq!(
-                parse("m[0-9+"),
+                parse("=[0-9+"),
                 Err(Error {
                     kind: ErrorKind::RegexInvalid(AnyString(String::from(
                         "This string is not compared by assertion"

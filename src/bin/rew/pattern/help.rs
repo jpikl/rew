@@ -200,7 +200,7 @@ Examples:
 
     FILTER     DESCRIPTION
     --------------------------------------------------------------------------
-    `mE`         Match of regular expression `E`.
+    `=E`         Match of regular expression `E`.
     `s:X:Y`      Replace first match of regular expression `X` with `Y`.
                `Y` can reference capture groups from `X` using `$1`, `$2`, ...
                Any other character than `:` can be also used as a delimiter.
@@ -213,7 +213,7 @@ Examples:
 
     INPUT    FILTER             OUTPUT
     ----------------------------------
-    12_34    `m\\d+`               12
+    12_34    `=\\d+`               12
     12_34    `s:\\d+:x`            x_34
     12_34    `S:\\d+:x`            x_x
     12_34    `s:(\\d)(\\d):$2$1`    21_34
