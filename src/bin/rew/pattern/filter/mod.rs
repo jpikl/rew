@@ -12,7 +12,7 @@ use std::fmt;
 mod error;
 mod format;
 mod generate;
-mod path;
+pub mod path;
 mod regex;
 mod string;
 mod substr;

@@ -7,7 +7,7 @@ use crate::pattern::parser::Parser;
 mod char;
 pub mod eval;
 mod explain;
-mod filter;
+pub mod filter;
 pub mod help;
 mod lexer;
 mod number;

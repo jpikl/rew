@@ -1,5 +1,5 @@
+use crate::pattern::filter::path;
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 const INIT_DEFAULT: u32 = 1;
@@ -74,7 +74,7 @@ impl From<&Config> for GlobalGenerator {
 
 #[derive(PartialEq, Debug)]
 pub struct LocalGenerator {
-    values: HashMap<Option<PathBuf>, u32>,
+    values: HashMap<String, u32>,
     init: u32,
     step: u32,
 }
@@ -95,7 +95,10 @@ impl LocalGenerator {
     }
 
     pub fn next(&mut self, value: &str) -> u32 {
-        let key = Path::new(value).parent().map(Path::to_path_buf);
+        let key = match path::get_parent_directory(value.to_string()) {
+            Ok(parent) => path::get_normalized(parent).unwrap_or_default(),
+            Err(_) => String::new(),
+        };
         if let Some(value) = self.values.get_mut(&key) {
             *value += self.step;
             *value
@@ -192,6 +195,7 @@ mod tests {
             let path_1 = "dir/subdir/file.ext";
             let path_2 = "dir/subdir";
             let path_3 = "dir";
+
             let mut counter = LocalGenerator::new(0, 1);
 
             assert_eq!(counter.next(path_1), 0);
@@ -213,6 +217,7 @@ mod tests {
             let path_1 = "dir/subdir/file.ext";
             let path_2 = "dir/subdir";
             let path_3 = "dir";
+
             let mut counter = LocalGenerator::new(1, 10);
 
             assert_eq!(counter.next(path_1), 1);
@@ -227,6 +232,21 @@ mod tests {
 
             assert_eq!(counter.next(path_2), 21);
             assert_eq!(counter.next(path_3), 21);
+        }
+
+        #[test]
+        fn normalize_parent_dirs() {
+            let path_1 = "./dir/subdir/file.ext";
+            let path_2 = "dir/subdir/file.ext";
+            let path_3 = "dir/subdir/..";
+            let path_4 = "dir";
+
+            let mut counter = LocalGenerator::new(0, 1);
+
+            assert_eq!(counter.next(path_1), 0);
+            assert_eq!(counter.next(path_2), 1);
+            assert_eq!(counter.next(path_3), 0);
+            assert_eq!(counter.next(path_4), 1);
         }
     }
 }
