@@ -14,7 +14,7 @@ Rew is a CLI tool that rewrites FS paths according to a pattern.
   - [:railway_track: Path filters](#railway_track-path-filters)
   - [:ab: Substring filters](#ab-substring-filters)
   - [:mag: Replace filters](#mag-replace-filters)
-  - [:star: Regex filters](#asterisk-regex-filters)
+  - [:star: Regex filters](#star-regex-filters)
   - [:art: Format filters](#art-format-filters)
   - [:infinity: Generators](#infinity-generators)
 - [:speech_balloon: Output](#speech_balloon-output)
