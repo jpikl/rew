@@ -14,7 +14,7 @@ Rew is a CLI tool that rewrites FS paths according to a pattern.
   - [:railway_track: Path filters](#railway_track-path-filters)
   - [:ab: Substring filters](#ab-substring-filters)
   - [:mag: Replace filters](#mag-replace-filters)
-  - [:asterisk: Regex filters](#asterisk-regex-filters)
+  - [:star: Regex filters](#asterisk-regex-filters)
   - [:art: Format filters](#art-format-filters)
   - [:infinity: Generators](#infinity-generators)
 - [:speech_balloon: Output](#speech_balloon-output)
@@ -259,7 +259,7 @@ Examples:
 | *(empty)*  |  `?def`    | `def`   |
 
 
-### :asterisk: Regex filters
+### :star: Regex filters
 
 | Filter        | Description                                      |
 | ------------- | ------------------------------------------------ |
@@ -492,7 +492,7 @@ find -name '*.txt'  | rew -b "$HOME/Backup/{b}_{U}.{e}"  | cpb -v
 Flatten directory structure `./dir/subdir/` to `./dir_subdir/`.
 
 ```bash
-find -mindepth 2 -maxdepth 2 -type d | rew -b '{p}_{f}' | mvb -v
+find -mindepth 2 -maxdepth 2 -type d | rew -b '{D}_{f}' | mvb -v
 ```
 
 Normalize base names of files to `file_001`, `file_002`, ...
