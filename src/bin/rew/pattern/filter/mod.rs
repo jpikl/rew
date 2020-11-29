@@ -24,6 +24,7 @@ pub enum Filter {
     // Path filters
     WorkingDir,
     AbsolutePath,
+    RelativePath,
     NormalizedPath,
     CanonicalPath,
     ParentDirectory,
@@ -88,6 +89,7 @@ impl Filter {
                 // Path filters
                 'w' => Ok(Self::WorkingDir),
                 'a' => Ok(Self::AbsolutePath),
+                'A' => Ok(Self::RelativePath),
                 'p' => Ok(Self::NormalizedPath),
                 'P' => Ok(Self::CanonicalPath),
                 'd' => Ok(Self::ParentDirectory),
@@ -149,6 +151,7 @@ impl Filter {
             // Path filters
             Self::WorkingDir => path::to_string(context.working_dir),
             Self::AbsolutePath => path::get_absolute(value, context.working_dir),
+            Self::RelativePath => path::get_relative(value, context.working_dir),
             Self::NormalizedPath => path::get_normalized(value),
             Self::CanonicalPath => path::get_canonical(value, context.working_dir),
             Self::ParentDirectory => path::get_parent_directory(value),
@@ -222,6 +225,7 @@ impl fmt::Display for Filter {
             // Path filters
             Self::WorkingDir => write!(formatter, "Working directory"),
             Self::AbsolutePath => write!(formatter, "Absolute path"),
+            Self::RelativePath => write!(formatter, "Relative path"),
             Self::NormalizedPath => write!(formatter, "Normalized path"),
             Self::CanonicalPath => write!(formatter, "Canonical path"),
             Self::ParentDirectory => write!(formatter, "Parent directory"),
@@ -340,6 +344,11 @@ mod tests {
         #[test]
         fn absolute_path() {
             assert_eq!(parse("a"), Ok(Filter::AbsolutePath));
+        }
+
+        #[test]
+        fn relative_path() {
+            assert_eq!(parse("A"), Ok(Filter::RelativePath));
         }
 
         #[test]
@@ -722,18 +731,44 @@ mod tests {
 
         #[test]
         fn working_dir() {
+            #[cfg(unix)]
             assert_eq!(
                 Filter::WorkingDir.eval(String::new(), &make_eval_context()),
-                Ok(String::from("working_dir"))
+                Ok(String::from("/work"))
+            );
+            #[cfg(windows)]
+            assert_eq!(
+                Filter::WorkingDir.eval(String::new(), &make_eval_context()),
+                Ok(String::from("C:\\work"))
             );
         }
 
         #[test]
         fn absolute_path() {
+            #[cfg(unix)]
             assert_eq!(
-                Filter::AbsolutePath
-                    .eval(String::from("root/parent/file.ext"), &make_eval_context()),
-                Ok(format!("working_dir{}root/parent/file.ext", MAIN_SEPARATOR))
+                Filter::AbsolutePath.eval(String::from("parent/file.ext"), &make_eval_context()),
+                Ok(String::from("/work/parent/file.ext"))
+            );
+            #[cfg(windows)]
+            assert_eq!(
+                Filter::AbsolutePath.eval(String::from("parent\\file.ext"), &make_eval_context()),
+                Ok(String::from("C:\\work\\parent\\file.ext"))
+            );
+        }
+
+        #[test]
+        fn relative_path() {
+            #[cfg(unix)]
+            assert_eq!(
+                Filter::RelativePath.eval(String::from("/parent/file.ext"), &make_eval_context()),
+                Ok(String::from("../parent/file.ext"))
+            );
+            #[cfg(windows)]
+            assert_eq!(
+                Filter::RelativePath
+                    .eval(String::from("C:\\parent\\file.ext"), &make_eval_context()),
+                Ok(String::from("..\\parent\\file.ext"))
             );
         }
 
@@ -1060,6 +1095,11 @@ mod tests {
         #[test]
         fn absolute_path() {
             assert_eq!(Filter::AbsolutePath.to_string(), "Absolute path");
+        }
+
+        #[test]
+        fn relative_path() {
+            assert_eq!(Filter::RelativePath.to_string(), "Relative path");
         }
 
         #[test]

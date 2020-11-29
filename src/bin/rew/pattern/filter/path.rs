@@ -2,6 +2,7 @@ use crate::pattern::eval::ErrorKind;
 use crate::pattern::filter::error::Result;
 use crate::utils::AnyString;
 use normpath::PathExt;
+use pathdiff::diff_paths;
 use std::ffi::OsStr;
 use std::path::{is_separator, Component, Path, MAIN_SEPARATOR};
 
@@ -15,6 +16,15 @@ pub fn get_absolute(value: String, working_dir: &Path) -> Result {
         } else {
             to_string(&working_dir.join(path))
         }
+    }
+}
+
+pub fn get_relative(value: String, working_dir: &Path) -> Result {
+    let path = Path::new(&value);
+    if path.is_relative() {
+        Ok(value)
+    } else {
+        opt_to_string(diff_paths(path, working_dir).as_ref())
     }
 }
 
@@ -252,6 +262,47 @@ mod tests {
             assert_eq!(
                 get_absolute(String::from("C:\\file.ext"), &working_dir),
                 Ok(String::from("C:\\file.ext"))
+            );
+        }
+    }
+
+    mod get_relative {
+        use super::*;
+
+        #[test]
+        fn empty() {
+            let working_dir = std::env::current_dir().unwrap();
+            assert_eq!(get_relative(String::new(), &working_dir), Ok(String::new()));
+        }
+
+        #[test]
+        fn relative() {
+            let working_dir = std::env::current_dir().unwrap();
+            assert_eq!(
+                get_relative(String::from("file.ext"), &working_dir),
+                Ok(String::from("file.ext"))
+            );
+        }
+
+        #[test]
+        fn absolute() {
+            let working_dir = std::env::current_dir().unwrap();
+            let value = working_dir
+                .join("..")
+                .join("file.ext")
+                .to_str()
+                .unwrap()
+                .to_string();
+
+            #[cfg(unix)]
+            assert_eq!(
+                get_relative(value, &working_dir),
+                Ok(String::from("../file.ext"))
+            );
+            #[cfg(windows)]
+            assert_eq!(
+                get_relative(value, &working_dir),
+                Ok(String::from("..\\file.ext"))
             );
         }
     }

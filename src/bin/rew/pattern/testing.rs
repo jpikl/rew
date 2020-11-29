@@ -5,7 +5,10 @@ use std::path::Path;
 
 pub fn make_eval_context<'a>() -> eval::Context<'a> {
     eval::Context {
-        working_dir: Path::new("working_dir"),
+        #[cfg(unix)]
+        working_dir: Path::new("/work"),
+        #[cfg(windows)]
+        working_dir: Path::new("C:\\work"),
         local_counter: 1,
         global_counter: 2,
         regex_captures: make_regex_captures(),
