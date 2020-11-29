@@ -3,6 +3,7 @@ use clap::{crate_name, crate_version, AppSettings, ArgSettings, Clap};
 use common::color::{parse_color, COLOR_VALUES};
 use common::run::Options;
 use regex::Regex;
+use std::path::PathBuf;
 use termcolor::ColorChoice;
 
 #[derive(Debug, Clap)]
@@ -130,6 +131,12 @@ pub struct Cli {
     /// step - Value increment (default: 1).
     #[clap(short = 'C', long, value_name = "init[:step]", verbatim_doc_comment)]
     pub global_counter: Option<counter::Config>,
+
+    /// Current working directory
+    ///
+    /// All relative paths are resolved to this path.
+    #[clap(short = 'w', long, value_name = "path", verbatim_doc_comment)]
+    pub working_directory: Option<PathBuf>,
 
     /// Custom escape character to use in pattern
     #[clap(long, value_name = "char")]

@@ -104,8 +104,15 @@ fn run(cli: &Cli, io: &Io) -> Result {
             regex::Solver::None
         };
 
-        let current_dir_buf = env::current_dir()?;
-        let current_dir = current_dir_buf.as_path();
+        let working_dir = if let Some(working_dir) = &cli.working_directory {
+            if working_dir.is_relative() {
+                env::current_dir()?.join(working_dir)
+            } else {
+                working_dir.clone()
+            }
+        } else {
+            env::current_dir()?
+        };
 
         while let Some(input_value) = input_values.next()? {
             let global_counter = if global_counter_used {
@@ -127,7 +134,7 @@ fn run(cli: &Cli, io: &Io) -> Result {
             };
 
             let context = eval::Context {
-                current_dir,
+                working_dir: &working_dir,
                 global_counter,
                 local_counter,
                 regex_captures,

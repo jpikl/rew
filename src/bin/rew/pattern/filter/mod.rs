@@ -145,9 +145,9 @@ impl Filter {
     pub fn eval(&self, value: String, context: &eval::Context) -> Result<String, eval::ErrorKind> {
         match self {
             // Path filters
-            Self::AbsolutePath => path::get_absolute(value, context.current_dir),
+            Self::AbsolutePath => path::get_absolute(value, context.working_dir),
             Self::NormalizedPath => path::get_normalized(value),
-            Self::CanonicalPath => path::get_canonical(value, context.current_dir),
+            Self::CanonicalPath => path::get_canonical(value, context.working_dir),
             Self::ParentDirectory => path::get_parent_directory(value),
             Self::RemoveLastName => path::get_without_last_name(value),
             Self::FileName => path::get_file_name(value),
@@ -716,7 +716,7 @@ mod tests {
             assert_eq!(
                 Filter::AbsolutePath
                     .eval(String::from("root/parent/file.ext"), &make_eval_context()),
-                Ok(format!("current_dir{}root/parent/file.ext", MAIN_SEPARATOR))
+                Ok(format!("working_dir{}root/parent/file.ext", MAIN_SEPARATOR))
             );
         }
 
@@ -736,13 +736,13 @@ mod tests {
 
         #[test]
         fn canonical_path() {
-            let current_dir = std::env::current_dir().unwrap();
+            let working_dir = std::env::current_dir().unwrap();
             let mut context = make_eval_context();
-            context.current_dir = &current_dir;
+            context.working_dir = &working_dir;
 
             assert_eq!(
                 Filter::CanonicalPath.eval(String::from("Cargo.toml"), &context),
-                Ok(current_dir.join("Cargo.toml").to_str().unwrap().to_string())
+                Ok(working_dir.join("Cargo.toml").to_str().unwrap().to_string())
             );
         }
 
@@ -811,7 +811,7 @@ mod tests {
             assert_eq!(
                 Filter::EnsureTrailingSeparator
                     .eval(String::from("root/parent"), &make_eval_context()),
-                Ok(String::from(format!("root/parent{}", MAIN_SEPARATOR)))
+                Ok(format!("root/parent{}", MAIN_SEPARATOR))
             );
         }
 

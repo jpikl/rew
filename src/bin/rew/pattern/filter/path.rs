@@ -5,21 +5,21 @@ use normpath::PathExt;
 use std::ffi::OsStr;
 use std::path::{is_separator, Component, Path, MAIN_SEPARATOR};
 
-pub fn get_absolute(value: String, current_dir: &Path) -> Result {
+pub fn get_absolute(value: String, working_dir: &Path) -> Result {
     if value.is_empty() {
-        to_string(current_dir)
+        to_string(working_dir)
     } else {
         let path = Path::new(&value);
         if path.is_absolute() {
             Ok(value)
         } else {
-            to_string(&current_dir.join(path))
+            to_string(&working_dir.join(path))
         }
     }
 }
 
-pub fn get_canonical(value: String, current_dir: &Path) -> Result {
-    let absolute_value = get_absolute(value, current_dir)?;
+pub fn get_canonical(value: String, working_dir: &Path) -> Result {
+    let absolute_value = get_absolute(value, working_dir)?;
     let absolute_path = Path::new(&absolute_value);
 
     // Normalize unix vs windows behaviour
@@ -218,39 +218,39 @@ mod tests {
 
         #[test]
         fn empty() {
-            let current_dir = std::env::current_dir().unwrap();
+            let working_dir = std::env::current_dir().unwrap();
             assert_eq!(
-                get_absolute(String::new(), &current_dir),
-                Ok(current_dir.to_str().unwrap().to_string())
+                get_absolute(String::new(), &working_dir),
+                Ok(working_dir.to_str().unwrap().to_string())
             );
         }
 
         #[test]
         fn relative() {
-            let current_dir = std::env::current_dir().unwrap();
+            let working_dir = std::env::current_dir().unwrap();
             #[cfg(unix)]
             assert_eq!(
-                get_absolute(String::from("file.ext"), &current_dir),
-                Ok(format!("{}/file.ext", current_dir.to_str().unwrap()))
+                get_absolute(String::from("file.ext"), &working_dir),
+                Ok(format!("{}/file.ext", working_dir.to_str().unwrap()))
             );
             #[cfg(windows)]
             assert_eq!(
-                get_absolute(String::from("file.ext"), &current_dir),
-                Ok(format!("{}\\file.ext", current_dir.to_str().unwrap()))
+                get_absolute(String::from("file.ext"), &working_dir),
+                Ok(format!("{}\\file.ext", working_dir.to_str().unwrap()))
             );
         }
 
         #[test]
         fn absolute() {
-            let current_dir = std::env::current_dir().unwrap();
+            let working_dir = std::env::current_dir().unwrap();
             #[cfg(unix)]
             assert_eq!(
-                get_absolute(String::from("/file.ext"), &current_dir),
+                get_absolute(String::from("/file.ext"), &working_dir),
                 Ok(String::from("/file.ext"))
             );
             #[cfg(windows)]
             assert_eq!(
-                get_absolute(String::from("C:\\file.ext"), &current_dir),
+                get_absolute(String::from("C:\\file.ext"), &working_dir),
                 Ok(String::from("C:\\file.ext"))
             );
         }
@@ -261,18 +261,18 @@ mod tests {
 
         #[test]
         fn empty() {
-            let current_dir = std::env::current_dir().unwrap();
+            let working_dir = std::env::current_dir().unwrap();
             assert_eq!(
-                get_canonical(String::new(), &current_dir),
-                Ok(current_dir.to_str().unwrap().to_string())
+                get_canonical(String::new(), &working_dir),
+                Ok(working_dir.to_str().unwrap().to_string())
             );
         }
 
         #[test]
         fn non_existent() {
-            let current_dir = std::env::current_dir().unwrap();
+            let working_dir = std::env::current_dir().unwrap();
             assert_eq!(
-                get_canonical(String::from("non-existent"), &current_dir),
+                get_canonical(String::from("non-existent"), &working_dir),
                 Err(ErrorKind::CanonicalizationFailed(AnyString(String::from(
                     "This string is not compared by assertion"
                 ))))
@@ -281,30 +281,30 @@ mod tests {
 
         #[test]
         fn existent() {
-            let current_dir = std::env::current_dir().unwrap();
+            let working_dir = std::env::current_dir().unwrap();
             #[cfg(unix)]
             assert_eq!(
-                get_canonical(String::from("src/"), &current_dir),
-                Ok(format!("{}/src", current_dir.to_str().unwrap(),))
+                get_canonical(String::from("src/"), &working_dir),
+                Ok(format!("{}/src", working_dir.to_str().unwrap(),))
             );
             #[cfg(windows)]
             assert_eq!(
-                get_canonical(String::from("src\\"), &current_dir),
-                Ok(format!("{}\\src", current_dir.to_str().unwrap()))
+                get_canonical(String::from("src\\"), &working_dir),
+                Ok(format!("{}\\src", working_dir.to_str().unwrap()))
             );
         }
 
         #[test]
         fn root() {
-            let current_dir = std::env::current_dir().unwrap();
+            let working_dir = std::env::current_dir().unwrap();
             #[cfg(unix)]
             assert_eq!(
-                get_canonical(String::from("/"), &current_dir),
+                get_canonical(String::from("/"), &working_dir),
                 Ok(String::from("/"))
             );
             #[cfg(windows)]
             assert_eq!(
-                get_canonical(String::from("C:\\"), &current_dir),
+                get_canonical(String::from("C:\\"), &working_dir),
                 Ok(String::from("C:\\"))
             );
         }
@@ -312,9 +312,9 @@ mod tests {
         #[test]
         #[cfg(windows)]
         fn prefix() {
-            let current_dir = std::env::current_dir().unwrap();
+            let working_dir = std::env::current_dir().unwrap();
             assert_eq!(
-                get_canonical(String::from("C:"), &current_dir),
+                get_canonical(String::from("C:"), &working_dir),
                 Ok(String::from("C:\\"))
             );
         }

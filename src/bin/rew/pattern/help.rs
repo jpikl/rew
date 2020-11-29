@@ -107,6 +107,12 @@ For working directory `/home/bob` and input `../alice/notes.txt`, filters would 
     `z`         ../alice/notes.txt/
     `Z`         ../alice/notes.txt
 
+Absolute path is resolved against the current working directory. 
+You can set custom working directory using `-w, --working-directory` option.
+
+    $> rew -d '/home/alice' '{a}' # Absolute path
+    $> rew -d '../alice'    '{a}' # Relative path
+
 Normalized path `p` is constructed using the following rules:
 
  - On Windows, all `/` separators are converted to `\\`.

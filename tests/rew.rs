@@ -318,6 +318,57 @@ fn eval_error_at_end() {
 }
 
 #[test]
+fn working_directory_default() {
+    rew()
+        .arg("{a}")
+        .write_stdin("file")
+        .assert()
+        .success()
+        .stdout(format!(
+            "{}\n",
+            std::env::current_dir()
+                .unwrap()
+                .join("file")
+                .to_str()
+                .unwrap()
+        ));
+}
+
+#[test]
+fn working_directory_custom_absolute() {
+    #[cfg(unix)]
+    let root_dir = "/";
+    #[cfg(windows)]
+    let root_dir = "C:\\";
+    rew()
+        .arg(format!("--working-directory={}", root_dir))
+        .arg("{a}")
+        .write_stdin("file")
+        .assert()
+        .success()
+        .stdout(format!("{}file\n", root_dir,));
+}
+
+#[test]
+fn working_directory_custom_relative() {
+    rew()
+        .arg("--working-directory=dir")
+        .arg("{a}")
+        .write_stdin("file")
+        .assert()
+        .success()
+        .stdout(format!(
+            "{}\n",
+            std::env::current_dir()
+                .unwrap()
+                .join("dir")
+                .join("file")
+                .to_str()
+                .unwrap()
+        ));
+}
+
+#[test]
 fn help_pattern() {
     rew()
         .arg("--help-pattern")
