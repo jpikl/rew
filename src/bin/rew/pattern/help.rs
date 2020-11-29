@@ -22,7 +22,7 @@ By default, pattern characters are directly copied to output.
 
 Characters `{` and `}` form an expression which is evaluated and replaced in output.
 
-Empty exrpession `{}` evaluates directly to input value.
+Empty expression `{}` evaluates directly to input value.
 
     INPUT    PATTERN      OUTPUT
     ------------------------------------
@@ -78,7 +78,6 @@ const FILTERS_HELP: &str = indoc! {"
     `B`         Remove extension
     `e`         Extension
     `E`         Extension with dot
-              Dot is not printed for missing extension.
     `z`         Ensure trailing separator
     `Z`         Remove trailing separator
 
@@ -139,19 +138,19 @@ Canonical path `P` works similarly to `p` but has some differences:
  - Evaluation will fail for a non-existent path.
  - Result will always be an absolute path.
  - If path is a symbolic link, it will be resolved.
- 
+
 Parent directory `d` might give a different result than `D` which removes last name of a path.
 Similarly, file name `f` might not be the same as last name `F` which is a complement of `D`.
- 
-    INPUT      {d}      {D}        {f}        {F}     
+
+    INPUT      {d}      {D}        {f}        {F}
     --------------------------------------------------
-    /          /        /          (empty)    (empty) 
-    /a         /        /          a          a       
-    a/b        a        a          b          b       
-    a          .        (empty)    a          a       
-    ..         ../..    (empty)    (empty)    ..      
-    .          ./..     (empty)    (empty)    .       
-    (empty)    ..       (empty)    (empty)    (empty) 
+    /          /        /          (empty)    (empty)
+    /a         /        /          a          a
+    a/b        a        a          b          b
+    a          .        (empty)    a          a
+    ..         ../..    (empty)    (empty)    ..
+    .          ./..     (empty)    (empty)    .
+    (empty)    ..       (empty)    (empty)    (empty)
 
 ========================================
  Substring filters

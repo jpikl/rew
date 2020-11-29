@@ -84,7 +84,7 @@ By default, pattern characters are directly copied to output.
 
 Characters `{` and `}` form an expression which is evaluated and replaced in output.
 
-Empty exrpession `{}` evaluates directly to input value.
+Empty expression `{}` evaluates directly to input value.
 
 | Input   | Pattern      | Output          |
 | ------- | ------------ | --------------- |
@@ -140,7 +140,7 @@ printf 'a\0b' | rew -z # Convert NUL bytes to newlines
 | `b`    | Base name                 |
 | `B`    | Remove extension          |
 | `e`    | Extension                 |
-| `E`    | Extension with dot<br/>Dot is not printed for missing extension. |
+| `E`    | Extension with dot        |
 | `z`    | Ensure trailing separator |
 | `Z`    | Remove trailing separator |
 
