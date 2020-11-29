@@ -197,7 +197,7 @@ fn opt_to_string<S: AsRef<OsStr> + ?Sized>(value: Option<&S>) -> Result {
     }
 }
 
-fn to_string<S: AsRef<OsStr> + ?Sized>(value: &S) -> Result {
+pub fn to_string<S: AsRef<OsStr> + ?Sized>(value: &S) -> Result {
     to_str(value).map(str::to_string)
 }
 

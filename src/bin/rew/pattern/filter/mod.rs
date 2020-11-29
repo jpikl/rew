@@ -22,6 +22,7 @@ mod testing;
 #[derive(Debug, PartialEq)]
 pub enum Filter {
     // Path filters
+    WorkingDir,
     AbsolutePath,
     NormalizedPath,
     CanonicalPath,
@@ -85,6 +86,7 @@ impl Filter {
         } else if let Some(char) = reader.read() {
             match char.as_char() {
                 // Path filters
+                'w' => Ok(Self::WorkingDir),
                 'a' => Ok(Self::AbsolutePath),
                 'p' => Ok(Self::NormalizedPath),
                 'P' => Ok(Self::CanonicalPath),
@@ -145,6 +147,7 @@ impl Filter {
     pub fn eval(&self, value: String, context: &eval::Context) -> Result<String, eval::ErrorKind> {
         match self {
             // Path filters
+            Self::WorkingDir => path::to_string(context.working_dir),
             Self::AbsolutePath => path::get_absolute(value, context.working_dir),
             Self::NormalizedPath => path::get_normalized(value),
             Self::CanonicalPath => path::get_canonical(value, context.working_dir),
@@ -217,6 +220,7 @@ impl fmt::Display for Filter {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match self {
             // Path filters
+            Self::WorkingDir => write!(formatter, "Working directory"),
             Self::AbsolutePath => write!(formatter, "Absolute path"),
             Self::NormalizedPath => write!(formatter, "Normalized path"),
             Self::CanonicalPath => write!(formatter, "Canonical path"),
@@ -326,6 +330,11 @@ mod tests {
             let mut reader = Reader::from("a_");
             Filter::parse(&mut reader).unwrap();
             assert_eq!(reader.position(), 1);
+        }
+
+        #[test]
+        fn working_dir() {
+            assert_eq!(parse("w"), Ok(Filter::WorkingDir));
         }
 
         #[test]
@@ -712,6 +721,14 @@ mod tests {
         use std::path::MAIN_SEPARATOR;
 
         #[test]
+        fn working_dir() {
+            assert_eq!(
+                Filter::WorkingDir.eval(String::new(), &make_eval_context()),
+                Ok(String::from("working_dir"))
+            );
+        }
+
+        #[test]
         fn absolute_path() {
             assert_eq!(
                 Filter::AbsolutePath
@@ -1034,6 +1051,11 @@ mod tests {
 
     mod display {
         use super::*;
+
+        #[test]
+        fn working_dir() {
+            assert_eq!(Filter::WorkingDir.to_string(), "Working directory");
+        }
 
         #[test]
         fn absolute_path() {

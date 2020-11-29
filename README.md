@@ -130,6 +130,7 @@ printf 'a\0b' | rew -z # Convert NUL bytes to newlines
 
 | Filter | Description               |
 | ------ | ------------------------- |
+| `w`    | Working directory         |
 | `a`    | Absolute path             |
 | `p`    | Normalized path           |
 | `P`    | Canonical path            |
@@ -159,6 +160,7 @@ For working directory `/home/bob` and input `../alice/notes.txt`, filters would 
 
 | Filter | Output                         |
 | ------ | ------------------------------ |
+| `w`    | `/home/bob`                    |
 | `a`    | `/home/bob/../alice/notes.txt` |
 | `p`    | `../alice/notes.txt`           |
 | `P`    | `/home/alice/notes.txt`        |

@@ -68,6 +68,7 @@ const FILTERS_HELP: &str = indoc! {"
 
     FILTER    DESCRIPTION
     ---------------------------------------------------
+    `w`         Working directory
     `a`         Absolute path
     `p`         Normalized path
     `P`         Canonical path
@@ -94,6 +95,7 @@ For working directory `/home/bob` and input `../alice/notes.txt`, filters would 
 
     FILTER    OUTPUT
     --------------------------------------
+    `w`         /home/bob
     `a`         /home/bob/../alice/notes.txt
     `p`         ../alice/notes.txt
     `P`         /home/alice/notes.txt
