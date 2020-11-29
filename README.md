@@ -1,6 +1,6 @@
 # rew
 
-Rew is a CLI tool that rewrites FS paths according to a pattern.
+Rew is a text processing CLI tool that rewrites FS paths according to a pattern.
 
 [![Build status][build-img]][build]
 [![Code coverage][coverage-img]][coverage]
