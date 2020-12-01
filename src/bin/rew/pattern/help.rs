@@ -70,7 +70,7 @@ const FILTERS_HELP: &str = indoc! {"
     ---------------------------------------------------
     `w`         Working directory
     `a`         Absolute path
-    `r`         Relative path
+    `A`         Relative path
     `p`         Normalized path
     `P`         Canonical path
     `d`         Parent directory
@@ -83,39 +83,50 @@ const FILTERS_HELP: &str = indoc! {"
     `z`         Ensure trailing separator
     `Z`         Remove trailing separator
 
-Let us assume the following directory structure:
+Filters `d`, `D`, `f`, `F`, `b`, `B`, `e`, `E` output portion of a path.
 
-    /
-    └── home
-        ├── alice
-        │   └── notes.txt
-        |
-        └── bob
+    EXPRESSION    OUTPUT
+    -----------------------------------
+    `{}`            /home/alice/notes.txt
+    `{d}`, `{D}`      /home/alice
+    `{f}`, `{F}`      notes.txt
+    `{b}`           notes
+    `{B}`           /home/alice/notes
+    `{e}`           txt
+    `{E}`           .txt
 
-For working directory `/home/bob` and input `../alice/notes.txt`, filters would evaluate to:
+Parent directory `d` might give a different result than `D` which removes last name of a path.
+Similarly, file name `f` might not be the same as last name `F` which is a complement of `D`.
 
-    FILTER    OUTPUT
-    --------------------------------------
-    `w`         /home/bob
-    `a`         /home/bob/../alice/notes.txt
-    `r`         ../alice/notes.txt
-    `p`         ../alice/notes.txt
-    `P`         /home/alice/notes.txt
-    `d`         ../alice
-    `D`         ../alice
-    `f`         notes.txt
-    `b`         notes
-    `B`         ../alice/notes
-    `e`         txt
-    `E`         .txt
-    `z`         ../alice/notes.txt/
-    `Z`         ../alice/notes.txt
+    INPUT      {d}      {D}        {f}        {F}
+    --------------------------------------------------
+    /          /        /          (empty)    (empty)
+    /a         /        /          a          a
+    a/b        a        a          b          b
+    a          .        (empty)    a          a
+    .          ./..     (empty)    (empty)    .
+    ..         ../..    (empty)    (empty)    ..
+    (empty)    ..       (empty)    (empty)    (empty)
 
-Absolute path is resolved against the current working directory. 
-You can set custom working directory using `-w, --working-directory` option.
+Extension with dot `E` can be useful when dealing with files with no extension.
 
-    $> rew -d '/home/alice' '{a}' # Absolute path
-    $> rew -d '../alice'    '{a}' # Relative path
+    INPUT      new.{e}    new{E}
+    -----------------------------
+    old.txt    new.txt    new.txt
+    old        new.       new
+
+Absolute path `a` and relative path `A` are both resolved against working directory `w`.
+
+    {w}            INPUT        {a}          {A}
+    -----------------------------------------------
+    /home/alice    /home/bob    /home/bob    ../bob
+    /home/alice    ../bob       /home/bob    ../bob
+
+By default, working directory `w` is set to your current working directory.
+You can change that using the `-w, --working-directory` option.
+
+    $> rew -w '/home/alice' '{a}' # Absolute path
+    $> rew -w '../alice'    '{a}' # Relative to the current working directory
 
 Normalized path `p` is constructed using the following rules:
 
@@ -149,18 +160,13 @@ Canonical path `P` works similarly to `p` but has some differences:
  - Result will always be an absolute path.
  - If path is a symbolic link, it will be resolved.
 
-Parent directory `d` might give a different result than `D` which removes last name of a path.
-Similarly, file name `f` might not be the same as last name `F` which is a complement of `D`.
+Trailing separator filters `z` and `Z` can be useful when dealing with root and unnormalized paths.
 
-    INPUT      {d}      {D}        {f}        {F}
-    --------------------------------------------------
-    /          /        /          (empty)    (empty)
-    /a         /        /          a          a
-    a/b        a        a          b          b
-    a          .        (empty)    a          a
-    ..         ../..    (empty)    (empty)    ..
-    .          ./..     (empty)    (empty)    .
-    (empty)    ..       (empty)    (empty)    (empty)
+    INPUT    {}b    {}/b    {z}b    {Z}/b
+    -------------------------------------
+    /        /b     //b     /b      /b
+    a        ab     a/b     a/b     a/b
+    a/       a/b    a//b    a/b     a/b
 
 ========================================
  Substring filters
