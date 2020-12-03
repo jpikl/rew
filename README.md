@@ -42,6 +42,7 @@ Input values are assumed to be FS paths, however, `rew` is able to process any U
     ```bash
     cargo install --git https://github.com/jpikl/rew
     ```
+
 - Binaries will be installed to `.cargo/bin/` in your home directory.
 
 ## :keyboard: Input
@@ -54,7 +55,7 @@ By default, values are read as lines from standard input.
 - Use `-d, --read` option to read values delimited by a specific character.
 
 ```bash
-find         | rew    '{a}' # Convert output lines from find command to absolute paths
+find         | rew    '{a}' # Convert output from find command to absolute paths
 find -print0 | rew -z '{a}' # Use NUL delimiter in case paths contain newlines
 echo "$PATH" | rew -d:      # Split PATH variable entries delimited by colon
 rew -r 'A{}B' <data.txt     # Read file as a whole, prepend 'A', append 'B'
@@ -103,7 +104,7 @@ Character `#` starts an escape sequence.
 
 | Sequence | Description                |
 | -------- |--------------------------- |
-| `#/`     | System directory separator<br>`\` on Windows<br>`/` everywhere else  |
+| `#/`     | System directory separator<br>`\` on Windows<br>`/` everywhere else |
 | `#n`     | New line                   |
 | `#r`     | Carriage return            |
 | `#t`     | Horizontal tab             |
@@ -146,9 +147,9 @@ printf 'a\0b' | rew -z # Convert NUL bytes to newlines
 | `z`    | Ensure trailing separator |
 | `Z`    | Remove trailing separator |
 
-Filters `d`, `D`, `f`, `F`, `b`, `B`, `e`, `E` output portion of a path.
+To get a specific portion of path, use one of `dD`, `fF`, `bB`, `eE` filters.
 
-| Expression   | Output                  |
+| Pattern      | Output                  |
 | ------------ | ----------------------- |
 | `{}`         | `/home/alice/notes.txt` |
 | `{d}`, `{D}` | `/home/alice`           |
@@ -187,10 +188,11 @@ Absolute path `a` and relative path `A` are both resolved against working direct
 
 By default, working directory `w` is set to your current working directory.
 You can change that using the `-w, --working-directory` option.
+`w` filter will always output an absolute path, even when you set relative one using the `-w` option.
 
 ```bash
-rew -w '/home/alice' '{a}' # Absolute path
-rew -w '../alice'    '{a}' # Relative to the current working directory
+rew -w '/home/alice' '{w}' # Absolute path
+rew -w '../alice'    '{w}' # Relative to the current working directory
 ```
 
 Normalized path `p` is constructed using the following rules:
@@ -244,14 +246,14 @@ Trailing separator filters `z` and `Z` can be useful when dealing with root and 
 
 Examples:
 
-| Input   |  Filter | Output |
-| ------- | ------- | ------ |
-| `abcde` |  `n2-3` | `bc`   |
-| `abcde` |  `N2-3` | `cd`   |
-| `abcde` |  `n2-`  | `bcde` |
-| `abcde` |  `N2-`  | `abcd` |
-| `abcde` |  `n2`   | `b`    |
-| `abcde` |  `N2`   | `d`    |
+| Input   | Pattern  | Output |
+| ------- | -------- | ------ |
+| `abcde` | `{n2-3}` | `bc`   |
+| `abcde` | `{N2-3}` | `cd`   |
+| `abcde` | `{n2-}`  | `bcde` |
+| `abcde` | `{N2-}`  | `abcd` |
+| `abcde` | `{n2}`   | `b`    |
+| `abcde` | `{N2}`   | `d`    |
 
 ### :mag: Replace filters
 
@@ -264,14 +266,14 @@ Examples:
 
 Examples:
 
-| Input      |  Filter    | Output  |
-| ---------- | ---------- | ------- |
-| `ab_ab`    |  `r:ab:xy` | `xy_ab` |
-| `ab_ab`    |  `R:ab:xy` | `xy_xy` |
-| `ab_ab`    |  `r:ab`    | `_ab`   |
-| `ab_ab`    |  `R:ab`    | `_`     |
-| `abc`      |  `?def`    | `abc`   |
-| *(empty)*  |  `?def`    | `def`   |
+| Input     |  Pattern    | Output  |
+| --------- | ----------- | ------- |
+| `ab_ab`   | `{r:ab:xy}` | `xy_ab` |
+| `ab_ab`   | `{R:ab:xy}` | `xy_xy` |
+| `ab_ab`   | `{r:ab}`    | `_ab`   |
+| `ab_ab`   | `{R:ab}`    | `_`     |
+| `abc`     | `{?def}`    | `abc`   |
+| *(empty)* | `{?def}`    | `def`   |
 
 
 ### :star: Regex filters
@@ -286,13 +288,13 @@ Examples:
 
 Examples:
 
-| Input     |  Filter            | Output  |
-| --------- | -------------------| ------- |
-| `12_34`   |  `=\d+`            | `12`    |
-| `12_34`   |  `s:\d+:x`         | `x_34`  |
-| `12_34`   |  `S:\d+:x`         | `x_x`   |
-| `12_34`   |  `s:(\d)(\d):$2$1` | `21_34` |
-| `12_34`   |  `S:(\d)(\d):$2$1` | `21_43` |
+| Input     |  Pattern             | Output  |
+| --------- | ---------------------| ------- |
+| `12_34`   |  `{=\d+}`            | `12`    |
+| `12_34`   |  `{s:\d+:x}`         | `x_34`  |
+| `12_34`   |  `{S:\d+:x}`         | `x_x`   |
+| `12_34`   |  `{s:(\d)(\d):$2$1}` | `21_34` |
+| `12_34`   |  `{S:(\d)(\d):$2$1}` | `21_43` |
 
 - Use `-e, --regex` / `-E, --regex-filename` option to define an external regular expression.
 - Option `-e, --regex` matches regex against each input value.
@@ -319,17 +321,17 @@ echo 'a/b.c' | rew -E '([a-z])' '{1}' # Will print 'b'
 
 Examples:
 
-| Input      |  Filter    | Output   |
-| ---------- | ---------- | -------- |
-| `..a..b..` | `t`        | `a..b` *(dots are white-spaces)* |
-| `aBčĎ`     | `u`        | `ABČĎ`   |
-| `aBčĎ`     | `l`        | `abčď`   |
-| `aBčĎ`     | `a`        | `aBcD`   |
-| `aBčĎ`     | `A`        | `aB`     |
-| `abc`      | `<<123456` | `124abc` |
-| `abc`      | `>>123456` | `abc456` |
-| `abc`      | `<3:XY`    | `XYXabc` |
-| `abc`      | `>3:XY`    | `abcYXY` |
+| Input      |  Pattern     | Output   |
+| ---------- | ------------ | -------- |
+| `..a..b..` | `{t}`        | `a..b` *(dots are white-spaces)* |
+| `aBčĎ`     | `{u}`        | `ABČĎ`   |
+| `aBčĎ`     | `{l}`        | `abčď`   |
+| `aBčĎ`     | `{a}`        | `aBcD`   |
+| `aBčĎ`     | `{A}`        | `aB`     |
+| `abc`      | `{<<123456}` | `124abc` |
+| `abc`      | `{>>123456}` | `abc456` |
+| `abc`      | `{<3:XY}`    | `XYXabc` |
+| `abc`      | `{>3:XY}`    | `abcYXY` |
 
 ### :infinity: Generators
 
@@ -345,13 +347,13 @@ Examples:
 
 Examples:
 
-| Filter  | Output                                            |
-| ------- | ------------------------------------------------- |
-| `*3:ab` | `ababab`                                          |
-| `c`     | *(see below)*                                     |
-| `C`     | *(see below)*                                     |
-| `u0-99` | *(random number between 0-99)*                     |
-| `U`     | `5eefc76d-0ca1-4631-8fd0-62eeb401c432` *(random)* |
+| Pattern   | Output                                            |
+| --------- | ------------------------------------------------- |
+| `{*3:ab}` | `ababab`                                          |
+| `{c}`     | *(see below)*                                     |
+| `{C}`     | *(see below)*                                     |
+| `{u0-99}` | *(random number between 0-99)*                    |
+| `{U}`     | `5eefc76d-0ca1-4631-8fd0-62eeb401c432` *(random)* |
 
 - Global counter `C` is incremented for every input value.
 - Local counter `c` is incremented per parent directory (assuming input value is a path).

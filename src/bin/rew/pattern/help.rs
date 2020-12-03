@@ -67,7 +67,7 @@ const FILTERS_HELP: &str = indoc! {"
 ========================================
 
     FILTER    DESCRIPTION
-    ---------------------------------------------------
+    -----------------------------------
     `w`         Working directory
     `a`         Absolute path
     `A`         Relative path
@@ -83,9 +83,9 @@ const FILTERS_HELP: &str = indoc! {"
     `z`         Ensure trailing separator
     `Z`         Remove trailing separator
 
-Filters `d`, `D`, `f`, `F`, `b`, `B`, `e`, `E` output portion of a path.
+To get a specific portion of path, use one of `dD`, `fF`, `bB`, `eE` filters.
 
-    EXPRESSION    OUTPUT
+    PATTERN       OUTPUT
     -----------------------------------
     `{}`            /home/alice/notes.txt
     `{d}`, `{D}`      /home/alice
@@ -124,9 +124,10 @@ Absolute path `a` and relative path `A` are both resolved against working direct
 
 By default, working directory `w` is set to your current working directory.
 You can change that using the `-w, --working-directory` option.
+`w` filter will always output an absolute path, even when you set relative one using the `-w` option.
 
-    $> rew -w '/home/alice' '{a}' # Absolute path
-    $> rew -w '../alice'    '{a}' # Relative to the current working directory
+    $> rew -w '/home/alice' '{w}' # Absolute path
+    $> rew -w '../alice'    '{w}' # Relative to the current working directory
 
 Normalized path `p` is constructed using the following rules:
 
@@ -183,21 +184,21 @@ Trailing separator filters `z` and `Z` can be useful when dealing with root and 
 
 Examples:
 
-    INPUT    FILTER    OUTPUT
-    -------------------------
-    abcde    `n2-3`      bc
-    abcde    `N2-3`      cd
-    abcde    `n2-`       bcde
-    abcde    `N2-`       abcd
-    abcde    `n2`        b
-    abcde    `N2`        d
+    INPUT    PATTERN    OUTPUT
+    --------------------------
+    abcde    `{n2-3}`     bc
+    abcde    `{N2-3       cd
+    abcde    `{n2-}       bcde
+    abcde    `{N2-}       abcd
+    abcde    `{n2}`       b
+    abcde    `{N2}`       d
 
 ========================================
  Replace filters
 ========================================
 
     FILTER     DESCRIPTION
-    ------------------------------------------------------------------------
+    ----------------------------------------------------------------------
     `r:X:Y`      Replace first occurrence of `X` with `Y`.
                Any other character than `:` can be also used as a delimiter.
     `r:X`        Remove first occurrence of `X`.
@@ -207,21 +208,21 @@ Examples:
 
 Examples:
 
-    INPUT      FILTER       OUTPUT
+    INPUT      PATTERN      OUTPUT
     ------------------------------
-    ab_ab      `r:ab:xy`      xy_ab
-    ab_ab      `R:ab:xy`      xy_xy
-    ab_ab      `r:ab`         _ab
-    ab_ab      `R:ab`         _
-    abc        `?def`         abc
-    (empty)    `?def`         def
+    ab_ab      `{r:ab:xy}`    xy_ab
+    ab_ab      `{R:ab:xy}`    xy_xy
+    ab_ab      `{r:ab}`       _ab
+    ab_ab      `{R:ab}`       _
+    abc        `{?def}`       abc
+    (empty)    `{?def}`       def
 
 ========================================
  Regex filters
 ========================================
 
     FILTER     DESCRIPTION
-    --------------------------------------------------------------------------
+    ----------------------------------------------------------------------
     `=E`         Match of regular expression `E`.
     `s:X:Y`      Replace first match of regular expression `X` with `Y`.
                `Y` can reference capture groups from `X` using `$1`, `$2`, ...
@@ -233,13 +234,13 @@ Examples:
 
 Examples:
 
-    INPUT    FILTER             OUTPUT
-    ----------------------------------
-    12_34    `=\\d+`               12
-    12_34    `s:\\d+:x`            x_34
-    12_34    `S:\\d+:x`            x_x
-    12_34    `s:(\\d)(\\d):$2$1`    21_34
-    12_34    `S:(\\d)(\\d):$2$1`    21_43
+    INPUT    PATTERN             OUTPUT
+    -------------------------------------
+    12_34    `{=\\d+}`                12
+    12_34    `{s:\\d+:x}`             x_34
+    12_34    `{S:\\d+:x}`             x_x
+    12_34    `{s:(\\d)(\\d):$2$1}`    21_34
+    12_34    `{S:(\\d)(\\d):$2$1}`    21_43
 
 Use `-e, --regex` / `-E, --regex-filename` option to define an external regular expression.
 Option `-e, --regex` matches regex against each input value.
@@ -253,7 +254,7 @@ Option `-E, --regex-filename` matches regex against 'filename component' of each
 ========================================
 
     FILTER    DESCRIPTION
-    -----------------------------------------------------------------------
+    ---------------------------------------------------------------------
     `t`         Trim white-spaces from both sides.
     `u`         Convert to uppercase.
     `l`         Convert to lowercase.
@@ -268,24 +269,24 @@ Option `-E, --regex-filename` matches regex against 'filename component' of each
 
 Examples:
 
-    INPUT       FILTER     OUTPUT
-    ----------------------------------------------------
-    ..a..b..    `t`          a..b  (dots are white-spaces)
-    aBčĎ        `u`          ABČĎ
-    aBčĎ        `l`          abčď
-    aBčĎ        `a`          aBcD
-    aBčĎ        `A`          aB
-    abc         `<<123456`   123abc
-    abc         `<3:XY`      XYXabc
-    abc         `>>123456`   abc456
-    abc         `>3:XY`      abcYXY
+    INPUT       PATTERN       OUTPUT
+    --------------------------------
+    ..a..b..    `{t}`           a..b  (dots are white-spaces)
+    aBčĎ        `{u}`           ABČĎ
+    aBčĎ        `{l}`           abčď
+    aBčĎ        `{a}`           aBcD
+    aBčĎ        `{A}`           aB
+    abc         `{<<123456}`    123abc
+    abc         `{<3:XY}`       XYXabc
+    abc         `{>>123456}`    abc456
+    abc         `{>3:XY}`       abcYXY
 
 ========================================
  Generators
 ========================================
 
     FILTER    DESCRIPTION
-    -----------------------------------------------------------------------
+    ---------------------------------------------------------------------
     `*N:V`      Repeat `N` times `V`.
               Any other non-digit than `:` can be also used as a delimiter.
     `c`         Local counter
@@ -297,13 +298,13 @@ Examples:
 
 Examples:
 
-    FILTER    OUTPUT
-    -------------------------------------------------------
-    `*3:ab`     ababab
-    `c`         (see below)
-    `C`         (see below)
-    `u0-99`     (random number between 0-99)
-    `u`         5eefc76d-0ca1-4631-8fd0-62eeb401c432 (random)
+    PATTERN    OUTPUT
+    --------------------------------------------------------
+    `{*3:ab}`    ababab
+    `{c}`        (see below)
+    `{C}`        (see below)
+    `{u0-99}`    (random number between 0-99)
+    `{u}`        5eefc76d-0ca1-4631-8fd0-62eeb401c432 (random)
 
 Global counter `C` is a number incremented for every input value.
 Local counter `c` is a number incremented per parent directory (assuming input value is a path).
