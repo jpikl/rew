@@ -446,16 +446,55 @@ find -name '*.jpeg' | rew '{B}.jpg' -b | mvb       # Same thing using rew + mvb
 find -name '*.jpeg' | rew 'mv "{}" "{B}.jpg"' | sh # Same thing using rew + mv + sh
 ```
 
-### `rew` vs `sed` / [`sd`][sd]
+### `rew` vs `coreutils`
 
-- Like `sed` or [`sd`][sd], `rew` is able to replace text using a regular expression.
+Like `pwd`, `rew` is able to print the current working directory.
 
 ```bash
-echo "foo 123 bar" | sed -E 's/[^0-9]*([0-9]+).*/\1/' # Extract first number using sed
-echo "foo 123 bar" | sd '\D*(\d+).*' '$1'    # Same thing using sd
-echo "Foo 123 Bar" | rew '{s:\D*(\d+).*:$1}' # Same thing using rew (regex replace filter)
-echo "Foo 123 Bar" | rew -e'(\d+)' '{1}'     # Same thing using rew (external regex)
-echo "Foo 123 Bar" | rew '{=\d+}'            # Same thing using rew (regex match filter)
+pwd          # Print the current working directory
+rew '{w}' '' # Same thing using rew
+```
+
+Like `basename`, `rew` is able to strip directory and suffix from a path.
+
+```bash
+basename 'dir/file.txt' '.txt' # Print base name without .txt extension
+rew '{b}' 'dir/file.txt'       # Same thing using rew, no need to specify the extension
+```
+
+Like `dirname`, `rew` is able to strip last component from a path.
+
+```bash
+dirname 'dir/file.txt'   # Print directory name
+rew '{D}' 'dir/file.txt' # Same thing using rew
+```
+
+Like `realpath`, `rew` is able to print resolved path.
+
+```bash
+realpath -e '/usr/../home'            # Print canonical path
+rew '{P}' '/usr/../home'              # Same thing using rew
+realpath --relative-to='/home' '/usr' # Print path relative to a directory
+rew -w '/home' '{A}' '/usr'           # Same thing using rew
+```
+
+### `rew` vs `grep`
+
+Like `grep`, `rew` is able to print match of a regular expression.
+
+```bash
+echo "123 abc 456" | grep -Po '\d+' # Extract all numbers from a string
+echo "123 abc 456" | rew '{=\d+}'   # Same thing using rew but only the first number
+```
+
+### `rew` vs `sed` / [`sd`][sd]
+
+Like `sed` or [`sd`][sd], `rew` is able to replace text using a regular expression.
+
+```bash
+echo "123 abc 456" | sed -E 's/([0-9]+)/_\1_/g' # Put underscores around numbers
+echo "123 abc 456" | sd '(\d+)' '_${1}_'        # Same thing using sd
+echo "123 abc 456" | rew '{S:(\d+):_$1_}'       # Same thing using rew
 ```
 
 ## :rocket: Examples
