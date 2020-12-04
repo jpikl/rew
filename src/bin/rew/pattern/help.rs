@@ -187,9 +187,9 @@ Examples:
     INPUT    PATTERN    OUTPUT
     --------------------------
     abcde    `{n2-3}`     bc
-    abcde    `{N2-3       cd
-    abcde    `{n2-}       bcde
-    abcde    `{N2-}       abcd
+    abcde    `{N2-3}`     cd
+    abcde    `{n2-}`      bcde
+    abcde    `{N2-}`      abcd
     abcde    `{n2}`       b
     abcde    `{N2}`       d
 
