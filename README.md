@@ -9,7 +9,6 @@ Rew is a text processing CLI tool that rewrites FS paths according to a pattern.
 
 - [:bulb: What rew does](#bulb-what-rew-does)
 - [:package: Installation](#package-installation)
-- [:keyboard: Input](#keyboard-input)
 - [:pencil: Pattern](#pencil-pattern)
   - [:railway_track: Path filters](#railway_track-path-filters)
   - [:ab: Substring filters](#ab-substring-filters)
@@ -17,6 +16,7 @@ Rew is a text processing CLI tool that rewrites FS paths according to a pattern.
   - [:star: Regex filters](#star-regex-filters)
   - [:art: Format filters](#art-format-filters)
   - [:infinity: Generators](#infinity-generators)
+- [:keyboard: Input](#keyboard-input)
 - [:speech_balloon: Output](#speech_balloon-output)
   - [:robot: Diff mode](#robot-diff-mode)
   - [:rose: Pretty mode](#rose-pretty-mode)
@@ -44,28 +44,6 @@ Input values are assumed to be FS paths, however, `rew` is able to process any U
     ```
 
 - Binaries will be installed to `.cargo/bin/` in your home directory.
-
-## :keyboard: Input
-
-By default, values are read as lines from standard input.
-`LF` or `CR+LF` is auto-detected as a delimiter, independent of platform.
-
-- Use `-z, --read-nul` flag to read values delimited by NUL character.
-- Use `-r, --read-raw` flag to read whole input into memory as a single value.
-- Use `-d, --read` option to read values delimited by a specific character.
-
-```bash
-find         | rew    '{a}' # Convert output from find command to absolute paths
-find -print0 | rew -z '{a}' # Use NUL delimiter in case paths contain newlines
-echo "$PATH" | rew -d:      # Split PATH variable entries delimited by colon
-rew -r 'A{}B' <data.txt     # Read file as a whole, prepend 'A', append 'B'
-```
-
-Input values can be also provided as additional arguments, after a pattern.
-
-```bash
-rew '{a}' *.txt # Wildcard expansion is done by shell
-```
 
 ## :pencil: Pattern
 
@@ -374,9 +352,32 @@ rew -c0   '{c}' # Start from 0, increment by 1
 rew -c2:3 '{c}' # Start from 2, increment by 3
 ```
 
+## :keyboard: Input
+
+By default, values are read as lines from standard input.
+`LF` or `CR+LF` is auto-detected as a delimiter, independent of platform.
+
+- Use `-z, --read-nul` flag to read values delimited by NUL character.
+- Use `-r, --read-raw` flag to read whole input into memory as a single value.
+- Use `-d, --read` option to read values delimited by a specific character.
+
+```bash
+find         | rew    '{a}' # Convert output from find command to absolute paths
+find -print0 | rew -z '{a}' # Use NUL delimiter in case paths contain newlines
+echo "$PATH" | rew -d:      # Split PATH variable entries delimited by colon
+rew -r 'A{}B' <data.txt     # Read file as a whole, prepend 'A', append 'B'
+```
+
+Input values can be also provided as additional arguments, after a pattern.
+
+```bash
+rew '{a}' *.txt # Wildcard expansion is done by shell
+```
+
 ## :speech_balloon: Output
 
 By default, results are printed as lines to standard output.
+`LF` is used as a delimiter.
 
 - Use `-Z, --print-nul` flag to print results delimited by NUL character.
 - Use `-R, --print-raw` flag to print results without a delimiter.
