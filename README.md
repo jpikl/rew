@@ -605,8 +605,8 @@ rew -R '{}#r#n' <input.txt >output.txt # CR+LF delimiter inside pattern
 
 Rew is licensed under the [MIT license](LICENSE.md).
 
-[build]: https://travis-ci.com/github/jpikl/rew
-[build-img]: https://travis-ci.com/jpikl/rew.svg?branch=master
+[build]: https://github.com/jpikl/rew/actions?query=workflow%3ABuild
+[build-img]: https://github.com/jpikl/rew/workflows/Build/badge.svg
 [coverage]: https://codecov.io/gh/jpikl/rew
 [coverage-img]: https://codecov.io/gh/jpikl/rew/branch/master/graph/badge.svg
 [fd]: https://github.com/sharkdp/fd
