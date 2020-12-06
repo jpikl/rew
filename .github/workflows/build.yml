@@ -29,6 +29,33 @@ jobs:
         with:
           command: check
 
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          components: rustfmt, clippy
+
+      - name: Run cargo fmt
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: -- --check
+
+      - name: Run cargo clippy
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: -- --deny warnings
+
   test:
     name: Test
     runs-on: ${{ matrix.os }}
@@ -53,9 +80,9 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
+          args: --no-fail-fast
 
-  lints:
-    name: Lint
+  coverage:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
@@ -65,18 +92,44 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: stable
+          toolchain: nightly
           override: true
-          components: rustfmt, clippy
 
-      - name: Run cargo fmt
+      - name: Install grcov
+        uses: actions-rs/install@v0.1
+        with:
+          crate: grcov
+          use-tool-cache: true
+
+      - name: Install rust-covfix
+        uses: actions-rs/install@v0.1
+        with:
+          crate: rust-covfix
+          use-tool-cache: true
+
+      - name: Run cargo test
         uses: actions-rs/cargo@v1
         with:
-          command: fmt
-          args: --all -- --check
+          command: test
+          args: --no-fail-fast
+        env:
+          CARGO_INCREMENTAL: '0'
+          RUSTFLAGS: '-Zprofile -Ccodegen-units=1 -Copt-level=0 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
+          RUSTDOCFLAGS: '-Zprofile -Ccodegen-units=1 -Copt-level=0 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
 
-      - name: Run cargo clippy
-        uses: actions-rs/cargo@v1
+      - name: Prepare grcov input
+        run: zip -0 cov.zip target/debug/deps/{rew,cpb,mvb}*.{gcda,gcno}
+
+      - name: Run grcov
+        run: grcov cov.zip --source-dir . --output-path cov.info --llvm --branch --ignore-not-existing --ignore "/*" --ignore "tests/*"
+
+      - name: Run rust-covfix
+        run: rust-covfix --verbose --output cov_fixed.info cov.info
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v1
         with:
-          command: clippy
-          args: -- --deny warnings
+          file: cov_fixed.info
+          yml: codecov.yml
+          fail_ci_if_error: true
+          verbose: true
