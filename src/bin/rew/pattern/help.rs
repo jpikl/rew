@@ -83,7 +83,8 @@ const FILTERS_HELP: &str = indoc! {"
     `z`         Ensure trailing separator
     `Z`         Remove trailing separator
 
-To get a specific portion of path, use one of `dD`, `fF`, `bB`, `eE` filters.
+Path filters assume that their input value is a FS path.
+To get a specific portion of a path, use one of `dD`, `fF`, `bB`, `eE` filters.
 
     PATTERN       OUTPUT
     -----------------------------------
