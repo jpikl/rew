@@ -114,22 +114,20 @@ jobs:
           args: --no-fail-fast
         env:
           CARGO_INCREMENTAL: '0'
-          RUSTFLAGS: '-Zprofile -Ccodegen-units=1 -Copt-level=0 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
-          RUSTDOCFLAGS: '-Zprofile -Ccodegen-units=1 -Copt-level=0 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
+          RUSTFLAGS: '-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
+          RUSTDOCFLAGS: '-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
 
       - name: Prepare grcov input
-        run: zip -0 cov.zip target/debug/deps/{rew,cpb,mvb}*.{gcda,gcno}
+        run: zip -0 ccov.zip target/debug/deps/{rew,cpb,mvb}*.{gcda,gcno}
 
       - name: Run grcov
-        run: grcov cov.zip --source-dir . --output-path cov.info --llvm --branch --ignore-not-existing --ignore "/*" --ignore "tests/*"
+        run: grcov ccov.zip --source-dir . --output-path lcov.info --llvm --branch --ignore-not-existing --ignore "/*" --ignore "tests/*"
 
       - name: Run rust-covfix
-        run: rust-covfix --verbose --output cov_fixed.info cov.info
+        run: rust-covfix --verbose --output lcov_correct.info lcov.info
 
       - name: Upload coverage
         uses: codecov/codecov-action@v1
         with:
-          file: cov_fixed.info
-          yml: codecov.yml
+          file: lcov_correct.info
           fail_ci_if_error: true
-          verbose: true
