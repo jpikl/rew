@@ -9,6 +9,7 @@ Rew is a text processing CLI tool that rewrites FS paths according to a pattern.
 
 - [:bulb: What rew does](#bulb-what-rew-does)
 - [:package: Installation](#package-installation)
+- [:rocket: Usage](#rocket-usage)
 - [:pencil: Pattern](#pencil-pattern)
   - [:railway_track: Path filters](#railway_track-path-filters)
   - [:ab: Substring filters](#ab-substring-filters)
@@ -21,7 +22,7 @@ Rew is a text processing CLI tool that rewrites FS paths according to a pattern.
   - [:robot: Diff mode](#robot-diff-mode)
   - [:rose: Pretty mode](#rose-pretty-mode)
 - [:microscope: Comparison with similar tools](#microscope-comparison-with-similar-tools)
-- [:rocket: Examples](#rocket-examples)
+- [:card_file_box: Examples](#card_file_box-examples)
 - [:page_facing_up: License](#page_facing_up-license)
 
 ## :bulb: What rew does
@@ -44,6 +45,22 @@ Input values are assumed to be FS paths, however, `rew` is able to process any U
     ```
 
 - Binaries will be installed to `.cargo/bin/` in your home directory.
+
+## :rocket: Usage
+
+1. Input values from stdin (default).
+
+    ```bash
+    cmd | rew [options] [pattern]
+    ```
+
+2. Input values as arguments.
+
+    ```bash
+    rew [options] [pattern] [--] <value>...
+    ```
+
+Use `-h` flag to print short help, `--help` to print detailed help.
 
 ## :pencil: Pattern
 
@@ -498,7 +515,7 @@ echo "123 abc 456" | sd '(\d+)' '_${1}_'        # Same thing using sd
 echo "123 abc 456" | rew '{S:(\d+):_$1_}'       # Same thing using rew
 ```
 
-## :rocket: Examples
+## :card_file_box: Examples
 
 > :information_source:
 > Use `rew --explain <pattern>` to print detailed explanation what a certain pattern does.
