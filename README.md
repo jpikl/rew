@@ -41,24 +41,25 @@ Input values are assumed to be FS paths, however, `rew` is able to process any U
 - Install `rew` from sources using `cargo`.
 
     ```bash
-    cargo install --git https://github.com/jpikl/rew
+    cargo install rew                                # Latest release
+    cargo install --git https://github.com/jpikl/rew # Development version
     ```
 
 - Binaries will be installed to `.cargo/bin/` in your home directory.
 
 ## :rocket: Usage
 
-1. Input values from stdin (default).
+By default, input values are read as lines from standard input.
 
-    ```bash
-    cmd | rew [options] [pattern]
-    ```
+```bash
+cmd | rew [options] [pattern]
+```
 
-2. Input values as arguments.
+Input values can be also passed as additional arguments.
 
-    ```bash
-    rew [options] [pattern] [--] <value>...
-    ```
+```bash
+rew [options] [pattern] [--] <value>...
+```
 
 Use `-h` flag to print short help, `--help` to print detailed help.
 
@@ -184,16 +185,16 @@ Absolute path `a` and relative path `A` are both resolved against working direct
 
 By default, working directory `w` is set to your current working directory.
 You can change that using the `-w, --working-directory` option.
-`w` filter will always output an absolute path, even when you set relative one using the `-w` option.
+`w` filter will always output an absolute path, even if you set a relative one using the `-w` option.
 
 ```bash
 rew -w '/home/alice' '{w}' # Absolute path
-rew -w '../alice'    '{w}' # Relative to the current working directory
+rew -w '../alice'    '{w}' # Relative to your current working directory
 ```
 
 Normalized path `p` is constructed using the following rules:
 
-- On Windows, all `/` separators are converted to `\\`.
+- On Windows, all `/` separators are converted to `\`.
 - Consecutive directory separators are collapsed into one.
 - Non-root trailing directory separator is removed.
 - Unnecessary current directory `.` components are removed.
@@ -276,9 +277,9 @@ Examples:
 
 | Filter        | Description                                      |
 | ------------- | ------------------------------------------------ |
-| `=E`          | Match of regular expression `E`.                 |
-| `s:X:Y`       | Replace first match of regular expression `X` with `Y`.<br/>`Y` can reference capture groups from `X` using `$1`, `$2`, ...<br/>Any other character than `:` can be also used as a delimiter. |
-| `s:X`         | Remove first match of regular expression `X`.<br/>Equivalent to `s:X:`. |
+| `=E`          | Match of a regular expression `E`.               |
+| `s:X:Y`       | Replace first match of a regular expression `X` with `Y`.<br/>`Y` can reference capture groups from `X` using `$1`, `$2`, ...<br/>Any other character than `:` can be also used as a delimiter. |
+| `s:X`         | Remove first match of a regular expression `X`.<br/>Equivalent to `s:X:`. |
 | `S`           | Same as `s` but replaces/removes all matches.    |
 | `1`, `2`, ... | Capture group of an external regular expression. |
 
@@ -324,7 +325,7 @@ Examples:
 | `aBčĎ`     | `{l}`        | `abčď`   |
 | `aBčĎ`     | `{a}`        | `aBcD`   |
 | `aBčĎ`     | `{A}`        | `aB`     |
-| `abc`      | `{<<123456}` | `124abc` |
+| `abc`      | `{<<123456}` | `123abc` |
 | `abc`      | `{>>123456}` | `abc456` |
 | `abc`      | `{<3:XY}`    | `XYXabc` |
 | `abc`      | `{>3:XY}`    | `abcYXY` |
@@ -352,15 +353,15 @@ Examples:
 | `{U}`     | `5eefc76d-0ca1-4631-8fd0-62eeb401c432` *(random)* |
 
 - Global counter `C` is incremented for every input value.
-- Local counter `c` is incremented per parent directory (assuming input value is a path).
+- Local counter `c` is incremented per parent directory (assuming input value is a FS path).
 - Both counters start at 1 and are incremented by 1.
 
 | Input | Global counter | Local counter |
 | ----- | -------------- | ------------- |
-| `a/x` | 1              | 1             |
-| `a/y` | 2              | 2             |
-| `b/x` | 3              | 1             |
-| `b/y` | 4              | 2             |
+| `A/1` | 1              | 1             |
+| `A/2` | 2              | 2             |
+| `B/1` | 3              | 1             |
+| `B/2` | 4              | 2             |
 
 - Use `-c, --local-counter` option to change local counter configuration.
 - Use `-C, --global-counter` option to change global counter configuration.
@@ -372,7 +373,7 @@ rew -c2:3 '{c}' # Start from 2, increment by 3
 
 ## :keyboard: Input
 
-By default, values are read as lines from standard input.
+By default, input values are read as lines from standard input.
 `LF` or `CR+LF` is auto-detected as a delimiter, independent of platform.
 
 - Use `-z, --read-nul` flag to read values delimited by NUL character.
@@ -380,13 +381,13 @@ By default, values are read as lines from standard input.
 - Use `-d, --read` option to read values delimited by a specific character.
 
 ```bash
-find         | rew    '{a}' # Convert output from find command to absolute paths
+find | rew '{a}'            # Convert output of find command to absolute paths
 find -print0 | rew -z '{a}' # Use NUL delimiter in case paths contain newlines
 echo "$PATH" | rew -d:      # Split PATH variable entries delimited by colon
 rew -r 'A{}B' <data.txt     # Read file as a whole, prepend 'A', append 'B'
 ```
 
-Input values can be also provided as additional arguments, after a pattern.
+Input values can be also passed as additional arguments, after a pattern.
 
 ```bash
 rew '{a}' *.txt # Wildcard expansion is done by shell
@@ -399,14 +400,14 @@ By default, results are printed as lines to standard output.
 
 - Use `-Z, --print-nul` flag to print results delimited by NUL character.
 - Use `-R, --print-raw` flag to print results without a delimiter.
-- Use `-D, --print` options to print results delimited by a specific string.
+- Use `-D, --print` option to print results delimited by a specific string.
 - Use `-T, --no-trailing-delimiter` flag to not print final delimiter at the end of output.
 
 ```bash
-rew    '{B}' | xargs    mkdir -p # Pass extracted directories to mkdir command
-rew -Z '{B}' | xargs -0 mkdir -p # Use NUL delimiter in case paths contain newlines
+rew '{D}' | xargs mkdir -p       # Pass extracted directories to mkdir command
+rew -Z '{D}' | xargs -0 mkdir -p # Use NUL delimiter in case paths contain newlines
 rew -D$'\r\n'                    # Convert newlines to CR+LF using custom output delimiter
-rew -R '{}#r#n'                  # Same thing but output delimiter is inside pattern
+rew -R '{}#r#n'                  # Same thing but output delimiter is in the pattern
 rew -TD+ '{}' a b c              # Join input values to string "a+b+c"
 ```
 
@@ -457,7 +458,7 @@ input_value_N -> output_value_N
 - Unlike `rename`, `rew` can read input paths directly from standard input.
   Use of `xargs` to pass output of `find` or [`fd`][fd] is not needed.
 - Unlike `rename`, `rew` is only a text-processing tool and it is unable to rename files.
-  You have to use accompanying `mvb` / `cpb` utilities, or you can generate executable shell code.
+  You have to use accompanying `mvb` / `cpb` utilities or you can generate executable shell code.
 
 ```bash
 find -name '*.jpeg' | xargs rename .jpeg .jpg      # Rename *.jpeg files to *.jpg
@@ -467,18 +468,18 @@ find -name '*.jpeg' | rew 'mv "{}" "{B}.jpg"' | sh # Same thing using rew + mv +
 
 ### `rew` vs `coreutils`
 
-Like `pwd`, `rew` is able to print the current working directory.
+Like `pwd`, `rew` is able to print your current working directory.
 
 ```bash
-pwd          # Print the current working directory
+pwd          # Print your current working directory
 rew '{w}' '' # Same thing using rew
 ```
 
 Like `basename`, `rew` is able to strip directory and suffix from a path.
 
 ```bash
-basename 'dir/file.txt' '.txt' # Print base name without .txt extension
-rew '{b}' 'dir/file.txt'       # Same thing using rew, no need to specify the extension
+basename 'dir/file.txt' '.txt' # Print base name without the ".txt" extension
+rew '{b}' 'dir/file.txt'       # Same thing using rew, no need to specify an extension
 ```
 
 Like `dirname`, `rew` is able to strip last component from a path.
@@ -488,7 +489,7 @@ dirname 'dir/file.txt'   # Print directory name
 rew '{D}' 'dir/file.txt' # Same thing using rew
 ```
 
-Like `realpath`, `rew` is able to print resolved path.
+Like `realpath`, `rew` is able to resolve a path.
 
 ```bash
 realpath -e '/usr/../home'            # Print canonical path
@@ -503,10 +504,10 @@ Like `grep`, `rew` is able to print match of a regular expression.
 
 ```bash
 echo "123 abc 456" | grep -Po '\d+' # Extract all numbers from a string
-echo "123 abc 456" | rew '{=\d+}'   # Same thing using rew but only the first number
+echo "123 abc 456" | rew '{=\d+}'   # Same thing using rew (but only the first number)
 ```
 
-### `rew` vs `sed` / [`sd`][sd]
+### `rew` vs `sed` / `sd`
 
 Like `sed` or [`sd`][sd], `rew` is able to replace text using a regular expression.
 
@@ -521,7 +522,7 @@ echo "123 abc 456" | rew '{S:(\d+):_$1_}'       # Same thing using rew
 > :information_source:
 > Use `rew --explain <pattern>` to print detailed explanation what a certain pattern does.
 
-Print contents of working directory as absolute paths.
+Print contents of your current working directory as absolute paths.
 
 ```bash
 rew '{a}' *    # Paths are passed as arguments, wildcard expansion is done by shell
@@ -567,7 +568,7 @@ find -name '*.txt'  | rew -b "$HOME/Backup/{b}_{U}.{e}"  | cpb -v
 Flatten directory structure `./dir/subdir/` to `./dir_subdir/`.
 
 ```bash
-find -mindepth 2 -maxdepth 2 -type d | rew -b '{D}_{f}' | mvb -v
+find -mindepth 2 -maxdepth 2 -type d | rew -b '{D}_{F}' | mvb -v
 ```
 
 Normalize base names of files to `file_001`, `file_002`, ...
@@ -616,7 +617,7 @@ Normalize line endings in a file to `CR+LF`.
 
 ````bash
 rew -D$'\r\n'   <input.txt >output.txt # CR+LF delimiter using -D option
-rew -R '{}#r#n' <input.txt >output.txt # CR+LF delimiter inside pattern
+rew -R '{}#r#n' <input.txt >output.txt # CR+LF delimiter in pattern
 ````
 
 ## :page_facing_up: License
