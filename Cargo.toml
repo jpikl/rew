@@ -47,4 +47,3 @@ path = "src/bin/cpb/main.rs"
 [lib]
 name = "common"
 path = "src/common/lib.rs"
-
