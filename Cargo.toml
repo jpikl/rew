@@ -2,8 +2,11 @@
 name = "rew"
 version = "0.1.0"
 description = "A text processing CLI tool that rewrites FS paths according to a pattern."
-keywords = ["tool", "command-line", "replace", "rename", "regex", "files"]
+categories = ["command-line-utilities", "text-processing", "filesystem"]
+keywords = ["tool", "pattern", "regex", "rename", "path"]
 authors = ["Jan Pikl <pikl.jan@gmail.com>"]
+repository = "https://github.com/jpikl/rew"
+license = "MIT"
 edition = "2018"
 
 [dependencies]
