@@ -12,25 +12,25 @@ Rew is a text processing CLI tool that rewrites FS paths according to a pattern.
 
 ## Contents
 
-- [:bulb: What rew does](#bulb-what-rew-does)
-- [:package: Installation](#package-installation)
-- [:rocket: Usage](#rocket-usage)
-- [:pencil: Pattern](#pencil-pattern)
-  - [:railway_track: Path filters](#railway_track-path-filters)
-  - [:ab: Substring filters](#ab-substring-filters)
-  - [:mag: Replace filters](#mag-replace-filters)
-  - [:star: Regex filters](#star-regex-filters)
-  - [:art: Format filters](#art-format-filters)
-  - [:infinity: Generators](#infinity-generators)
-- [:keyboard: Input](#keyboard-input)
-- [:speech_balloon: Output](#speech_balloon-output)
-  - [:robot: Diff mode](#robot-diff-mode)
-  - [:rose: Pretty mode](#rose-pretty-mode)
-- [:microscope: Comparison with similar tools](#microscope-comparison-with-similar-tools)
-- [:card_file_box: Examples](#card_file_box-examples)
-- [:page_facing_up: License](#page_facing_up-license)
+- [💡 What rew does](#-what-rew-does)
+- [📦 Installation](#-installation)
+- [🚀 Usage](#-usage)
+- [✏️ Pattern](#-pattern)
+  - [🛤 Path filters](#-path-filters)
+  - [🆎 Substring filters](#-filters)
+  - [🔍 Replace filters](#-replace-filters)
+  - [⭐️ Regex filters](#-regex-filters)
+  - [🎨 Format filters](#-format-filters)
+  - [🏭 Generators](#-generators)
+- [⌨️ Input](#-input)
+- [💬 Output](#-output)
+  - [🤖 Diff mode](#-diff-mode)
+  - [🌹 Pretty mode](#-pretty-mode)
+- [🔬 Comparison with similar tools](#-comparison-with-similar-tools)
+- [🗃 Examples](#-examples)
+- [📄 License](#-license)
 
-## :bulb: What rew does
+## 💡 What rew does
 
 1. Reads values from standard input.
 2. Rewrites them according to a pattern.
@@ -40,7 +40,7 @@ Input values are assumed to be FS paths, however, `rew` is able to process any U
 
 ![What rew does](images/diagram.png)
 
-## :package: Installation
+## 📦 Installation
 
 - Set up a [Rust development environment][rust-dev].
 - Install `rew` from sources using `cargo`.
@@ -52,7 +52,7 @@ Input values are assumed to be FS paths, however, `rew` is able to process any U
 
 - Binaries will be installed to `.cargo/bin/` in your home directory.
 
-## :rocket: Usage
+## 🚀 Usage
 
 By default, input values are read as lines from standard input.
 
@@ -68,7 +68,7 @@ rew [options] [pattern] [--] <value>...
 
 Use `-h` flag to print short help, `--help` to print detailed help.
 
-## :pencil: Pattern
+## ✏️ Pattern
 
 Pattern is a string describing how to generate output from an input.
 
@@ -128,7 +128,7 @@ If no pattern is provided, input values are directly copied to output.
 printf 'a\0b' | rew -z # Convert NUL bytes to newlines
 ```
 
-### :railway_track: Path filters
+### 🛤 Path filters
 
 | Filter | Description               |
 | ------ | ------------------------- |
@@ -237,7 +237,7 @@ Trailing separator filters `z` and `Z` can be useful when dealing with root and 
 | `a`    | `ab`  | `a/b`  | `a/b`  | `a/b`   |
 | `a/`   | `a/b` | `a//b` | `a/b`  | `a/b`   |
 
-### :ab: Substring filters
+### 🆎 Substring filters
 
 | Filter | Description                                       |
 | ------ | ------------------------------------------------- |
@@ -257,7 +257,7 @@ Examples:
 | `abcde` | `{n2}`   | `b`    |
 | `abcde` | `{N2}`   | `d`    |
 
-### :mag: Replace filters
+### 🔍 Replace filters
 
 | Filter  | Description                                             |
 | ------- | ------------------------------------------------------- |
@@ -277,7 +277,7 @@ Examples:
 | `abc`     | `{?def}`    | `abc`   |
 | *(empty)* | `{?def}`    | `def`   |
 
-### :star: Regex filters
+### ⭐️ Regex filters
 
 | Filter        | Description                                      |
 | ------------- | ------------------------------------------------ |
@@ -306,7 +306,7 @@ echo 'a/b.c' | rew -e '([a-z])' '{1}' # Will print 'a'
 echo 'a/b.c' | rew -E '([a-z])' '{1}' # Will print 'b'
 ```
 
-### :art: Format filters
+### 🎨 Format filters
 
 | Filter | Description                            |
 | ------ | -------------------------------------- |
@@ -334,7 +334,7 @@ Examples:
 | `abc`      | `{<3:XY}`    | `XYXabc` |
 | `abc`      | `{>3:XY}`    | `abcYXY` |
 
-### :infinity: Generators
+### 🏭 Generators
 
 | Filter | Description                                        |
 | ------ | -------------------------------------------------- |
@@ -375,7 +375,7 @@ rew -c0   '{c}' # Start from 0, increment by 1
 rew -c2:3 '{c}' # Start from 2, increment by 3
 ```
 
-## :keyboard: Input
+## ⌨️ Input
 
 By default, input values are read as lines from standard input.
 `LF` or `CR+LF` is auto-detected as a delimiter, independent of platform.
@@ -397,7 +397,7 @@ Input values can be also passed as additional arguments, after a pattern.
 rew '{a}' *.txt # Wildcard expansion is done by shell
 ```
 
-## :speech_balloon: Output
+## 💬 Output
 
 By default, results are printed as lines to standard output.
 `LF` is used as a delimiter.
@@ -417,7 +417,7 @@ rew -TD+ '{}' a b c              # Join input values to string "a+b+c"
 
 Apart from this (standard) mode, there are also two other output modes.
 
-### :robot: Diff mode
+### 🤖 Diff mode
 
 - Enabled using `-b, --diff` flag.
 - Respects `--print*` flags/options.
@@ -441,7 +441,7 @@ find -name '*.jpeg' | rew -b '{B}.jpg' | mvb # Rename all *.jpeg files to *.jpg
 find -name '*.txt'  | rew -b '{}.bak'  | cpb # Make backup copy of each *.txt file
 ```
 
-### :rose: Pretty mode
+### 🌹 Pretty mode
 
 - Enabled using `-p, --pretty` flag.
 - Ignores `--print*` flags/options.
@@ -455,7 +455,7 @@ input_value_2 -> output_value_2
 input_value_N -> output_value_N
 ```
 
-## :microscope: Comparison with similar tools
+## 🔬 Comparison with similar tools
 
 ### `rew` vs `rename` / `prename`
 
@@ -521,10 +521,9 @@ echo "123 abc 456" | sd '(\d+)' '_${1}_'        # Same thing using sd
 echo "123 abc 456" | rew '{S:(\d+):_$1_}'       # Same thing using rew
 ```
 
-## :card_file_box: Examples
+## 🗃 Examples
 
-> :information_source:
-> Use `rew --explain <pattern>` to print detailed explanation what a certain pattern does.
+> ℹ️ Use `rew --explain <pattern>` to print detailed explanation what a certain pattern does.
 
 Print contents of your current working directory as absolute paths.
 
@@ -624,7 +623,7 @@ rew -D$'\r\n'   <input.txt >output.txt # CR+LF delimiter using -D option
 rew -R '{}#r#n' <input.txt >output.txt # CR+LF delimiter in pattern
 ````
 
-## :page_facing_up: License
+## 📄 License
 
 Rew is licensed under the [MIT license](LICENSE.md).
 
