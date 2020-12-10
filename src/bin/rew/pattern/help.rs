@@ -286,6 +286,9 @@ Examples:
  Generators
 ========================================
 
+Unlike other filters, generator output is not produced from its input.
+However, it is still possible (although meaningless) to pipe input into a generator.
+
     FILTER    DESCRIPTION
     ---------------------------------------------------------------------
     `*N:V`      Repeat `N` times `V`.

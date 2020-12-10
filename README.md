@@ -336,6 +336,9 @@ Examples:
 
 ### 🏭 Generators
 
+Unlike other filters, generator output is not produced from its input.
+However, it is still possible (although meaningless) to pipe input into a generator.
+
 | Filter | Description                                        |
 | ------ | -------------------------------------------------- |
 | `*N:V` | Repeat `N` times `V`.<br/>Any other non-digit than `:` can be also used as a delimiter. |
