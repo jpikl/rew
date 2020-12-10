@@ -2,8 +2,13 @@
 
 Rew is a text processing CLI tool that rewrites FS paths according to a pattern.
 
-[![Build status][build-img]][build]
-[![Code coverage][coverage-img]][coverage]
+<sup>master:</sup>
+[![Build status](https://github.com/jpikl/rew/workflows/Build/badge.svg?branch=master&event=push)](https://github.com/jpikl/rew/actions?query=workflow%3ABuild+branch%3Amaster)
+[![Code coverage](https://codecov.io/gh/jpikl/rew/branch/master/graph/badge.svg?token=9K88E1ZCBU)](https://codecov.io/gh/jpikl/rew/branch/master)
+<br>
+<sup>develop:</sup>
+[![Build status](https://github.com/jpikl/rew/workflows/Build/badge.svg?branch=develop&event=push)](https://github.com/jpikl/rew/actions?query=workflow%3ABuild+branch%3Adevelop)
+[![Code coverage](https://codecov.io/gh/jpikl/rew/branch/develop/graph/badge.svg?token=9K88E1ZCBU)](https://codecov.io/gh/jpikl/rew/branch/develop)
 
 ## Contents
 
@@ -271,7 +276,6 @@ Examples:
 | `ab_ab`   | `{R:ab}`    | `_`     |
 | `abc`     | `{?def}`    | `abc`   |
 | *(empty)* | `{?def}`    | `def`   |
-
 
 ### :star: Regex filters
 
@@ -624,10 +628,6 @@ rew -R '{}#r#n' <input.txt >output.txt # CR+LF delimiter in pattern
 
 Rew is licensed under the [MIT license](LICENSE.md).
 
-[build]: https://github.com/jpikl/rew/actions?query=workflow%3ABuild
-[build-img]: https://github.com/jpikl/rew/workflows/Build/badge.svg
-[coverage]: https://codecov.io/gh/jpikl/rew
-[coverage-img]: https://codecov.io/gh/jpikl/rew/branch/master/graph/badge.svg
 [fd]: https://github.com/sharkdp/fd
 [rust-dev]: https://www.rust-lang.org/learn/get-started
 [sd]: https://github.com/chmln/sd
