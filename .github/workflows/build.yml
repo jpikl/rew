@@ -1,10 +1,5 @@
 name: Build
-
-on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+on: [push, pull_request]
 
 env:
   CARGO_TERM_COLOR: always
@@ -20,8 +15,8 @@ jobs:
       - name: Install toolchain
         uses: actions-rs/toolchain@v1
         with:
-          profile: minimal
           toolchain: stable
+          profile: minimal
           override: true
 
       - name: Run cargo check
@@ -39,8 +34,8 @@ jobs:
       - name: Install toolchain
         uses: actions-rs/toolchain@v1
         with:
-          profile: minimal
           toolchain: stable
+          profile: minimal
           override: true
           components: rustfmt, clippy
 
@@ -64,7 +59,7 @@ jobs:
         os:
           - ubuntu-latest
           - windows-latest
-          - macOS-latest
+          - macos-latest
     steps:
       - name: Checkout sources
         uses: actions/checkout@v2
@@ -72,8 +67,8 @@ jobs:
       - name: Install toolchain
         uses: actions-rs/toolchain@v1
         with:
-          profile: minimal
           toolchain: stable
+          profile: minimal
           override: true
 
       - name: Run cargo test
@@ -83,6 +78,7 @@ jobs:
           args: --no-fail-fast
 
   coverage:
+    name: Coverage
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
@@ -91,8 +87,8 @@ jobs:
       - name: Install toolchain
         uses: actions-rs/toolchain@v1
         with:
-          profile: minimal
           toolchain: nightly
+          profile: minimal
           override: true
 
       - name: Install grcov
