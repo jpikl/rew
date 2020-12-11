@@ -123,6 +123,7 @@ jobs:
         run: rust-covfix --verbose --output lcov_correct.info lcov.info
 
       - name: Upload coverage
+        if: ${{ github.event_name == 'push' }}
         uses: codecov/codecov-action@v1
         with:
           file: lcov_correct.info
