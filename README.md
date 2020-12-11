@@ -43,6 +43,10 @@ Input values are assumed to be FS paths, however, `rew` is able to process any U
 
 ## 📦 Installation
 
+The latest release is available for [download on GitHub](https://github.com/jpikl/rew/releases/latest).
+
+Alternatively, you can build `rew` from sources:
+
 - Set up a [Rust development environment][rust-dev].
 - Install `rew` from sources using `cargo`.
 
