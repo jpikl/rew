@@ -9,7 +9,7 @@ env:
 
 jobs:
   release:
-    name: GitHub release
+    name: Release ${{ matrix.target }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -107,22 +107,22 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-#  publish:
-#    name: Publish crate
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: Checkout sources
-#        uses: actions/checkout@v2
-#
-#      - name: Install toolchain
-#        uses: actions-rs/toolchain@v1
-#        with:
-#          toolchain: stable
-#          profile: minimal
-#          override: true
-#
-#      - name: Run cargo publish
-#        uses: actions-rs/cargo@v1
-#        with:
-#          command: publish
-#          args: --allow-dirty --token ${{ secrets.CARGO_API_KEY }}
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+
+      - name: Run cargo publish
+        uses: actions-rs/cargo@v1
+        with:
+          command: publish
+          args: --allow-dirty --token ${{ secrets.CARGO_API_KEY }}
