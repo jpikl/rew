@@ -5,6 +5,7 @@ Rew is a text processing CLI tool that rewrites FS paths according to a pattern.
 <sup>master:</sup>
 [![Build status](https://github.com/jpikl/rew/workflows/Build/badge.svg?branch=master&event=push)](https://github.com/jpikl/rew/actions?query=workflow%3ABuild+branch%3Amaster)
 [![Code coverage](https://codecov.io/gh/jpikl/rew/branch/master/graph/badge.svg?token=9K88E1ZCBU)](https://codecov.io/gh/jpikl/rew/branch/master)
+[![crates.io](https://img.shields.io/crates/v/rew.svg)](https://crates.io/crates/rew)
 <br>
 <sup>develop:</sup>
 [![Build status](https://github.com/jpikl/rew/workflows/Build/badge.svg?branch=develop&event=push)](https://github.com/jpikl/rew/actions?query=workflow%3ABuild+branch%3Adevelop)
