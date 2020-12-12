@@ -23,13 +23,19 @@ Input values are assumed to be FS paths, however, rew is able to process any UTF
 
 ## Documentation
 
-See [documentation](https://jpikl.github.io/rew) for:
-
 - [📦 Installation](https://jpikl.github.io/rew/installation.html)
 - [🚀 Usage](https://jpikl.github.io/rew/usage.html)
-- [✏️ Pattern syntax](https://jpikl.github.io/rew/pattern.html)
+- [✏️ Pattern](https://jpikl.github.io/rew/pattern.html)
+  - [🛤 Path filters](https://jpikl.github.io/rew/filters/path.html)
+  - [🆎 Substring filters](https://jpikl.github.io/rew/filters/substr.html)
+  - [🔍 Replace filters](https://jpikl.github.io/rew/filters/replace.html)
+  - [⭐️ Regex filters](https://jpikl.github.io/rew/filters/regex.html)
+  - [🎨 Format filters](https://jpikl.github.io/rew/filters/format.html)
+  - [🏭 Generators](https://jpikl.github.io/rew/filters/generators.html)
+- [⌨️ Input](https://jpikl.github.io/rew/input.html)
+- [💬 Output](https://jpikl.github.io/rew/output.html)
+- [🔬 Comparison with similar tools](https://jpikl.github.io/rew/comparison.html)
 - [🗃 Examples](https://jpikl.github.io/rew/examples.html)
-- and more...
 
 ## License
 
