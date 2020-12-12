@@ -25,18 +25,12 @@ Input values are assumed to be FS paths, however, rew is able to process any UTF
 
 See [documentation](https://jpikl.github.io/rew) for:
 
-   - [📦 installation][installation]
-   - [🚀 usage][usage]
-   - [✏️ pattern syntax][pattern]
-   - [🗃 examples][examples]
-   -  and more...
+- [📦 Installation](https://jpikl.github.io/rew/installation.html)
+- [🚀 Usage](https://jpikl.github.io/rew/usage.html)
+- [✏️ Pattern syntax](https://jpikl.github.io/rew/pattern.html)
+- [🗃 Examples](https://jpikl.github.io/rew/examples.html)
+- and more...
 
 ## License
 
 Rew is licensed under the [MIT license](LICENSE.md).
-
-[docs]: https://jpikl.github.io/rew
-[installation]: https://jpikl.github.io/rew/installation.html
-[pattern]: https://jpikl.github.io/rew/pattern.html
-[usage]: https://jpikl.github.io/rew/usage.html
-[examples]: https://jpikl.github.io/rew/examples.html
