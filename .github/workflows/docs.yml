@@ -1,0 +1,29 @@
+name: Deploy docs
+
+on:
+  push:
+    branches: [ master ]
+    paths: [ 'docs/**' ]
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v1
+
+      - name: Generate docs
+        run: npx docpress build
+
+      - name: Deploy docs
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_docpress
+          force_orphan: true

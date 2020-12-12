@@ -1,0 +1,7 @@
+.markdown-body table th:empty,
+.markdown-body table td:empty {
+	border-top-color: transparent;
+	border-bottom-color: transparent;
+	background-color: white;
+	width: 2rem;
+}

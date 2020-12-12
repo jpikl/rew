@@ -1,0 +1,17 @@
+# Table of contents
+
+- [rew](about.md)
+- [📦 Installation](installation.md)
+- [🚀 Usage](usage.md)
+- [✏️ Pattern](pattern.md)
+  - [🛤 Path filters](filters/path.md)
+  - [🆎 Substring filters](filters/substr.md)
+  - [🔍 Replace filters](filters/replace.md)
+  - [⭐️ Regex filters](filters/regex.md)
+  - [🎨 Format filters](filters/format.md)
+  - [🏭 Generators](filters/generators.md)
+- [⌨️ Input](input.md)
+- [💬 Output](output.md)
+- [🔬 Comparison with similar tools](comparison.md)
+- [🗃 Examples](examples.md)
+- [📄 License](../LICENSE.md)
