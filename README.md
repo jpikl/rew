@@ -2,14 +2,16 @@
 
 Rew is a text processing CLI tool that rewrites FS paths according to a pattern.
 
-<sup>master:</sup>
-[![Build status](https://github.com/jpikl/rew/workflows/Build/badge.svg?branch=master&event=push)](https://github.com/jpikl/rew/actions?query=workflow%3ABuild+branch%3Amaster)
-[![Code coverage](https://codecov.io/gh/jpikl/rew/branch/master/graph/badge.svg?token=9K88E1ZCBU)](https://codecov.io/gh/jpikl/rew/branch/master)
-[![crates.io](https://img.shields.io/crates/v/rew.svg)](https://crates.io/crates/rew)
+[![Version](https://img.shields.io/crates/v/rew.svg)](https://crates.io/crates/rew)
+[![Dependencies](https://deps.rs/repo/github/jpikl/rew/status.svg)](https://deps.rs/repo/github/jpikl/rew)
+[![Downloads](https://img.shields.io/crates/d/rew)](https://crates.io/crates/rew)
+[![License](https://img.shields.io/crates/l/rew.svg)](https://github.com/jpikl/rew/blob/master/LICENSE.md)
 <br>
-<sup>develop:</sup>
-[![Build status](https://github.com/jpikl/rew/workflows/Build/badge.svg?branch=develop&event=push)](https://github.com/jpikl/rew/actions?query=workflow%3ABuild+branch%3Adevelop)
-[![Code coverage](https://codecov.io/gh/jpikl/rew/branch/develop/graph/badge.svg?token=9K88E1ZCBU)](https://codecov.io/gh/jpikl/rew/branch/develop)
+[![Build status](https://img.shields.io/github/workflow/status/jpikl/rew/Build/master?event=push&label=build%20%28master%29&logo=github)](https://github.com/jpikl/rew/actions?query=workflow%3ABuild+branch%3Amaster)
+[![Code coverage](https://img.shields.io/codecov/c/github/jpikl/rew/master?label=coverage%20%28master%29&logo=codecov&token=9K88E1ZCBU)](https://codecov.io/gh/jpikl/rew/branch/master)
+<br>
+[![Build status](https://img.shields.io/github/workflow/status/jpikl/rew/Build/develop?event=push&label=build%20%28develop%29&logo=github)](https://github.com/jpikl/rew/actions?query=workflow%3ABuild+branch%3Adevelop)
+[![Code coverage](https://img.shields.io/codecov/c/github/jpikl/rew/develop?label=coverage%20%28develop%29&logo=codecov&token=9K88E1ZCBU)](https://codecov.io/gh/jpikl/rew/branch/develop)
 
 ## What rew does
 
