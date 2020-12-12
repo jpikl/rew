@@ -2,11 +2,9 @@ name: Build
 
 on:
   push:
-    branches: [ '**' ]
-    paths-ignore: [ 'docs/**', '*.md' ]
+    paths: [ '**.rs', 'Cargo.toml', 'codecov.yml' ]
   pull_request:
-    branches: [ '**' ]
-    paths-ignore: [ 'docs/**', '*.md' ]
+    paths: [ '**.rs', 'Cargo.toml', 'codecov.yml' ]
 
 env:
   CARGO_TERM_COLOR: always
