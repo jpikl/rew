@@ -86,7 +86,7 @@ jobs:
             BINARIES=(${BINARIES[@]/%/.exe})
           fi
 
-          if [[ ${{ matrix.binutils-target }} ]]; then
+          if [[ '${{ matrix.binutils-target }}' ]]; then
             STRIP=${{ matrix.binutils-target }}-$STRIP
           fi
 
