@@ -2,8 +2,10 @@ name: Build
 
 on:
   push:
+    tags-ignore: [ '**' ]
     paths: [ '**.rs', 'Cargo.toml', 'codecov.yml' ]
   pull_request:
+    tags-ignore: [ '**' ]
     paths: [ '**.rs', 'Cargo.toml', 'codecov.yml' ]
 
 env:

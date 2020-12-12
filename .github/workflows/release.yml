@@ -15,38 +15,38 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            os-name: linux
-            target: x86_64-unknown-linux-gnu
+            os-type: linux
             architecture: x86_64
-            binary-postfix: ''
+            target: x86_64-unknown-linux-gnu
+            binutils-target: ''
             use-cross: false
 
           - os: ubuntu-latest
-            os-name: linux
-            target: i686-unknown-linux-gnu
+            os-type: linux
             architecture: i686
-            binary-postfix: ''
+            target: i686-unknown-linux-gnu
+            binutils-target: ''
             use-cross: true
 
           - os: ubuntu-latest
-            os-name: linux
-            target: aarch64-unknown-linux-gnu
+            os-type: linux
             architecture: arm64
-            binary-postfix: ''
+            target: aarch64-unknown-linux-gnu
+            binutils-target: aarch64-linux-gnu
             use-cross: true
 
           - os: windows-latest
-            os-name: windows
-            target: x86_64-pc-windows-msvc
+            os-type: windows
             architecture: x86_64
-            binary-postfix: '.exe'
+            target: x86_64-pc-windows-msvc
+            binutils-target: ''
             use-cross: false
 
           - os: macos-latest
-            os-name: macos
-            target: x86_64-apple-darwin
+            os-type: macos
             architecture: x86_64
-            binary-postfix: ''
+            target: x86_64-apple-darwin
+            binutils-target: ''
             use-cross: false
 
     steps:
@@ -58,11 +58,11 @@ jobs:
           override: true
 
       - name: Install strip
-        if: ${{ matrix.target == 'aarch64-unknown-linux-gnu' }}
+        if: ${{ matrix.binutils-target != '' }}
         shell: bash
         run: |
           sudo apt update
-          sudo apt-get install -y binutils-aarch64-linux-gnu
+          sudo apt-get install -y binutils-${{ matrix.binutils-target }}
 
       - name: Checkout sources
         uses: actions/checkout@v2
@@ -71,26 +71,28 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: build
-          use-cross: ${{ matrix.use-cross }}
-          toolchain: stable
           args: --release --target ${{ matrix.target }}
+          use-cross: ${{ matrix.use-cross }}
 
-      - name: Package binary
+      - name: Package binaries
         shell: bash
         run: |
-          BINARY=rew${{ matrix.binary-postfix }}
           VERSION=${GITHUB_REF/refs\/tags\/v/}
-          REALEASE=rew-$VERSION-${{ matrix.os-name }}-${{ matrix.architecture }}
+          REALEASE=rew-$VERSION-${{ matrix.os-type }}-${{ matrix.architecture }}
+          BINARIES=(rew cpb mvb)
+          STRIP=strip
 
-          cd target/${{ matrix.target }}/release
-
-          if [[ ${{ matrix.target }} == aarch64-unknown-linux-gnu ]]; then
-            aarch64-linux-gnu-strip $BINARY
-          else
-            strip $BINARY
+          if [[ ${{ runner.os }} == Windows ]]; then
+            BINARIES=(${BINARIES[@]/%/.exe})
           fi
 
-          tar czvf $REALEASE.tar.gz $BINARY
+          if [[ ${{ matrix.binutils-target }} ]]; then
+            STRIP=${{ matrix.binutils-target }}-$STRIP
+          fi
+
+          cd target/${{ matrix.target }}/release
+          $STRIP "${BINARIES[@]}"
+          tar czvf $REALEASE.tar.gz "${BINARIES[@]}"
 
           if [[ ${{ runner.os }} == Windows ]]; then
             certutil -hashfile $REALEASE.tar.gz sha256 | grep -E [A-Fa-f0-9]{64} > $REALEASE.sha256
@@ -110,6 +112,7 @@ jobs:
   publish:
     name: Publish
     runs-on: ubuntu-latest
+    needs: release
     steps:
       - name: Checkout sources
         uses: actions/checkout@v2
