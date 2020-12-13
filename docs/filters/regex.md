@@ -18,7 +18,7 @@ Examples:
 | `12_34`   |  `{s:(\d)(\d):$2$1}` | `21_34` |
 | `12_34`   |  `{S:(\d)(\d):$2$1}` | `21_43` |
 
-- Use `-e, --regex` / `-E, --regex-filename` option to define an external regular expression.
+- Use `-e, --regex` or `-E, --regex-filename` option to define an external regular expression.
 - Option `-e, --regex` matches regex against each input value.
 - Option `-E, --regex-filename` matches regex against *filename component* of each input value.
 

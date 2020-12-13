@@ -1,6 +1,6 @@
-# Rew
+# rew
 
-Rew is a text processing CLI tool that rewrites FS paths according to a pattern.
+A text processing CLI tool that rewrites FS paths according to a pattern.
 
 [![Version](https://img.shields.io/crates/v/rew.svg)](https://crates.io/crates/rew)
 [![Dependencies](https://deps.rs/repo/github/jpikl/rew/status.svg)](https://deps.rs/repo/github/jpikl/rew)
@@ -15,13 +15,23 @@ Rew is a text processing CLI tool that rewrites FS paths according to a pattern.
 
 ## What rew does
 
-1. Reads values from standard input.
-2. Rewrites them according to a pattern.
-3. Prints results to standard output.
+1. Reads values from standard [input](https://jpikl.github.io/rew/input.html).
+2. Rewrites them according to a [pattern](https://jpikl.github.io/rew/pattern.html).
+3. Prints results to standard [output](https://jpikl.github.io/rew/output.html).
 
 ![What rew does](docs/images/diagram.svg)
 
-Input values are assumed to be FS paths, however, rew is able to process any UTF-8 encoded text.
+Input values are assumed to be FS paths, however, `rew` is able to process any UTF-8 encoded text.
+
+```bash
+find -iname '*.jpeg' | rew 'img_{C}.{e|l|r:e}'
+```
+
+Rew is also distributed with two accompanying utilities (`mvb` and `cpb`) which move/copy files and directories, based on `rew` output.
+
+```bash
+find -iname '*.jpeg' | rew 'img_{C}.{e|l|r:e}' -b | mvb
+```
 
 ## Documentation
 
