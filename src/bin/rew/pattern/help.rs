@@ -257,8 +257,8 @@ Option `-E, --regex-filename` matches regex against 'filename component' of each
     FILTER    DESCRIPTION
     ---------------------------------------------------------------------
     `t`         Trim white-spaces from both sides.
-    `u`         Convert to uppercase.
     `l`         Convert to lowercase.
+    `L`         Convert to uppercase.
     `a`         Convert non-ASCII characters to ASCII.
     `A`         Remove non-ASCII characters.
     `<<M`       Left pad with mask `M`.

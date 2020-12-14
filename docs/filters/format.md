@@ -3,8 +3,8 @@
 | Filter | Description                            |
 | ------ | -------------------------------------- |
 | `t`    | Trim white-spaces from both sides.     |
-| `u`    | Convert to uppercase.                  |
 | `l`    | Convert to lowercase.                  |
+| `L`    | Convert to uppercase.                  |
 | `i`    | Convert non-ASCII characters to ASCII. |
 | `I`    | Remove non-ASCII characters.           |
 | `<<M`  | Left pad with mask `M`.                |
