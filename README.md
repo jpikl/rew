@@ -2,16 +2,12 @@
 
 A text processing CLI tool that rewrites FS paths according to a pattern.
 
+[![Build](https://img.shields.io/github/workflow/status/jpikl/rew/Build/master?logo=github)](https://github.com/jpikl/rew/actions?query=workflow%3ABuild+branch%3Amaster)
+[![Coverage](https://img.shields.io/codecov/c/github/jpikl/rew/master?logo=codecov&token=9K88E1ZCBU)](https://codecov.io/gh/jpikl/rew)
 [![Version](https://img.shields.io/crates/v/rew.svg)](https://crates.io/crates/rew)
 [![Dependencies](https://deps.rs/repo/github/jpikl/rew/status.svg)](https://deps.rs/repo/github/jpikl/rew)
 [![Downloads](https://img.shields.io/crates/d/rew)](https://crates.io/crates/rew)
 [![License](https://img.shields.io/crates/l/rew.svg)](https://github.com/jpikl/rew/blob/master/LICENSE.md)
-<br>
-[![Build status](https://img.shields.io/github/workflow/status/jpikl/rew/Build/master?event=push&label=build%20%28master%29&logo=github)](https://github.com/jpikl/rew/actions?query=workflow%3ABuild+branch%3Amaster)
-[![Code coverage](https://img.shields.io/codecov/c/github/jpikl/rew/master?label=coverage%20%28master%29&logo=codecov&token=9K88E1ZCBU)](https://codecov.io/gh/jpikl/rew/branch/master)
-<br>
-[![Build status](https://img.shields.io/github/workflow/status/jpikl/rew/Build/develop?event=push&label=build%20%28develop%29&logo=github)](https://github.com/jpikl/rew/actions?query=workflow%3ABuild+branch%3Adevelop)
-[![Code coverage](https://img.shields.io/codecov/c/github/jpikl/rew/develop?label=coverage%20%28develop%29&logo=codecov&token=9K88E1ZCBU)](https://codecov.io/gh/jpikl/rew/branch/develop)
 
 ## What rew does
 
