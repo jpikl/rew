@@ -1,16 +1,16 @@
 use crate::pattern::char::Char;
-use crate::pattern::number::{get_bits, parse_number};
+use crate::pattern::number::{get_bits, parse_number, ParsableNumber};
 use crate::pattern::parse::{Error, ErrorKind, Result};
 use crate::pattern::reader::Reader;
-use crate::pattern::symbols::RANGE;
-use num_traits::PrimInt;
+use crate::pattern::symbols::{LENGTH, RANGE};
 use std::fmt;
 
 pub type Number = u64;
 pub type Index = usize;
 
-pub trait RangeBound: PrimInt {
-    const REQUIRES_DELIMTER: bool;
+pub trait RangeBound: ParsableNumber {
+    const DELIMITER_REQUIRED: bool;
+    const LENGTH_ALLOWED: bool;
 
     fn parse(reader: &mut Reader<Char>) -> Result<Self>;
 
@@ -18,7 +18,8 @@ pub trait RangeBound: PrimInt {
 }
 
 impl RangeBound for Number {
-    const REQUIRES_DELIMTER: bool = true;
+    const DELIMITER_REQUIRED: bool = true;
+    const LENGTH_ALLOWED: bool = false;
 
     fn parse(reader: &mut Reader<Char>) -> Result<Self> {
         parse_number(reader)
@@ -30,7 +31,8 @@ impl RangeBound for Number {
 }
 
 impl RangeBound for Index {
-    const REQUIRES_DELIMTER: bool = false;
+    const DELIMITER_REQUIRED: bool = false;
+    const LENGTH_ALLOWED: bool = true;
 
     fn parse(reader: &mut Reader<Char>) -> Result<Self> {
         let position = reader.position();
@@ -131,32 +133,64 @@ impl<T: RangeBound> Range<T> {
                 let position = reader.position();
                 let start = T::parse(reader)?;
 
-                if let Some(RANGE) = reader.peek_char() {
-                    reader.seek();
+                match reader.peek_char() {
+                    Some(RANGE) => {
+                        reader.seek();
 
-                    if let Some('0'..='9') = reader.peek_char() {
-                        let end = T::parse(reader)?;
-                        if start > end {
-                            Err(Error {
-                                kind: ErrorKind::RangeStartOverEnd(start.unparse(), end.unparse()),
-                                range: position..reader.position(),
-                            })
+                        if let Some('0'..='9') = reader.peek_char() {
+                            let end = T::parse(reader)?;
+                            if start > end {
+                                Err(Error {
+                                    kind: ErrorKind::RangeStartOverEnd(
+                                        start.unparse(),
+                                        end.unparse(),
+                                    ),
+                                    range: position..reader.position(),
+                                })
+                            } else {
+                                Ok(Range(start, Some(end)))
+                            }
                         } else {
-                            Ok(Range(start, Some(end)))
+                            Ok(Range(start, None))
                         }
-                    } else {
-                        Ok(Range(start, None))
                     }
-                } else if T::REQUIRES_DELIMTER {
-                    let position = reader.position();
-                    let char = reader.read();
 
-                    Err(Error {
-                        kind: ErrorKind::ExpectedRangeDelimiter(char.map(Clone::clone)),
-                        range: position..reader.position(),
-                    })
-                } else {
-                    Ok(Range(start, Some(start)))
+                    Some(LENGTH) if T::LENGTH_ALLOWED => {
+                        reader.seek();
+
+                        if let Some('0'..='9') = reader.peek_char() {
+                            let position = reader.position();
+                            let length: T = parse_number(reader)?;
+                            if let Some(end) = start.checked_add(&length) {
+                                Ok(Range(start, Some(end)))
+                            } else {
+                                Err(Error {
+                                    kind: ErrorKind::RangeLengthOverflow(
+                                        length.to_string(),
+                                        T::max_value().to_string(),
+                                    ),
+                                    range: position..reader.position(),
+                                })
+                            }
+                        } else {
+                            Err(Error {
+                                kind: ErrorKind::ExpectedRangeLength,
+                                range: reader.position()..reader.end(),
+                            })
+                        }
+                    }
+
+                    _ if T::DELIMITER_REQUIRED => {
+                        let position = reader.position();
+                        let char = reader.read();
+
+                        Err(Error {
+                            kind: ErrorKind::ExpectedRangeDelimiter(char.map(Clone::clone)),
+                            range: position..reader.position(),
+                        })
+                    }
+
+                    _ => Ok(Range(start, Some(start))),
                 }
             }
 
@@ -355,6 +389,19 @@ mod tests {
             }
 
             #[test]
+            fn start_with_length() {
+                let mut reader = Reader::from("0+1");
+                assert_eq!(
+                    NumberInterval::parse(&mut reader),
+                    Err(Error {
+                        kind: ErrorKind::ExpectedRangeDelimiter(Some(Char::Raw('+'))),
+                        range: 1..2
+                    })
+                );
+                assert_eq!(reader.position(), 2);
+            }
+
+            #[test]
             fn no_delimiter() {
                 let mut reader = Reader::from("1");
                 assert_eq!(
@@ -499,6 +546,59 @@ mod tests {
                     })
                 );
                 assert_eq!(reader.position(), 3);
+            }
+
+            #[test]
+            fn start_no_length() {
+                let mut reader = Reader::from("1+");
+                assert_eq!(
+                    IndexRange::parse(&mut reader),
+                    Err(Error {
+                        kind: ErrorKind::ExpectedRangeLength,
+                        range: 2..2
+                    })
+                );
+                assert_eq!(reader.position(), 2);
+            }
+
+            #[test]
+            fn start_no_length_but_chars() {
+                let mut reader = Reader::from("1+ab");
+                assert_eq!(
+                    IndexRange::parse(&mut reader),
+                    Err(Error {
+                        kind: ErrorKind::ExpectedRangeLength,
+                        range: 2..4
+                    })
+                );
+                assert_eq!(reader.position(), 2);
+            }
+
+            #[test]
+            fn start_with_length() {
+                let mut reader = Reader::from("2+3");
+                assert_eq!(
+                    IndexRange::parse(&mut reader),
+                    Ok(IndexRange::new(1, Some(4)))
+                );
+                assert_eq!(reader.position(), 3);
+            }
+
+            #[test]
+            fn start_with_length_overflow() {
+                let input = format!("3+{}", Index::max_value() - 1);
+                let mut reader = Reader::from(input.as_str());
+                assert_eq!(
+                    IndexRange::parse(&mut reader),
+                    Err(Error {
+                        kind: ErrorKind::RangeLengthOverflow(
+                            (Index::max_value() - 1).to_string(),
+                            Index::max_value().to_string()
+                        ),
+                        range: 2..input.len()
+                    })
+                );
+                assert_eq!(reader.position(), input.len());
             }
 
             #[test]

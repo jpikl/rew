@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Alternative way to write range of substring filters as `start+length`.
+
+### Changed
+
+- Simplified error message for an invalid range.
+
 ### Fixed
 
 - Invalid name in the *uppercase* filter documentation.

@@ -1,5 +1,5 @@
 use crate::pattern::char::{Char, EscapeSequence};
-use crate::pattern::symbols::{EXPR_END, EXPR_START, PIPE, RANGE};
+use crate::pattern::symbols::{EXPR_END, EXPR_START, LENGTH, PIPE, RANGE};
 use crate::utils::{AnyString, HasRange};
 use std::ops::Range;
 use std::{error, fmt, result};
@@ -26,6 +26,7 @@ pub enum ErrorKind {
     ExpectedPipeOrExprEnd,
     ExpectedRange,
     ExpectedRangeDelimiter(Option<Char>),
+    ExpectedRangeLength,
     ExpectedRegex,
     ExpectedRepetition,
     ExpectedSubstitution,
@@ -36,6 +37,7 @@ pub enum ErrorKind {
     RangeIndexZero,
     RangeInvalid(String),
     RangeStartOverEnd(String, String),
+    RangeLengthOverflow(String, String),
     RegexCaptureZero,
     RegexInvalid(AnyString),
     RepetitionDigitDelimiter(char),
@@ -74,7 +76,10 @@ impl fmt::Display for ErrorKind {
             Self::ExpectedPipeOrExprEnd => {
                 write!(formatter, "Expected '{}' or closing '{}'", PIPE, EXPR_END)
             }
-            Self::ExpectedRange => write!(formatter, "Filter requires range 'A-B' as a parameter"),
+            Self::ExpectedRange => write!(
+                formatter,
+                "Filter requires range 'A-B' or 'A+B' as a parameter"
+            ),
             Self::ExpectedRangeDelimiter(None) => {
                 write!(formatter, "Expected range delimiter '{}'", RANGE)
             }
@@ -88,6 +93,9 @@ impl fmt::Display for ErrorKind {
                 "Expected range delimiter '{}' but got escape sequence '{}{}'",
                 RANGE, sequence[0], sequence[1]
             ),
+            Self::ExpectedRangeLength => {
+                write!(formatter, "Expected range length after '{}'", LENGTH)
+            }
             Self::ExpectedRegex => write!(
                 formatter,
                 "Filter requires regular expression as a parameter"
@@ -123,9 +131,16 @@ impl fmt::Display for ErrorKind {
             Self::RangeInvalid(value) => write!(formatter, "Invalid range '{}'", value),
             Self::RangeStartOverEnd(start, end) => write!(
                 formatter,
-                "Range start ({}) is greater than end ({})",
+                "Range start {} is greater than end {}",
                 start, end
             ),
+            Self::RangeLengthOverflow(length, max) => {
+                write!(
+                    formatter,
+                    "Range length {} overflowed maximum {}",
+                    length, max
+                )
+            }
             Self::RegexCaptureZero => {
                 write!(formatter, "Regular expression captures start from 1, not 0")
             }
@@ -251,7 +266,7 @@ mod tests {
         fn expected_range() {
             assert_eq!(
                 ErrorKind::ExpectedRange.to_string(),
-                "Filter requires range 'A-B' as a parameter"
+                "Filter requires range 'A-B' or 'A+B' as a parameter"
             );
         }
 
@@ -268,6 +283,14 @@ mod tests {
             assert_eq!(
                 ErrorKind::ExpectedRangeDelimiter(Some(Char::Escaped('x', ['#', 'y']))).to_string(),
                 "Expected range delimiter '-' but got escape sequence '#y'"
+            );
+        }
+
+        #[test]
+        fn expected_range_length() {
+            assert_eq!(
+                ErrorKind::ExpectedRangeLength.to_string(),
+                "Expected range length after '+'"
             );
         }
 
@@ -356,7 +379,15 @@ mod tests {
         fn range_start_over_end() {
             assert_eq!(
                 ErrorKind::RangeStartOverEnd(String::from("2"), String::from("1")).to_string(),
-                "Range start (2) is greater than end (1)"
+                "Range start 2 is greater than end 1"
+            );
+        }
+
+        #[test]
+        fn range_length_overflow() {
+            assert_eq!(
+                ErrorKind::RangeLengthOverflow(String::from("10"), String::from("5")).to_string(),
+                "Range length 10 overflowed maximum 5"
             );
         }
 

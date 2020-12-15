@@ -3,17 +3,17 @@ use crate::pattern::parse::{Error, ErrorKind, Result};
 use crate::pattern::reader::Reader;
 use num_traits::PrimInt;
 use std::convert::TryFrom;
-use std::fmt::{Debug, Display};
+use std::fmt::Display;
 
 pub const fn get_bits<T>() -> usize {
     std::mem::size_of::<T>() * 8
 }
 
-pub fn parse_number<T, E>(reader: &mut Reader<Char>) -> Result<T>
-where
-    T: TryFrom<u32, Error = E> + PrimInt + Display,
-    E: Debug,
-{
+pub trait ParsableNumber: TryFrom<u32> + PrimInt + Display {}
+
+impl<T: TryFrom<u32> + PrimInt + Display> ParsableNumber for T {}
+
+pub fn parse_number<T: ParsableNumber>(reader: &mut Reader<Char>) -> Result<T> {
     match reader.peek_char() {
         Some('0') => {
             reader.seek();
@@ -59,14 +59,19 @@ where
     }
 }
 
-fn parse_digit<T: TryFrom<u32, Error = E>, E: Debug>(value: char) -> T {
+fn parse_digit<T: TryFrom<u32>>(value: char) -> T {
     // This should never fail even for T = u8, the caller makes sure value is a digit
     parse_u32(value.to_digit(10).expect("Expected a digit"))
 }
 
-fn parse_u32<T: TryFrom<u32, Error = E>, E: Debug>(value: u32) -> T {
+fn parse_u32<T: TryFrom<u32>>(value: u32) -> T {
     // This should never fail even for T = u8, the caller makes sure value is a digit
-    T::try_from(value).expect("Expected to convert from u32")
+    // We are not using .expect() because it requires TryFrom::Error to implement Display
+    // which would introduce another unnecessary function template parameter.
+    match T::try_from(value) {
+        Ok(result) => result,
+        _ => panic!("Expected to convert from u32"),
+    }
 }
 
 #[cfg(test)]
@@ -89,7 +94,7 @@ mod tests {
         fn empty() {
             let mut reader = Reader::from("");
             assert_eq!(
-                parse_number::<usize, _>(&mut reader),
+                parse_number::<usize>(&mut reader),
                 Err(Error {
                     kind: ErrorKind::ExpectedNumber,
                     range: 0..0,
@@ -102,7 +107,7 @@ mod tests {
         fn alpha() {
             let mut reader = Reader::from("ab");
             assert_eq!(
-                parse_number::<usize, _>(&mut reader),
+                parse_number::<usize>(&mut reader),
                 Err(Error {
                     kind: ErrorKind::ExpectedNumber,
                     range: 0..2,
@@ -164,7 +169,7 @@ mod tests {
         fn mul_overflow() {
             let mut reader = Reader::from("25500");
             assert_eq!(
-                parse_number::<u8, _>(&mut reader),
+                parse_number::<u8>(&mut reader),
                 Err(Error {
                     kind: ErrorKind::NumberOverflow(String::from("255")),
                     range: 0..4
@@ -177,7 +182,7 @@ mod tests {
         fn add_overflow() {
             let mut reader = Reader::from("2560");
             assert_eq!(
-                parse_number::<u8, _>(&mut reader),
+                parse_number::<u8>(&mut reader),
                 Err(Error {
                     kind: ErrorKind::NumberOverflow(String::from("255")),
                     range: 0..3

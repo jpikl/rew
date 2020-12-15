@@ -4,6 +4,7 @@ pub const EXPR_START: char = '{';
 pub const EXPR_END: char = '}';
 pub const PIPE: char = '|';
 pub const RANGE: char = '-';
+pub const LENGTH: char = '+';
 
 pub const SEP: char = '/';
 pub const LF: char = 'n';

@@ -178,6 +178,7 @@ Trailing separator filters `z` and `Z` can be useful when dealing with root and 
     ------------------------------------------------------
     `nA-B`      Substring from index `A` to `B`.
               Indices start from 1 and are both inclusive.
+    `nA+B`      Substring from index `A` with length `B`.
     `nA-`       Substring from index `A` to end.
     `nA`        Character at index `A`.
               Equivalent to `nA-A`.
