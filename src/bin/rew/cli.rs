@@ -6,10 +6,17 @@ use regex::Regex;
 use std::path::PathBuf;
 use termcolor::ColorChoice;
 
+const INPUT_HEADING: Option<&str> = Some("INPUT OPTIONS");
+const OUTPUT_HEADING: Option<&str> = Some("OUTPUT OPTIONS");
+const PROCESSING_HEADING: Option<&str> = Some("PROCESSING OPTIONS");
+const PATTERN_HEADING: Option<&str> = Some("PATTERN OPTIONS");
+const HELP_HEADING: Option<&str> = Some("HELP OPTIONS");
+
 #[derive(Debug, Clap)]
 #[clap(
     name = crate_name!(),
     version = crate_version!(),
+    override_usage = "rew [OPTIONS] [pattern] [--] [values]...",
     after_help = "Use `-h` for short descriptions and `--help` for more details.",
     setting(AppSettings::ColoredHelp),
     setting(AppSettings::DeriveDisplayOrder),
@@ -37,16 +44,27 @@ pub struct Cli {
         long,
         value_name = "char",
         conflicts_with_all = &["read-nul", "read-raw"],
-        parse(try_from_str = parse_single_byte_char)
+        parse(try_from_str = parse_single_byte_char),
+        help_heading = INPUT_HEADING,
     )]
     pub read: Option<u8>,
 
     /// Read values delimited by NUL, not newline
-    #[clap(short = 'z', long, conflicts_with_all = &["read-raw", "read"])]
+    #[clap(
+        short = 'z',
+        long,
+        conflicts_with_all = &["read-raw", "read"],
+        help_heading = INPUT_HEADING)
+    ]
     pub read_nul: bool,
 
     /// Read the whole input into memory as a single value
-    #[clap(short = 'r', long, conflicts_with_all = &["read-nul", "read"])]
+    #[clap(
+        short = 'r',
+        long,
+        conflicts_with_all = &["read-nul", "read"],
+        help_heading = INPUT_HEADING
+    )]
     pub read_raw: bool,
 
     /// Print results delimited by a specific string, not newline
@@ -54,20 +72,31 @@ pub struct Cli {
         short = 'D',
         long,
         value_name = "string",
-        conflicts_with_all = &["print-nul", "print-raw"]
+        conflicts_with_all = &["print-nul", "print-raw"],
+        help_heading = OUTPUT_HEADING,
     )]
     pub print: Option<String>,
 
     /// Print results delimited by NUL, not newline
-    #[clap(short = 'Z', long, conflicts_with_all = &["print-raw", "print"])]
+    #[clap(
+        short = 'Z',
+        long,
+        conflicts_with_all = &["print-raw", "print"],
+        help_heading = OUTPUT_HEADING
+    )]
     pub print_nul: bool,
 
     /// Print results without a delimiter
-    #[clap(short = 'R', long, conflicts_with_all = &["print-nul", "print"])]
+    #[clap(
+        short = 'R',
+        long,
+        conflicts_with_all = &["print-nul", "print"],
+        help_heading = OUTPUT_HEADING
+    )]
     pub print_raw: bool,
 
     /// Do not print final delimiter at the end of output
-    #[clap(short = 'T', long)]
+    #[clap(short = 'T', long, help_heading = OUTPUT_HEADING)]
     pub no_trailing_delimiter: bool,
 
     /// Enable diff output mode
@@ -85,7 +114,13 @@ pub struct Cli {
     ///    >output_value_N
     ///
     /// Such output can be processed by accompanying `mvb` and `cpb` utilities to perform bulk move/copy.
-    #[clap(short = 'b', long, conflicts_with = "pretty", verbatim_doc_comment)]
+    #[clap(
+        short = 'b',
+        long,
+        conflicts_with = "pretty",
+        verbatim_doc_comment,
+        help_heading = OUTPUT_HEADING
+    )]
     pub diff: bool,
 
     /// Enable pretty output mode
@@ -98,77 +133,95 @@ pub struct Cli {
     ///     input_value_2 -> output_value_2
     ///     ...
     ///     input_value_N -> output_value_N
-    #[clap(short = 'p', long, conflicts_with = "diff", verbatim_doc_comment)]
+    #[clap(short = 'p', long, conflicts_with = "diff", verbatim_doc_comment, help_heading = OUTPUT_HEADING)]
     pub pretty: bool,
+
+    /// When to use colors
+    #[clap(
+        long,
+        value_name = "when",
+        possible_values = COLOR_VALUES,
+        parse(try_from_str = parse_color),
+        help_heading = OUTPUT_HEADING
+    )]
+    pub color: Option<ColorChoice>,
 
     /// Regular expression matched against each input value
     #[clap(
         short = 'e',
         long,
         value_name = "regex",
-        conflicts_with = "regex-filename"
+        conflicts_with = "regex-filename",
+        help_heading = PROCESSING_HEADING,
     )]
     pub regex: Option<Regex>,
 
     /// Regular expression matched against 'filename component' of each input value
-    #[clap(short = 'E', long, value_name = "regex", conflicts_with = "regex")]
+    #[clap(
+        short = 'E',
+        long,
+        value_name = "regex",
+        conflicts_with = "regex",
+        help_heading = PROCESSING_HEADING
+    )]
     pub regex_filename: Option<Regex>,
-
-    /// Continue processing after an error, fail at end
-    #[clap(short = 's', long)]
-    pub fail_at_end: bool,
 
     /// Local counter configuration
     ///
     /// init - Initial value.
     /// step - Value increment (default: 1)
-    #[clap(short = 'c', long, value_name = "init[:step]", verbatim_doc_comment)]
+    #[clap(
+        short = 'c',
+        long,
+        value_name = "init[:step]",
+        verbatim_doc_comment,
+        help_heading = PROCESSING_HEADING
+    )]
     pub local_counter: Option<counter::Config>,
 
     /// Global counter configuration
     ///
     /// init - Initial value.
     /// step - Value increment (default: 1).
-    #[clap(short = 'C', long, value_name = "init[:step]", verbatim_doc_comment)]
+    #[clap(
+        short = 'C',
+        long,
+        value_name = "init[:step]",
+        verbatim_doc_comment,
+        help_heading = PROCESSING_HEADING
+    )]
     pub global_counter: Option<counter::Config>,
 
-    /// Current working directory
-    ///
-    /// All relative paths are resolved to this path.
-    #[clap(short = 'w', long, value_name = "path", verbatim_doc_comment)]
+    /// Directory against which to resolve relative/absolute paths
+    #[clap(short = 'w', long, value_name = "path", help_heading = PROCESSING_HEADING)]
     pub working_directory: Option<PathBuf>,
 
+    /// Continue processing after an error, fail at end
+    #[clap(short = 's', long, help_heading = PROCESSING_HEADING)]
+    pub fail_at_end: bool,
+
+    /// Print explanation of a given pattern
+    #[clap(long, requires = "pattern", help_heading = PATTERN_HEADING)]
+    pub explain: bool,
+
     /// Custom escape character to use in pattern
-    #[clap(long, value_name = "char")]
+    #[clap(long, value_name = "char", help_heading = PATTERN_HEADING)]
     pub escape: Option<char>,
 
-    /// When to use colors
-    #[clap(
-    long,
-    value_name = "when",
-    possible_values = COLOR_VALUES,
-    parse(try_from_str = parse_color),
-    )]
-    pub color: Option<ColorChoice>,
-
     /// Print help information
-    #[clap(short = 'h', long)]
+    #[clap(short = 'h', long, help_heading = HELP_HEADING)]
     pub help: bool,
 
     /// Print description of pattern syntax
-    #[clap(long)]
+    #[clap(long, help_heading = HELP_HEADING)]
     pub help_pattern: bool,
 
     /// Print filter reference
-    #[clap(long)]
+    #[clap(long, help_heading = HELP_HEADING)]
     pub help_filters: bool,
 
-    /// Print explanation of a given pattern
-    #[clap(long, requires = "pattern")]
-    pub explain: bool,
-
     /// Print version information
-    #[clap(long)]
+    #[clap(long, help_heading = HELP_HEADING)]
     pub version: bool,
 }
 

@@ -12,6 +12,7 @@ use termcolor::ColorChoice;
     setting(AppSettings::ColoredHelp),
     setting(AppSettings::DeriveDisplayOrder),
     setting(AppSettings::DontCollapseArgsInUsage),
+    setting(AppSettings::UnifiedHelpMessage),
     verbatim_doc_comment,
 )]
 /// Bulk copy files and directories

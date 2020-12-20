@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Simplified error message for an invalid range.
+- Help has options organized into sections.
 
 ### Fixed
 
