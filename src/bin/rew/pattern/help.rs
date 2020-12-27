@@ -273,8 +273,8 @@ Examples:
     INPUT       PATTERN       OUTPUT
     --------------------------------
     ..a..b..    `{t}`           a..b  (dots are white-spaces)
-    aBčĎ        `{u}`           ABČĎ
     aBčĎ        `{l}`           abčď
+    aBčĎ        `{L}`           ABČĎ
     aBčĎ        `{a}`           aBcD
     aBčĎ        `{A}`           aB
     abc         `{<<123456}`    123abc
@@ -308,7 +308,7 @@ Examples:
     `{c}`        (see below)
     `{C}`        (see below)
     `{u0-99}`    (random number between 0-99)
-    `{u}`        5eefc76d-0ca1-4631-8fd0-62eeb401c432 (random)
+    `{U}`        5eefc76d-0ca1-4631-8fd0-62eeb401c432 (random)
 
 Global counter `C` is a number incremented for every input value.
 Local counter `c` is a number incremented per parent directory (assuming input value is a FS path).

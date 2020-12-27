@@ -17,8 +17,8 @@ Examples:
 | Input      |  Pattern     | Output   |
 | ---------- | ------------ | -------- |
 | `..a..b..` | `{t}`        | `a..b` *(dots are white-spaces)* |
-| `aBčĎ`     | `{u}`        | `ABČĎ`   |
 | `aBčĎ`     | `{l}`        | `abčď`   |
+| `aBčĎ`     | `{L}`        | `ABČĎ`   |
 | `aBčĎ`     | `{a}`        | `aBcD`   |
 | `aBčĎ`     | `{A}`        | `aB`     |
 | `abc`      | `{<<123456}` | `123abc` |
