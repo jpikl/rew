@@ -14,8 +14,9 @@ pub fn counter(value: u32) -> Result {
 
 pub fn random_number(start: Number, end: Option<Number>) -> Result {
     let end = end.unwrap_or(Number::MAX);
+    // gen_range(start..=end) might cause an overflow in rand lib
     let result = if let Some(length) = (end - start).checked_add(1) {
-        start + thread_rng().gen_range(0, length)
+        start + thread_rng().gen_range(0..length)
     } else {
         thread_rng().gen()
     };
