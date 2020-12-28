@@ -1,4 +1,5 @@
 use crate::color::{spec_bold_color, spec_color};
+use crate::utils::str_from_utf8;
 use std::fmt;
 use std::io::{Error, ErrorKind, Result, Write};
 use termcolor::{Color, ColorSpec, WriteColor};
@@ -26,7 +27,7 @@ impl ColoredOuput {
 impl Write for ColoredOuput {
     fn write(&mut self, buf: &[u8]) -> Result<usize> {
         let spec = &self.spec;
-        let value = std::str::from_utf8(buf).unwrap();
+        let value = str_from_utf8(buf)?;
 
         if let Some(chunk) = self.chunks.last_mut().filter(|chunk| &chunk.spec == spec) {
             chunk.value += value;

@@ -1,4 +1,5 @@
-use std::io::{BufRead, Error, ErrorKind, Result};
+use crate::utils::str_from_utf8;
+use std::io::{BufRead, Result};
 
 pub enum Delimiter {
     Newline,
@@ -50,16 +51,7 @@ impl<I: BufRead> Splitter<I> {
                 Delimiter::None => {}
             }
 
-            match std::str::from_utf8(&self.buffer[..size]) {
-                Ok(str) => Ok(Some((str, orig_size))),
-                Err(error) => Err(Error::new(
-                    ErrorKind::InvalidData,
-                    format!(
-                        "Input does not have UTF-8 encoding (offset {})",
-                        error.valid_up_to()
-                    ),
-                )),
-            }
+            str_from_utf8(&self.buffer[..size]).map(|str| Some((str, orig_size)))
         } else {
             Ok(None)
         }
@@ -226,18 +218,5 @@ mod tests {
             );
             assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
         }
-    }
-
-    #[test]
-    fn non_utf8() {
-        assert_eq!(
-            Splitter::new(&[0, 159, 146, 150][..], Delimiter::None)
-                .read()
-                .map_err(unpack_io_error),
-            Err((
-                ErrorKind::InvalidData,
-                String::from("Input does not have UTF-8 encoding (offset 1)")
-            ))
-        );
     }
 }

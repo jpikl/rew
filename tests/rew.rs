@@ -256,7 +256,7 @@ fn non_utf8_input() {
         .failure()
         .code(1)
         .stdout("")
-        .stderr("error: Input does not have UTF-8 encoding (offset 2)\n");
+        .stderr("error: Value does not have UTF-8 encoding (offset 2)\n");
 }
 
 #[test]
