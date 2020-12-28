@@ -14,11 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Simplified error message for an invalid range.
-- Help has options organized into sections.
+- Output of `-h, --help` flag is organized into sections.
+- Output of `--help-pattern` and `--help-filters` flags matches online documentation.
 
 ### Fixed
 
-- Invalid name in the *uppercase* filter documentation.
+- `--help-filters` flag displays correct name of the *uppercase* filter.
 
 ## [0.1.0] - 2020-12-13
 

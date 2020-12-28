@@ -2,8 +2,8 @@ use crate::color::spec_color;
 use std::io::{Result, Write};
 use termcolor::{Color, WriteColor};
 
-const DOUBLE_LINE_PREFIX: &str = "====";
-const SIMPLE_LINE_PREFIX: &str = "----";
+const DOUBLE_LINE_PREFIX: &str = "===";
+const SIMPLE_LINE_PREFIX: &str = "---";
 const PADDED_BLOCK_PREFIX: &str = "    ";
 const SHELL_PREFIX: &str = "$>";
 
@@ -24,8 +24,12 @@ pub fn highlight_help<O: Write + WriteColor>(output: &mut O, text: &str) -> Resu
             in_heading = !in_heading;
             write!(output, "{}", line)?;
         } else if in_heading {
-            output.set_color(&spec_color(PRIMARY_COLOR))?;
-            write!(output, "{}", line)?;
+            if line.is_empty() {
+                in_heading = false;
+            } else {
+                output.set_color(&spec_color(PRIMARY_COLOR))?;
+                write!(output, "{}", line)?;
+            }
         } else if let Some(block) = line.strip_prefix(PADDED_BLOCK_PREFIX) {
             write!(output, "{}", PADDED_BLOCK_PREFIX)?;
 
@@ -98,6 +102,10 @@ mod tests {
             =========
 
             Text.
+
+            === Heading ===
+
+            Text.
             Text with `code`.
             Text with `code` and `more code`.
             
@@ -105,17 +113,11 @@ mod tests {
                 ------------
                 `a`      1
                 `b`      2
-                
+
             Text.
-            
+
                 $> ls -la
                 $> ls -la # Shell comment
-                
-            =========
-             Heading
-            =========
-                
-            Text.
         "};
 
         let mut ouput = ColoredOuput::new();
@@ -128,6 +130,8 @@ mod tests {
                 OutputChunk::color(Color::Yellow, " Heading"),
                 OutputChunk::plain("\n"),
                 OutputChunk::color(Color::Yellow, "========="),
+                OutputChunk::plain("\n\nText.\n\n"),
+                OutputChunk::color(Color::Yellow, "=== Heading ==="),
                 OutputChunk::plain("\n\nText.\nText with "),
                 OutputChunk::color(Color::Green, "code"),
                 OutputChunk::plain(".\nText with "),
@@ -142,19 +146,13 @@ mod tests {
                 OutputChunk::color(Color::Green, "a"),
                 OutputChunk::plain("      1\n    "),
                 OutputChunk::color(Color::Green, "b"),
-                OutputChunk::plain("      2\n    \nText.\n\n    "),
+                OutputChunk::plain("      2\n\nText.\n\n    "),
                 OutputChunk::color(Color::Cyan, "$>"),
                 OutputChunk::color(Color::Green, " ls -la"),
                 OutputChunk::plain("\n    "),
                 OutputChunk::color(Color::Cyan, "$>"),
                 OutputChunk::color(Color::Green, " ls -la "),
-                OutputChunk::plain("# Shell comment\n    \n"),
-                OutputChunk::color(Color::Yellow, "========="),
-                OutputChunk::plain("\n"),
-                OutputChunk::color(Color::Yellow, " Heading"),
-                OutputChunk::plain("\n"),
-                OutputChunk::color(Color::Yellow, "========="),
-                OutputChunk::plain("\n    \nText.\n")
+                OutputChunk::plain("# Shell comment\n"),
             ]
         );
     }

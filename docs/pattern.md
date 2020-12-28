@@ -8,10 +8,11 @@ Use `--explain` flag to print detailed explanation what a certain pattern does.
 rew --explain 'file_{c|<3:0}.{e}'
 ```
 
-If no pattern is provided, input values are directly copied to output.
+When no pattern is provided as an argument, the default pattern `{}` is used.
 
 ```bash
-echo 'Hello, world!' | rew # Will print: Hello, world!
+rew '{}' # The default pattern
+rew      # Also uses the default pattern
 ```
 
 ## Syntax
@@ -23,7 +24,6 @@ By default, pattern characters are directly copied to output.
 | *     | `abc`   | `abc`  |
 
 Characters `{` and `}` form an expression which is evaluated and replaced in output.
-
 Empty expression `{}` evaluates directly to input value.
 
 | Input   | Pattern      | Output          |
@@ -31,7 +31,8 @@ Empty expression `{}` evaluates directly to input value.
 | `world` | `{}`         | `world`         |
 | `world` | `Hello, {}!` | `Hello, world!` |
 
-Expression may contain one or more filters, delimited by `|`, which are consecutively applied on input value.
+Expression may contain one or more filters, delimited by `|`.
+Filters are consecutively applied on input value.
 
 | Input      | Pattern         | Output     | Description                        |
 | ---------- | --------------- | ---------- | ---------------------------------- |

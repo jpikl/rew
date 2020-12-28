@@ -5,7 +5,7 @@ use termcolor::WriteColor;
 
 const PATTERN_HELP: &str = indoc! {r#"
 ========================================
- Pattern syntax
+ Pattern
 ========================================
 
 Pattern is a string describing how to generate output from an input.
@@ -14,6 +14,13 @@ Use `--explain` flag to print detailed explanation what a certain pattern does.
 
     $> rew --explain 'file_{c|<3:0}.{e}'
 
+When no pattern is provided as an argument, the default pattern `{}` is used.
+
+    $> rew '{}' # The default pattern
+    $> rew      # Also uses the default pattern
+
+=== Syntax ===
+
 By default, pattern characters are directly copied to output.
 
     INPUT    PATTERN    OUTPUT
@@ -21,15 +28,15 @@ By default, pattern characters are directly copied to output.
     *        `abc`        abc
 
 Characters `{` and `}` form an expression which is evaluated and replaced in output.
-
 Empty expression `{}` evaluates directly to input value.
 
     INPUT    PATTERN      OUTPUT
-    ------------------------------------
+    -----------------------------------
     world    `{}`           world
-    world    `Hello_{}_!`   Hello_world_!
+    world    `Hello, {}!`   Hello, world!
 
-Expression may contain one or more filters, delimited by `|`, which are consecutively applied on input value.
+Expression may contain one or more filters, delimited by `|`.
+Filters are consecutively applied on input value.
 
     INPUT       PATTERN          OUTPUT      DESCRIPTION
     ---------------------------------------------------------------------------
@@ -38,6 +45,8 @@ Expression may contain one or more filters, delimited by `|`, which are consecut
     old.JPEG    `new.{e|l|r:e}`    new.jpg     Extension + Lowercase + Remove 'e'
 
 Use `--help-filters` flag to print filter reference.
+
+=== Escaping ===
 
 Character `#` starts an escape sequence.
 
@@ -50,10 +59,10 @@ Character `#` starts an escape sequence.
     `#r`          Carriage return
     `#t`          Horizontal tab
     `#0`          Null
-    `#{`          Escaped {
-    `#|`          Escaped |
-    `#}`          Escaped {
-    `##`          Escaped #
+    `#{`          Escaped `{`
+    `#|`          Escaped `|`
+    `#}`          Escaped `{`
+    `##`          Escaped `#`
 
 Use `--escape` option to set a different escape character.
 
@@ -66,25 +75,18 @@ const FILTERS_HELP: &str = indoc! {"
  Path filters
 ========================================
 
-    FILTER    DESCRIPTION
-    -----------------------------------
-    `w`         Working directory
-    `a`         Absolute path
-    `A`         Relative path
-    `p`         Normalized path
-    `P`         Canonical path
-    `d`         Parent directory
-    `D`         Remove last name
-    `f`         File name
-    `b`         Base name
-    `B`         Remove extension
-    `e`         Extension
-    `E`         Extension with dot
-    `z`         Ensure trailing separator
-    `Z`         Remove trailing separator
-
 Path filters assume that their input value is a FS path.
-To get a specific portion of a path, use one of `dD`, `fF`, `bB`, `eE` filters.
+
+=== Path components ===
+
+    FILTER    DESCRIPTION         FILTER    DESCRIPTION
+    --------------------------    ---------------------------
+    `d`         Parent directory    `D`         Remove last name
+    `f`         File name           `F`         Last name
+    `b`         Base name           `B`         Remove extension
+    `e`         Extension           `E`         Extension with dot
+
+For input value `/home/alice/notes.txt`, filters would evaluate to:
 
     PATTERN       OUTPUT
     -----------------------------------
@@ -116,6 +118,14 @@ Extension with dot `E` can be useful when dealing with files with no extension.
     old.txt    new.txt    new.txt
     old        new.       new
 
+=== Absolute and relative paths ===
+
+    FILTER    DESCRIPTION
+    -----------------------------------
+    `w`         Working directory
+    `a`         Absolute path
+    `A`         Relative path
+
 Absolute path `a` and relative path `A` are both resolved against working directory `w`.
 
     {w}            INPUT        {a}          {A}
@@ -129,6 +139,13 @@ You can change that using the `-w, --working-directory` option.
 
     $> rew -w '/home/alice' '{w}' # Absolute path
     $> rew -w '../alice'    '{w}' # Relative to your current working directory
+
+=== Path normalization ===
+
+    FILTER    DESCRIPTION
+    -----------------------------------
+    `p`         Normalized path
+    `P`         Canonical path
 
 Normalized path `p` is constructed using the following rules:
 
@@ -161,6 +178,13 @@ Canonical path `P` works similarly to `p` but has some differences:
  - Evaluation will fail for a non-existent path.
  - Result will always be an absolute path.
  - If path is a symbolic link, it will be resolved.
+
+=== Trailing separator ===
+
+    FILTER    DESCRIPTION
+    -----------------------------------
+    `z`         Ensure trailing separator
+    `Z`         Remove trailing separator
 
 Trailing separator filters `z` and `Z` can be useful when dealing with root and unnormalized paths.
 
