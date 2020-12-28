@@ -14,11 +14,10 @@ pub fn counter(value: u32) -> Result {
 
 pub fn random_number(start: Number, end: Option<Number>) -> Result {
     let end = end.unwrap_or(Number::MAX);
-    // gen_range(start..=end) might cause an overflow in rand lib
-    let result = if let Some(length) = (end - start).checked_add(1) {
-        start + thread_rng().gen_range(0..length)
+    let result = if start == 0 && end == Number::MAX {
+        thread_rng().gen() // gen_range(start..=end) would cause an overflow in rand lib
     } else {
-        thread_rng().gen()
+        thread_rng().gen_range(start..=end)
     };
     Ok(result.to_string())
 }
@@ -83,7 +82,9 @@ mod tests {
 
         #[test]
         fn lowest_to_highest() {
-            assert_ok!(random_number(0, None)); // Should not overflow
+            assert_ok!(random_number(0, Some(Number::MAX))); // Should not overflow
+            assert_ok!(random_number(1, Some(Number::MAX)));
+            assert_ok!(random_number(0, Some(Number::MAX - 1)));
         }
     }
 
