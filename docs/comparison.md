@@ -64,5 +64,15 @@ echo "123 abc 456" | sd '(\d+)' '_${1}_'        # Same thing using sd
 echo "123 abc 456" | rew '{S:(\d+):_$1_}'       # Same thing using rew
 ```
 
+## rew vs awk
+
+`awk` is obviously more powerful tool than `rew`.
+However, there are some use cases where `rew` can replace `awk` using more compact pattern syntax.
+
+```bash
+awk '{print substr($0,2,3)}' # Substring from index 2 with length 3
+rew '{n2+3}'                 # Same thing using rew
+```
+
 [fd]: https://github.com/sharkdp/fd
 [sd]: https://github.com/chmln/sd
