@@ -105,13 +105,13 @@ pub struct Cli {
     /// Ignores `--no-trailing-delimiter` flag.
     /// Prints machine-readable transformations as results:
     ///
-    ///    <input_value_1
-    ///    >output_value_1
-    ///    <input_value_2
-    ///    >output_value_2
-    ///    ...
-    ///    <input_value_N
-    ///    >output_value_N
+    ///     <input_value_1
+    ///     >output_value_1
+    ///     <input_value_2
+    ///     >output_value_2
+    ///     ...
+    ///     <input_value_N
+    ///     >output_value_N
     ///
     /// Such output can be processed by accompanying `mvb` and `cpb` utilities to perform bulk move/copy.
     #[clap(
