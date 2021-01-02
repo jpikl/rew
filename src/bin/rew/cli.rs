@@ -1,7 +1,9 @@
 use crate::counter;
 use clap::{crate_name, crate_version, AppSettings, ArgSettings, Clap};
 use common::color::{parse_color, COLOR_VALUES};
+use common::help::highlight_static;
 use common::run::Options;
+use indoc::indoc;
 use regex::Regex;
 use std::path::PathBuf;
 use termcolor::ColorChoice;
@@ -17,7 +19,7 @@ const HELP_HEADING: Option<&str> = Some("HELP OPTIONS");
     name = crate_name!(),
     version = crate_version!(),
     override_usage = "rew [OPTIONS] [pattern] [--] [values]...",
-    after_help = "Use `-h` for short descriptions and `--help` for more details.",
+    after_help = highlight_static("Use `-h` for short descriptions and `--help` for more details."),
     setting(AppSettings::ColoredHelp),
     setting(AppSettings::DeriveDisplayOrder),
     setting(AppSettings::DontCollapseArgsInUsage),
@@ -25,13 +27,18 @@ const HELP_HEADING: Option<&str> = Some("HELP OPTIONS");
 /// Rewrite FS paths according to a pattern
 pub struct Cli {
     /// Output pattern
-    ///
-    /// If not provided, input values are directly written to stdout.
-    ///
-    /// Use `--explain` flag to print explanation of a given pattern.
-    /// Use `--help-pattern` flag to print description of patter syntax.
-    /// Use `--help-filters` flag to print filter reference.
-    #[clap(verbatim_doc_comment, setting(ArgSettings::AllowEmptyValues))]
+    #[clap(
+        setting(ArgSettings::AllowEmptyValues),
+        long_about = highlight_static(indoc!{"
+            Output pattern
+
+            If not provided, input values are directly written to stdout.
+
+            Use `--explain` flag to print explanation of a given pattern.
+            Use `--help-pattern` flag to print description of patter syntax.
+            Use `--help-filters` flag to print filter reference.
+        "})
+    )]
     pub pattern: Option<String>,
 
     /// Input values (read from stdin by default)
@@ -100,40 +107,50 @@ pub struct Cli {
     pub no_trailing_delimiter: bool,
 
     /// Enable diff output mode
-    ///
-    /// Respects `--print*` flags/options.
-    /// Ignores `--no-trailing-delimiter` flag.
-    /// Prints machine-readable transformations as results:
-    ///
-    ///     <input_value_1
-    ///     >output_value_1
-    ///     <input_value_2
-    ///     >output_value_2
-    ///     ...
-    ///     <input_value_N
-    ///     >output_value_N
-    ///
-    /// Such output can be processed by accompanying `mvb` and `cpb` utilities to perform bulk move/copy.
     #[clap(
         short = 'b',
         long,
         conflicts_with = "pretty",
-        verbatim_doc_comment,
-        help_heading = OUTPUT_HEADING
+        help_heading = OUTPUT_HEADING,
+        long_about = highlight_static(indoc!{"
+            Enable diff output mode
+
+            Respects `--print*` flags/options.
+            Ignores `--no-trailing-delimiter` flag.
+            Prints machine-readable transformations as results:
+           
+                <input_value_1
+                >output_value_1
+                <input_value_2
+                >output_value_2
+                ...
+                <input_value_N
+                >output_value_N
+           
+            Such output can be processed by accompanying `mvb` and `cpb` utilities to perform bulk move/copy.
+        "}),
     )]
     pub diff: bool,
 
     /// Enable pretty output mode
-    ///
-    /// Ignores `--print*` flags/options.
-    /// Ignores `--no-trailing-delimiter` flag.
-    /// Prints human-readable transformations as results:
-    ///
-    ///     input_value_1 -> output_value_1
-    ///     input_value_2 -> output_value_2
-    ///     ...
-    ///     input_value_N -> output_value_N
-    #[clap(short = 'p', long, conflicts_with = "diff", verbatim_doc_comment, help_heading = OUTPUT_HEADING)]
+    #[clap(
+        short = 'p',
+        long,
+        conflicts_with = "diff",
+        help_heading = OUTPUT_HEADING,
+        long_about = highlight_static(indoc!{"
+            Enable pretty output mode
+
+            Ignores `--print*` flags/options.
+            Ignores `--no-trailing-delimiter` flag.
+            Prints human-readable transformations as results:
+
+                input_value_1 -> output_value_1
+                input_value_2 -> output_value_2
+                ...
+                input_value_N -> output_value_N
+        "}),
+    )]
     pub pretty: bool,
 
     /// When to use colors
@@ -174,8 +191,8 @@ pub struct Cli {
         short = 'c',
         long,
         value_name = "init[:step]",
+        help_heading = PROCESSING_HEADING,
         verbatim_doc_comment,
-        help_heading = PROCESSING_HEADING
     )]
     pub local_counter: Option<counter::Config>,
 
@@ -187,8 +204,8 @@ pub struct Cli {
         short = 'C',
         long,
         value_name = "init[:step]",
+        help_heading = PROCESSING_HEADING,
         verbatim_doc_comment,
-        help_heading = PROCESSING_HEADING
     )]
     pub global_counter: Option<counter::Config>,
 

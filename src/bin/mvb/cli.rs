@@ -1,45 +1,49 @@
 use clap::{crate_version, AppSettings, Clap};
 use common::color::{parse_color, COLOR_VALUES};
+use common::help::highlight_static;
 use common::run::Options;
 use common::transfer::TransferOptions;
+use indoc::indoc;
 use termcolor::ColorChoice;
 
 #[derive(Debug, Clap)]
 #[clap(
     name = "mvb",
     version = crate_version!(),
-    after_help = "Use `-h` for short descriptions and `--help` for more details.",
+    long_about = highlight_static(indoc!{"
+        Bulk move (rename) files and directories
+
+        `mvb` reads instructions from standard input in the following format:
+       
+            <src_path_1
+            >dst_path_1
+            <src_path_2
+            >dst_path_2
+            ...
+            <src_path_N
+            >dst_path_N
+       
+        Such input can be generated using accompanying `rew` utility and its `-b, --diff` flag:
+       
+            $> find -name '*.jpeg' | rew -b '{B}.jpg' | mvb # Rename all *.jpeg files to *.jpg
+       
+        Each pair of source and destination path must be either both files or both directories. Mixing these types will result in error.
+       
+        Source path must exist. Using non-existent source path will result in error.
+       
+        Destination path may exist. Existing destination file will be overwritten. Existing destination directory will have its contents merged with contents of source directory.
+       
+        Missing parent directories in destination path will be created as needed.
+       
+        Nothing will be done if source and destination paths point to the same file or directory.
+    "}),
+    after_help = highlight_static("Use `-h` for short descriptions and `--help` for more details."),
     setting(AppSettings::ColoredHelp),
     setting(AppSettings::DeriveDisplayOrder),
     setting(AppSettings::DontCollapseArgsInUsage),
     setting(AppSettings::UnifiedHelpMessage),
-    verbatim_doc_comment,
 )]
 /// Bulk move (rename) files and directories
-///
-/// `mvb` reads instructions from standard input in the following format:
-///
-///     <src_path_1
-///     >dst_path_1
-///     <src_path_2
-///     >dst_path_2
-///     ...
-///     <src_path_N
-///     >dst_path_N
-///
-/// Such input can be generated using accompanying `rew` utility and its `-b, --diff` flag:
-///
-///     $> find -name '*.jpeg' | rew -b '{B}.jpg' | mvb # Rename all *.jpeg files to *.jpg
-///
-/// Each pair of source and destination path must be either both files or both directories. Mixing these types will result in error.
-///
-/// Source path must exist. Using non-existent source path will result in error.
-///
-/// Destination path may exist. Existing destination file will be overwritten. Existing destination directory will have its contents merged with contents of source directory.
-///
-/// Missing parent directories in destination path will be created as needed.
-///
-/// Nothing will be done if source and destination paths point to the same file or directory.
 pub struct Cli {
     /// Read instructions delimited by NUL, not newline
     #[clap(short = 'z', long)]

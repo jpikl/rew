@@ -1,4 +1,4 @@
-use common::help::highlight_help;
+use common::help::highlight;
 use indoc::indoc;
 use std::io::{Result, Write};
 use termcolor::WriteColor;
@@ -354,11 +354,11 @@ Use `-C, --global-counter` option to change global counter configuration.
 "};
 
 pub fn write_pattern_help<O: Write + WriteColor>(output: &mut O) -> Result<()> {
-    highlight_help(output, PATTERN_HELP)
+    highlight(output, PATTERN_HELP)
 }
 
 pub fn write_filters_help<O: Write + WriteColor>(output: &mut O) -> Result<()> {
-    highlight_help(output, FILTERS_HELP)
+    highlight(output, FILTERS_HELP)
 }
 
 #[cfg(test)]

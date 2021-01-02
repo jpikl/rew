@@ -3,6 +3,7 @@ mod utils;
 
 use assert_fs::prelude::*;
 use assert_fs::TempDir;
+use predicates::prelude::*;
 use utils::cpb;
 
 #[test]
@@ -169,4 +170,14 @@ fn verbose_output_fail_at_end() {
     src_file_2.assert("2");
     dst_file_1.assert(predicates::path::missing());
     dst_file_2.assert("2");
+}
+
+#[test]
+fn help() {
+    cpb()
+        .arg("--help")
+        .assert()
+        .success()
+        .stdout(predicate::str::is_empty().not())
+        .stderr("");
 }

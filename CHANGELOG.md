@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Simplified error message for an invalid range.
 - Output of `-h, --help` flag is organized into sections.
+- Output of `-h, --help` flag uses more colors in descriptions.
 - Output of `--help-pattern` and `--help-filters` flags matches online documentation.
 
 ### Fixed

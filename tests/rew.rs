@@ -369,6 +369,16 @@ fn working_directory_custom_relative() {
 }
 
 #[test]
+fn help() {
+    rew()
+        .arg("--help")
+        .assert()
+        .success()
+        .stdout(predicate::str::is_empty().not())
+        .stderr("");
+}
+
+#[test]
 fn help_pattern() {
     rew()
         .arg("--help-pattern")
