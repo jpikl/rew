@@ -16,8 +16,8 @@ mod regex;
 mod testing;
 mod utils;
 
-const EXIT_CODE_PATTERN_PARSE_ERROR: i32 = 3;
-const EXIT_CODE_PATTERN_EVAL_ERROR: i32 = 4;
+const EXIT_CODE_PARSE_ERROR: i32 = 3;
+const EXIT_CODE_EVAL_ERROR: i32 = 4;
 
 fn main() {
     exec_run(run);
@@ -77,7 +77,7 @@ fn run(cli: &Cli, io: &Io) -> Result {
             Ok(pattern) => pattern,
             Err(error) => {
                 write_pattern_error(&mut io.stderr(), &error, raw_pattern)?;
-                return Ok(EXIT_CODE_PATTERN_PARSE_ERROR);
+                return Ok(EXIT_CODE_PARSE_ERROR);
             }
         };
 
@@ -145,10 +145,10 @@ fn run(cli: &Cli, io: &Io) -> Result {
                 Err(error) => {
                     write_pattern_error(&mut io.stderr(), &error, raw_pattern)?;
                     if cli.fail_at_end {
-                        exit_code = EXIT_CODE_PATTERN_EVAL_ERROR;
+                        exit_code = EXIT_CODE_EVAL_ERROR;
                         continue;
                     } else {
-                        return Ok(EXIT_CODE_PATTERN_EVAL_ERROR);
+                        return Ok(EXIT_CODE_EVAL_ERROR);
                     }
                 }
             };
