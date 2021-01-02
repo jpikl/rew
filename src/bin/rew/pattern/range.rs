@@ -247,7 +247,7 @@ mod tests {
 
         #[test]
         fn unparse() {
-            assert_eq!((123 as Number).unparse(), String::from("123"));
+            assert_eq!(Number::unparse(123), String::from("123"));
         }
     }
 
@@ -293,7 +293,7 @@ mod tests {
 
         #[test]
         fn unparse() {
-            assert_eq!((122 as Index).unparse(), String::from("123"));
+            assert_eq!(Index::unparse(122), String::from("123"));
         }
     }
 
