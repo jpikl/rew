@@ -32,14 +32,6 @@ pub fn get_canonical(value: String, working_dir: &Path) -> Result {
     let absolute_value = get_absolute(value, working_dir)?;
     let absolute_path = Path::new(&absolute_value);
 
-    // Normalize unix vs windows behaviour
-    if cfg!(windows) && !absolute_path.exists() {
-        return Err(ErrorKind::CanonicalizationFailed(AnyString(format!(
-            "Path '{}' not found or user lacks permission",
-            absolute_path.to_string_lossy()
-        ))));
-    }
-
     match absolute_path.normalize() {
         Ok(path_buf) => to_string(&path_buf).map(|mut result| {
             // Normalize unix vs windows behaviour
