@@ -1,4 +1,4 @@
-use crate::pattern::filter::path;
+use crate::pattern::path;
 use std::collections::HashMap;
 use std::str::FromStr;
 

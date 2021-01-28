@@ -1,23 +1,16 @@
 use crate::pattern::char::{AsChar, Char};
-use crate::pattern::number::parse_number;
+use crate::pattern::index::IndexRange;
+use crate::pattern::integer::parse_integer;
+use crate::pattern::number::NumberInterval;
 use crate::pattern::padding::Padding;
-use crate::pattern::range::{IndexRange, NumberInterval};
 use crate::pattern::reader::Reader;
 use crate::pattern::regex::RegexHolder;
 use crate::pattern::repetition::Repetition;
 use crate::pattern::substitution::Substitution;
-use crate::pattern::{eval, parse};
+use crate::pattern::{eval, parse, path, uuid};
+use crate::utils::Empty;
 use std::fmt;
-
-mod error;
-mod format;
-mod generate;
-pub mod path;
-mod regex;
-mod string;
-mod substr;
-#[cfg(test)]
-mod testing;
+use unidecode::unidecode;
 
 #[derive(Debug, PartialEq)]
 pub enum Filter {
@@ -45,7 +38,7 @@ pub enum Filter {
     // Replace filters
     ReplaceFirst(Substitution<String>),
     ReplaceAll(Substitution<String>),
-    ReplaceEmpty(String),
+    ReplaceEmpty(Substitution<Empty>),
 
     // Regex filters
     RegexMatch(RegexHolder),
@@ -75,7 +68,7 @@ impl Filter {
         let position = reader.position();
 
         if let Some('0'..='9') = reader.peek_char() {
-            let number = parse_number(reader)?;
+            let number = parse_integer(reader)?;
             if number > 0 {
                 Ok(Filter::RegexCapture(number))
             } else {
@@ -110,7 +103,7 @@ impl Filter {
                 // Replace filters
                 'r' => Ok(Self::ReplaceFirst(Substitution::parse_string(reader)?)),
                 'R' => Ok(Self::ReplaceAll(Substitution::parse_string(reader)?)),
-                '?' => Ok(Self::ReplaceEmpty(Char::join(reader.read_to_end()))),
+                '?' => Ok(Self::ReplaceEmpty(Substitution::parse_empty(reader)?)),
 
                 // Regex filters
                 '=' => Ok(Self::RegexMatch(RegexHolder::parse(reader)?)),
@@ -146,7 +139,11 @@ impl Filter {
         }
     }
 
-    pub fn eval(&self, value: String, context: &eval::Context) -> Result<String, eval::ErrorKind> {
+    pub fn eval(
+        &self,
+        mut value: String,
+        context: &eval::Context,
+    ) -> Result<String, eval::ErrorKind> {
         match self {
             // Path filters
             Self::WorkingDir => path::to_string(context.working_dir),
@@ -162,59 +159,42 @@ impl Filter {
             Self::RemoveExtension => path::get_without_extension(value),
             Self::Extension => path::get_extension(value),
             Self::ExtensionWithDot => path::get_extension_with_dot(value),
-            Self::EnsureTrailingSeparator => path::ensure_trailing_separator(value),
-            Self::RemoveTrailingSeparator => path::remove_trailing_separator(value),
+            Self::EnsureTrailingSeparator => Ok(path::ensure_trailing_separator(value)),
+            Self::RemoveTrailingSeparator => Ok(path::remove_trailing_separator(value)),
 
             // Substring filters
-            Self::Substring(range) => substr::get_forward(value, range.start(), range.length()),
-            Self::SubstringBackward(range) => {
-                substr::get_backward(value, range.start(), range.length())
-            }
+            Self::Substring(range) => Ok(range.substr(value)),
+            Self::SubstringBackward(range) => Ok(range.substr_backward(value)),
 
             // Replace filters
-            Self::ReplaceFirst(subst) => {
-                string::replace_first(value, &subst.target, &subst.replacement)
-            }
-            Self::ReplaceAll(subst) => {
-                string::replace_all(value, &subst.target, &subst.replacement)
-            }
-            Self::ReplaceEmpty(replacement) => string::replace_empty(value, &replacement),
+            Self::ReplaceFirst(substitution) => Ok(substitution.replace_first(&value)),
+            Self::ReplaceAll(substitution) => Ok(substitution.replace_all(&value)),
+            Self::ReplaceEmpty(substitution) => Ok(substitution.replace(value)),
 
             // Regex filters
-            Self::RegexMatch(RegexHolder(regex)) => regex::get_match(value, &regex),
-            Self::RegexReplaceFirst(subst) => {
-                regex::replace_first(value, &subst.target.0, &subst.replacement)
-            }
-            Self::RegexReplaceAll(subst) => {
-                regex::replace_all(value, &subst.target.0, &subst.replacement)
-            }
-            Self::RegexCapture(number) => {
-                regex::get_capture(context.regex_captures.as_ref(), *number)
-            }
+            Self::RegexMatch(regex) => Ok(regex.find(&value)),
+            Self::RegexReplaceFirst(substitution) => Ok(substitution.replace_first(&value)),
+            Self::RegexReplaceAll(substitution) => Ok(substitution.replace_all(&value)),
+            Self::RegexCapture(number) => Ok(context.regex_capture(*number)),
 
             // Format filters
-            Self::Trim => format::trim(value),
-            Self::ToLowercase => format::to_lowercase(value),
-            Self::ToUppercase => format::to_uppercase(value),
-            Self::ToAscii => format::to_ascii(value),
-            Self::RemoveNonAscii => format::remove_non_ascii(value),
-            Self::LeftPad(Padding::Fixed(padding)) => format::left_pad(value, &padding),
-            Self::LeftPad(Padding::Repeated(repetition)) => {
-                format::left_pad_repeat(value, &repetition.value, repetition.count)
+            Self::Trim => Ok(value.trim().to_string()),
+            Self::ToLowercase => Ok(value.to_lowercase()),
+            Self::ToUppercase => Ok(value.to_uppercase()),
+            Self::ToAscii => Ok(unidecode(&value)),
+            Self::RemoveNonAscii => {
+                value.retain(|ch| ch.is_ascii());
+                Ok(value)
             }
-            Self::RightPad(Padding::Fixed(padding)) => format::right_pad(value, &padding),
-            Self::RightPad(Padding::Repeated(repetition)) => {
-                format::right_pad_repeat(value, &repetition.value, repetition.count)
-            }
+            Self::LeftPad(padding) => Ok(padding.apply_left(value)),
+            Self::RightPad(padding) => Ok(padding.apply_right(value)),
 
             // Generators
-            Self::Repeat(Repetition { value, count }) => generate::repetition(value, *count),
-            Self::LocalCounter => generate::counter(context.local_counter),
-            Self::GlobalCounter => generate::counter(context.global_counter),
-            Self::RandomNumber(interval) => {
-                generate::random_number(interval.start(), interval.end())
-            }
-            Self::RandomUuid => generate::random_uuid(),
+            Self::Repeat(repetition) => Ok(repetition.expand()),
+            Self::LocalCounter => Ok(context.local_counter.to_string()),
+            Self::GlobalCounter => Ok(context.global_counter.to_string()),
+            Self::RandomNumber(interval) => Ok(interval.random().to_string()),
+            Self::RandomUuid => Ok(uuid::random()),
         }
     }
 }
@@ -248,8 +228,8 @@ impl fmt::Display for Filter {
             // Replace filters
             Self::ReplaceFirst(substitution) => write!(formatter, "Replace first {}", substitution),
             Self::ReplaceAll(substitution) => write!(formatter, "Replace all {}", substitution),
-            Self::ReplaceEmpty(replacement) => {
-                write!(formatter, "Replace empty with '{}'", replacement)
+            Self::ReplaceEmpty(substitution) => {
+                write!(formatter, "Replace {}", substitution)
             }
 
             // Regex filters
@@ -292,10 +272,12 @@ impl fmt::Display for Filter {
 #[cfg(test)]
 mod tests {
     extern crate regex;
+
     use super::Filter;
     use crate::pattern::char::Char;
+    use crate::pattern::index::IndexRange;
+    use crate::pattern::number::NumberInterval;
     use crate::pattern::padding::Padding;
-    use crate::pattern::range::{IndexRange, NumberInterval};
     use crate::pattern::regex::RegexHolder;
     use crate::pattern::repetition::Repetition;
     use crate::pattern::substitution::Substitution;
@@ -306,6 +288,7 @@ mod tests {
         use super::*;
         use crate::pattern::parse::{Error, ErrorKind, Result};
         use crate::pattern::reader::Reader;
+        use crate::utils::Empty;
 
         #[test]
         fn empty() {
@@ -504,7 +487,13 @@ mod tests {
 
         #[test]
         fn replace_empty() {
-            assert_eq!(parse("?abc"), Ok(Filter::ReplaceEmpty(String::from("abc"))));
+            assert_eq!(
+                parse("?abc"),
+                Ok(Filter::ReplaceEmpty(Substitution {
+                    target: Empty,
+                    replacement: String::from("abc")
+                }))
+            );
         }
 
         #[test]
@@ -725,8 +714,8 @@ mod tests {
 
     mod eval {
         use super::*;
-        use crate::pattern::filter::testing::assert_ok_uuid;
-        use crate::pattern::testing::make_eval_context;
+        use crate::pattern::testing::{assert_uuid, make_eval_context};
+        use crate::utils::Empty;
         use std::path::MAIN_SEPARATOR;
 
         #[test]
@@ -921,7 +910,11 @@ mod tests {
         #[test]
         fn replace_empty() {
             assert_eq!(
-                Filter::ReplaceEmpty(String::from("xyz")).eval(String::new(), &make_eval_context()),
+                Filter::ReplaceEmpty(Substitution {
+                    target: Empty,
+                    replacement: String::from("xyz")
+                })
+                .eval(String::new(), &make_eval_context()),
                 Ok(String::from("xyz"))
             );
         }
@@ -1080,12 +1073,17 @@ mod tests {
 
         #[test]
         fn random_uuid() {
-            assert_ok_uuid(Filter::RandomUuid.eval(String::new(), &make_eval_context()));
+            assert_uuid(
+                &Filter::RandomUuid
+                    .eval(String::new(), &make_eval_context())
+                    .unwrap(),
+            );
         }
     }
 
     mod display {
         use super::*;
+        use crate::utils::Empty;
 
         #[test]
         fn working_dir() {
@@ -1206,7 +1204,11 @@ mod tests {
         #[test]
         fn replace_empty() {
             assert_eq!(
-                Filter::ReplaceEmpty(String::from("abc")).to_string(),
+                Filter::ReplaceEmpty(Substitution {
+                    target: Empty,
+                    replacement: String::from("abc")
+                })
+                .to_string(),
                 "Replace empty with 'abc'"
             );
         }

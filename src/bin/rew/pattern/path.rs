@@ -1,10 +1,11 @@
 use crate::pattern::eval::ErrorKind;
-use crate::pattern::filter::error::Result;
 use crate::utils::AnyString;
 use normpath::PathExt;
 use pathdiff::diff_paths;
 use std::ffi::OsStr;
 use std::path::{is_separator, Component, Path, MAIN_SEPARATOR};
+
+type Result = std::result::Result<String, ErrorKind>;
 
 pub fn get_absolute(value: String, working_dir: &Path) -> Result {
     if value.is_empty() {
@@ -167,7 +168,7 @@ pub fn get_extension_with_dot(value: String) -> Result {
     Ok(result)
 }
 
-pub fn ensure_trailing_separator(mut value: String) -> Result {
+pub fn ensure_trailing_separator(mut value: String) -> String {
     match value.chars().last() {
         Some(last_char) if is_separator(last_char) => {
             if last_char != MAIN_SEPARATOR {
@@ -179,16 +180,16 @@ pub fn ensure_trailing_separator(mut value: String) -> Result {
             value.push(MAIN_SEPARATOR);
         }
     }
-    Ok(value)
+    value
 }
 
-pub fn remove_trailing_separator(mut value: String) -> Result {
+pub fn remove_trailing_separator(mut value: String) -> String {
     if let Some(last_char) = value.chars().last() {
         if std::path::is_separator(last_char) {
             value.pop();
         }
     }
-    Ok(value)
+    value
 }
 
 fn opt_to_string<S: AsRef<OsStr> + ?Sized>(value: Option<&S>) -> Result {
@@ -1311,15 +1312,9 @@ mod tests {
         #[test]
         fn empty() {
             #[cfg(unix)]
-            assert_eq!(
-                ensure_trailing_separator(String::new()),
-                Ok(String::from("/"))
-            );
+            assert_eq!(ensure_trailing_separator(String::new()), String::from("/"));
             #[cfg(windows)]
-            assert_eq!(
-                ensure_trailing_separator(String::new()),
-                Ok(String::from("\\"))
-            );
+            assert_eq!(ensure_trailing_separator(String::new()), String::from("\\"));
         }
 
         #[test]
@@ -1327,12 +1322,12 @@ mod tests {
             #[cfg(unix)]
             assert_eq!(
                 ensure_trailing_separator(String::from("dir")),
-                Ok(String::from("dir/"))
+                String::from("dir/")
             );
             #[cfg(windows)]
             assert_eq!(
                 ensure_trailing_separator(String::from("dir")),
-                Ok(String::from("dir\\"))
+                String::from("dir\\")
             );
         }
 
@@ -1341,17 +1336,17 @@ mod tests {
             #[cfg(unix)]
             assert_eq!(
                 ensure_trailing_separator(String::from("dir/")),
-                Ok(String::from("dir/"))
+                String::from("dir/")
             );
             #[cfg(windows)]
             assert_eq!(
                 ensure_trailing_separator(String::from("dir\\")),
-                Ok(String::from("dir\\"))
+                String::from("dir\\")
             );
             #[cfg(windows)]
             assert_eq!(
                 ensure_trailing_separator(String::from("dir/")),
-                Ok(String::from("dir\\"))
+                String::from("dir\\")
             );
         }
 
@@ -1360,17 +1355,17 @@ mod tests {
             #[cfg(unix)]
             assert_eq!(
                 ensure_trailing_separator(String::from("/")),
-                Ok(String::from("/"))
+                String::from("/")
             );
             #[cfg(windows)]
             assert_eq!(
                 ensure_trailing_separator(String::from("C:\\")),
-                Ok(String::from("C:\\"))
+                String::from("C:\\")
             );
             #[cfg(windows)]
             assert_eq!(
                 ensure_trailing_separator(String::from("C:/")),
-                Ok(String::from("C:\\"))
+                String::from("C:\\")
             );
         }
 
@@ -1379,7 +1374,7 @@ mod tests {
         fn prefix() {
             assert_eq!(
                 ensure_trailing_separator(String::from("C:")),
-                Ok(String::from("C:\\"))
+                String::from("C:\\")
             );
         }
     }
@@ -1389,7 +1384,7 @@ mod tests {
 
         #[test]
         fn empty() {
-            assert_eq!(remove_trailing_separator(String::new()), Ok(String::new()));
+            assert_eq!(remove_trailing_separator(String::new()), String::new());
         }
 
         #[test]
@@ -1397,7 +1392,7 @@ mod tests {
             #[cfg(unix)]
             assert_eq!(
                 remove_trailing_separator(String::from("dir")),
-                Ok(String::from("dir"))
+                String::from("dir")
             );
         }
 
@@ -1405,31 +1400,28 @@ mod tests {
         fn name_separator() {
             assert_eq!(
                 remove_trailing_separator(String::from("dir/")),
-                Ok(String::from("dir"))
+                String::from("dir")
             );
             #[cfg(windows)]
             assert_eq!(
                 remove_trailing_separator(String::from("dir\\")),
-                Ok(String::from("dir"))
+                String::from("dir")
             );
         }
 
         #[test]
         fn root() {
             #[cfg(unix)]
-            assert_eq!(
-                remove_trailing_separator(String::from("/")),
-                Ok(String::new())
-            );
+            assert_eq!(remove_trailing_separator(String::from("/")), String::new());
             #[cfg(windows)]
             assert_eq!(
                 remove_trailing_separator(String::from("C:\\")),
-                Ok(String::from("C:"))
+                String::from("C:")
             );
             #[cfg(windows)]
             assert_eq!(
                 remove_trailing_separator(String::from("C:/")),
-                Ok(String::from("C:"))
+                String::from("C:")
             );
         }
 
@@ -1438,7 +1430,7 @@ mod tests {
         fn prefix() {
             assert_eq!(
                 remove_trailing_separator(String::from("C:")),
-                Ok(String::from("C:"))
+                String::from("C:")
             );
         }
     }

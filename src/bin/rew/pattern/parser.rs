@@ -193,8 +193,8 @@ impl Parser {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::pattern::index::IndexRange;
     use crate::pattern::padding::Padding;
-    use crate::pattern::range::IndexRange;
     use crate::pattern::repetition::Repetition;
     use crate::pattern::substitution::Substitution;
     use crate::pattern::testing::make_parsed;

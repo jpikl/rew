@@ -31,7 +31,7 @@ pub enum ErrorKind {
     ExpectedRepetition,
     ExpectedSubstitution,
     ExprStartInsideExpr,
-    NumberOverflow(String),
+    IntegerOverflow(String),
     PaddingPrefixInvalid(char, Option<Char>),
     PipeOutsideExpr,
     RangeIndexZero,
@@ -110,7 +110,7 @@ impl fmt::Display for ErrorKind {
             Self::ExprStartInsideExpr => {
                 write!(formatter, "Unescaped '{}' inside expression", EXPR_START)
             }
-            Self::NumberOverflow(max) => {
+            Self::IntegerOverflow(max) => {
                 write!(formatter, "Cannot parse value greater than {}", max)
             }
             Self::PaddingPrefixInvalid(fixed_prefix, None) => {
@@ -329,7 +329,7 @@ mod tests {
         #[test]
         fn number_overflow() {
             assert_eq!(
-                ErrorKind::NumberOverflow(String::from("255")).to_string(),
+                ErrorKind::IntegerOverflow(String::from("255")).to_string(),
                 "Cannot parse value greater than 255"
             );
         }

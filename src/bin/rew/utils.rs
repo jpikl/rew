@@ -1,6 +1,9 @@
 use std::fmt::{self, Debug};
 use std::ops::Range;
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct Empty;
+
 #[derive(Debug, Clone)]
 pub struct AnyString(pub String);
 

@@ -2,13 +2,8 @@ use crate::pattern::char::Char;
 use crate::pattern::parse::{Error, ErrorKind, Result};
 use crate::pattern::reader::Reader;
 use crate::utils::AnyString;
-use lazy_static::lazy_static;
 use regex::Regex;
 use std::fmt;
-
-lazy_static! {
-    static ref CAPTURE_GROUP_VAR_REGEX: Regex = Regex::new(r"\$(\d+)").unwrap();
-}
 
 #[derive(Debug)]
 pub struct RegexHolder(pub Regex);
@@ -31,6 +26,13 @@ impl RegexHolder {
                 kind: ErrorKind::RegexInvalid(AnyString(error.to_string())),
                 range: position..reader.position(),
             }),
+        }
+    }
+
+    pub fn find(&self, value: &str) -> String {
+        match self.0.find(value) {
+            Some(result) => result.as_str().to_string(),
+            None => String::new(),
         }
     }
 }
@@ -90,6 +92,34 @@ mod tests {
                 })
             );
             assert_eq!(reader.position(), 4);
+        }
+    }
+
+    mod find {
+        use super::*;
+
+        #[test]
+        fn empty() {
+            assert_eq!(
+                RegexHolder(Regex::new("\\d+").unwrap()).find(""),
+                String::new()
+            );
+        }
+
+        #[test]
+        fn none() {
+            assert_eq!(
+                RegexHolder(Regex::new("\\d+").unwrap()).find("abc"),
+                String::new()
+            );
+        }
+
+        #[test]
+        fn first() {
+            assert_eq!(
+                RegexHolder(Regex::new("\\d+").unwrap()).find("abc123def456"),
+                String::from("123")
+            );
         }
     }
 

@@ -9,11 +9,14 @@ pub mod eval;
 mod explain;
 pub mod filter;
 pub mod help;
+mod index;
+mod integer;
 mod lexer;
 mod number;
 mod padding;
 pub mod parse;
 mod parser;
+pub mod path;
 mod range;
 mod reader;
 mod regex;
@@ -22,6 +25,7 @@ mod substitution;
 mod symbols;
 #[cfg(test)]
 mod testing;
+mod uuid;
 
 #[derive(Debug, PartialEq)]
 pub struct Pattern {
@@ -103,9 +107,9 @@ impl Pattern {
 #[cfg(test)]
 mod tests {
     use super::filter::Filter;
+    use super::index::IndexRange;
     use super::parse::Parsed;
     use super::parser::Item;
-    use super::range::IndexRange;
     use super::substitution::Substitution;
     use super::testing::{make_eval_context, make_parsed};
     use super::Pattern;

@@ -1,194 +1,268 @@
 use crate::pattern::char::Char;
-use crate::pattern::parse::{Error, ErrorKind, Result};
+use crate::pattern::integer::{get_bits, parse_integer};
+use crate::pattern::parse::Result;
+use crate::pattern::range::{Range, RangeBound};
 use crate::pattern::reader::Reader;
-use num_traits::PrimInt;
-use std::convert::TryFrom;
-use std::fmt::Display;
+use rand::thread_rng;
+use rand::Rng;
 
-pub const fn get_bits<T>() -> usize {
-    std::mem::size_of::<T>() * 8
-}
+use std::fmt;
 
-pub trait ParsableNumber: TryFrom<u32> + PrimInt + Display {}
+pub type Number = u64;
 
-impl<T: TryFrom<u32> + PrimInt + Display> ParsableNumber for T {}
+impl RangeBound for Number {
+    const DELIMITER_REQUIRED: bool = true;
+    const LENGTH_ALLOWED: bool = false;
 
-pub fn parse_number<T: ParsableNumber>(reader: &mut Reader<Char>) -> Result<T> {
-    match reader.peek_char() {
-        Some('0') => {
-            reader.seek();
-            Ok(T::zero())
-        }
-        Some(ch @ '1'..='9') => {
-            let position = reader.position();
-            reader.seek();
+    fn parse(reader: &mut Reader<Char>) -> Result<Self> {
+        parse_integer(reader)
+    }
 
-            let base: T = parse_u32(10);
-            let mut number: T = parse_digit(ch);
-
-            while let Some(ch @ '0'..='9') = reader.peek_char() {
-                reader.seek();
-
-                match number.checked_mul(&base) {
-                    Some(result) => number = result,
-                    None => {
-                        return Err(Error {
-                            kind: ErrorKind::NumberOverflow(T::max_value().to_string()),
-                            range: position..reader.position(),
-                        })
-                    }
-                }
-
-                match number.checked_add(&parse_digit(ch)) {
-                    Some(result) => number = result,
-                    None => {
-                        return Err(Error {
-                            kind: ErrorKind::NumberOverflow(T::max_value().to_string()),
-                            range: position..reader.position(),
-                        })
-                    }
-                }
-            }
-
-            Ok(number)
-        }
-        _ => Err(Error {
-            kind: ErrorKind::ExpectedNumber,
-            range: reader.position()..reader.end(),
-        }),
+    fn unparse(self) -> String {
+        self.to_string()
     }
 }
 
-fn parse_digit<T: TryFrom<u32>>(value: char) -> T {
-    // This should never fail even for T = u8, the caller makes sure value is a digit
-    parse_u32(value.to_digit(10).expect("Expected a digit"))
+#[derive(Debug, PartialEq)]
+pub struct NumberInterval(Range<Number>);
+
+impl NumberInterval {
+    #[cfg(test)]
+    pub fn new(start: Number, end: Option<Number>) -> Self {
+        Self(Range(start, end))
+    }
+
+    pub fn parse(reader: &mut Reader<Char>) -> Result<Self> {
+        if reader.peek().is_some() {
+            Range::parse(reader).map(Self)
+        } else {
+            Ok(Self(Range(0, None)))
+        }
+    }
+
+    pub fn start(&self) -> Number {
+        (self.0).0
+    }
+
+    pub fn end(&self) -> Option<Number> {
+        (self.0).1
+    }
+
+    pub fn random(&self) -> Number {
+        let start = self.start();
+        let end = self.end().unwrap_or(Number::MAX);
+        if start == 0 && end == Number::MAX {
+            thread_rng().gen() // gen_range(start..=end) would cause an overflow in rand lib
+        } else {
+            thread_rng().gen_range(start..=end)
+        }
+    }
 }
 
-fn parse_u32<T: TryFrom<u32>>(value: u32) -> T {
-    // This should never fail even for T = u8, the caller makes sure value is a digit
-    // We are not using .expect() because it requires TryFrom::Error to implement Display
-    // which would introduce another unnecessary function template parameter.
-    match T::try_from(value) {
-        Ok(result) => result,
-        _ => panic!("Expected to convert from u32"),
+impl fmt::Display for NumberInterval {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        match &self.0 {
+            Range(start, Some(end)) => write!(formatter, "[{}, {}]", start, end),
+            Range(start, None) => write!(formatter, "[{}, 2^{})", start, get_bits::<Number>()),
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::pattern::parse::{Error, ErrorKind};
 
-    #[test]
-    fn gets_bits() {
-        assert_eq!(get_bits::<u8>(), 8);
-        assert_eq!(get_bits::<u16>(), 16);
-        assert_eq!(get_bits::<u32>(), 32);
-        assert_eq!(get_bits::<u64>(), 64);
-        assert_eq!(get_bits::<u128>(), 128);
+    mod number {
+        use super::*;
+
+        mod parse {
+            use super::*;
+
+            #[test]
+            fn zero() {
+                let mut reader = Reader::from("0abc");
+                assert_eq!(Number::parse(&mut reader), Ok(0));
+                assert_eq!(reader.position(), 1);
+            }
+
+            #[test]
+            fn positive() {
+                let mut reader = Reader::from("123abc");
+                assert_eq!(Number::parse(&mut reader), Ok(123));
+                assert_eq!(reader.position(), 3);
+            }
+
+            #[test]
+            fn invalid() {
+                let mut reader = Reader::from("abc");
+                assert_eq!(
+                    Number::parse(&mut reader),
+                    Err(Error {
+                        kind: ErrorKind::ExpectedNumber,
+                        range: 0..3
+                    })
+                );
+                assert_eq!(reader.position(), 0);
+            }
+        }
+
+        #[test]
+        fn unparse() {
+            assert_eq!(Number::unparse(123), String::from("123"));
+        }
     }
 
-    mod parse_number {
+    mod number_interval {
         use super::*;
 
         #[test]
-        fn empty() {
-            let mut reader = Reader::from("");
-            assert_eq!(
-                parse_number::<usize>(&mut reader),
-                Err(Error {
-                    kind: ErrorKind::ExpectedNumber,
-                    range: 0..0,
-                })
-            );
-            assert_eq!(reader.position(), 0);
+        fn start() {
+            assert_eq!(NumberInterval::new(0, None).start(), 0);
+            assert_eq!(NumberInterval::new(1, None).start(), 1);
         }
 
         #[test]
-        fn alpha() {
-            let mut reader = Reader::from("ab");
-            assert_eq!(
-                parse_number::<usize>(&mut reader),
-                Err(Error {
-                    kind: ErrorKind::ExpectedNumber,
-                    range: 0..2,
-                })
-            );
-            assert_eq!(reader.position(), 0);
+        fn end() {
+            assert_eq!(NumberInterval::new(0, None).end(), None);
+            assert_eq!(NumberInterval::new(0, Some(0)).end(), Some(0));
+            assert_eq!(NumberInterval::new(0, Some(1)).end(), Some(1));
         }
 
         #[test]
-        fn zero() {
-            let mut reader = Reader::from("0");
-            assert_eq!(parse_number(&mut reader), Ok(0));
-            assert_eq!(reader.position(), 1);
+        fn display() {
+            assert_eq!(NumberInterval::new(1, None).to_string(), "[1, 2^64)");
+            assert_eq!(NumberInterval::new(1, Some(2)).to_string(), "[1, 2]");
+        }
+
+        mod parse {
+            use super::*;
+
+            #[test]
+            fn empty() {
+                let mut reader = Reader::from("");
+                assert_eq!(
+                    NumberInterval::parse(&mut reader),
+                    Ok(NumberInterval::new(0, None))
+                );
+                assert_eq!(reader.position(), 0);
+            }
+
+            #[test]
+            fn invalid() {
+                let mut reader = Reader::from("-");
+                assert_eq!(
+                    NumberInterval::parse(&mut reader),
+                    Err(Error {
+                        kind: ErrorKind::RangeInvalid(String::from("-")),
+                        range: 0..1,
+                    })
+                );
+                assert_eq!(reader.position(), 0);
+            }
+
+            #[test]
+            fn start_no_end() {
+                let mut reader = Reader::from("0-");
+                assert_eq!(
+                    NumberInterval::parse(&mut reader),
+                    Ok(NumberInterval::new(0, None))
+                );
+                assert_eq!(reader.position(), 2);
+            }
+
+            #[test]
+            fn start_below_end() {
+                let mut reader = Reader::from("0-1");
+                assert_eq!(
+                    NumberInterval::parse(&mut reader),
+                    Ok(NumberInterval::new(0, Some(1)))
+                );
+                assert_eq!(reader.position(), 3);
+            }
+
+            #[test]
+            fn start_equals_end() {
+                let mut reader = Reader::from("0-0");
+                assert_eq!(
+                    NumberInterval::parse(&mut reader),
+                    Ok(NumberInterval::new(0, Some(0)))
+                );
+                assert_eq!(reader.position(), 3);
+            }
+
+            #[test]
+            fn start_above_end() {
+                let mut reader = Reader::from("1-0");
+                assert_eq!(
+                    NumberInterval::parse(&mut reader),
+                    Err(Error {
+                        kind: ErrorKind::RangeStartOverEnd(String::from("1"), String::from("0")),
+                        range: 0..3,
+                    })
+                );
+                assert_eq!(reader.position(), 3);
+            }
+
+            #[test]
+            fn start_with_length() {
+                let mut reader = Reader::from("0+1");
+                assert_eq!(
+                    NumberInterval::parse(&mut reader),
+                    Err(Error {
+                        kind: ErrorKind::ExpectedRangeDelimiter(Some(Char::Raw('+'))),
+                        range: 1..2
+                    })
+                );
+                assert_eq!(reader.position(), 2);
+            }
+
+            #[test]
+            fn no_delimiter() {
+                let mut reader = Reader::from("1");
+                assert_eq!(
+                    NumberInterval::parse(&mut reader),
+                    Err(Error {
+                        kind: ErrorKind::ExpectedRangeDelimiter(None),
+                        range: 1..1
+                    })
+                );
+                assert_eq!(reader.position(), 1);
+            }
+
+            #[test]
+            fn no_delimiter_but_chars() {
+                let mut reader = Reader::from("1ab");
+                assert_eq!(
+                    NumberInterval::parse(&mut reader),
+                    Err(Error {
+                        kind: ErrorKind::ExpectedRangeDelimiter(Some(Char::Raw('a'))),
+                        range: 1..2
+                    })
+                );
+                assert_eq!(reader.position(), 2);
+            }
+        }
+    }
+
+    mod random {
+        use super::*;
+
+        #[test]
+        fn lowest() {
+            assert_eq!(NumberInterval::new(0, Some(0)).random(), 0);
         }
 
         #[test]
-        fn zero_then_zero() {
-            let mut reader = Reader::from("00");
-            assert_eq!(parse_number(&mut reader), Ok(0));
-            assert_eq!(reader.position(), 1);
+        fn highest() {
+            assert_eq!(NumberInterval::new(Number::MAX, None).random(), Number::MAX);
         }
 
         #[test]
-        fn zero_then_alpha() {
-            let mut reader = Reader::from("0a");
-            assert_eq!(parse_number(&mut reader), Ok(0));
-            assert_eq!(reader.position(), 1);
-        }
-
-        #[test]
-        fn single_digit() {
-            let mut reader = Reader::from("1");
-            assert_eq!(parse_number(&mut reader), Ok(1));
-            assert_eq!(reader.position(), 1);
-        }
-
-        #[test]
-        fn single_digit_then_alpha() {
-            let mut reader = Reader::from("1a");
-            assert_eq!(parse_number(&mut reader), Ok(1));
-            assert_eq!(reader.position(), 1);
-        }
-
-        #[test]
-        fn multiple_digits() {
-            let mut reader = Reader::from("1234567890");
-            assert_eq!(parse_number(&mut reader), Ok(1_234_567_890));
-            assert_eq!(reader.position(), 10);
-        }
-
-        #[test]
-        fn multiple_digits_then_alpha() {
-            let mut reader = Reader::from("1234567890a");
-            assert_eq!(parse_number(&mut reader), Ok(1_234_567_890));
-            assert_eq!(reader.position(), 10);
-        }
-
-        #[test]
-        fn mul_overflow() {
-            let mut reader = Reader::from("25500");
-            assert_eq!(
-                parse_number::<u8>(&mut reader),
-                Err(Error {
-                    kind: ErrorKind::NumberOverflow(String::from("255")),
-                    range: 0..4
-                })
-            );
-            assert_eq!(reader.position(), 4);
-        }
-
-        #[test]
-        fn add_overflow() {
-            let mut reader = Reader::from("2560");
-            assert_eq!(
-                parse_number::<u8>(&mut reader),
-                Err(Error {
-                    kind: ErrorKind::NumberOverflow(String::from("255")),
-                    range: 0..3
-                })
-            );
-            assert_eq!(reader.position(), 3);
+        fn lowest_to_highest() {
+            NumberInterval::new(0, Some(Number::MAX)).random(); // Should not overflow
+            NumberInterval::new(1, Some(Number::MAX)).random();
+            NumberInterval::new(0, Some(Number::MAX - 1)).random();
         }
     }
 }

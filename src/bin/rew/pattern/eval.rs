@@ -11,6 +11,17 @@ pub struct Context<'a> {
     pub regex_captures: Option<regex::Captures<'a>>,
 }
 
+impl<'a> Context<'a> {
+    pub fn regex_capture(&self, number: usize) -> String {
+        self.regex_captures
+            .as_ref()
+            .map(|captures| captures.get(number))
+            .flatten()
+            .map(|capture| capture.as_str())
+            .map_or_else(String::new, String::from)
+    }
+}
+
 pub type Result<'a, T> = result::Result<T, Error<'a>>;
 
 #[derive(Debug, PartialEq)]
@@ -59,6 +70,53 @@ impl fmt::Display for ErrorKind {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    mod eval_context_regex_capture {
+        use super::*;
+        use crate::pattern::testing::make_regex_captures;
+
+        #[test]
+        fn none() {
+            assert_eq!(
+                Context {
+                    working_dir: Path::new(""),
+                    global_counter: 0,
+                    local_counter: 0,
+                    regex_captures: None,
+                }
+                .regex_capture(1),
+                String::new()
+            );
+        }
+
+        #[test]
+        fn some() {
+            assert_eq!(
+                Context {
+                    working_dir: Path::new(""),
+                    global_counter: 0,
+                    local_counter: 0,
+                    regex_captures: make_regex_captures(),
+                }
+                .regex_capture(1),
+                String::from("abc")
+            );
+        }
+
+        #[test]
+        fn some_invalid() {
+            assert_eq!(
+                Context {
+                    working_dir: Path::new(""),
+                    global_counter: 0,
+                    local_counter: 0,
+                    regex_captures: make_regex_captures(),
+                }
+                .regex_capture(2),
+                String::new()
+            );
+        }
+    }
 
     mod error {
         use super::*;

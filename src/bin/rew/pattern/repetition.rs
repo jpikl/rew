@@ -1,5 +1,5 @@
 use crate::pattern::char::Char;
-use crate::pattern::number::parse_number;
+use crate::pattern::integer::parse_integer;
 use crate::pattern::parse::{Error, ErrorKind, Result};
 use crate::pattern::reader::Reader;
 use std::fmt;
@@ -19,7 +19,7 @@ impl Repetition {
             });
         }
 
-        let count = parse_number(reader)?;
+        let count = parse_integer(reader)?;
         let position = reader.position();
 
         if let Some(delimiter) = reader.read_char() {
@@ -38,6 +38,10 @@ impl Repetition {
                 range: reader.position()..reader.end(),
             })
         }
+    }
+
+    pub fn expand(&self) -> String {
+        self.value.repeat(self.count)
     }
 }
 
@@ -132,6 +136,58 @@ mod tests {
                 })
             );
             assert_eq!(reader.position(), 5);
+        }
+    }
+
+    mod expand {
+        use super::*;
+
+        #[test]
+        fn empty_zero_times() {
+            assert_eq!(
+                Repetition {
+                    count: 0,
+                    value: String::new()
+                }
+                .expand(),
+                String::new()
+            );
+        }
+
+        #[test]
+        fn empty_multiple_times() {
+            assert_eq!(
+                Repetition {
+                    count: 2,
+                    value: String::new()
+                }
+                .expand(),
+                String::new()
+            );
+        }
+
+        #[test]
+        fn nonempty_zero_times() {
+            assert_eq!(
+                Repetition {
+                    count: 0,
+                    value: String::from("ab")
+                }
+                .expand(),
+                String::new()
+            );
+        }
+
+        #[test]
+        fn nonempty_multiple_times() {
+            assert_eq!(
+                Repetition {
+                    count: 2,
+                    value: String::from("ab")
+                }
+                .expand(),
+                String::from("abab")
+            );
         }
     }
 

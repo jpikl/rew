@@ -2,6 +2,7 @@ use crate::pattern::char::{AsChar, Char};
 use crate::pattern::parse::{Error, ErrorKind, Result};
 use crate::pattern::reader::Reader;
 use crate::pattern::repetition::Repetition;
+use std::borrow::Cow;
 use std::fmt;
 
 #[derive(Debug, PartialEq)]
@@ -29,6 +30,27 @@ impl Padding {
                 kind: ErrorKind::PaddingPrefixInvalid(fixed_prefix, None),
                 range: position..position,
             }),
+        }
+    }
+
+    pub fn apply_left(&self, mut value: String) -> String {
+        for char in self.expand().chars().rev().skip(value.len()) {
+            value.insert(0, char);
+        }
+        value
+    }
+
+    pub fn apply_right(&self, mut value: String) -> String {
+        for char in self.expand().chars().skip(value.len()) {
+            value.push(char);
+        }
+        value
+    }
+
+    fn expand(&self) -> Cow<String> {
+        match self {
+            Self::Fixed(value) => Cow::Borrowed(value),
+            Self::Repeated(repetition) => Cow::Owned(repetition.expand()),
         }
     }
 }
@@ -135,6 +157,118 @@ mod tests {
                 }))
             );
             assert_eq!(reader.position(), 6);
+        }
+    }
+
+    mod apply_left {
+        use super::*;
+
+        #[test]
+        fn empty_with_empty() {
+            assert_eq!(
+                Padding::Fixed(String::new()).apply_left(String::new()),
+                String::new()
+            );
+        }
+
+        #[test]
+        fn empty_with_nonempty() {
+            assert_eq!(
+                Padding::Fixed(String::from("0123")).apply_left(String::new()),
+                String::from("0123")
+            );
+        }
+
+        #[test]
+        fn nonempty_with_empty() {
+            assert_eq!(
+                Padding::Fixed(String::new()).apply_left(String::from("abcd")),
+                String::from("abcd")
+            );
+        }
+
+        #[test]
+        fn shorter_with_longer() {
+            assert_eq!(
+                Padding::Fixed(String::from("0123")).apply_left(String::from("ab")),
+                String::from("01ab")
+            );
+        }
+
+        #[test]
+        fn longer_with_shorter() {
+            assert_eq!(
+                Padding::Fixed(String::from("0123")).apply_left(String::from("abcd")),
+                String::from("abcd")
+            );
+        }
+
+        #[test]
+        fn repeated() {
+            assert_eq!(
+                Padding::Repeated(Repetition {
+                    count: 3,
+                    value: String::from("01")
+                })
+                .apply_left(String::from("abc")),
+                String::from("010abc")
+            );
+        }
+    }
+
+    mod apply_right {
+        use super::*;
+
+        #[test]
+        fn empty_with_empty() {
+            assert_eq!(
+                Padding::Fixed(String::new()).apply_right(String::new()),
+                String::new()
+            );
+        }
+
+        #[test]
+        fn empty_with_nonempty() {
+            assert_eq!(
+                Padding::Fixed(String::from("0123")).apply_right(String::new()),
+                String::from("0123")
+            );
+        }
+
+        #[test]
+        fn nonempty_with_empty() {
+            assert_eq!(
+                Padding::Fixed(String::new()).apply_right(String::from("abcd")),
+                String::from("abcd")
+            );
+        }
+
+        #[test]
+        fn shorter_with_longer() {
+            assert_eq!(
+                Padding::Fixed(String::from("0123")).apply_right(String::from("ab")),
+                String::from("ab23")
+            );
+        }
+
+        #[test]
+        fn longer_with_shorter() {
+            assert_eq!(
+                Padding::Fixed(String::from("0123")).apply_right(String::from("abcd")),
+                String::from("abcd")
+            );
+        }
+
+        #[test]
+        fn repeated() {
+            assert_eq!(
+                Padding::Repeated(Repetition {
+                    count: 3,
+                    value: String::from("01")
+                })
+                .apply_right(String::from("abc")),
+                String::from("abc101")
+            );
         }
     }
 
