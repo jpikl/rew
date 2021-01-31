@@ -96,7 +96,7 @@ impl LocalGenerator {
 
     pub fn next(&mut self, value: &str) -> u32 {
         let key = match path::get_parent_directory(value.to_string()) {
-            Ok(parent) => path::get_normalized(parent).unwrap_or_default(),
+            Ok(parent) => path::normalize(&parent).unwrap_or_default(),
             Err(_) => String::new(),
         };
         if let Some(value) = self.values.get_mut(&key) {

@@ -3,11 +3,11 @@ use crate::utils::AnyString;
 use normpath::PathExt;
 use pathdiff::diff_paths;
 use std::ffi::OsStr;
-use std::path::{is_separator, Component, Path, MAIN_SEPARATOR};
+use std::path::{is_separator, Component, Path, PathBuf, MAIN_SEPARATOR};
 
 type Result = std::result::Result<String, ErrorKind>;
 
-pub fn get_absolute(value: String, working_dir: &Path) -> Result {
+pub fn to_absolute(value: String, working_dir: &Path) -> Result {
     if value.is_empty() {
         to_string(working_dir)
     } else {
@@ -15,30 +15,33 @@ pub fn get_absolute(value: String, working_dir: &Path) -> Result {
         if path.is_absolute() {
             Ok(value)
         } else {
-            to_string(&working_dir.join(path))
+            into_string(working_dir.join(path))
         }
     }
 }
 
-pub fn get_relative(value: String, working_dir: &Path) -> Result {
+pub fn to_relative(value: String, working_dir: &Path) -> Result {
     let path = Path::new(&value);
     if path.is_relative() {
         Ok(value)
     } else {
-        opt_to_string(diff_paths(path, working_dir).as_ref())
+        into_string(diff_paths(path, working_dir).unwrap_or_default())
     }
 }
 
-pub fn get_canonical(value: String, working_dir: &Path) -> Result {
-    let absolute_value = get_absolute(value, working_dir)?;
+pub fn canonicalize(value: String, working_dir: &Path) -> Result {
+    let absolute_value = to_absolute(value, working_dir)?;
     let absolute_path = Path::new(&absolute_value);
 
     match absolute_path.normalize() {
-        Ok(path_buf) => to_string(&path_buf).map(|mut result| {
+        Ok(result) => into_string(result.into_path_buf()).map(|mut result| {
             // Normalize unix vs windows behaviour
             if cfg!(windows)
                 && result.ends_with(MAIN_SEPARATOR)
-                && !matches!(path_buf.components().last(), Some(Component::RootDir))
+                && !matches!(
+                    Path::new(&result).components().last(),
+                    Some(Component::RootDir)
+                )
             {
                 result.pop();
             }
@@ -50,10 +53,10 @@ pub fn get_canonical(value: String, working_dir: &Path) -> Result {
     }
 }
 
-pub fn get_normalized(value: String) -> Result {
+pub fn normalize(value: &str) -> Result {
     let mut normalized_components = Vec::new();
 
-    for component in Path::new(&value).components() {
+    for component in Path::new(value).components() {
         match &component {
             Component::Prefix(_) | Component::RootDir | Component::Normal(_) => {
                 normalized_components.push(component);
@@ -108,10 +111,10 @@ pub fn get_normalized(value: String) -> Result {
 pub fn get_parent_directory(value: String) -> Result {
     let path = Path::new(&value);
     match path.components().last() {
-        Some(Component::Prefix(_)) => to_string(&path.to_path_buf().join(Component::RootDir)),
+        Some(Component::Prefix(_)) => into_string(PathBuf::from(value).join(Component::RootDir)),
         Some(Component::RootDir) => Ok(value),
         Some(Component::CurDir) | Some(Component::ParentDir) | None => {
-            to_string(&path.to_path_buf().join(Component::ParentDir))
+            into_string(PathBuf::from(value).join(Component::ParentDir))
         }
         Some(Component::Normal(_)) => {
             let parent = path.parent().unwrap_or_else(|| Path::new(""));
@@ -124,7 +127,7 @@ pub fn get_parent_directory(value: String) -> Result {
     }
 }
 
-pub fn get_without_last_name(value: String) -> Result {
+pub fn remove_last_name(value: String) -> Result {
     if let Some(parent) = Path::new(&value).parent() {
         to_string(parent)
     } else {
@@ -132,12 +135,12 @@ pub fn get_without_last_name(value: String) -> Result {
     }
 }
 
-pub fn get_file_name(value: String) -> Result {
-    opt_to_string(Path::new(&value).file_name())
+pub fn get_file_name(value: &str) -> Result {
+    to_string(Path::new(value).file_name().unwrap_or_default())
 }
 
-pub fn get_last_name(value: String) -> Result {
-    match Path::new(&value).components().last() {
+pub fn get_last_name(value: &str) -> Result {
+    match Path::new(value).components().last() {
         Some(component @ Component::Normal(_))
         | Some(component @ Component::CurDir)
         | Some(component @ Component::ParentDir) => to_string(&component),
@@ -145,22 +148,22 @@ pub fn get_last_name(value: String) -> Result {
     }
 }
 
-pub fn get_base_name(value: String) -> Result {
-    opt_to_string(Path::new(&value).file_stem())
+pub fn get_base_name(value: &str) -> Result {
+    to_string(Path::new(value).file_stem().unwrap_or_default())
 }
 
-pub fn get_without_extension(mut value: String) -> Result {
+pub fn remove_extension(mut value: String) -> Result {
     if let Some(extension_len) = Path::new(&value).extension().map(OsStr::len) {
         value.replace_range((value.len() - extension_len - 1).., "");
     }
     Ok(value)
 }
 
-pub fn get_extension(value: String) -> Result {
-    opt_to_string(Path::new(&value).extension())
+pub fn get_extension(value: &str) -> Result {
+    to_string(Path::new(value).extension().unwrap_or_default())
 }
 
-pub fn get_extension_with_dot(value: String) -> Result {
+pub fn get_extension_with_dot(value: &str) -> Result {
     let mut result = get_extension(value)?;
     if !result.is_empty() {
         result.insert(0, '.');
@@ -192,11 +195,10 @@ pub fn remove_trailing_separator(mut value: String) -> String {
     value
 }
 
-fn opt_to_string<S: AsRef<OsStr> + ?Sized>(value: Option<&S>) -> Result {
-    if let Some(value) = value {
-        to_string(value)
-    } else {
-        Ok(String::new())
+pub fn into_string(value: PathBuf) -> Result {
+    match value.into_os_string().into_string() {
+        Ok(result) => Ok(result),
+        Err(_) => Err(ErrorKind::InputNotUtf8),
     }
 }
 
@@ -216,14 +218,14 @@ fn to_str<S: AsRef<OsStr> + ?Sized>(value: &S) -> std::result::Result<&str, Erro
 mod tests {
     use super::*;
 
-    mod get_absolute {
+    mod to_absolute {
         use super::*;
 
         #[test]
         fn empty() {
             let working_dir = std::env::current_dir().unwrap();
             assert_eq!(
-                get_absolute(String::new(), &working_dir),
+                to_absolute(String::new(), &working_dir),
                 Ok(working_dir.to_str().unwrap().to_string())
             );
         }
@@ -233,12 +235,12 @@ mod tests {
             let working_dir = std::env::current_dir().unwrap();
             #[cfg(unix)]
             assert_eq!(
-                get_absolute(String::from("file.ext"), &working_dir),
+                to_absolute(String::from("file.ext"), &working_dir),
                 Ok(format!("{}/file.ext", working_dir.to_str().unwrap()))
             );
             #[cfg(windows)]
             assert_eq!(
-                get_absolute(String::from("file.ext"), &working_dir),
+                to_absolute(String::from("file.ext"), &working_dir),
                 Ok(format!("{}\\file.ext", working_dir.to_str().unwrap()))
             );
         }
@@ -248,31 +250,31 @@ mod tests {
             let working_dir = std::env::current_dir().unwrap();
             #[cfg(unix)]
             assert_eq!(
-                get_absolute(String::from("/file.ext"), &working_dir),
+                to_absolute(String::from("/file.ext"), &working_dir),
                 Ok(String::from("/file.ext"))
             );
             #[cfg(windows)]
             assert_eq!(
-                get_absolute(String::from("C:\\file.ext"), &working_dir),
+                to_absolute(String::from("C:\\file.ext"), &working_dir),
                 Ok(String::from("C:\\file.ext"))
             );
         }
     }
 
-    mod get_relative {
+    mod to_relative {
         use super::*;
 
         #[test]
         fn empty() {
             let working_dir = std::env::current_dir().unwrap();
-            assert_eq!(get_relative(String::new(), &working_dir), Ok(String::new()));
+            assert_eq!(to_relative(String::new(), &working_dir), Ok(String::new()));
         }
 
         #[test]
         fn relative() {
             let working_dir = std::env::current_dir().unwrap();
             assert_eq!(
-                get_relative(String::from("file.ext"), &working_dir),
+                to_relative(String::from("file.ext"), &working_dir),
                 Ok(String::from("file.ext"))
             );
         }
@@ -289,25 +291,25 @@ mod tests {
 
             #[cfg(unix)]
             assert_eq!(
-                get_relative(value, &working_dir),
+                to_relative(value, &working_dir),
                 Ok(String::from("../file.ext"))
             );
             #[cfg(windows)]
             assert_eq!(
-                get_relative(value, &working_dir),
+                to_relative(value, &working_dir),
                 Ok(String::from("..\\file.ext"))
             );
         }
     }
 
-    mod get_canonical {
+    mod canonicalize {
         use super::*;
 
         #[test]
         fn empty() {
             let working_dir = std::env::current_dir().unwrap();
             assert_eq!(
-                get_canonical(String::new(), &working_dir),
+                canonicalize(String::new(), &working_dir),
                 Ok(working_dir.to_str().unwrap().to_string())
             );
         }
@@ -316,7 +318,7 @@ mod tests {
         fn non_existent() {
             let working_dir = std::env::current_dir().unwrap();
             assert_eq!(
-                get_canonical(String::from("non-existent"), &working_dir),
+                canonicalize(String::from("non-existent"), &working_dir),
                 Err(ErrorKind::CanonicalizationFailed(AnyString(String::from(
                     "This string is not compared by assertion"
                 ))))
@@ -328,12 +330,12 @@ mod tests {
             let working_dir = std::env::current_dir().unwrap();
             #[cfg(unix)]
             assert_eq!(
-                get_canonical(String::from("src/"), &working_dir),
+                canonicalize(String::from("src/"), &working_dir),
                 Ok(format!("{}/src", working_dir.to_str().unwrap(),))
             );
             #[cfg(windows)]
             assert_eq!(
-                get_canonical(String::from("src\\"), &working_dir),
+                canonicalize(String::from("src\\"), &working_dir),
                 Ok(format!("{}\\src", working_dir.to_str().unwrap()))
             );
         }
@@ -343,12 +345,12 @@ mod tests {
             let working_dir = std::env::current_dir().unwrap();
             #[cfg(unix)]
             assert_eq!(
-                get_canonical(String::from("/"), &working_dir),
+                canonicalize(String::from("/"), &working_dir),
                 Ok(String::from("/"))
             );
             #[cfg(windows)]
             assert_eq!(
-                get_canonical(String::from("C:\\"), &working_dir),
+                canonicalize(String::from("C:\\"), &working_dir),
                 Ok(String::from("C:\\"))
             );
         }
@@ -358,13 +360,13 @@ mod tests {
         fn prefix() {
             let working_dir = std::env::current_dir().unwrap();
             assert_eq!(
-                get_canonical(String::from("C:"), &working_dir),
+                canonicalize(String::from("C:"), &working_dir),
                 Ok(String::from("C:\\"))
             );
         }
     }
 
-    mod get_normalized {
+    mod normalize {
         use super::*;
 
         #[test]
@@ -576,7 +578,7 @@ mod tests {
         }
 
         fn assert_normalized(value: &str, result: &str) {
-            assert_eq!(get_normalized(value.to_string()), Ok(result.to_string()));
+            assert_eq!(normalize(value), Ok(result.to_string()));
         }
     }
 
@@ -686,18 +688,18 @@ mod tests {
         }
     }
 
-    mod get_without_last_name {
+    mod remove_last_name {
         use super::*;
 
         #[test]
         fn empty() {
-            assert_eq!(get_without_last_name(String::new()), Ok(String::new()));
+            assert_eq!(remove_last_name(String::new()), Ok(String::new()));
         }
 
         #[test]
         fn name() {
             assert_eq!(
-                get_without_last_name(String::from("file.ext")),
+                remove_last_name(String::from("file.ext")),
                 Ok(String::new())
             );
         }
@@ -705,33 +707,33 @@ mod tests {
         #[test]
         fn name_parent() {
             assert_eq!(
-                get_without_last_name(String::from("dir/file.ext")),
+                remove_last_name(String::from("dir/file.ext")),
                 Ok(String::from("dir"))
             );
         }
 
         #[test]
         fn dot() {
-            assert_eq!(get_without_last_name(String::from(".")), Ok(String::new()));
+            assert_eq!(remove_last_name(String::from(".")), Ok(String::new()));
         }
 
         #[test]
         fn dot_parent() {
             assert_eq!(
-                get_without_last_name(String::from("./file.ext")),
+                remove_last_name(String::from("./file.ext")),
                 Ok(String::from("."))
             );
         }
 
         #[test]
         fn double_dot() {
-            assert_eq!(get_without_last_name(String::from("..")), Ok(String::new()));
+            assert_eq!(remove_last_name(String::from("..")), Ok(String::new()));
         }
 
         #[test]
         fn double_dot_parent() {
             assert_eq!(
-                get_without_last_name(String::from("../file.ext")),
+                remove_last_name(String::from("../file.ext")),
                 Ok(String::from(".."))
             );
         }
@@ -739,13 +741,10 @@ mod tests {
         #[test]
         fn root() {
             #[cfg(unix)]
-            assert_eq!(
-                get_without_last_name(String::from("/")),
-                Ok(String::from("/"))
-            );
+            assert_eq!(remove_last_name(String::from("/")), Ok(String::from("/")));
             #[cfg(windows)]
             assert_eq!(
-                get_without_last_name(String::from("C:\\")),
+                remove_last_name(String::from("C:\\")),
                 Ok(String::from("C:\\"))
             );
         }
@@ -754,12 +753,12 @@ mod tests {
         fn root_parent() {
             #[cfg(unix)]
             assert_eq!(
-                get_without_last_name(String::from("/file.ext")),
+                remove_last_name(String::from("/file.ext")),
                 Ok(String::from("/"))
             );
             #[cfg(windows)]
             assert_eq!(
-                get_without_last_name(String::from("C:\\file.ext")),
+                remove_last_name(String::from("C:\\file.ext")),
                 Ok(String::from("C:\\"))
             );
         }
@@ -767,10 +766,7 @@ mod tests {
         #[test]
         #[cfg(windows)]
         fn prefix() {
-            assert_eq!(
-                get_without_last_name(String::from("C:")),
-                Ok(String::from("C:"))
-            );
+            assert_eq!(remove_last_name(String::from("C:")), Ok(String::from("C:")));
         }
     }
 
@@ -779,55 +775,43 @@ mod tests {
 
         #[test]
         fn empty() {
-            assert_eq!(get_file_name(String::new()), Ok(String::new()));
+            assert_eq!(get_file_name(""), Ok(String::new()));
         }
 
         #[test]
         fn name() {
-            assert_eq!(
-                get_file_name(String::from("file.ext")),
-                Ok(String::from("file.ext"))
-            );
+            assert_eq!(get_file_name("file.ext"), Ok(String::from("file.ext")));
         }
 
         #[test]
         fn name_parent() {
-            assert_eq!(
-                get_file_name(String::from("dir/file.ext")),
-                Ok(String::from("file.ext"))
-            );
+            assert_eq!(get_file_name("dir/file.ext"), Ok(String::from("file.ext")));
         }
 
         #[test]
         fn dot() {
-            assert_eq!(get_file_name(String::from(".")), Ok(String::new()));
+            assert_eq!(get_file_name("."), Ok(String::new()));
         }
 
         #[test]
         fn dot_parent() {
-            assert_eq!(
-                get_file_name(String::from("./file.ext")),
-                Ok(String::from("file.ext"))
-            );
+            assert_eq!(get_file_name("./file.ext"), Ok(String::from("file.ext")));
         }
 
         #[test]
         fn double_dot() {
-            assert_eq!(get_file_name(String::from("..")), Ok(String::new()));
+            assert_eq!(get_file_name(".."), Ok(String::new()));
         }
 
         #[test]
         fn double_dot_parent() {
-            assert_eq!(
-                get_file_name(String::from("../file.ext")),
-                Ok(String::from("file.ext"))
-            );
+            assert_eq!(get_file_name("../file.ext"), Ok(String::from("file.ext")));
         }
 
         #[test]
         fn root() {
             #[cfg(unix)]
-            assert_eq!(get_file_name(String::from("/")), Ok(String::new()));
+            assert_eq!(get_file_name("/"), Ok(String::new()));
             #[cfg(windows)]
             assert_eq!(get_file_name(String::from("C:\\")), Ok(String::new()));
         }
@@ -835,10 +819,7 @@ mod tests {
         #[test]
         fn root_parent() {
             #[cfg(unix)]
-            assert_eq!(
-                get_file_name(String::from("/file.ext")),
-                Ok(String::from("file.ext"))
-            );
+            assert_eq!(get_file_name("/file.ext"), Ok(String::from("file.ext")));
             #[cfg(windows)]
             assert_eq!(
                 get_file_name(String::from("C:\\file.ext")),
@@ -858,77 +839,59 @@ mod tests {
 
         #[test]
         fn empty() {
-            assert_eq!(get_last_name(String::new()), Ok(String::new()));
+            assert_eq!(get_last_name(""), Ok(String::new()));
         }
 
         #[test]
         fn name() {
-            assert_eq!(
-                get_last_name(String::from("file.ext")),
-                Ok(String::from("file.ext"))
-            );
+            assert_eq!(get_last_name("file.ext"), Ok(String::from("file.ext")));
         }
 
         #[test]
         fn name_parent() {
-            assert_eq!(
-                get_last_name(String::from("dir/file.ext")),
-                Ok(String::from("file.ext"))
-            );
+            assert_eq!(get_last_name("dir/file.ext"), Ok(String::from("file.ext")));
         }
 
         #[test]
         fn dot() {
-            assert_eq!(get_last_name(String::from(".")), Ok(String::from(".")));
+            assert_eq!(get_last_name("."), Ok(String::from(".")));
         }
 
         #[test]
         fn dot_parent() {
-            assert_eq!(
-                get_last_name(String::from("./file.ext")),
-                Ok(String::from("file.ext"))
-            );
+            assert_eq!(get_last_name("./file.ext"), Ok(String::from("file.ext")));
         }
 
         #[test]
         fn double_dot() {
-            assert_eq!(get_last_name(String::from("..")), Ok(String::from("..")));
+            assert_eq!(get_last_name(".."), Ok(String::from("..")));
         }
 
         #[test]
         fn double_dot_parent() {
-            assert_eq!(
-                get_last_name(String::from("../file.ext")),
-                Ok(String::from("file.ext"))
-            );
+            assert_eq!(get_last_name("../file.ext"), Ok(String::from("file.ext")));
         }
 
         #[test]
         fn root() {
             #[cfg(unix)]
-            assert_eq!(get_last_name(String::from("/")), Ok(String::new()));
+            assert_eq!(get_last_name("/"), Ok(String::new()));
             #[cfg(windows)]
-            assert_eq!(get_last_name(String::from("C:\\")), Ok(String::new()));
+            assert_eq!(get_last_name("C:\\"), Ok(String::new()));
         }
 
         #[test]
         fn root_parent() {
             #[cfg(unix)]
-            assert_eq!(
-                get_last_name(String::from("/file.ext")),
-                Ok(String::from("file.ext"))
-            );
+            assert_eq!(get_last_name("/file.ext"), Ok(String::from("file.ext")));
             #[cfg(windows)]
-            assert_eq!(
-                get_last_name(String::from("C:\\file.ext")),
-                Ok(String::from("file.ext"))
-            );
+            assert_eq!(get_last_name("C:\\file.ext"), Ok(String::from("file.ext")));
         }
 
         #[test]
         #[cfg(windows)]
         fn prefix() {
-            assert_eq!(get_last_name(String::from("C:")), Ok(String::new()));
+            assert_eq!(get_last_name("C:"), Ok(String::new()));
         }
     }
 
@@ -937,100 +900,79 @@ mod tests {
 
         #[test]
         fn empty() {
-            assert_eq!(get_base_name(String::new()), Ok(String::new()));
+            assert_eq!(get_base_name(""), Ok(String::new()));
         }
 
         #[test]
         fn base() {
-            assert_eq!(
-                get_base_name(String::from("file")),
-                Ok(String::from("file"))
-            );
+            assert_eq!(get_base_name("file"), Ok(String::from("file")));
         }
 
         #[test]
         fn name() {
-            assert_eq!(
-                get_base_name(String::from("file.ext")),
-                Ok(String::from("file"))
-            );
+            assert_eq!(get_base_name("file.ext"), Ok(String::from("file")));
         }
 
         #[test]
         fn name_parent() {
-            assert_eq!(
-                get_base_name(String::from("dir/file.ext")),
-                Ok(String::from("file"))
-            );
+            assert_eq!(get_base_name("dir/file.ext"), Ok(String::from("file")));
         }
 
         #[test]
         fn dot() {
-            assert_eq!(get_base_name(String::from(".")), Ok(String::new()));
+            assert_eq!(get_base_name("."), Ok(String::new()));
         }
 
         #[test]
         fn dot_parent() {
-            assert_eq!(
-                get_base_name(String::from("./file.ext")),
-                Ok(String::from("file"))
-            );
+            assert_eq!(get_base_name("./file.ext"), Ok(String::from("file")));
         }
 
         #[test]
         fn double_dot() {
-            assert_eq!(get_base_name(String::from("..")), Ok(String::new()));
+            assert_eq!(get_base_name(".."), Ok(String::new()));
         }
 
         #[test]
         fn double_dot_parent() {
-            assert_eq!(
-                get_base_name(String::from("../file.ext")),
-                Ok(String::from("file"))
-            );
+            assert_eq!(get_base_name("../file.ext"), Ok(String::from("file")));
         }
 
         #[test]
         fn root() {
             #[cfg(unix)]
-            assert_eq!(get_base_name(String::from("/")), Ok(String::new()));
+            assert_eq!(get_base_name("/"), Ok(String::new()));
             #[cfg(windows)]
-            assert_eq!(get_base_name(String::from("C:\\")), Ok(String::new()));
+            assert_eq!(get_base_name("C:\\"), Ok(String::new()));
         }
 
         #[test]
         fn root_parent() {
             #[cfg(unix)]
-            assert_eq!(
-                get_base_name(String::from("/file.ext")),
-                Ok(String::from("file"))
-            );
+            assert_eq!(get_base_name("/file.ext"), Ok(String::from("file")));
             #[cfg(windows)]
-            assert_eq!(
-                get_base_name(String::from("C:\\file.ext")),
-                Ok(String::from("file"))
-            );
+            assert_eq!(get_base_name("C:\\file.ext"), Ok(String::from("file")));
         }
 
         #[test]
         #[cfg(windows)]
         fn prefix() {
-            assert_eq!(get_base_name(String::from("C:")), Ok(String::new()));
+            assert_eq!(get_base_name("C:"), Ok(String::new()));
         }
     }
 
-    mod get_without_extension {
+    mod remove_extension {
         use super::*;
 
         #[test]
         fn empty() {
-            assert_eq!(get_without_extension(String::new()), Ok(String::new()));
+            assert_eq!(remove_extension(String::new()), Ok(String::new()));
         }
 
         #[test]
         fn base() {
             assert_eq!(
-                get_without_extension(String::from("file")),
+                remove_extension(String::from("file")),
                 Ok(String::from("file"))
             );
         }
@@ -1038,7 +980,7 @@ mod tests {
         #[test]
         fn name() {
             assert_eq!(
-                get_without_extension(String::from("file.ext")),
+                remove_extension(String::from("file.ext")),
                 Ok(String::from("file"))
             );
         }
@@ -1046,39 +988,33 @@ mod tests {
         #[test]
         fn name_parent() {
             assert_eq!(
-                get_without_extension(String::from("dir/file.ext")),
+                remove_extension(String::from("dir/file.ext")),
                 Ok(String::from("dir/file"))
             );
         }
 
         #[test]
         fn dot() {
-            assert_eq!(
-                get_without_extension(String::from(".")),
-                Ok(String::from("."))
-            );
+            assert_eq!(remove_extension(String::from(".")), Ok(String::from(".")));
         }
 
         #[test]
         fn dot_parent() {
             assert_eq!(
-                get_without_extension(String::from("./file.ext")),
+                remove_extension(String::from("./file.ext")),
                 Ok(String::from("./file"))
             );
         }
 
         #[test]
         fn double_dot() {
-            assert_eq!(
-                get_without_extension(String::from("..")),
-                Ok(String::from(".."))
-            );
+            assert_eq!(remove_extension(String::from("..")), Ok(String::from("..")));
         }
 
         #[test]
         fn double_dot_parent() {
             assert_eq!(
-                get_without_extension(String::from("../file.ext")),
+                remove_extension(String::from("../file.ext")),
                 Ok(String::from("../file"))
             );
         }
@@ -1086,13 +1022,10 @@ mod tests {
         #[test]
         fn root() {
             #[cfg(unix)]
-            assert_eq!(
-                get_without_extension(String::from("/")),
-                Ok(String::from("/"))
-            );
+            assert_eq!(remove_extension(String::from("/")), Ok(String::from("/")));
             #[cfg(windows)]
             assert_eq!(
-                get_without_extension(String::from("C:\\")),
+                remove_extension(String::from("C:\\")),
                 Ok(String::from("C:\\"))
             );
         }
@@ -1101,12 +1034,12 @@ mod tests {
         fn root_parent() {
             #[cfg(unix)]
             assert_eq!(
-                get_without_extension(String::from("/file.ext")),
+                remove_extension(String::from("/file.ext")),
                 Ok(String::from("/file"))
             );
             #[cfg(windows)]
             assert_eq!(
-                get_without_extension(String::from("C:\\file.ext")),
+                remove_extension(String::from("C:\\file.ext")),
                 Ok(String::from("C:\\file"))
             );
         }
@@ -1114,10 +1047,7 @@ mod tests {
         #[test]
         #[cfg(windows)]
         fn prefix() {
-            assert_eq!(
-                get_without_extension(String::from("C:")),
-                Ok(String::from("C:"))
-            );
+            assert_eq!(remove_extension(String::from("C:")), Ok(String::from("C:")));
         }
     }
 
@@ -1126,54 +1056,42 @@ mod tests {
 
         #[test]
         fn empty() {
-            assert_eq!(get_extension(String::new()), Ok(String::new()));
+            assert_eq!(get_extension(""), Ok(String::new()));
         }
 
         #[test]
         fn base() {
-            assert_eq!(get_extension(String::from("file")), Ok(String::new()));
+            assert_eq!(get_extension("file"), Ok(String::new()));
         }
 
         #[test]
         fn name() {
-            assert_eq!(
-                get_extension(String::from("file.ext")),
-                Ok(String::from("ext"))
-            );
+            assert_eq!(get_extension("file.ext"), Ok(String::from("ext")));
         }
 
         #[test]
         fn name_parent() {
-            assert_eq!(
-                get_extension(String::from("dir/file.ext")),
-                Ok(String::from("ext"))
-            );
+            assert_eq!(get_extension("dir/file.ext"), Ok(String::from("ext")));
         }
 
         #[test]
         fn dot() {
-            assert_eq!(get_extension(String::from(".")), Ok(String::new()));
+            assert_eq!(get_extension("."), Ok(String::new()));
         }
 
         #[test]
         fn dot_parent() {
-            assert_eq!(
-                get_extension(String::from("./file.ext")),
-                Ok(String::from("ext"))
-            );
+            assert_eq!(get_extension("./file.ext"), Ok(String::from("ext")));
         }
 
         #[test]
         fn double_dot() {
-            assert_eq!(get_extension(String::from("..")), Ok(String::new()));
+            assert_eq!(get_extension(".."), Ok(String::new()));
         }
 
         #[test]
         fn double_dot_parent() {
-            assert_eq!(
-                get_extension(String::from("../file.ext")),
-                Ok(String::from("ext"))
-            );
+            assert_eq!(get_extension("../file.ext"), Ok(String::from("ext")));
         }
 
         #[cfg(unix)]
@@ -1183,29 +1101,23 @@ mod tests {
             #[test]
             fn root() {
                 #[cfg(unix)]
-                assert_eq!(get_extension(String::from("/")), Ok(String::new()));
+                assert_eq!(get_extension("/"), Ok(String::new()));
                 #[cfg(windows)]
-                assert_eq!(get_extension(String::from("C:\\")), Ok(String::new()));
+                assert_eq!(get_extension("C:\\"), Ok(String::new()));
             }
 
             #[test]
             fn root_parent() {
                 #[cfg(unix)]
-                assert_eq!(
-                    get_extension(String::from("/file.ext")),
-                    Ok(String::from("ext"))
-                );
+                assert_eq!(get_extension("/file.ext"), Ok(String::from("ext")));
                 #[cfg(windows)]
-                assert_eq!(
-                    get_extension(String::from("C:\\file.ext")),
-                    Ok(String::from("ext"))
-                );
+                assert_eq!(get_extension("C:\\file.ext"), Ok(String::from("ext")));
             }
 
             #[test]
             #[cfg(windows)]
             fn prefix() {
-                assert_eq!(get_extension(String::from("C:")), Ok(String::new()));
+                assert_eq!(get_extension("C:"), Ok(String::new()));
             }
         }
     }
@@ -1215,58 +1127,49 @@ mod tests {
 
         #[test]
         fn empty() {
-            assert_eq!(get_extension_with_dot(String::new()), Ok(String::new()));
+            assert_eq!(get_extension_with_dot(""), Ok(String::new()));
         }
 
         #[test]
         fn base() {
-            assert_eq!(
-                get_extension_with_dot(String::from("file")),
-                Ok(String::new())
-            );
+            assert_eq!(get_extension_with_dot("file"), Ok(String::new()));
         }
 
         #[test]
         fn name() {
-            assert_eq!(
-                get_extension_with_dot(String::from("file.ext")),
-                Ok(String::from(".ext"))
-            );
+            assert_eq!(get_extension_with_dot("file.ext"), Ok(String::from(".ext")));
         }
 
         #[test]
         fn name_parent() {
             assert_eq!(
-                get_extension_with_dot(String::from("dir/file.ext")),
+                get_extension_with_dot("dir/file.ext"),
                 Ok(String::from(".ext"))
             );
         }
 
         #[test]
         fn dot() {
-            assert_eq!(get_extension_with_dot(String::from(".")), Ok(String::new()));
+            assert_eq!(get_extension_with_dot("."), Ok(String::new()));
         }
 
         #[test]
         fn dot_parent() {
             assert_eq!(
-                get_extension_with_dot(String::from("./file.ext")),
+                get_extension_with_dot("./file.ext"),
                 Ok(String::from(".ext"))
             );
         }
 
         #[test]
         fn double_dot() {
-            assert_eq!(
-                get_extension_with_dot(String::from("..")),
-                Ok(String::new())
-            );
+            assert_eq!(get_extension_with_dot(".."), Ok(String::new()));
         }
 
         #[test]
         fn double_dot_parent() {
             assert_eq!(
-                get_extension_with_dot(String::from("../file.ext")),
+                get_extension_with_dot("../file.ext"),
                 Ok(String::from(".ext"))
             );
         }
@@ -1274,24 +1177,21 @@ mod tests {
         #[test]
         fn root() {
             #[cfg(unix)]
-            assert_eq!(get_extension_with_dot(String::from("/")), Ok(String::new()));
+            assert_eq!(get_extension_with_dot("/"), Ok(String::new()));
             #[cfg(windows)]
-            assert_eq!(
-                get_extension_with_dot(String::from("C:\\")),
-                Ok(String::new())
-            );
+            assert_eq!(get_extension_with_dot("C:\\"), Ok(String::new()));
         }
 
         #[test]
         fn root_parent() {
             #[cfg(unix)]
             assert_eq!(
-                get_extension_with_dot(String::from("/file.ext")),
+                get_extension_with_dot("/file.ext"),
                 Ok(String::from(".ext"))
             );
             #[cfg(windows)]
             assert_eq!(
-                get_extension_with_dot(String::from("C:\\file.ext")),
+                get_extension_with_dot("C:\\file.ext"),
                 Ok(String::from(".ext"))
             );
         }
@@ -1299,10 +1199,7 @@ mod tests {
         #[test]
         #[cfg(windows)]
         fn prefix() {
-            assert_eq!(
-                get_extension_with_dot(String::from("C:")),
-                Ok(String::new())
-            );
+            assert_eq!(get_extension_with_dot("C:"), Ok(String::new()));
         }
     }
 
@@ -1432,6 +1329,24 @@ mod tests {
                 remove_trailing_separator(String::from("C:")),
                 String::from("C:")
             );
+        }
+    }
+
+    mod into_string {
+        use super::*;
+        use crate::testing::make_non_utf8_os_string;
+
+        #[test]
+        fn utf8() {
+            assert_eq!(into_string(PathBuf::from("abc")), Ok(String::from("abc")));
+        }
+
+        #[test]
+        fn non_utf8() {
+            assert_eq!(
+                into_string(PathBuf::from(make_non_utf8_os_string())),
+                Err(ErrorKind::InputNotUtf8)
+            )
         }
     }
 

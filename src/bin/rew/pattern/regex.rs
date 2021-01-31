@@ -29,7 +29,7 @@ impl RegexHolder {
         }
     }
 
-    pub fn find(&self, value: &str) -> String {
+    pub fn first_match(&self, value: &str) -> String {
         match self.0.find(value) {
             Some(result) => result.as_str().to_string(),
             None => String::new(),
@@ -95,13 +95,13 @@ mod tests {
         }
     }
 
-    mod find {
+    mod first_match {
         use super::*;
 
         #[test]
         fn empty() {
             assert_eq!(
-                RegexHolder(Regex::new("\\d+").unwrap()).find(""),
+                RegexHolder(Regex::new("\\d+").unwrap()).first_match(""),
                 String::new()
             );
         }
@@ -109,7 +109,7 @@ mod tests {
         #[test]
         fn none() {
             assert_eq!(
-                RegexHolder(Regex::new("\\d+").unwrap()).find("abc"),
+                RegexHolder(Regex::new("\\d+").unwrap()).first_match("abc"),
                 String::new()
             );
         }
@@ -117,7 +117,7 @@ mod tests {
         #[test]
         fn first() {
             assert_eq!(
-                RegexHolder(Regex::new("\\d+").unwrap()).find("abc123def456"),
+                RegexHolder(Regex::new("\\d+").unwrap()).first_match("abc123def456"),
                 String::from("123")
             );
         }

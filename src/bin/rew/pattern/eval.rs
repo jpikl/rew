@@ -12,13 +12,12 @@ pub struct Context<'a> {
 }
 
 impl<'a> Context<'a> {
-    pub fn regex_capture(&self, number: usize) -> String {
+    pub fn regex_capture(&self, number: usize) -> &str {
         self.regex_captures
             .as_ref()
             .map(|captures| captures.get(number))
             .flatten()
-            .map(|capture| capture.as_str())
-            .map_or_else(String::new, String::from)
+            .map_or("", |capture| capture.as_str())
     }
 }
 
@@ -85,7 +84,7 @@ mod tests {
                     regex_captures: None,
                 }
                 .regex_capture(1),
-                String::new()
+                ""
             );
         }
 
@@ -99,7 +98,7 @@ mod tests {
                     regex_captures: make_regex_captures(),
                 }
                 .regex_capture(1),
-                String::from("abc")
+                "abc"
             );
         }
 
@@ -113,7 +112,7 @@ mod tests {
                     regex_captures: make_regex_captures(),
                 }
                 .regex_capture(2),
-                String::new()
+                ""
             );
         }
     }

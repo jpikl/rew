@@ -147,18 +147,18 @@ impl Filter {
         match self {
             // Path filters
             Self::WorkingDir => path::to_string(context.working_dir),
-            Self::AbsolutePath => path::get_absolute(value, context.working_dir),
-            Self::RelativePath => path::get_relative(value, context.working_dir),
-            Self::NormalizedPath => path::get_normalized(value),
-            Self::CanonicalPath => path::get_canonical(value, context.working_dir),
+            Self::AbsolutePath => path::to_absolute(value, context.working_dir),
+            Self::RelativePath => path::to_relative(value, context.working_dir),
+            Self::NormalizedPath => path::normalize(&value),
+            Self::CanonicalPath => path::canonicalize(value, context.working_dir),
             Self::ParentDirectory => path::get_parent_directory(value),
-            Self::RemoveLastName => path::get_without_last_name(value),
-            Self::FileName => path::get_file_name(value),
-            Self::LastName => path::get_last_name(value),
-            Self::BaseName => path::get_base_name(value),
-            Self::RemoveExtension => path::get_without_extension(value),
-            Self::Extension => path::get_extension(value),
-            Self::ExtensionWithDot => path::get_extension_with_dot(value),
+            Self::RemoveLastName => path::remove_last_name(value),
+            Self::FileName => path::get_file_name(&value),
+            Self::LastName => path::get_last_name(&value),
+            Self::BaseName => path::get_base_name(&value),
+            Self::RemoveExtension => path::remove_extension(value),
+            Self::Extension => path::get_extension(&value),
+            Self::ExtensionWithDot => path::get_extension_with_dot(&value),
             Self::EnsureTrailingSeparator => Ok(path::ensure_trailing_separator(value)),
             Self::RemoveTrailingSeparator => Ok(path::remove_trailing_separator(value)),
 
@@ -172,10 +172,10 @@ impl Filter {
             Self::ReplaceEmpty(substitution) => Ok(substitution.replace(value)),
 
             // Regex filters
-            Self::RegexMatch(regex) => Ok(regex.find(&value)),
+            Self::RegexMatch(regex) => Ok(regex.first_match(&value)),
             Self::RegexReplaceFirst(substitution) => Ok(substitution.replace_first(&value)),
             Self::RegexReplaceAll(substitution) => Ok(substitution.replace_all(&value)),
-            Self::RegexCapture(number) => Ok(context.regex_capture(*number)),
+            Self::RegexCapture(number) => Ok(context.regex_capture(*number).to_string()),
 
             // Format filters
             Self::Trim => Ok(value.trim().to_string()),
