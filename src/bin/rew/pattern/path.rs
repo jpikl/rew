@@ -813,7 +813,7 @@ mod tests {
             #[cfg(unix)]
             assert_eq!(get_file_name("/"), Ok(String::new()));
             #[cfg(windows)]
-            assert_eq!(get_file_name(String::from("C:\\")), Ok(String::new()));
+            assert_eq!(get_file_name("C:\\"), Ok(String::new()));
         }
 
         #[test]
@@ -821,16 +821,13 @@ mod tests {
             #[cfg(unix)]
             assert_eq!(get_file_name("/file.ext"), Ok(String::from("file.ext")));
             #[cfg(windows)]
-            assert_eq!(
-                get_file_name(String::from("C:\\file.ext")),
-                Ok(String::from("file.ext"))
-            );
+            assert_eq!(get_file_name("C:\\file.ext"), Ok(String::from("file.ext")));
         }
 
         #[test]
         #[cfg(windows)]
         fn prefix() {
-            assert_eq!(get_file_name(String::from("C:")), Ok(String::new()));
+            assert_eq!(get_file_name("C:"), Ok(String::new()));
         }
     }
 
