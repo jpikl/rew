@@ -65,7 +65,7 @@ impl IndexRange {
 
         if let Some(length) = self.length() {
             if let Some((end, _)) = value.char_indices().nth(length) {
-                value.replace_range(end.., "");
+                value.truncate(end);
             }
         }
 
@@ -76,7 +76,7 @@ impl IndexRange {
         let start = self.start();
         if start > 0 {
             if let Some((start, _)) = value.char_indices().nth_back(start - 1) {
-                value.replace_range(start.., "");
+                value.truncate(start);
             } else {
                 value.clear();
             }
@@ -347,198 +347,198 @@ mod tests {
                 assert_eq!(reader.position(), 1);
             }
         }
-    }
 
-    mod substr {
-        use super::*;
+        mod substr {
+            use super::*;
 
-        #[test]
-        fn empty() {
-            assert_eq!(
-                IndexRange::new(0, None).substr(String::new()),
-                String::new()
-            );
+            #[test]
+            fn empty() {
+                assert_eq!(
+                    IndexRange::new(0, None).substr(String::new()),
+                    String::new()
+                );
+            }
+
+            #[test]
+            fn from_first() {
+                assert_eq!(
+                    IndexRange::new(0, None).substr(String::from("ábčd")),
+                    String::from("ábčd")
+                );
+            }
+
+            #[test]
+            fn from_last() {
+                assert_eq!(
+                    IndexRange::new(3, None).substr(String::from("ábčd")),
+                    String::from("d")
+                );
+            }
+
+            #[test]
+            fn from_over() {
+                assert_eq!(
+                    IndexRange::new(4, None).substr(String::from("ábčd")),
+                    String::new()
+                );
+            }
+
+            #[test]
+            fn from_first_to_first() {
+                assert_eq!(
+                    IndexRange::new(0, Some(0)).substr(String::from("ábčd")),
+                    String::from("á")
+                );
+            }
+
+            #[test]
+            fn from_first_to_last_but_one() {
+                assert_eq!(
+                    IndexRange::new(0, Some(2)).substr(String::from("ábčd")),
+                    String::from("ábč")
+                );
+            }
+
+            #[test]
+            fn from_first_to_last() {
+                assert_eq!(
+                    IndexRange::new(0, Some(3)).substr(String::from("ábčd")),
+                    String::from("ábčd")
+                );
+            }
+
+            #[test]
+            fn from_first_to_over() {
+                assert_eq!(
+                    IndexRange::new(0, Some(4)).substr(String::from("ábčd")),
+                    String::from("ábčd")
+                );
+            }
+
+            #[test]
+            fn from_last_to_last() {
+                assert_eq!(
+                    IndexRange::new(3, Some(3)).substr(String::from("ábčd")),
+                    String::from("d")
+                );
+            }
+
+            #[test]
+            fn from_last_to_over() {
+                assert_eq!(
+                    IndexRange::new(3, Some(4)).substr(String::from("ábčd")),
+                    String::from("d")
+                );
+            }
+
+            #[test]
+            fn from_over_to_over() {
+                assert_eq!(
+                    IndexRange::new(4, Some(4)).substr(String::from("ábčd")),
+                    String::new()
+                );
+            }
         }
 
-        #[test]
-        fn from_first() {
-            assert_eq!(
-                IndexRange::new(0, None).substr(String::from("ábčd")),
-                String::from("ábčd")
-            );
-        }
+        mod substr_backward {
+            use super::*;
 
-        #[test]
-        fn from_last() {
-            assert_eq!(
-                IndexRange::new(3, None).substr(String::from("ábčd")),
-                String::from("d")
-            );
-        }
+            #[test]
+            fn empty() {
+                assert_eq!(
+                    IndexRange::new(0, None).substr_backward(String::new()),
+                    String::new()
+                );
+            }
 
-        #[test]
-        fn from_over() {
-            assert_eq!(
-                IndexRange::new(4, None).substr(String::from("ábčd")),
-                String::new()
-            );
-        }
+            #[test]
+            fn from_first() {
+                assert_eq!(
+                    IndexRange::new(0, None).substr_backward(String::from("ábčd")),
+                    String::from("ábčd")
+                );
+            }
 
-        #[test]
-        fn from_first_to_first() {
-            assert_eq!(
-                IndexRange::new(0, Some(0)).substr(String::from("ábčd")),
-                String::from("á")
-            );
-        }
+            #[test]
+            fn from_last() {
+                assert_eq!(
+                    IndexRange::new(3, None).substr_backward(String::from("ábčd")),
+                    String::from("á")
+                );
+            }
 
-        #[test]
-        fn from_first_to_last_but_one() {
-            assert_eq!(
-                IndexRange::new(0, Some(2)).substr(String::from("ábčd")),
-                String::from("ábč")
-            );
-        }
+            #[test]
+            fn from_over() {
+                assert_eq!(
+                    IndexRange::new(4, None).substr_backward(String::from("ábčd")),
+                    String::new()
+                );
+            }
 
-        #[test]
-        fn from_first_to_last() {
-            assert_eq!(
-                IndexRange::new(0, Some(3)).substr(String::from("ábčd")),
-                String::from("ábčd")
-            );
-        }
+            #[test]
+            fn from_first_to_first() {
+                assert_eq!(
+                    IndexRange::new(0, Some(0)).substr_backward(String::from("ábčd")),
+                    String::from("d")
+                );
+            }
 
-        #[test]
-        fn from_first_to_over() {
-            assert_eq!(
-                IndexRange::new(0, Some(4)).substr(String::from("ábčd")),
-                String::from("ábčd")
-            );
-        }
+            #[test]
+            fn from_first_to_last_but_one() {
+                assert_eq!(
+                    IndexRange::new(0, Some(2)).substr_backward(String::from("ábčd")),
+                    String::from("bčd")
+                );
+            }
 
-        #[test]
-        fn from_last_to_last() {
-            assert_eq!(
-                IndexRange::new(3, Some(3)).substr(String::from("ábčd")),
-                String::from("d")
-            );
-        }
+            #[test]
+            fn from_first_to_last() {
+                assert_eq!(
+                    IndexRange::new(0, Some(3)).substr_backward(String::from("ábčd")),
+                    String::from("ábčd")
+                );
+            }
 
-        #[test]
-        fn from_last_to_over() {
-            assert_eq!(
-                IndexRange::new(3, Some(4)).substr(String::from("ábčd")),
-                String::from("d")
-            );
-        }
+            #[test]
+            fn from_first_to_over() {
+                assert_eq!(
+                    IndexRange::new(0, Some(4)).substr_backward(String::from("ábčd")),
+                    String::from("ábčd")
+                );
+            }
 
-        #[test]
-        fn from_over_to_over() {
-            assert_eq!(
-                IndexRange::new(4, Some(4)).substr(String::from("ábčd")),
-                String::new()
-            );
-        }
-    }
+            #[test]
+            fn from_last_to_last() {
+                assert_eq!(
+                    IndexRange::new(3, Some(3)).substr_backward(String::from("ábčd")),
+                    String::from("á")
+                );
+            }
 
-    mod substr_backward {
-        use super::*;
+            #[test]
+            fn from_last_to_over() {
+                assert_eq!(
+                    IndexRange::new(3, Some(3)).substr_backward(String::from("ábčd")),
+                    String::from("á")
+                );
+            }
 
-        #[test]
-        fn empty() {
-            assert_eq!(
-                IndexRange::new(0, None).substr_backward(String::new()),
-                String::new()
-            );
-        }
+            #[test]
+            fn from_over_to_over() {
+                assert_eq!(
+                    IndexRange::new(4, Some(4)).substr_backward(String::from("ábčd")),
+                    String::new()
+                );
+            }
 
-        #[test]
-        fn from_first() {
-            assert_eq!(
-                IndexRange::new(0, None).substr_backward(String::from("ábčd")),
-                String::from("ábčd")
-            );
-        }
-
-        #[test]
-        fn from_last() {
-            assert_eq!(
-                IndexRange::new(3, None).substr_backward(String::from("ábčd")),
-                String::from("á")
-            );
-        }
-
-        #[test]
-        fn from_over() {
-            assert_eq!(
-                IndexRange::new(4, None).substr_backward(String::from("ábčd")),
-                String::new()
-            );
-        }
-
-        #[test]
-        fn from_first_to_first() {
-            assert_eq!(
-                IndexRange::new(0, Some(0)).substr_backward(String::from("ábčd")),
-                String::from("d")
-            );
-        }
-
-        #[test]
-        fn from_first_to_last_but_one() {
-            assert_eq!(
-                IndexRange::new(0, Some(2)).substr_backward(String::from("ábčd")),
-                String::from("bčd")
-            );
-        }
-
-        #[test]
-        fn from_first_to_last() {
-            assert_eq!(
-                IndexRange::new(0, Some(3)).substr_backward(String::from("ábčd")),
-                String::from("ábčd")
-            );
-        }
-
-        #[test]
-        fn from_first_to_over() {
-            assert_eq!(
-                IndexRange::new(0, Some(4)).substr_backward(String::from("ábčd")),
-                String::from("ábčd")
-            );
-        }
-
-        #[test]
-        fn from_last_to_last() {
-            assert_eq!(
-                IndexRange::new(3, Some(3)).substr_backward(String::from("ábčd")),
-                String::from("á")
-            );
-        }
-
-        #[test]
-        fn from_last_to_over() {
-            assert_eq!(
-                IndexRange::new(3, Some(3)).substr_backward(String::from("ábčd")),
-                String::from("á")
-            );
-        }
-
-        #[test]
-        fn from_over_to_over() {
-            assert_eq!(
-                IndexRange::new(4, Some(4)).substr_backward(String::from("ábčd")),
-                String::new()
-            );
-        }
-
-        #[test]
-        fn from_extra_over_to_over() {
-            // Covers different evaluation branch than from_over_to_over
-            assert_eq!(
-                IndexRange::new(5, Some(5)).substr_backward(String::from("ábčd")),
-                String::new()
-            );
+            #[test]
+            fn from_extra_over_to_over() {
+                // Covers different evaluation branch than from_over_to_over
+                assert_eq!(
+                    IndexRange::new(5, Some(5)).substr_backward(String::from("ábčd")),
+                    String::new()
+                );
+            }
         }
     }
 }

@@ -243,26 +243,26 @@ mod tests {
                 assert_eq!(reader.position(), 2);
             }
         }
-    }
 
-    mod random {
-        use super::*;
+        mod random {
+            use super::*;
 
-        #[test]
-        fn lowest() {
-            assert_eq!(NumberInterval::new(0, Some(0)).random(), 0);
-        }
+            #[test]
+            fn lowest() {
+                assert_eq!(NumberInterval::new(0, Some(0)).random(), 0);
+            }
 
-        #[test]
-        fn highest() {
-            assert_eq!(NumberInterval::new(Number::MAX, None).random(), Number::MAX);
-        }
+            #[test]
+            fn highest() {
+                assert_eq!(NumberInterval::new(Number::MAX, None).random(), Number::MAX);
+            }
 
-        #[test]
-        fn lowest_to_highest() {
-            NumberInterval::new(0, Some(Number::MAX)).random(); // Should not overflow
-            NumberInterval::new(1, Some(Number::MAX)).random();
-            NumberInterval::new(0, Some(Number::MAX - 1)).random();
+            #[test]
+            fn lowest_to_highest() {
+                NumberInterval::new(0, Some(Number::MAX)).random(); // Should not overflow
+                NumberInterval::new(1, Some(Number::MAX)).random();
+                NumberInterval::new(0, Some(Number::MAX - 1)).random();
+            }
         }
     }
 }
