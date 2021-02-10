@@ -35,7 +35,7 @@ pub struct Cli {
             If not provided, input values are directly written to stdout.
 
             Use `--explain` flag to print explanation of a given pattern.
-            Use `--help-pattern` flag to print description of patter syntax.
+            Use `--help-pattern` flag to print pattern syntax reference.
             Use `--help-filters` flag to print filter reference.
         "})
     )]
@@ -229,7 +229,7 @@ pub struct Cli {
     #[clap(short = 'h', long, help_heading = HELP_HEADING)]
     pub help: bool,
 
-    /// Print description of pattern syntax
+    /// Print pattern syntax reference
     #[clap(long, help_heading = HELP_HEADING)]
     pub help_pattern: bool,
 

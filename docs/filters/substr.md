@@ -3,7 +3,7 @@
 | Filter | Description                                       |
 | ------ | ------------------------------------------------- |
 | `nA-B` | Substring from index `A` to `B`.<br/>Indices start from 1 and are both inclusive. |
-| `nA+B` | Substring from index `A` with length `B`.         |
+| `nA+L` | Substring from index `A` with length `L`.         |
 | `nA-`  | Substring from index `A` to end.                  |
 | `nA`   | Character at index `A`.<br/>Equivalent to `nA-A`. |
 | `N`    | Same as `n` but with backward indexing.           |

@@ -1,6 +1,7 @@
 use crate::cli::Cli;
 use crate::output::write_pattern_error;
 use crate::pattern::{eval, help, Pattern};
+use common::help::highlight;
 use common::input::Delimiter as InputDelimiter;
 use common::run::{exec_run, Io, Result, EXIT_CODE_OK};
 use std::env;
@@ -25,12 +26,12 @@ fn main() {
 
 fn run(cli: &Cli, io: &Io) -> Result {
     if cli.help_pattern {
-        help::write_pattern_help(&mut io.stdout())?;
+        highlight(&mut io.stdout(), help::PATTERN)?;
         return Ok(EXIT_CODE_OK);
     }
 
     if cli.help_filters {
-        help::write_filters_help(&mut io.stdout())?;
+        highlight(&mut io.stdout(), help::FILTERS)?;
         return Ok(EXIT_CODE_OK);
     }
 

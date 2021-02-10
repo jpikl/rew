@@ -5,8 +5,7 @@ use std::io::{Result, Write};
 use std::sync::Mutex;
 use termcolor::{Buffer, Color, WriteColor};
 
-const DOUBLE_LINE_PREFIX: &str = "===";
-const SIMPLE_LINE_PREFIX: &str = "---";
+const HEADING_PREFIX: &str = "# ";
 const PADDED_BLOCK_PREFIX: &str = "    ";
 const SHELL_PREFIX: &str = "$>";
 
@@ -53,21 +52,10 @@ fn highlight_to_string(text: &str) -> Result<String> {
 }
 
 pub fn highlight<O: Write + WriteColor>(output: &mut O, text: &str) -> Result<()> {
-    let mut in_heading = false;
-    let mut in_padded_block_after_line = false;
-
     for line in text.lines() {
-        if line.starts_with(DOUBLE_LINE_PREFIX) {
+        if let Some(header) = line.strip_prefix(HEADING_PREFIX) {
             output.set_color(&spec_color(PRIMARY_COLOR))?;
-            in_heading = !in_heading;
-            write!(output, "{}", line)?;
-        } else if in_heading {
-            if line.is_empty() {
-                in_heading = false;
-            } else {
-                output.set_color(&spec_color(PRIMARY_COLOR))?;
-                write!(output, "{}", line)?;
-            }
+            write!(output, "{}", header)?;
         } else if let Some(block) = line.strip_prefix(PADDED_BLOCK_PREFIX) {
             write!(output, "{}", PADDED_BLOCK_PREFIX)?;
 
@@ -78,23 +66,16 @@ pub fn highlight<O: Write + WriteColor>(output: &mut O, text: &str) -> Result<()
 
                 if let Some(comment_index) = command.rfind(COMMENT_CHAR) {
                     write!(output, "{}", &command[..comment_index])?;
-                    output.reset()?;
+                    output.set_color(&spec_color(SECONDARY_COLOR))?;
                     write!(output, "{}", &command[comment_index..])?;
                 } else {
                     write!(output, "{}", command)?;
                 }
-            } else if block.starts_with(SIMPLE_LINE_PREFIX) {
-                in_padded_block_after_line = true;
-                output.set_color(&spec_color(SECONDARY_COLOR))?;
-                write!(output, "{}", block)?;
-            } else if in_padded_block_after_line {
-                highlight_code(output, block)?;
             } else {
                 output.set_color(&spec_color(SECONDARY_COLOR))?;
                 write!(output, "{}", block)?;
             }
         } else {
-            in_padded_block_after_line = false;
             highlight_code(output, line)?;
         }
 
@@ -132,22 +113,14 @@ mod tests {
     use indoc::indoc;
 
     const SAMPLE_HELP: &str = indoc! {"
-        =========
-         Heading
-        =========
-
-        Text.
-
-        === Heading ===
+        # Heading
 
         Text.
         Text with `code`.
         Text with `code` and `more code`.
 
-            KEY    VALUE
-            ------------
-            `a`      1
-            `b`      2
+            Padded block.
+            Padded block with `code`.
 
         Text.
 
@@ -170,13 +143,7 @@ mod tests {
         assert_eq!(
             ouput.chunks(),
             &[
-                OutputChunk::color(Color::Yellow, "========="),
-                OutputChunk::plain("\n"),
-                OutputChunk::color(Color::Yellow, " Heading"),
-                OutputChunk::plain("\n"),
-                OutputChunk::color(Color::Yellow, "========="),
-                OutputChunk::plain("\n\nText.\n\n"),
-                OutputChunk::color(Color::Yellow, "=== Heading ==="),
+                OutputChunk::color(Color::Yellow, "Heading"),
                 OutputChunk::plain("\n\nText.\nText with "),
                 OutputChunk::color(Color::Green, "code"),
                 OutputChunk::plain(".\nText with "),
@@ -184,20 +151,17 @@ mod tests {
                 OutputChunk::plain(" and "),
                 OutputChunk::color(Color::Green, "more code"),
                 OutputChunk::plain(".\n\n    "),
-                OutputChunk::color(Color::Cyan, "KEY    VALUE"),
+                OutputChunk::color(Color::Cyan, "Padded block."),
                 OutputChunk::plain("\n    "),
-                OutputChunk::color(Color::Cyan, "------------"),
-                OutputChunk::plain("\n    "),
-                OutputChunk::color(Color::Green, "a"),
-                OutputChunk::plain("      1\n    "),
-                OutputChunk::color(Color::Green, "b"),
-                OutputChunk::plain("      2\n\nText.\n\n    "),
+                OutputChunk::color(Color::Cyan, "Padded block with `code`."),
+                OutputChunk::plain("\n\nText.\n\n    "),
                 OutputChunk::color(Color::Cyan, "$>"),
                 OutputChunk::color(Color::Green, " ls -la"),
                 OutputChunk::plain("\n    "),
                 OutputChunk::color(Color::Cyan, "$>"),
                 OutputChunk::color(Color::Green, " ls -la "),
-                OutputChunk::plain("# Shell comment\n"),
+                OutputChunk::color(Color::Cyan, "# Shell comment"),
+                OutputChunk::plain("\n")
             ]
         );
     }
