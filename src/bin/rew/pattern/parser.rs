@@ -1,4 +1,4 @@
-use crate::pattern::char::{AsChar, Char};
+use crate::pattern::char::{AsChar, Char, Chars};
 use crate::pattern::filter::Filter;
 use crate::pattern::lexer::{Lexer, Token};
 use crate::pattern::parse::{Error, ErrorKind, Parsed, Result};
@@ -59,7 +59,7 @@ impl Parser {
         if let Some(token) = self.fetch_token()? {
             match &token.value {
                 Token::Raw(raw) => Ok(Some(Parsed {
-                    value: Item::Constant(Char::join(raw)),
+                    value: Item::Constant(Chars(&raw).to_string()),
                     range: token.range.clone(),
                 })),
                 Token::ExprStart => {

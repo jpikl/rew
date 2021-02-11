@@ -19,7 +19,7 @@ impl Padding {
                 '0'..='9' => Ok(Self::Repeated(Repetition::parse(reader)?)),
                 prefix if prefix == fixed_prefix => {
                     reader.seek();
-                    Ok(Self::Fixed(Char::join(reader.read_to_end())))
+                    Ok(Self::Fixed(reader.read_to_end().to_string()))
                 }
                 _ => Err(Error {
                     kind: ErrorKind::PaddingPrefixInvalid(fixed_prefix, Some(prefix.clone())),

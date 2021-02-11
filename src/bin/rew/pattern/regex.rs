@@ -11,7 +11,7 @@ pub struct RegexHolder(pub Regex);
 impl RegexHolder {
     pub fn parse(reader: &mut Reader<Char>) -> Result<Self> {
         let position = reader.position();
-        let value = Char::join(reader.read_to_end());
+        let value = reader.read_to_end();
 
         if value.is_empty() {
             return Err(Error {
@@ -20,7 +20,7 @@ impl RegexHolder {
             });
         }
 
-        match Regex::new(&value) {
+        match Regex::new(&value.to_string()) {
             Ok(regex) => Ok(Self(regex)),
             Err(error) => Err(Error {
                 kind: ErrorKind::RegexInvalid(AnyString(error.to_string())),

@@ -29,7 +29,7 @@ impl Repetition {
                     range: position..reader.position(),
                 })
             } else {
-                let value = Char::join(reader.read_to_end());
+                let value = reader.read_to_end().to_string();
                 Ok(Self { count, value })
             }
         } else {

@@ -1,4 +1,4 @@
-use crate::pattern::char::AsChar;
+use crate::pattern::char::{AsChar, Chars};
 
 pub struct Reader<T: AsChar> {
     chars: Vec<T>,
@@ -17,11 +17,11 @@ impl<T: AsChar> Reader<T> {
     }
 
     pub fn position(&self) -> usize {
-        sum_len_utf8::<T>(&self.chars[..self.index])
+        Chars(&self.chars[..self.index]).len_utf8()
     }
 
     pub fn end(&self) -> usize {
-        sum_len_utf8(&self.chars)
+        Chars(&self.chars).len_utf8()
     }
 
     pub fn seek(&mut self) {
@@ -52,12 +52,12 @@ impl<T: AsChar> Reader<T> {
         self.peek().map(T::as_char)
     }
 
-    pub fn peek_to_end(&self) -> &[T] {
+    pub fn peek_to_end(&self) -> Chars<T> {
         self.peek_to_end_at(self.index)
     }
 
-    fn peek_to_end_at(&self, index: usize) -> &[T] {
-        &self.chars[index..]
+    fn peek_to_end_at(&self, index: usize) -> Chars<T> {
+        Chars(&self.chars[index..])
     }
 
     pub fn read(&mut self) -> Option<&T> {
@@ -70,15 +70,23 @@ impl<T: AsChar> Reader<T> {
         self.read().map(T::as_char)
     }
 
-    pub fn read_to_end(&mut self) -> &[T] {
+    pub fn read_to_end(&mut self) -> Chars<T> {
         let index = self.index;
         self.seek_to_end();
         self.peek_to_end_at(index)
     }
-}
 
-fn sum_len_utf8<T: AsChar>(chars: &[T]) -> usize {
-    chars.iter().fold(0, |sum, char| sum + char.len_utf8())
+    // TODO test
+    pub fn read_until(&mut self, delimiter: &T) -> Chars<T> {
+        for i in self.index..self.chars.len() {
+            if self.chars[i].as_char() == delimiter.as_char() {
+                let index = self.index;
+                self.seek_to(i + 1);
+                return Chars(&self.chars[index..i]);
+            }
+        }
+        self.read_to_end()
+    }
 }
 
 #[cfg(test)]
@@ -186,27 +194,27 @@ mod tests {
         reader.seek_to(0);
         assert_eq!(
             reader.peek_to_end(),
-            [
+            Chars(&[
                 Char::Raw('a'),
                 Char::Escaped('b', ['x', 'y']),
                 Char::Raw('č')
-            ]
+            ])
         );
         assert_eq!(reader.position(), 0);
 
         reader.seek_to(1);
         assert_eq!(
             reader.peek_to_end(),
-            [Char::Escaped('b', ['x', 'y']), Char::Raw('č')]
+            Chars(&[Char::Escaped('b', ['x', 'y']), Char::Raw('č')])
         );
         assert_eq!(reader.position(), 1);
 
         reader.seek_to(2);
-        assert_eq!(reader.peek_to_end(), [Char::Raw('č')]);
+        assert_eq!(reader.peek_to_end(), Chars(&[Char::Raw('č')]));
         assert_eq!(reader.position(), 3);
 
         reader.seek_to(3);
-        assert_eq!(reader.peek_to_end(), []);
+        assert_eq!(reader.peek_to_end(), Chars(&[]));
         assert_eq!(reader.position(), 5);
     }
 
@@ -251,42 +259,28 @@ mod tests {
         reader.seek_to(0);
         assert_eq!(
             reader.read_to_end(),
-            [
+            Chars(&[
                 Char::Raw('a'),
                 Char::Escaped('b', ['x', 'y']),
                 Char::Raw('č')
-            ]
+            ])
         );
         assert_eq!(reader.position(), 5);
 
         reader.seek_to(1);
         assert_eq!(
             reader.read_to_end(),
-            [Char::Escaped('b', ['x', 'y']), Char::Raw('č')]
+            Chars(&[Char::Escaped('b', ['x', 'y']), Char::Raw('č')])
         );
         assert_eq!(reader.position(), 5);
 
         reader.seek_to(2);
-        assert_eq!(reader.read_to_end(), [Char::Raw('č')]);
+        assert_eq!(reader.read_to_end(), Chars(&[Char::Raw('č')]));
         assert_eq!(reader.position(), 5);
 
         reader.seek_to(3);
-        assert_eq!(reader.read_to_end(), []);
+        assert_eq!(reader.read_to_end(), Chars(&[]));
         assert_eq!(reader.position(), 5);
-    }
-
-    #[test]
-    fn sum_len_utf8() {
-        use super::*;
-
-        assert_eq!(
-            sum_len_utf8(&[
-                Char::Raw('a'),
-                Char::Raw('á'),
-                Char::Escaped('\n', ['#', 'n'])
-            ]),
-            5
-        );
     }
 
     fn make_reader() -> Reader<Char> {

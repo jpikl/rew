@@ -1,4 +1,4 @@
-use crate::pattern::char::{AsChar, Char};
+use crate::pattern::char::Char;
 use crate::pattern::parse::{Error, ErrorKind, Result};
 use crate::pattern::reader::Reader;
 use crate::pattern::regex::RegexHolder;
@@ -23,7 +23,7 @@ impl Substitution<Empty> {
     pub fn parse_empty(reader: &mut Reader<Char>) -> Result<Self> {
         Ok(Self {
             target: Empty,
-            replacement: Char::join(reader.read_to_end()),
+            replacement: reader.read_to_end().to_string(),
         })
     }
 
@@ -92,18 +92,9 @@ pub fn parse_target_and_replacement(
     reader: &mut Reader<Char>,
 ) -> Result<(String, Range<usize>, String)> {
     if let Some(delimiter) = reader.read().cloned() {
-        let mut target = String::new();
         let target_start = reader.position();
-        let mut target_end = target_start;
-
-        while let Some(ch) = reader.read_char() {
-            if ch == delimiter.as_char() {
-                break;
-            } else {
-                target.push(ch);
-                target_end = reader.position();
-            }
-        }
+        let target = reader.read_until(&delimiter);
+        let target_end = target_start + target.len_utf8();
 
         if target.is_empty() {
             return Err(Error {
@@ -113,9 +104,9 @@ pub fn parse_target_and_replacement(
         }
 
         Ok((
-            target,
+            target.to_string(),
             target_start..target_end,
-            Char::join(reader.read_to_end()),
+            reader.read_to_end().to_string(),
         ))
     } else {
         Err(Error {

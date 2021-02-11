@@ -1,15 +1,11 @@
+use std::ops::Deref;
+
 pub type EscapeSequence = [char; 2];
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Char {
     Raw(char),
     Escaped(char, EscapeSequence),
-}
-
-impl Char {
-    pub fn join(chars: &[Char]) -> String {
-        chars.iter().map(Char::as_char).collect()
-    }
 }
 
 impl From<char> for Char {
@@ -47,6 +43,29 @@ impl AsChar for Char {
             Self::Raw(value) => value.len_utf8(),
             Self::Escaped(_, sequence) => sequence[0].len_utf8() + sequence[1].len_utf8(),
         }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct Chars<'a, T: AsChar>(pub &'a [T]);
+
+impl<'a, T: AsChar> Deref for Chars<'a, T> {
+    type Target = [T];
+
+    fn deref(&self) -> &Self::Target {
+        self.0
+    }
+}
+
+impl<'a, T: AsChar> Chars<'a, T> {
+    pub fn len_utf8(&self) -> usize {
+        self.0.iter().fold(0, |sum, char| sum + char.len_utf8())
+    }
+}
+
+impl<'a, T: AsChar> ToString for Chars<'a, T> {
+    fn to_string(&self) -> String {
+        self.0.iter().map(T::as_char).collect()
     }
 }
 
@@ -89,9 +108,19 @@ mod tests {
         }
     }
 
-    #[test]
-    fn join() {
-        let chars = [Char::Raw('a'), Char::Escaped('b', ['c', 'd'])];
-        assert_eq!(Char::join(&chars), String::from("ab"));
+    mod chars {
+        use super::*;
+
+        #[test]
+        fn len_utf8() {
+            let chars = [Char::Raw('a'), Char::Escaped('b', ['c', 'd'])];
+            assert_eq!(Chars(&chars).len_utf8(), 3);
+        }
+
+        #[test]
+        fn to_string() {
+            let chars = [Char::Raw('a'), Char::Escaped('b', ['c', 'd'])];
+            assert_eq!(Chars(&chars).to_string(), String::from("ab"));
+        }
     }
 }

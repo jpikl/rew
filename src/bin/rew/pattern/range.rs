@@ -85,7 +85,7 @@ impl<T: RangeBound> Range<T> {
             }
 
             Some(_) => Err(Error {
-                kind: ErrorKind::RangeInvalid(Char::join(reader.peek_to_end())),
+                kind: ErrorKind::RangeInvalid(reader.peek_to_end().to_string()),
                 range: reader.position()..reader.end(),
             }),
 
