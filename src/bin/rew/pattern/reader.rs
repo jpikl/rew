@@ -17,11 +17,11 @@ impl<T: AsChar> Reader<T> {
     }
 
     pub fn position(&self) -> usize {
-        Chars(&self.chars[..self.index]).len_utf8()
+        Chars::from(&self.chars[..self.index]).len_utf8()
     }
 
     pub fn end(&self) -> usize {
-        Chars(&self.chars).len_utf8()
+        Chars::from(&self.chars[..]).len_utf8()
     }
 
     pub fn seek(&mut self) {
@@ -57,7 +57,7 @@ impl<T: AsChar> Reader<T> {
     }
 
     fn peek_to_end_at(&self, index: usize) -> Chars<T> {
-        Chars(&self.chars[index..])
+        Chars::from(&self.chars[index..])
     }
 
     pub fn read(&mut self) -> Option<&T> {
@@ -76,13 +76,12 @@ impl<T: AsChar> Reader<T> {
         self.peek_to_end_at(index)
     }
 
-    // TODO test
     pub fn read_until(&mut self, delimiter: &T) -> Chars<T> {
         for i in self.index..self.chars.len() {
             if self.chars[i].as_char() == delimiter.as_char() {
                 let index = self.index;
                 self.seek_to(i + 1);
-                return Chars(&self.chars[index..i]);
+                return Chars::from(&self.chars[index..i]);
             }
         }
         self.read_to_end()
@@ -194,27 +193,29 @@ mod tests {
         reader.seek_to(0);
         assert_eq!(
             reader.peek_to_end(),
-            Chars(&[
-                Char::Raw('a'),
-                Char::Escaped('b', ['x', 'y']),
-                Char::Raw('č')
-            ])
+            Chars::from(
+                &[
+                    Char::Raw('a'),
+                    Char::Escaped('b', ['x', 'y']),
+                    Char::Raw('č')
+                ][..]
+            )
         );
         assert_eq!(reader.position(), 0);
 
         reader.seek_to(1);
         assert_eq!(
             reader.peek_to_end(),
-            Chars(&[Char::Escaped('b', ['x', 'y']), Char::Raw('č')])
+            Chars::from(&[Char::Escaped('b', ['x', 'y']), Char::Raw('č')][..])
         );
         assert_eq!(reader.position(), 1);
 
         reader.seek_to(2);
-        assert_eq!(reader.peek_to_end(), Chars(&[Char::Raw('č')]));
+        assert_eq!(reader.peek_to_end(), Chars::from(&[Char::Raw('č')][..]));
         assert_eq!(reader.position(), 3);
 
         reader.seek_to(3);
-        assert_eq!(reader.peek_to_end(), Chars(&[]));
+        assert_eq!(reader.peek_to_end(), Chars::from(&[][..]));
         assert_eq!(reader.position(), 5);
     }
 
@@ -259,35 +260,67 @@ mod tests {
         reader.seek_to(0);
         assert_eq!(
             reader.read_to_end(),
-            Chars(&[
-                Char::Raw('a'),
-                Char::Escaped('b', ['x', 'y']),
-                Char::Raw('č')
-            ])
+            Chars::from(
+                &[
+                    Char::Raw('a'),
+                    Char::Escaped('b', ['x', 'y']),
+                    Char::Raw('č')
+                ][..]
+            )
         );
         assert_eq!(reader.position(), 5);
 
         reader.seek_to(1);
         assert_eq!(
             reader.read_to_end(),
-            Chars(&[Char::Escaped('b', ['x', 'y']), Char::Raw('č')])
+            Chars::from(&[Char::Escaped('b', ['x', 'y']), Char::Raw('č')][..])
         );
         assert_eq!(reader.position(), 5);
 
         reader.seek_to(2);
-        assert_eq!(reader.read_to_end(), Chars(&[Char::Raw('č')]));
+        assert_eq!(reader.read_to_end(), Chars::from(&[Char::Raw('č')][..]));
         assert_eq!(reader.position(), 5);
 
         reader.seek_to(3);
-        assert_eq!(reader.read_to_end(), Chars(&[]));
+        assert_eq!(reader.read_to_end(), Chars::from(&[][..]));
         assert_eq!(reader.position(), 5);
     }
 
+    #[test]
+    fn read_until() {
+        let mut reader = make_reader();
+
+        reader.seek_to(0);
+        assert_eq!(reader.read_until(&Char::Raw('a')), Chars::from(&[][..]));
+
+        reader.seek_to(0);
+        assert_eq!(
+            reader.read_until(&Char::Raw('b')),
+            Chars::from(&make_chars()[..1])
+        );
+
+        reader.seek_to(0);
+        assert_eq!(
+            reader.read_until(&Char::Raw('č')),
+            Chars::from(&make_chars()[..2])
+        );
+
+        reader.seek_to(0);
+        assert_eq!(
+            reader.read_until(&Char::Raw('?')),
+            Chars::from(&make_chars()[..])
+        );
+    }
+
     fn make_reader() -> Reader<Char> {
-        Reader::new(vec![
+        Reader::new(make_chars())
+    }
+
+    fn make_chars() -> Vec<Char> {
+        vec![
             Char::Raw('a'),
             Char::Escaped('b', ['x', 'y']),
             Char::Raw('č'),
-        ])
+        ]
     }
 }

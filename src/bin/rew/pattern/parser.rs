@@ -59,7 +59,7 @@ impl Parser {
         if let Some(token) = self.fetch_token()? {
             match &token.value {
                 Token::Raw(raw) => Ok(Some(Parsed {
-                    value: Item::Constant(Chars(&raw).to_string()),
+                    value: Item::Constant(Chars::from(&raw[..]).to_string()),
                     range: token.range.clone(),
                 })),
                 Token::ExprStart => {

@@ -47,19 +47,25 @@ impl AsChar for Char {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct Chars<'a, T: AsChar>(pub &'a [T]);
+pub struct Chars<'a, T: AsChar>(&'a [T]);
+
+impl<'a, T: AsChar> Chars<'a, T> {
+    pub fn len_utf8(&self) -> usize {
+        self.0.iter().fold(0, |sum, char| sum + char.len_utf8())
+    }
+}
+
+impl<'a, T: AsChar> From<&'a [T]> for Chars<'a, T> {
+    fn from(chars: &'a [T]) -> Self {
+        Self(chars)
+    }
+}
 
 impl<'a, T: AsChar> Deref for Chars<'a, T> {
     type Target = [T];
 
     fn deref(&self) -> &Self::Target {
         self.0
-    }
-}
-
-impl<'a, T: AsChar> Chars<'a, T> {
-    pub fn len_utf8(&self) -> usize {
-        self.0.iter().fold(0, |sum, char| sum + char.len_utf8())
     }
 }
 
@@ -110,6 +116,12 @@ mod tests {
 
     mod chars {
         use super::*;
+
+        #[test]
+        fn from() {
+            let chars = [Char::Raw('a'), Char::Escaped('b', ['c', 'd'])];
+            assert_eq!(Chars(&chars), Chars::from(&chars[..]));
+        }
 
         #[test]
         fn len_utf8() {
