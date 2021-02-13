@@ -1,12 +1,12 @@
 # ⭐️ Regex filters
 
-| Filter        | Description                                      |
-| ------------- | ------------------------------------------------ |
-| `=E`          | Match of a regular expression `E`.               |
-| `s:X:Y`       | Replace first match of a regular expression `X` with `Y`.<br/>`Y` can reference capture groups from `X` using `$1`, `$2`, ...<br/>Any other character than `:` can be also used as a delimiter. |
-| `s:X`         | Remove first match of a regular expression `X`.<br/>Equivalent to `s:X:`. |
-| `S`           | Same as `s` but replaces/removes all matches.    |
-| `1`, `2`, ... | Capture group of an external regular expression. |
+| Filter   | Description                                   |
+| -------- | --------------------------------------------- |
+| `=E`     | Match of a regular expression `E`.            |
+| `s:X:Y`  | Replace first match of a regular expression `X` with `Y`.<br/>`Y` can reference capture groups from `X` using `$0`, `$1`, `$2`, ...<br/>Any other character than `:` can be also used as a delimiter. |
+| `s:X`    | Remove first match of a regular expression `X`.<br/>Equivalent to `s:X:`. |
+| `S`      | Same as `s` but replaces/removes all matches. |
+| `0`, `1`, `2`, ... | Capture group of an external regular expression. |
 
 Examples:
 

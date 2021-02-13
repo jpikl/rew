@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Using capture group `0` filter is no longer considered error.  
 - Simplified error message for an invalid range.
 - Simplified output of `--help-pattern` and `--help-filters` flags.
 - Output of `-h, --help` flag is organized into sections.

@@ -68,15 +68,7 @@ impl Filter {
         let position = reader.position();
 
         if let Some('0'..='9') = reader.peek_char() {
-            let number = parse_integer(reader)?;
-            if number > 0 {
-                Ok(Filter::RegexCapture(number))
-            } else {
-                Err(parse::Error {
-                    kind: parse::ErrorKind::RegexCaptureZero,
-                    range: position..reader.position(),
-                })
-            }
+            Ok(Filter::RegexCapture(parse_integer(reader)?))
         } else if let Some(char) = reader.read() {
             match char.as_char() {
                 // Path filters
@@ -592,13 +584,7 @@ mod tests {
 
         #[test]
         fn regex_capture() {
-            assert_eq!(
-                parse("0"),
-                Err(Error {
-                    kind: ErrorKind::RegexCaptureZero,
-                    range: 0..1,
-                }),
-            );
+            assert_eq!(parse("0"), Ok(Filter::RegexCapture(0)));
             assert_eq!(parse("1"), Ok(Filter::RegexCapture(1)));
             assert_eq!(parse("2"), Ok(Filter::RegexCapture(2)));
             assert_eq!(parse("10"), Ok(Filter::RegexCapture(10)));

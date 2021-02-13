@@ -38,7 +38,6 @@ pub enum ErrorKind {
     RangeInvalid(String),
     RangeStartOverEnd(String, String),
     RangeLengthOverflow(String, String),
-    RegexCaptureZero,
     RegexInvalid(AnyString),
     RepetitionDigitDelimiter(char),
     RepetitionWithoutDelimiter,
@@ -140,9 +139,6 @@ impl fmt::Display for ErrorKind {
                     "Range length {} overflowed maximum {}",
                     length, max
                 )
-            }
-            Self::RegexCaptureZero => {
-                write!(formatter, "Regular expression captures start from 1, not 0")
             }
             Self::RegexInvalid(value) => write!(formatter, "Invalid regular expression: {}", value),
             Self::RepetitionDigitDelimiter(value) => write!(
@@ -388,14 +384,6 @@ mod tests {
             assert_eq!(
                 ErrorKind::RangeLengthOverflow(String::from("10"), String::from("5")).to_string(),
                 "Range length 10 overflowed maximum 5"
-            );
-        }
-
-        #[test]
-        fn regex_capture_zero() {
-            assert_eq!(
-                ErrorKind::RegexCaptureZero.to_string(),
-                "Regular expression captures start from 1, not 0"
             );
         }
 

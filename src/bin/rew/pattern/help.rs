@@ -48,10 +48,10 @@ pub const FILTERS: &str = indoc! {r#"
 
 # Regular expressions
 
-  `=E`       Match of regex `E`
-  `s:X:Y`    Replace match of `X` with `Y`      (`s` = first occurence)  
-  `s:X`      Remove match of `X`              (`S` = all occurences)
-  `1,2,...`  Capture group of extern regex  (`$1,$2,...` capture group of `s/S`)
+  `=E`         Match of regex `E`
+  `s:X:Y`      Replace match of `X` with `Y`  (`s` = first occurence)  
+  `s:X`        Remove match of `X`          (`S` = all occurences)
+  `0,1,2,...`  External capture group     (`$0,$1,$2,...` = `s/S` capture group)
 
 
 # Formatting
