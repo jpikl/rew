@@ -7,6 +7,7 @@ use crate::pattern::reader::Reader;
 use crate::pattern::regex::RegexHolder;
 use crate::pattern::repetition::Repetition;
 use crate::pattern::substitution::Substitution;
+use crate::pattern::switch::Switch;
 use crate::pattern::{eval, parse, path, uuid};
 use crate::utils::Empty;
 use std::fmt;
@@ -44,6 +45,7 @@ pub enum Filter {
     RegexMatch(RegexHolder),
     RegexReplaceFirst(Substitution<RegexHolder>),
     RegexReplaceAll(Substitution<RegexHolder>),
+    RegexSwitch(Switch),
     RegexCapture(usize),
 
     // Format filters
@@ -101,6 +103,7 @@ impl Filter {
                 '=' => Ok(Self::RegexMatch(RegexHolder::parse(reader)?)),
                 's' => Ok(Self::RegexReplaceFirst(Substitution::parse_regex(reader)?)),
                 'S' => Ok(Self::RegexReplaceAll(Substitution::parse_regex(reader)?)),
+                '@' => Ok(Self::RegexSwitch(Switch::parse(reader)?)),
 
                 // Format filters
                 't' => Ok(Self::Trim),
@@ -167,6 +170,7 @@ impl Filter {
             Self::RegexMatch(regex) => Ok(regex.first_match(&value)),
             Self::RegexReplaceFirst(substitution) => Ok(substitution.replace_first(&value)),
             Self::RegexReplaceAll(substitution) => Ok(substitution.replace_all(&value)),
+            Self::RegexSwitch(switch) => Ok(switch.eval(&value).to_string()),
             Self::RegexCapture(number) => Ok(context.regex_capture(*number).to_string()),
 
             // Format filters
@@ -238,8 +242,15 @@ impl fmt::Display for Filter {
                 "Replace all matches of regular expression {}",
                 substitution
             ),
+            Self::RegexSwitch(switch) => {
+                write!(formatter, "Regular expression switch with {}", switch)
+            }
             Self::RegexCapture(number) => {
-                write!(formatter, "Regular expression capture #{}", number)
+                write!(
+                    formatter,
+                    "Capture group #{} of an external regular expression",
+                    number
+                )
             }
 
             // Format filters
@@ -273,6 +284,7 @@ mod tests {
     use crate::pattern::regex::RegexHolder;
     use crate::pattern::repetition::Repetition;
     use crate::pattern::substitution::Substitution;
+    use crate::pattern::switch::{Case, Switch};
     use crate::utils::AnyString;
     use regex::Regex;
 
@@ -583,6 +595,20 @@ mod tests {
         }
 
         #[test]
+        fn regex_switch() {
+            assert_eq!(
+                parse("@:\\d:digit:alpha"),
+                Ok(Filter::RegexSwitch(Switch {
+                    cases: vec![Case {
+                        matcher: RegexHolder(Regex::new("\\d").unwrap()),
+                        result: String::from("digit"),
+                    }],
+                    default: String::from("alpha")
+                }))
+            );
+        }
+
+        #[test]
         fn regex_capture() {
             assert_eq!(parse("0"), Ok(Filter::RegexCapture(0)));
             assert_eq!(parse("1"), Ok(Filter::RegexCapture(1)));
@@ -700,6 +726,7 @@ mod tests {
 
     mod eval {
         use super::*;
+        use crate::pattern::switch::Switch;
         use crate::pattern::testing::{assert_uuid, make_eval_context};
         use crate::utils::Empty;
         use std::path::MAIN_SEPARATOR;
@@ -939,6 +966,25 @@ mod tests {
         }
 
         #[test]
+        fn regex_switch() {
+            let filter = Filter::RegexSwitch(Switch {
+                cases: vec![Case {
+                    matcher: RegexHolder(Regex::new("\\d").unwrap()),
+                    result: String::from("digit"),
+                }],
+                default: String::from("alpha"),
+            });
+            assert_eq!(
+                filter.eval(String::from("1"), &make_eval_context()),
+                Ok(String::from("digit"))
+            );
+            assert_eq!(
+                filter.eval(String::from("a"), &make_eval_context()),
+                Ok(String::from("alpha"))
+            );
+        }
+
+        #[test]
         fn regex_capture() {
             assert_eq!(
                 Filter::RegexCapture(1).eval(String::new(), &make_eval_context()),
@@ -1070,6 +1116,7 @@ mod tests {
     mod display {
         use super::*;
         use crate::utils::Empty;
+        use indoc::indoc;
 
         #[test]
         fn working_dir() {
@@ -1232,10 +1279,32 @@ mod tests {
         }
 
         #[test]
+        fn regex_switch() {
+            assert_eq!(
+                Filter::RegexSwitch(Switch {
+                    cases: vec![Case {
+                        matcher: RegexHolder(Regex::new("\\d").unwrap()),
+                        result: String::from("digit"),
+                    }],
+                    default: String::from("alpha"),
+                })
+                .to_string(),
+                indoc! {"
+                    Regular expression switch with variable output:
+                    
+                        if input matches '\\d'
+                            output is 'digit'
+                        else
+                            output is 'alpha'"
+                }
+            );
+        }
+
+        #[test]
         fn regex_capture() {
             assert_eq!(
                 Filter::RegexCapture(1).to_string(),
-                "Regular expression capture #1"
+                "Capture group #1 of an external regular expression"
             );
         }
 

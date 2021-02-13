@@ -30,6 +30,7 @@ pub enum ErrorKind {
     ExpectedRegex,
     ExpectedRepetition,
     ExpectedSubstitution,
+    ExpectedSwitch,
     ExprStartInsideExpr,
     IntegerOverflow(String),
     PaddingPrefixInvalid(char, Option<Char>),
@@ -43,6 +44,8 @@ pub enum ErrorKind {
     RepetitionWithoutDelimiter,
     SubstitutionWithoutTarget(Char),
     SubstitutionRegexInvalid(AnyString),
+    SwitchRegexInvalid(AnyString),
+    SwitchWithoutMatcher(Char, usize),
     UnknownEscapeSequence(EscapeSequence),
     UnknownFilter(Char),
     UnmatchedExprEnd,
@@ -106,6 +109,10 @@ impl fmt::Display for ErrorKind {
                 formatter,
                 "Filter requires substitution ':A:B' as a parameter"
             ),
+            Self::ExpectedSwitch => write!(
+                formatter,
+                "Filter requires switch ':X1:Y1:...:Xn:Yn:D' as a parameter"
+            ),
             Self::ExprStartInsideExpr => {
                 write!(formatter, "Unescaped '{}' inside expression", EXPR_START)
             }
@@ -163,6 +170,24 @@ impl fmt::Display for ErrorKind {
                 formatter,
                 "Invalid regular expression in substitution: {}",
                 reason
+            ),
+            Self::SwitchRegexInvalid(reason) => write!(
+                formatter,
+                "Invalid regular expression in switch: {}",
+                reason
+            ),
+            Self::SwitchWithoutMatcher(Char::Raw(value), index) => write!(
+                formatter,
+                "Switch is missing value after delimiter '{}' #{}",
+                value,
+                index + 1
+            ),
+            Self::SwitchWithoutMatcher(Char::Escaped(_, sequence), index) => write!(
+                formatter,
+                "Switch is missing value after delimiter '{}{}' #{} (escape sequence)",
+                sequence[0],
+                sequence[1],
+                index + 1
             ),
             Self::UnknownEscapeSequence(sequence) => write!(
                 formatter,
@@ -315,6 +340,14 @@ mod tests {
         }
 
         #[test]
+        fn expected_switch() {
+            assert_eq!(
+                ErrorKind::ExpectedSwitch.to_string(),
+                "Filter requires switch ':X1:Y1:...:Xn:Yn:D' as a parameter"
+            );
+        }
+
+        #[test]
         fn expr_start_inside_expr() {
             assert_eq!(
                 ErrorKind::ExprStartInsideExpr.to_string(),
@@ -428,6 +461,26 @@ mod tests {
             assert_eq!(
                 ErrorKind::SubstitutionRegexInvalid(AnyString(String::from("abc"))).to_string(),
                 "Invalid regular expression in substitution: abc"
+            );
+        }
+
+        #[test]
+        fn switch_regex_invalid() {
+            assert_eq!(
+                ErrorKind::SwitchRegexInvalid(AnyString(String::from("abc"))).to_string(),
+                "Invalid regular expression in switch: abc"
+            );
+        }
+
+        #[test]
+        fn swith_without_matcher() {
+            assert_eq!(
+                ErrorKind::SwitchWithoutMatcher(Char::Raw('_'), 0).to_string(),
+                "Switch is missing value after delimiter '_' #1"
+            );
+            assert_eq!(
+                ErrorKind::SwitchWithoutMatcher(Char::Escaped('|', ['#', '|']), 1).to_string(),
+                "Switch is missing value after delimiter '#|' #2 (escape sequence)"
             );
         }
 

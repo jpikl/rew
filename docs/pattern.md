@@ -19,9 +19,9 @@ rew      # Also uses the default pattern
 
 By default, pattern characters are directly copied to output.
 
-| Input | Pattern | Output |
-| ----- | ------- | ------ |
-| *     | `abc`   | `abc`  |
+| Input   | Pattern | Output |
+| ------- | ------- | ------ |
+| *(any)* | `abc`   | `abc`  |
 
 Characters `{` and `}` form an expression which is evaluated and replaced in output.
 Empty expression `{}` evaluates directly to input value.

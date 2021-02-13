@@ -35,7 +35,7 @@ pub const FILTERS: &str = indoc! {r#"
 
   `nA-B`  From `A` to `B`           (`n` = normal indexing) 
   `nA+L`  From `A` with length `L`  (`N` = backward indexing) 
-  `nA-`   From `A` to end         (`A,B` = inclusive 1-based indices)
+  `nA-`   From `A` to end         (`A`, `B` = inclusive 1-based indices)
   `nA`    Character at `A`
 
 
@@ -48,11 +48,14 @@ pub const FILTERS: &str = indoc! {r#"
 
 # Regular expressions
 
-  `=E`         Match of regex `E`
-  `s:X:Y`      Replace match of `X` with `Y`  (`s` = first occurence)  
-  `s:X`        Remove match of `X`          (`S` = all occurences)
-  `0,1,2,...`  External capture group     (`$0,$1,$2,...` = `s/S` capture group)
+  `=E`     Match of regex `E`           (`:` = any separator)
+  `s:X:Y`  Replace match of `X` with `Y`  (`s` = first occurence)  
+  `s:X`    Remove match of `X`          (`S` = all occurences)
 
+   `@:X1:Y1:...:Xn:Yn:D`  Output `Yi` for first match of `Xi`, `D` for no match
+
+   `0`, `1`, `2`, ...     Capture group of an external regex
+   `$0`, `$1`, `$2`, ...  Capture group inside `s/S/@`
 
 # Formatting
 

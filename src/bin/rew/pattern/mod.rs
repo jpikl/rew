@@ -22,6 +22,7 @@ mod reader;
 mod regex;
 mod repetition;
 mod substitution;
+mod switch;
 mod symbols;
 #[cfg(test)]
 mod testing;

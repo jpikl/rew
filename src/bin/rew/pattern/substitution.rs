@@ -1,17 +1,11 @@
 use crate::pattern::char::Char;
 use crate::pattern::parse::{Error, ErrorKind, Result};
 use crate::pattern::reader::Reader;
-use crate::pattern::regex::RegexHolder;
+use crate::pattern::regex::{add_capture_group_brackets, RegexHolder};
 use crate::utils::{AnyString, Empty};
-use lazy_static::lazy_static;
 use regex::Regex;
-use std::borrow::Cow;
 use std::fmt;
 use std::ops::Range;
-
-lazy_static! {
-    static ref CAPTURE_GROUP_VAR_REGEX: Regex = Regex::new(r"\$(\d+)").unwrap();
-}
 
 #[derive(Debug, PartialEq)]
 pub struct Substitution<T> {
@@ -73,16 +67,12 @@ impl Substitution<RegexHolder> {
 
     pub fn replace_first(&self, value: &str) -> String {
         let replacement = add_capture_group_brackets(&self.replacement);
-        self.target
-            .0
-            .replace(value, replacement.as_ref())
-            .to_string()
+        self.target.replace(value, replacement.as_ref()).to_string()
     }
 
     pub fn replace_all(&self, value: &str) -> String {
         let replacement = add_capture_group_brackets(&self.replacement);
         self.target
-            .0
             .replace_all(value, replacement.as_ref())
             .to_string()
     }
@@ -113,14 +103,6 @@ pub fn parse_target_and_replacement(
             kind: ErrorKind::ExpectedSubstitution,
             range: reader.position()..reader.end(),
         })
-    }
-}
-
-fn add_capture_group_brackets(string: &str) -> Cow<str> {
-    if string.contains('$') {
-        CAPTURE_GROUP_VAR_REGEX.replace_all(string, r"$${${1}}")
-    } else {
-        Cow::Borrowed(string)
     }
 }
 
@@ -698,28 +680,6 @@ mod tests {
                 }
                 .to_string(),
                 "'([a-z]+)' with '_$1_'"
-            );
-        }
-    }
-
-    mod add_capture_group_brackets {
-        use super::*;
-
-        #[test]
-        fn zero() {
-            assert_eq!(add_capture_group_brackets("ab"), "ab");
-        }
-
-        #[test]
-        fn one() {
-            assert_eq!(add_capture_group_brackets("a$1b"), "a${1}b");
-        }
-
-        #[test]
-        fn multiple() {
-            assert_eq!(
-                add_capture_group_brackets("$1a$12b$123"),
-                "${1}a${12}b${123}"
             );
         }
     }

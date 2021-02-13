@@ -2,8 +2,23 @@ use crate::pattern::char::Char;
 use crate::pattern::parse::{Error, ErrorKind, Result};
 use crate::pattern::reader::Reader;
 use crate::utils::AnyString;
+use lazy_static::lazy_static;
 use regex::Regex;
+use std::borrow::Cow;
 use std::fmt;
+use std::ops::Deref;
+
+lazy_static! {
+    static ref CAPTURE_GROUP_VAR_REGEX: Regex = Regex::new(r"\$(\d+)").unwrap();
+}
+
+pub fn add_capture_group_brackets(string: &str) -> Cow<str> {
+    if string.contains('$') {
+        CAPTURE_GROUP_VAR_REGEX.replace_all(string, r"$${${1}}")
+    } else {
+        Cow::Borrowed(string)
+    }
+}
 
 #[derive(Debug)]
 pub struct RegexHolder(pub Regex);
@@ -37,6 +52,14 @@ impl RegexHolder {
     }
 }
 
+impl Deref for RegexHolder {
+    type Target = Regex;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
 impl PartialEq for RegexHolder {
     fn eq(&self, other: &Self) -> bool {
         self.0.as_str() == other.0.as_str()
@@ -53,93 +76,119 @@ impl fmt::Display for RegexHolder {
 mod tests {
     use super::*;
 
-    mod parse {
+    mod add_capture_group_brackets {
         use super::*;
 
         #[test]
-        fn empty() {
-            let mut reader = Reader::from("");
-            assert_eq!(
-                RegexHolder::parse(&mut reader),
-                Err(Error {
-                    kind: ErrorKind::ExpectedRegex,
-                    range: 0..0,
-                })
-            );
-            assert_eq!(reader.position(), 0);
+        fn zero() {
+            assert_eq!(add_capture_group_brackets("ab"), "ab");
         }
 
         #[test]
-        fn valid() {
-            let mut reader = Reader::from("\\d+");
-            assert_eq!(
-                RegexHolder::parse(&mut reader),
-                Ok(RegexHolder(Regex::new("\\d+").unwrap()))
-            );
-            assert_eq!(reader.position(), 3);
+        fn one() {
+            assert_eq!(add_capture_group_brackets("a$1b"), "a${1}b");
         }
 
         #[test]
-        fn invalid() {
-            let mut reader = Reader::from("[0-9");
+        fn multiple() {
             assert_eq!(
-                RegexHolder::parse(&mut reader),
-                Err(Error {
-                    kind: ErrorKind::RegexInvalid(AnyString(String::from(
-                        "This string is not compared by assertion"
-                    ))),
-                    range: 0..4,
-                })
+                add_capture_group_brackets("$1a$12b$123"),
+                "${1}a${12}b${123}"
             );
-            assert_eq!(reader.position(), 4);
         }
     }
 
-    mod first_match {
+    mod regex_holder {
         use super::*;
 
+        mod parse {
+            use super::*;
+
+            #[test]
+            fn empty() {
+                let mut reader = Reader::from("");
+                assert_eq!(
+                    RegexHolder::parse(&mut reader),
+                    Err(Error {
+                        kind: ErrorKind::ExpectedRegex,
+                        range: 0..0,
+                    })
+                );
+                assert_eq!(reader.position(), 0);
+            }
+
+            #[test]
+            fn valid() {
+                let mut reader = Reader::from("\\d+");
+                assert_eq!(
+                    RegexHolder::parse(&mut reader),
+                    Ok(RegexHolder(Regex::new("\\d+").unwrap()))
+                );
+                assert_eq!(reader.position(), 3);
+            }
+
+            #[test]
+            fn invalid() {
+                let mut reader = Reader::from("[0-9");
+                assert_eq!(
+                    RegexHolder::parse(&mut reader),
+                    Err(Error {
+                        kind: ErrorKind::RegexInvalid(AnyString(String::from(
+                            "This string is not compared by assertion"
+                        ))),
+                        range: 0..4,
+                    })
+                );
+                assert_eq!(reader.position(), 4);
+            }
+        }
+
+        mod first_match {
+            use super::*;
+
+            #[test]
+            fn empty() {
+                assert_eq!(
+                    RegexHolder(Regex::new("\\d+").unwrap()).first_match(""),
+                    String::new()
+                );
+            }
+
+            #[test]
+            fn none() {
+                assert_eq!(
+                    RegexHolder(Regex::new("\\d+").unwrap()).first_match("abc"),
+                    String::new()
+                );
+            }
+
+            #[test]
+            fn first() {
+                assert_eq!(
+                    RegexHolder(Regex::new("\\d+").unwrap()).first_match("abc123def456"),
+                    String::from("123")
+                );
+            }
+        }
+
         #[test]
-        fn empty() {
+        fn partial_eq() {
             assert_eq!(
-                RegexHolder(Regex::new("\\d+").unwrap()).first_match(""),
-                String::new()
+                RegexHolder(Regex::new("[a-z]+").unwrap()),
+                RegexHolder(Regex::new("[a-z]+").unwrap())
+            );
+            assert_ne!(
+                RegexHolder(Regex::new("[a-z]+").unwrap()),
+                RegexHolder(Regex::new("[a-z]*").unwrap())
             );
         }
 
         #[test]
-        fn none() {
+        fn display() {
             assert_eq!(
-                RegexHolder(Regex::new("\\d+").unwrap()).first_match("abc"),
-                String::new()
+                RegexHolder(Regex::new("[a-z]+").unwrap()).to_string(),
+                String::from("[a-z]+")
             );
         }
-
-        #[test]
-        fn first() {
-            assert_eq!(
-                RegexHolder(Regex::new("\\d+").unwrap()).first_match("abc123def456"),
-                String::from("123")
-            );
-        }
-    }
-
-    #[test]
-    fn partial_eq() {
-        assert_eq!(
-            RegexHolder(Regex::new("[a-z]+").unwrap()),
-            RegexHolder(Regex::new("[a-z]+").unwrap())
-        );
-        assert_ne!(
-            RegexHolder(Regex::new("[a-z]+").unwrap()),
-            RegexHolder(Regex::new("[a-z]*").unwrap())
-        );
-    }
-
-    #[test]
-    fn display() {
-        assert_eq!(
-            RegexHolder(Regex::new("[a-z]+").unwrap()).to_string(),
-            String::from("[a-z]+")
-        );
     }
 }
