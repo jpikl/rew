@@ -75,7 +75,7 @@ impl Substitution<RegexHolder> {
         let replacement = add_capture_group_brackets(&self.replacement);
         self.target
             .0
-            .replacen(value, 1, replacement.as_ref())
+            .replace(value, replacement.as_ref())
             .to_string()
     }
 
