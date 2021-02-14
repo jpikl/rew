@@ -107,8 +107,8 @@ impl Filter {
 
                 // Format filters
                 't' => Ok(Self::Trim),
-                'l' => Ok(Self::ToLowercase),
-                'L' => Ok(Self::ToUppercase),
+                'v' => Ok(Self::ToLowercase),
+                '^' => Ok(Self::ToUppercase),
                 'i' => Ok(Self::ToAscii),
                 'I' => Ok(Self::RemoveNonAscii),
                 '<' => Ok(Self::LeftPad(Padding::parse(reader, '<')?)),
@@ -623,12 +623,12 @@ mod tests {
 
         #[test]
         fn to_lowercase() {
-            assert_eq!(parse("l"), Ok(Filter::ToLowercase));
+            assert_eq!(parse("v"), Ok(Filter::ToLowercase));
         }
 
         #[test]
         fn to_uppercase() {
-            assert_eq!(parse("L"), Ok(Filter::ToUppercase));
+            assert_eq!(parse("^"), Ok(Filter::ToUppercase));
         }
 
         #[test]

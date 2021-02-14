@@ -3,8 +3,8 @@
 | Filter | Description                            |
 | ------ | -------------------------------------- |
 | `t`    | Trim white-spaces from both sides.     |
-| `l`    | Convert to lowercase.                  |
-| `L`    | Convert to uppercase.                  |
+| `v`    | Convert to lowercase.                  |
+| `^`    | Convert to uppercase.                  |
 | `i`    | Convert non-ASCII characters to ASCII. |
 | `I`    | Remove non-ASCII characters.           |
 | `<<M`  | Left pad with mask `M`.                |
@@ -17,8 +17,8 @@ Examples:
 | Input      |  Pattern     | Output   |
 | ---------- | ------------ | -------- |
 | `..a..b..` | `{t}`        | `a..b` *(dots are white-spaces)* |
-| `aBčĎ`     | `{l}`        | `abčď`   |
-| `aBčĎ`     | `{L}`        | `ABČĎ`   |
+| `aBčĎ`     | `{v}`        | `abčď`   |
+| `aBčĎ`     | `{^}`        | `ABČĎ`   |
 | `aBčĎ`     | `{a}`        | `aBcD`   |
 | `aBčĎ`     | `{A}`        | `aB`     |
 | `abc`      | `{<<123456}` | `123abc` |

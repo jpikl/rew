@@ -60,7 +60,7 @@ pub const FILTERS: &str = indoc! {r#"
 # Formatting
 
   `t`     Trim
-  `l`     To lowercase    `L`  To uppercase
+  `v`     To lowercase    `^`  To uppercase
   `i`     To ASCII        `I`  Remove non-ASCII chars
 
   `<<M`   Left pad with `M`            (`>>` or `>` to right pad)

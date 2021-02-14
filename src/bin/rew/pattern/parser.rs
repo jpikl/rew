@@ -393,7 +393,7 @@ mod tests {
         #[test]
         fn missing_pipe_or_expr_end_2() {
             assert_eq!(
-                Parser::from("{f|l").parse_items(),
+                Parser::from("{f|v").parse_items(),
                 Err(Error {
                     kind: ErrorKind::UnmatchedExprStart,
                     range: 0..1,
@@ -404,7 +404,7 @@ mod tests {
         #[test]
         fn filter_after_filter_2() {
             assert_eq!(
-                Parser::from("{f|ll").parse_items(),
+                Parser::from("{f|vv").parse_items(),
                 Err(Error {
                     kind: ErrorKind::ExpectedPipeOrExprEnd,
                     range: 4..5,
@@ -450,7 +450,7 @@ mod tests {
         #[test]
         fn complex_pattern() {
             assert_eq!(
-                Parser::from("image_{c|<3:0}.{e|l|r_e}2").parse_items(),
+                Parser::from("image_{c|<3:0}.{e|v|r_e}2").parse_items(),
                 Ok(vec![
                     Parsed {
                         value: Item::Constant(String::from("image_")),

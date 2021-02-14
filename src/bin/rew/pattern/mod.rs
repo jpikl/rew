@@ -135,9 +135,9 @@ mod tests {
         #[test]
         fn default_escape() {
             assert_eq!(
-                Pattern::parse("_#{{f|l}#}_", None),
+                Pattern::parse("_#{{f|v}#}_", None),
                 Ok(Pattern {
-                    source: String::from("_#{{f|l}#}_"),
+                    source: String::from("_#{{f|v}#}_"),
                     items: vec![
                         Parsed {
                             value: Item::Constant(String::from("_{")),
@@ -168,9 +168,9 @@ mod tests {
         #[test]
         fn custom_escape() {
             assert_eq!(
-                Pattern::parse("_\\{{f|l}\\}_", Some('\\')),
+                Pattern::parse("_\\{{f|v}\\}_", Some('\\')),
                 Ok(Pattern {
-                    source: String::from("_\\{{f|l}\\}_"),
+                    source: String::from("_\\{{f|v}\\}_"),
                     items: vec![
                         Parsed {
                             value: Item::Constant(String::from("_{")),

@@ -13,7 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Using capture group `0` filter is no longer considered error.  
+- *To lowercase* filter renamed from `l` to `v`.
+- *To uppercase* filter renamed from `L` to `^`.
+- Using capture group `0` filter is no longer considered error.
 - Simplified error message for an invalid range.
 - Simplified output of `--help-pattern` and `--help-filters` flags.
 - Output of `-h, --help` flag is organized into sections.
@@ -21,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- `--help-filters` flag displays correct name of *ascii* and *uppercase* filters.
+- `--help-filters` flag displays correct name of *ascii* filters.
 
 ## [0.1.0] - 2020-12-13
 
