@@ -2,7 +2,7 @@ name: Deploy docs
 
 on:
   push:
-    branches: [ deploy-docs ]
+    branches: [ stable-docs ]
     paths: [ 'docs/**' ]
 
 jobs:
