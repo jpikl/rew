@@ -1,6 +1,6 @@
 [package]
 name = "rew"
-version = "0.2.0"
+version = "0.3.0"
 description = "A text processing CLI tool that rewrites FS paths according to a pattern."
 categories = ["command-line-utilities", "text-processing", "filesystem"]
 keywords = ["tool", "pattern", "regex", "rename", "path"]
