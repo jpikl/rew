@@ -54,7 +54,7 @@ pub const FILTERS: &str = indoc! {r#"
 
    `@:X1:Y1:...:Xn:Yn:D`  Output `Yi` for first match of `Xi`, `D` for no match
 
-   `0`, `1`, `2`, ...     Capture group of an external regex
+   `0`, `1`, `2`, ...     Capture group of a global regex
    `$0`, `$1`, `$2`, ...  Capture group inside `s/S/@`
 
 # Formatting

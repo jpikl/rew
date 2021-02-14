@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Simplified output of `--help-pattern` and `--help-filters` flags.
 - Output of `-h, --help` flag is organized into sections.
 - Output of `-h, --help` flag uses more colors in descriptions.
+- Regular expression `-e. --regex` / `-E. --regex-filename` is now called *global* instead of *external*.
 
 ### Fixed
 

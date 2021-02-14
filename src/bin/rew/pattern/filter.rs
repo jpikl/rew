@@ -248,7 +248,7 @@ impl fmt::Display for Filter {
             Self::RegexCapture(number) => {
                 write!(
                     formatter,
-                    "Capture group #{} of an external regular expression",
+                    "Capture group #{} of a global regular expression",
                     number
                 )
             }
@@ -1304,7 +1304,7 @@ mod tests {
         fn regex_capture() {
             assert_eq!(
                 Filter::RegexCapture(1).to_string(),
-                "Capture group #1 of an external regular expression"
+                "Capture group #1 of a global regular expression"
             );
         }
 
