@@ -61,7 +61,7 @@ pub const FILTERS: &str = indoc! {r#"
 
   `t`     Trim
   `l`     To lowercase    `L`  To uppercase
-  `a`     To ASCII        `A`  Remove non-ASCII chars
+  `i`     To ASCII        `I`  Remove non-ASCII chars
 
   `<<M`   Left pad with `M`            (`>>` or `>` to right pad)
   `<N:M`  Left pad `N` times with `M`    (`:` = any separator)
