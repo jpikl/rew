@@ -1,7 +1,7 @@
 use indoc::indoc;
 
 pub const PATTERN: &str = indoc! {r#"
-# Syntax
+# SYNTAX
 
   `abc`         Constant  
   `{}`          Empty expression     
@@ -9,7 +9,7 @@ pub const PATTERN: &str = indoc! {r#"
   `{x|y|z}`     Expression with multiple filters  
   `a{}b{x|y}c`  Example of a more complex pattern
 
-# Rules
+# RULES
 
   Constants are directly copied to output.
   Expression is replaced by input value
@@ -17,7 +17,7 @@ pub const PATTERN: &str = indoc! {r#"
 "#};
 
 pub const FILTERS: &str = indoc! {r#"
-# Paths
+# PATH
 
   `d`  Parent directory             `D`  Remove last name
   `f`  File name                    `F`  Last name
@@ -31,7 +31,7 @@ pub const FILTERS: &str = indoc! {r#"
   `z`  Ensure trailing separator    `Z`  Remove trailing separator
 
 
-# Substrings
+# SUBSTRINGS
 
   `nA-B`  From `A` to `B`           (`n` = normal indexing) 
   `nA+L`  From `A` with length `L`  (`N` = backward indexing) 
@@ -39,25 +39,25 @@ pub const FILTERS: &str = indoc! {r#"
   `nA`    Character at `A`
 
 
-# Replacement
+# REPLACEMENT
 
   `r:X:Y`  Replace `X` with `Y`      (`r` = first occurence)
   `r:X`    Remove `X`              (`R` = all occurences)
   `?D`     Replace empty with `D`  (`:` = any separator)
 
 
-# Regular expressions
+# REGULAR EXPRESSIONS
 
   `=E`     Match of regex `E`           (`:` = any separator)
   `s:X:Y`  Replace match of `X` with `Y`  (`s` = first occurence)  
   `s:X`    Remove match of `X`          (`S` = all occurences)
 
-   `@:X1:Y1:...:Xn:Yn:D`  Output `Yi` for first match of `Xi`, `D` for no match
+  `@:X1:Y1:...:Xn:Yn:D`  Output `Yi` for first match of `Xi`, `D` for no match
 
-   `0`, `1`, `2`, ...     Capture group of a global regex
-   `$0`, `$1`, `$2`, ...  Capture group inside `s/S/@`
+  `0`, `1`, `2`, ...     Capture group of a global regex
+  `$0`, `$1`, `$2`, ...  Capture group inside `s/S/@`
 
-# Formatting
+# FORMATTING
 
   `t`     Trim
   `v`     To lowercase    `^`  To uppercase
@@ -67,9 +67,9 @@ pub const FILTERS: &str = indoc! {r#"
   `<N:M`  Left pad `N` times with `M`    (`:` = any separator)
 
 
-# Generators
+# GENERATORS
 
-  `*N:V`  Repeat `N` times `V`  (`:` = any separator)
+  `*N:V`  Repeat `N` times `V`       (`:` = any separator)
 
   `c`     Local counter           `C`  Global counter
   `u`     Random 64-bit number    `U`  Random UUID
