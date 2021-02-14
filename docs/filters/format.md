@@ -19,8 +19,8 @@ Examples:
 | `..a..b..` | `{t}`        | `a..b` *(dots are white-spaces)* |
 | `aBčĎ`     | `{v}`        | `abčď`   |
 | `aBčĎ`     | `{^}`        | `ABČĎ`   |
-| `aBčĎ`     | `{a}`        | `aBcD`   |
-| `aBčĎ`     | `{A}`        | `aB`     |
+| `aBčĎ`     | `{i}`        | `aBcD`   |
+| `aBčĎ`     | `{I}`        | `aB`     |
 | `abc`      | `{<<123456}` | `123abc` |
 | `abc`      | `{>>123456}` | `abc456` |
 | `abc`      | `{<3:XY}`    | `XYXabc` |
