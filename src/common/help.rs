@@ -1,8 +1,7 @@
 use crate::color::spec_color;
-use crate::utils::str_from_utf8;
+use crate::utils::{into_static_str, str_from_utf8};
 use lazy_static::lazy_static;
 use std::io::{Result, Write};
-use std::sync::Mutex;
 use termcolor::{Buffer, Color, WriteColor};
 
 const HEADING_PREFIX: &str = "# ";
@@ -16,30 +15,14 @@ const PRIMARY_COLOR: Color = Color::Yellow;
 const SECONDARY_COLOR: Color = Color::Cyan;
 const CODE_COLOR: Color = Color::Green;
 
-static mut STATIC_HIGHLIGHTS: Vec<String> = Vec::new();
-
 lazy_static! {
-    static ref STATIC_HIGHLIGHTS_MUTEX: Mutex<()> = Mutex::new(());
-    static ref STATIC_HIGHLIGHTS_ENABLED: bool = atty::is(atty::Stream::Stdout)
+    static ref COLORED_HELP_ENABLED: bool = atty::is(atty::Stream::Stdout)
         && std::env::args().any(|arg| arg == "-h" || arg == "--help");
 }
 
-pub fn highlight_static(text: &str) -> &str {
-    if *STATIC_HIGHLIGHTS_ENABLED {
-        match highlight_to_string(text) {
-            Ok(result) => unsafe {
-                // Well, this is ugly but the current usage should be actually safe:
-                // 1) It's used only by cli.rs to generate static strings for clap attributes.
-                // 2) Values are never modified after being pushed to vector.
-                let _lock = STATIC_HIGHLIGHTS_MUTEX.lock(); // Lock might not be actually needed in our case
-                STATIC_HIGHLIGHTS.push(result);
-                STATIC_HIGHLIGHTS
-                    .last()
-                    .expect("Expected at least one static highlight result")
-                    .as_str()
-            },
-            Err(_) => text,
-        }
+pub fn highlight_static(text: &'static str) -> &'static str {
+    if *COLORED_HELP_ENABLED {
+        highlight_to_string(text).map_or(text, into_static_str)
     } else {
         text
     }
