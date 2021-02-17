@@ -7,7 +7,7 @@ use crate::pattern::reader::Reader;
 use crate::pattern::regex::RegexHolder;
 use crate::pattern::repetition::Repetition;
 use crate::pattern::substitution::{EmptySubstitution, RegexSubstitution, StringSubstitution};
-use crate::pattern::switch::Switch;
+use crate::pattern::switch::RegexSwitch;
 use crate::pattern::{eval, parse, path, uuid};
 use std::fmt;
 use unidecode::unidecode;
@@ -44,7 +44,7 @@ pub enum Filter {
     RegexMatch(RegexHolder),
     RegexReplaceFirst(RegexSubstitution),
     RegexReplaceAll(RegexSubstitution),
-    RegexSwitch(Switch),
+    RegexSwitch(RegexSwitch),
     RegexCapture(usize),
 
     // Format filters
@@ -102,7 +102,7 @@ impl Filter {
                 '=' => Ok(Self::RegexMatch(RegexHolder::parse(reader)?)),
                 's' => Ok(Self::RegexReplaceFirst(RegexSubstitution::parse(reader)?)),
                 'S' => Ok(Self::RegexReplaceAll(RegexSubstitution::parse(reader)?)),
-                '@' => Ok(Self::RegexSwitch(Switch::parse(reader)?)),
+                '@' => Ok(Self::RegexSwitch(RegexSwitch::parse(reader)?)),
 
                 // Format filters
                 't' => Ok(Self::Trim),
@@ -283,7 +283,7 @@ mod tests {
     use crate::pattern::regex::RegexHolder;
     use crate::pattern::repetition::Repetition;
     use crate::pattern::substitution::Substitution;
-    use crate::pattern::switch::{Case, Switch};
+    use crate::pattern::switch::{Case, RegexSwitch};
     use crate::utils::AnyString;
     use regex::Regex;
 
@@ -597,7 +597,7 @@ mod tests {
         fn regex_switch() {
             assert_eq!(
                 parse("@:\\d:digit:alpha"),
-                Ok(Filter::RegexSwitch(Switch {
+                Ok(Filter::RegexSwitch(RegexSwitch {
                     cases: vec![Case {
                         matcher: RegexHolder(Regex::new("\\d").unwrap()),
                         result: String::from("digit"),
@@ -725,7 +725,7 @@ mod tests {
 
     mod eval {
         use super::*;
-        use crate::pattern::switch::Switch;
+        use crate::pattern::switch::RegexSwitch;
         use crate::pattern::testing::{assert_uuid, make_eval_context};
         use crate::utils::Empty;
         use std::path::MAIN_SEPARATOR;
@@ -966,7 +966,7 @@ mod tests {
 
         #[test]
         fn regex_switch() {
-            let filter = Filter::RegexSwitch(Switch {
+            let filter = Filter::RegexSwitch(RegexSwitch {
                 cases: vec![Case {
                     matcher: RegexHolder(Regex::new("\\d").unwrap()),
                     result: String::from("digit"),
@@ -1280,7 +1280,7 @@ mod tests {
         #[test]
         fn regex_switch() {
             assert_eq!(
-                Filter::RegexSwitch(Switch {
+                Filter::RegexSwitch(RegexSwitch {
                     cases: vec![Case {
                         matcher: RegexHolder(Regex::new("\\d").unwrap()),
                         result: String::from("digit"),
