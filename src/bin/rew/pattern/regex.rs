@@ -5,6 +5,7 @@ use crate::utils::AnyString;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::borrow::Cow;
+use std::convert::TryFrom;
 use std::fmt;
 use std::ops::Deref;
 
@@ -25,22 +26,19 @@ pub struct RegexHolder(pub Regex);
 
 impl RegexHolder {
     pub fn parse(reader: &mut Reader<Char>) -> Result<Self> {
-        let position = reader.position();
+        let value_start = reader.position();
         let value = reader.read_to_end();
 
         if value.is_empty() {
-            return Err(Error {
+            Err(Error {
                 kind: ErrorKind::ExpectedRegex,
-                range: position..position,
-            });
-        }
-
-        match Regex::new(&value.to_string()) {
-            Ok(regex) => Ok(Self(regex)),
-            Err(error) => Err(Error {
-                kind: ErrorKind::RegexInvalid(AnyString(error.to_string())),
-                range: position..reader.position(),
-            }),
+                range: value_start..value_start,
+            })
+        } else {
+            Self::try_from(value.to_string()).map_err(|kind| Error {
+                kind,
+                range: value_start..reader.position(),
+            })
         }
     }
 
@@ -48,6 +46,17 @@ impl RegexHolder {
         match self.0.find(value) {
             Some(result) => result.as_str().to_string(),
             None => String::new(),
+        }
+    }
+}
+
+impl TryFrom<String> for RegexHolder {
+    type Error = ErrorKind;
+
+    fn try_from(value: String) -> std::result::Result<Self, Self::Error> {
+        match Regex::new(&value) {
+            Ok(regex) => Ok(Self(regex)),
+            Err(error) => Err(ErrorKind::RegexInvalid(AnyString(error.to_string()))),
         }
     }
 }
@@ -101,6 +110,28 @@ mod tests {
     mod regex_holder {
         use super::*;
 
+        mod try_from {
+            use super::*;
+
+            #[test]
+            fn valid() {
+                assert_eq!(
+                    RegexHolder::try_from(String::from("[0-9]")),
+                    Ok(RegexHolder(Regex::new("[0-9]").unwrap()))
+                );
+            }
+
+            #[test]
+            fn invalid() {
+                assert_eq!(
+                    RegexHolder::try_from(String::from("[0-9")),
+                    Err(ErrorKind::RegexInvalid(AnyString(String::from(
+                        "This string is not compared by assertion"
+                    ))))
+                );
+            }
+        }
+
         mod parse {
             use super::*;
 
@@ -119,12 +150,12 @@ mod tests {
 
             #[test]
             fn valid() {
-                let mut reader = Reader::from("\\d+");
+                let mut reader = Reader::from("[0-9]");
                 assert_eq!(
                     RegexHolder::parse(&mut reader),
-                    Ok(RegexHolder(Regex::new("\\d+").unwrap()))
+                    Ok(RegexHolder(Regex::new("[0-9]").unwrap()))
                 );
-                assert_eq!(reader.position(), 3);
+                assert_eq!(reader.position(), 5);
             }
 
             #[test]

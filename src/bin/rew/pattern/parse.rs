@@ -1,6 +1,7 @@
 use crate::pattern::char::{Char, EscapeSequence};
 use crate::pattern::symbols::{EXPR_END, EXPR_START, LENGTH, PIPE, RANGE};
 use crate::utils::{AnyString, HasRange};
+use std::convert::Infallible;
 use std::ops::Range;
 use std::{error, fmt, result};
 
@@ -43,7 +44,6 @@ pub enum ErrorKind {
     RepetitionDigitDelimiter(char),
     RepetitionWithoutDelimiter,
     SubstitutionWithoutTarget(Char),
-    SubstitutionRegexInvalid(AnyString),
     SwitchRegexInvalid(AnyString),
     SwitchWithoutMatcher(Char, usize),
     UnknownEscapeSequence(EscapeSequence),
@@ -58,6 +58,12 @@ impl error::Error for Error {}
 impl HasRange for Error {
     fn range(&self) -> &Range<usize> {
         &self.range
+    }
+}
+
+impl From<Infallible> for ErrorKind {
+    fn from(_: Infallible) -> Self {
+        unreachable!("Infallible to parse::ErrorKind conversion should never happen");
     }
 }
 
@@ -165,11 +171,6 @@ impl fmt::Display for ErrorKind {
                 formatter,
                 "Substitution is missing value after delimiter '{}{}' (escape sequence)",
                 sequence[0], sequence[1]
-            ),
-            Self::SubstitutionRegexInvalid(reason) => write!(
-                formatter,
-                "Invalid regular expression in substitution: {}",
-                reason
             ),
             Self::SwitchRegexInvalid(reason) => write!(
                 formatter,
@@ -453,14 +454,6 @@ mod tests {
             assert_eq!(
                 ErrorKind::SubstitutionWithoutTarget(Char::Escaped('|', ['#', '|'])).to_string(),
                 "Substitution is missing value after delimiter '#|' (escape sequence)"
-            );
-        }
-
-        #[test]
-        fn substitution_regex_invalid() {
-            assert_eq!(
-                ErrorKind::SubstitutionRegexInvalid(AnyString(String::from("abc"))).to_string(),
-                "Invalid regular expression in substitution: abc"
             );
         }
 

@@ -6,10 +6,9 @@ use crate::pattern::padding::Padding;
 use crate::pattern::reader::Reader;
 use crate::pattern::regex::RegexHolder;
 use crate::pattern::repetition::Repetition;
-use crate::pattern::substitution::Substitution;
+use crate::pattern::substitution::{EmptySubstitution, RegexSubstitution, StringSubstitution};
 use crate::pattern::switch::Switch;
 use crate::pattern::{eval, parse, path, uuid};
-use crate::utils::Empty;
 use std::fmt;
 use unidecode::unidecode;
 
@@ -37,14 +36,14 @@ pub enum Filter {
     SubstringBackward(IndexRange),
 
     // Replace filters
-    ReplaceFirst(Substitution<String>),
-    ReplaceAll(Substitution<String>),
-    ReplaceEmpty(Substitution<Empty>),
+    ReplaceFirst(StringSubstitution),
+    ReplaceAll(StringSubstitution),
+    ReplaceEmpty(EmptySubstitution),
 
     // Regex filters
     RegexMatch(RegexHolder),
-    RegexReplaceFirst(Substitution<RegexHolder>),
-    RegexReplaceAll(Substitution<RegexHolder>),
+    RegexReplaceFirst(RegexSubstitution),
+    RegexReplaceAll(RegexSubstitution),
     RegexSwitch(Switch),
     RegexCapture(usize),
 
@@ -95,14 +94,14 @@ impl Filter {
                 'N' => Ok(Self::SubstringBackward(IndexRange::parse(reader)?)),
 
                 // Replace filters
-                'r' => Ok(Self::ReplaceFirst(Substitution::parse_string(reader)?)),
-                'R' => Ok(Self::ReplaceAll(Substitution::parse_string(reader)?)),
-                '?' => Ok(Self::ReplaceEmpty(Substitution::parse_empty(reader)?)),
+                'r' => Ok(Self::ReplaceFirst(StringSubstitution::parse(reader)?)),
+                'R' => Ok(Self::ReplaceAll(StringSubstitution::parse(reader)?)),
+                '?' => Ok(Self::ReplaceEmpty(EmptySubstitution::parse(reader)?)),
 
                 // Regex filters
                 '=' => Ok(Self::RegexMatch(RegexHolder::parse(reader)?)),
-                's' => Ok(Self::RegexReplaceFirst(Substitution::parse_regex(reader)?)),
-                'S' => Ok(Self::RegexReplaceAll(Substitution::parse_regex(reader)?)),
+                's' => Ok(Self::RegexReplaceFirst(RegexSubstitution::parse(reader)?)),
+                'S' => Ok(Self::RegexReplaceAll(RegexSubstitution::parse(reader)?)),
                 '@' => Ok(Self::RegexSwitch(Switch::parse(reader)?)),
 
                 // Format filters
@@ -552,7 +551,7 @@ mod tests {
             assert_eq!(
                 parse("s/[0-9+/cd"),
                 Err(Error {
-                    kind: ErrorKind::SubstitutionRegexInvalid(AnyString(String::from(
+                    kind: ErrorKind::RegexInvalid(AnyString(String::from(
                         "This string is not compared by assertion"
                     ))),
                     range: 2..7,
@@ -586,7 +585,7 @@ mod tests {
             assert_eq!(
                 parse("S/[0-9+/cd"),
                 Err(Error {
-                    kind: ErrorKind::SubstitutionRegexInvalid(AnyString(String::from(
+                    kind: ErrorKind::RegexInvalid(AnyString(String::from(
                         "This string is not compared by assertion"
                     ))),
                     range: 2..7,
