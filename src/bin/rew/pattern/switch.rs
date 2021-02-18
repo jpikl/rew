@@ -2,9 +2,8 @@ use crate::pattern::char::{AsChar, Char};
 use crate::pattern::parse::{Error, ErrorKind, Result};
 use crate::pattern::reader::Reader;
 use crate::pattern::regex::{add_capture_group_brackets, RegexHolder};
-use crate::utils::AnyString;
-use regex::Regex;
 use std::borrow::Cow;
+use std::convert::TryFrom;
 use std::fmt;
 
 #[derive(Debug, PartialEq)]
@@ -41,16 +40,11 @@ impl RegexSwitch {
                         });
                     }
 
-                    // There was a separator after value
-                    let matcher = match Regex::new(&value) {
-                        Ok(regex) => RegexHolder(regex),
-                        Err(error) => {
-                            return Err(Error {
-                                kind: ErrorKind::SwitchRegexInvalid(AnyString(error.to_string())),
-                                range: value_start..value_end,
-                            })
-                        }
-                    };
+                    // There was a delimiter after value
+                    let matcher = RegexHolder::try_from(value).map_err(|kind| Error {
+                        kind,
+                        range: value_start..value_end,
+                    })?;
 
                     let result = reader.read_until(&delimiter).to_string();
                     cases.push(Case { matcher, result })
@@ -115,6 +109,8 @@ impl fmt::Display for RegexSwitch {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::utils::AnyString;
+    use regex::Regex;
 
     mod parse {
         use super::*;
@@ -133,7 +129,7 @@ mod tests {
         }
 
         #[test]
-        fn separator() {
+        fn delimiter() {
             let mut reader = Reader::from(":");
             assert_eq!(
                 RegexSwitch::parse(&mut reader),
@@ -146,7 +142,7 @@ mod tests {
         }
 
         #[test]
-        fn separator_separator() {
+        fn delimiter_delimiter() {
             let mut reader = Reader::from("::");
             assert_eq!(
                 RegexSwitch::parse(&mut reader),
@@ -177,7 +173,7 @@ mod tests {
             assert_eq!(
                 RegexSwitch::parse(&mut reader),
                 Err(Error {
-                    kind: ErrorKind::SwitchRegexInvalid(AnyString(String::from(
+                    kind: ErrorKind::RegexInvalid(AnyString(String::from(
                         "This string is not compared by assertion"
                     ))),
                     range: 1..7,
@@ -219,7 +215,7 @@ mod tests {
         }
 
         #[test]
-        fn matcher_result_separator() {
+        fn matcher_result_delimiter() {
             let mut reader = Reader::from(":^[a-z]+$:lower:");
             assert_eq!(
                 RegexSwitch::parse(&mut reader),
@@ -235,7 +231,7 @@ mod tests {
         }
 
         #[test]
-        fn matcher_separator() {
+        fn matcher_delimiter() {
             let mut reader = Reader::from(":^[a-z]+$::");
             assert_eq!(
                 RegexSwitch::parse(&mut reader),
@@ -251,7 +247,7 @@ mod tests {
         }
 
         #[test]
-        fn matcher_separator_separator() {
+        fn matcher_delimiter_delimiter() {
             let mut reader = Reader::from(":^[a-z]+$:::");
             assert_eq!(
                 RegexSwitch::parse(&mut reader),
@@ -285,7 +281,7 @@ mod tests {
             assert_eq!(
                 RegexSwitch::parse(&mut reader),
                 Err(Error {
-                    kind: ErrorKind::SwitchRegexInvalid(AnyString(String::from(
+                    kind: ErrorKind::RegexInvalid(AnyString(String::from(
                         "This string is not compared by assertion"
                     ))),
                     range: 16..22,
@@ -339,7 +335,7 @@ mod tests {
         }
 
         #[test]
-        fn matcher_result_matcher_result_separator() {
+        fn matcher_result_matcher_result_delimiter() {
             let mut reader = Reader::from(":^[a-z]+$:lower:^[A-Z]+$:upper:");
             assert_eq!(
                 RegexSwitch::parse(&mut reader),

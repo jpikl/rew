@@ -44,7 +44,6 @@ pub enum ErrorKind {
     RepetitionDigitDelimiter(char),
     RepetitionWithoutDelimiter,
     SubstitutionWithoutTarget(Char),
-    SwitchRegexInvalid(AnyString),
     SwitchWithoutMatcher(Char, usize),
     UnknownEscapeSequence(EscapeSequence),
     UnknownFilter(Char),
@@ -171,11 +170,6 @@ impl fmt::Display for ErrorKind {
                 formatter,
                 "Substitution is missing value after delimiter '{}{}' (escape sequence)",
                 sequence[0], sequence[1]
-            ),
-            Self::SwitchRegexInvalid(reason) => write!(
-                formatter,
-                "Invalid regular expression in switch: {}",
-                reason
             ),
             Self::SwitchWithoutMatcher(Char::Raw(value), index) => write!(
                 formatter,
@@ -454,14 +448,6 @@ mod tests {
             assert_eq!(
                 ErrorKind::SubstitutionWithoutTarget(Char::Escaped('|', ['#', '|'])).to_string(),
                 "Substitution is missing value after delimiter '#|' (escape sequence)"
-            );
-        }
-
-        #[test]
-        fn switch_regex_invalid() {
-            assert_eq!(
-                ErrorKind::SwitchRegexInvalid(AnyString(String::from("abc"))).to_string(),
-                "Invalid regular expression in switch: abc"
             );
         }
 
