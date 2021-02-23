@@ -33,10 +33,10 @@ pub enum ErrorKind {
     ExpectedSubstitution,
     ExpectedSwitch,
     ExprStartInsideExpr,
+    IndexZero,
     IntegerOverflow(String),
     PaddingPrefixInvalid(char, Option<Char>),
     PipeOutsideExpr,
-    RangeIndexZero,
     RangeInvalid(String),
     RangeStartOverEnd(String, String),
     RangeLengthOverflow(String, String),
@@ -121,6 +121,7 @@ impl fmt::Display for ErrorKind {
             Self::ExprStartInsideExpr => {
                 write!(formatter, "Unescaped '{}' inside expression", EXPR_START)
             }
+            Self::IndexZero => write!(formatter, "Indices start from 1, not 0"),
             Self::IntegerOverflow(max) => {
                 write!(formatter, "Cannot parse value greater than {}", max)
             }
@@ -138,7 +139,6 @@ impl fmt::Display for ErrorKind {
                 expected, sequence[0], sequence[1]
             ),
             Self::PipeOutsideExpr => write!(formatter, "Unescaped '{}' outside expression", PIPE),
-            Self::RangeIndexZero => write!(formatter, "Range indices start from 1, not 0"),
             Self::RangeInvalid(value) => write!(formatter, "Invalid range '{}'", value),
             Self::RangeStartOverEnd(start, end) => write!(
                 formatter,
@@ -351,7 +351,15 @@ mod tests {
         }
 
         #[test]
-        fn number_overflow() {
+        fn index_zero() {
+            assert_eq!(
+                ErrorKind::IndexZero.to_string(),
+                "Indices start from 1, not 0"
+            );
+        }
+
+        #[test]
+        fn integer_overflow() {
             assert_eq!(
                 ErrorKind::IntegerOverflow(String::from("255")).to_string(),
                 "Cannot parse value greater than 255"
@@ -380,14 +388,6 @@ mod tests {
             assert_eq!(
                 ErrorKind::PipeOutsideExpr.to_string(),
                 "Unescaped '|' outside expression"
-            );
-        }
-
-        #[test]
-        fn range_index_zero() {
-            assert_eq!(
-                ErrorKind::RangeIndexZero.to_string(),
-                "Range indices start from 1, not 0"
             );
         }
 

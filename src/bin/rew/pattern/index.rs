@@ -20,7 +20,7 @@ impl RangeBound for Index {
             Ok(index - 1)
         } else {
             Err(Error {
-                kind: ErrorKind::RangeIndexZero,
+                kind: ErrorKind::IndexZero,
                 range: position..reader.position(),
             })
         }
@@ -121,7 +121,7 @@ mod tests {
                 assert_eq!(
                     Index::parse(&mut reader),
                     Err(Error {
-                        kind: ErrorKind::RangeIndexZero,
+                        kind: ErrorKind::IndexZero,
                         range: 0..1
                     })
                 );
@@ -214,7 +214,7 @@ mod tests {
                 assert_eq!(
                     IndexRange::parse(&mut reader),
                     Err(Error {
-                        kind: ErrorKind::RangeIndexZero,
+                        kind: ErrorKind::IndexZero,
                         range: 0..1,
                     })
                 );
@@ -234,7 +234,7 @@ mod tests {
                 assert_eq!(
                     IndexRange::parse(&mut reader),
                     Err(Error {
-                        kind: ErrorKind::RangeIndexZero,
+                        kind: ErrorKind::IndexZero,
                         range: 2..3,
                     })
                 );
