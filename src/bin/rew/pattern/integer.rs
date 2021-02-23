@@ -14,48 +14,43 @@ pub trait ParsableInt: TryFrom<u32> + PrimInt + Display {}
 impl<T: TryFrom<u32> + PrimInt + Display> ParsableInt for T {}
 
 pub fn parse_integer<T: ParsableInt>(reader: &mut Reader<Char>) -> Result<T> {
-    match reader.peek_char() {
-        Some('0') => {
+    if let Some(ch @ '0'..='9') = reader.peek_char() {
+        let position = reader.position();
+        reader.seek();
+
+        let base: T = parse_u32(10);
+        let mut number: T = parse_digit(ch);
+
+        while let Some(ch @ '0'..='9') = reader.peek_char() {
             reader.seek();
-            Ok(T::zero())
-        }
-        Some(ch @ '1'..='9') => {
-            let position = reader.position();
-            reader.seek();
 
-            let base: T = parse_u32(10);
-            let mut number: T = parse_digit(ch);
-
-            while let Some(ch @ '0'..='9') = reader.peek_char() {
-                reader.seek();
-
-                match number.checked_mul(&base) {
-                    Some(result) => number = result,
-                    None => {
-                        return Err(Error {
-                            kind: ErrorKind::IntegerOverflow(T::max_value().to_string()),
-                            range: position..reader.position(),
-                        })
-                    }
-                }
-
-                match number.checked_add(&parse_digit(ch)) {
-                    Some(result) => number = result,
-                    None => {
-                        return Err(Error {
-                            kind: ErrorKind::IntegerOverflow(T::max_value().to_string()),
-                            range: position..reader.position(),
-                        })
-                    }
+            match number.checked_mul(&base) {
+                Some(result) => number = result,
+                None => {
+                    return Err(Error {
+                        kind: ErrorKind::IntegerOverflow(T::max_value().to_string()),
+                        range: position..reader.position(),
+                    })
                 }
             }
 
-            Ok(number)
+            match number.checked_add(&parse_digit(ch)) {
+                Some(result) => number = result,
+                None => {
+                    return Err(Error {
+                        kind: ErrorKind::IntegerOverflow(T::max_value().to_string()),
+                        range: position..reader.position(),
+                    })
+                }
+            }
         }
-        _ => Err(Error {
+
+        Ok(number)
+    } else {
+        Err(Error {
             kind: ErrorKind::ExpectedNumber,
             range: reader.position()..reader.end(),
-        }),
+        })
     }
 }
 
@@ -127,7 +122,14 @@ mod tests {
         fn zero_then_zero() {
             let mut reader = Reader::from("00");
             assert_eq!(parse_integer(&mut reader), Ok(0));
-            assert_eq!(reader.position(), 1);
+            assert_eq!(reader.position(), 2);
+        }
+
+        #[test]
+        fn zero_then_nonzero() {
+            let mut reader = Reader::from("01");
+            assert_eq!(parse_integer(&mut reader), Ok(1));
+            assert_eq!(reader.position(), 2);
         }
 
         #[test]

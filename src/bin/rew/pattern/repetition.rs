@@ -20,18 +20,9 @@ impl Repetition {
         }
 
         let count = parse_integer(reader)?;
-        let position = reader.position();
-
-        if let Some(delimiter) = reader.read_char() {
-            if delimiter.is_ascii_digit() {
-                Err(Error {
-                    kind: ErrorKind::RepetitionDigitDelimiter(delimiter),
-                    range: position..reader.position(),
-                })
-            } else {
-                let value = reader.read_to_end().to_string();
-                Ok(Self { count, value })
-            }
+        if reader.read().is_some() {
+            let value = reader.read_to_end().to_string();
+            Ok(Self { count, value })
         } else {
             Err(Error {
                 kind: ErrorKind::RepetitionWithoutDelimiter,
@@ -94,19 +85,6 @@ mod tests {
                 Err(Error {
                     kind: ErrorKind::RepetitionWithoutDelimiter,
                     range: 2..2
-                })
-            );
-            assert_eq!(reader.position(), 2);
-        }
-
-        #[test]
-        fn digit_delimiter() {
-            let mut reader = Reader::from("010");
-            assert_eq!(
-                Repetition::parse(&mut reader),
-                Err(Error {
-                    kind: ErrorKind::RepetitionDigitDelimiter('1'),
-                    range: 1..2
                 })
             );
             assert_eq!(reader.position(), 2);

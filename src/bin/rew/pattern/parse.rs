@@ -41,7 +41,6 @@ pub enum ErrorKind {
     RangeStartOverEnd(String, String),
     RangeLengthOverflow(String, String),
     RegexInvalid(AnyString),
-    RepetitionDigitDelimiter(char),
     RepetitionWithoutDelimiter,
     SubstitutionWithoutTarget(Char),
     SwitchWithoutMatcher(Char, usize),
@@ -153,11 +152,6 @@ impl fmt::Display for ErrorKind {
                 )
             }
             Self::RegexInvalid(value) => write!(formatter, "Invalid regular expression: {}", value),
-            Self::RepetitionDigitDelimiter(value) => write!(
-                formatter,
-                "Repetition delimiter should not be a digit but is '{}'",
-                value
-            ),
             Self::RepetitionWithoutDelimiter => {
                 write!(formatter, "Repetition is missing delimiter after number")
             }
@@ -420,14 +414,6 @@ mod tests {
             assert_eq!(
                 ErrorKind::RegexInvalid(AnyString(String::from("abc"))).to_string(),
                 "Invalid regular expression: abc"
-            );
-        }
-
-        #[test]
-        fn repetition_digit_delimiter() {
-            assert_eq!(
-                ErrorKind::RepetitionDigitDelimiter('0').to_string(),
-                "Repetition delimiter should not be a digit but is '0'"
             );
         }
 
