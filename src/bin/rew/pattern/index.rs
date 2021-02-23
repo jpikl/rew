@@ -72,7 +72,7 @@ impl IndexRange {
         value
     }
 
-    pub fn substr_backward(&self, mut value: String) -> String {
+    pub fn substr_back(&self, mut value: String) -> String {
         let start = self.start();
         if start > 0 {
             if let Some((start, _)) = value.char_indices().nth_back(start - 1) {
@@ -440,13 +440,13 @@ mod tests {
             }
         }
 
-        mod substr_backward {
+        mod substr_back {
             use super::*;
 
             #[test]
             fn empty() {
                 assert_eq!(
-                    IndexRange::new(0, None).substr_backward(String::new()),
+                    IndexRange::new(0, None).substr_back(String::new()),
                     String::new()
                 );
             }
@@ -454,7 +454,7 @@ mod tests {
             #[test]
             fn from_first() {
                 assert_eq!(
-                    IndexRange::new(0, None).substr_backward(String::from("ábčd")),
+                    IndexRange::new(0, None).substr_back(String::from("ábčd")),
                     String::from("ábčd")
                 );
             }
@@ -462,7 +462,7 @@ mod tests {
             #[test]
             fn from_last() {
                 assert_eq!(
-                    IndexRange::new(3, None).substr_backward(String::from("ábčd")),
+                    IndexRange::new(3, None).substr_back(String::from("ábčd")),
                     String::from("á")
                 );
             }
@@ -470,7 +470,7 @@ mod tests {
             #[test]
             fn from_over() {
                 assert_eq!(
-                    IndexRange::new(4, None).substr_backward(String::from("ábčd")),
+                    IndexRange::new(4, None).substr_back(String::from("ábčd")),
                     String::new()
                 );
             }
@@ -478,7 +478,7 @@ mod tests {
             #[test]
             fn from_first_to_first() {
                 assert_eq!(
-                    IndexRange::new(0, Some(0)).substr_backward(String::from("ábčd")),
+                    IndexRange::new(0, Some(0)).substr_back(String::from("ábčd")),
                     String::from("d")
                 );
             }
@@ -486,7 +486,7 @@ mod tests {
             #[test]
             fn from_first_to_last_but_one() {
                 assert_eq!(
-                    IndexRange::new(0, Some(2)).substr_backward(String::from("ábčd")),
+                    IndexRange::new(0, Some(2)).substr_back(String::from("ábčd")),
                     String::from("bčd")
                 );
             }
@@ -494,7 +494,7 @@ mod tests {
             #[test]
             fn from_first_to_last() {
                 assert_eq!(
-                    IndexRange::new(0, Some(3)).substr_backward(String::from("ábčd")),
+                    IndexRange::new(0, Some(3)).substr_back(String::from("ábčd")),
                     String::from("ábčd")
                 );
             }
@@ -502,7 +502,7 @@ mod tests {
             #[test]
             fn from_first_to_over() {
                 assert_eq!(
-                    IndexRange::new(0, Some(4)).substr_backward(String::from("ábčd")),
+                    IndexRange::new(0, Some(4)).substr_back(String::from("ábčd")),
                     String::from("ábčd")
                 );
             }
@@ -510,7 +510,7 @@ mod tests {
             #[test]
             fn from_last_to_last() {
                 assert_eq!(
-                    IndexRange::new(3, Some(3)).substr_backward(String::from("ábčd")),
+                    IndexRange::new(3, Some(3)).substr_back(String::from("ábčd")),
                     String::from("á")
                 );
             }
@@ -518,7 +518,7 @@ mod tests {
             #[test]
             fn from_last_to_over() {
                 assert_eq!(
-                    IndexRange::new(3, Some(3)).substr_backward(String::from("ábčd")),
+                    IndexRange::new(3, Some(3)).substr_back(String::from("ábčd")),
                     String::from("á")
                 );
             }
@@ -526,7 +526,7 @@ mod tests {
             #[test]
             fn from_over_to_over() {
                 assert_eq!(
-                    IndexRange::new(4, Some(4)).substr_backward(String::from("ábčd")),
+                    IndexRange::new(4, Some(4)).substr_back(String::from("ábčd")),
                     String::new()
                 );
             }
@@ -535,7 +535,7 @@ mod tests {
             fn from_extra_over_to_over() {
                 // Covers different evaluation branch than from_over_to_over
                 assert_eq!(
-                    IndexRange::new(5, Some(5)).substr_backward(String::from("ábčd")),
+                    IndexRange::new(5, Some(5)).substr_back(String::from("ábčd")),
                     String::new()
                 );
             }

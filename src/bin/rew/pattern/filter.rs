@@ -158,7 +158,7 @@ impl Filter {
 
             // Substring filters
             Self::Substring(range) => Ok(range.substr(value)),
-            Self::SubstringBackward(range) => Ok(range.substr_backward(value)),
+            Self::SubstringBackward(range) => Ok(range.substr_back(value)),
 
             // Replace filters
             Self::ReplaceFirst(substitution) => Ok(substitution.replace_first(&value)),
