@@ -71,7 +71,7 @@ However, there are some use cases where `rew` can replace `awk` using more compa
 
 ```bash
 awk '{print substr($0,2,3)}' # Substring from index 2 with length 3
-rew '{n2+3}'                 # Same thing using rew
+rew '{#2+3}'                 # Same thing using rew
 ```
 
 [fd]: https://github.com/sharkdp/fd

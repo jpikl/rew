@@ -33,11 +33,10 @@ pub const FILTERS: &str = indoc! {r#"
 
 # SUBSTRINGS
 
-  `nA-B`  From `A` to `B`           (`n` = normal indexing) 
-  `nA+L`  From `A` with length `L`  (`N` = backward indexing) 
-  `nA-`   From `A` to end         (`A`, `B` = inclusive 1-based indices)
-  `nA`    Character at `A`
-
+  `#A-B`  From `A` to `B`         (`A`, `B` = inclusive 1-based indices)
+  `#A+L`  From `A` of length `L`  (`-A`   = backward indexing)   
+  `#A-`   From `A` to end         
+  `#A`    Character at `A`
 
 # REPLACEMENT
 

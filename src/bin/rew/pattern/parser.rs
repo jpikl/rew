@@ -415,7 +415,7 @@ mod tests {
         #[test]
         fn invalid_filter() {
             assert_eq!(
-                Parser::from("{n2-1}").parse_items(),
+                Parser::from("{#2-1}").parse_items(),
                 Err(Error {
                     kind: ErrorKind::RangeStartOverEnd(String::from("2"), String::from("1")),
                     range: 2..5,
@@ -426,7 +426,7 @@ mod tests {
         #[test]
         fn expr_multiple_filters() {
             assert_eq!(
-                Parser::from("{e|t|n1-3}").parse_items(),
+                Parser::from("{e|t|#1-3}").parse_items(),
                 Ok(vec![Parsed {
                     value: Item::Expression(vec![
                         Parsed {

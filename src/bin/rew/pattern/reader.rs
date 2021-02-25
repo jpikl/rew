@@ -70,6 +70,16 @@ impl<T: AsChar> Reader<T> {
         self.read().map(T::as_char)
     }
 
+    pub fn read_expected(&mut self, expected: char) -> bool {
+        match self.peek_char() {
+            Some(value) if value == expected => {
+                self.seek();
+                true
+            }
+            _ => false,
+        }
+    }
+
     pub fn read_to_end(&mut self) -> Chars<T> {
         let index = self.index;
         self.seek_to_end();
@@ -92,6 +102,7 @@ impl<T: AsChar> Reader<T> {
 mod tests {
     use super::*;
     use crate::pattern::char::Char;
+    use ntest::*;
 
     #[test]
     fn position() {
@@ -250,6 +261,29 @@ mod tests {
         assert_eq!(reader.position(), 5);
 
         assert_eq!(reader.read_char(), None);
+        assert_eq!(reader.position(), 5);
+    }
+
+    #[test]
+    fn read_expected() {
+        let mut reader = make_reader();
+
+        assert_false!(reader.read_expected('b'));
+        assert_eq!(reader.position(), 0);
+
+        assert_true!(reader.read_expected('a'));
+        assert_eq!(reader.position(), 1);
+
+        assert_false!(reader.read_expected('a'));
+        assert_eq!(reader.position(), 1);
+
+        assert_true!(reader.read_expected('b'));
+        assert_eq!(reader.position(), 3);
+
+        assert_true!(reader.read_expected('č'));
+        assert_eq!(reader.position(), 5);
+
+        assert_false!(reader.read_expected('č'));
         assert_eq!(reader.position(), 5);
     }
 

@@ -8,6 +8,7 @@ use crate::pattern::regex::RegexHolder;
 use crate::pattern::repetition::Repetition;
 use crate::pattern::substitution::{EmptySubstitution, RegexSubstitution, StringSubstitution};
 use crate::pattern::switch::RegexSwitch;
+use crate::pattern::symbols::RANGE;
 use crate::pattern::{eval, parse, path, uuid};
 use std::fmt;
 use unidecode::unidecode;
@@ -88,8 +89,13 @@ impl Filter {
                 'Z' => Ok(Self::RemoveTrailingSeparator),
 
                 // Substring filters
-                'n' => Ok(Self::Substring(IndexRange::parse(reader)?)),
-                'N' => Ok(Self::SubstringBackward(IndexRange::parse(reader)?)),
+                '#' => {
+                    if reader.read_expected(RANGE) {
+                        Ok(Self::SubstringBackward(IndexRange::parse(reader)?))
+                    } else {
+                        Ok(Self::Substring(IndexRange::parse(reader)?))
+                    }
+                }
 
                 // Replace filters
                 'r' => Ok(Self::ReplaceFirst(StringSubstitution::parse(reader)?)),
@@ -394,45 +400,53 @@ mod tests {
         #[test]
         fn substring() {
             assert_eq!(
-                parse("n2-10"),
-                Ok(Filter::Substring(IndexRange::new(1, Some(9))))
-            );
-            assert_eq!(
-                parse("n2-"),
-                Ok(Filter::Substring(IndexRange::new(1, None)))
-            );
-            assert_eq!(
-                parse("n2"),
-                Ok(Filter::Substring(IndexRange::new(1, Some(1))))
-            );
-            assert_eq!(
-                parse("n"),
+                parse("#"),
                 Err(Error {
                     kind: ErrorKind::ExpectedRange,
                     range: 1..1,
                 }),
+            );
+            assert_eq!(
+                parse("#2"),
+                Ok(Filter::Substring(IndexRange::new(1, Some(1))))
+            );
+            assert_eq!(
+                parse("#2-"),
+                Ok(Filter::Substring(IndexRange::new(1, None)))
+            );
+            assert_eq!(
+                parse("#2-10"),
+                Ok(Filter::Substring(IndexRange::new(1, Some(9))))
+            );
+            assert_eq!(
+                parse("#2+8"),
+                Ok(Filter::Substring(IndexRange::new(1, Some(9))))
             );
         }
 
         #[test]
         fn substring_backward() {
             assert_eq!(
-                parse("N"),
+                parse("#-"),
                 Err(Error {
                     kind: ErrorKind::ExpectedRange,
-                    range: 1..1,
+                    range: 2..2,
                 }),
             );
             assert_eq!(
-                parse("N2"),
+                parse("#-2"),
                 Ok(Filter::SubstringBackward(IndexRange::new(1, Some(1))))
             );
             assert_eq!(
-                parse("N2-"),
+                parse("#-2-"),
                 Ok(Filter::SubstringBackward(IndexRange::new(1, None)))
             );
             assert_eq!(
-                parse("N2-10"),
+                parse("#-2-10"),
+                Ok(Filter::SubstringBackward(IndexRange::new(1, Some(9))))
+            );
+            assert_eq!(
+                parse("#-2+8"),
                 Ok(Filter::SubstringBackward(IndexRange::new(1, Some(9))))
             );
         }
