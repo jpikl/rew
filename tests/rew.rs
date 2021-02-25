@@ -228,7 +228,7 @@ fn global_counter() {
 fn regex() {
     rew()
         .arg("--regex=(\\d+)")
-        .arg("{1}")
+        .arg("{$1}")
         .write_stdin("dir_1/file_2")
         .assert()
         .success()
@@ -240,7 +240,7 @@ fn regex() {
 fn regex_filename() {
     rew()
         .arg("--regex-filename=(\\d+)")
-        .arg("{1}")
+        .arg("{$1}")
         .write_stdin("dir_1/file_2")
         .assert()
         .success()

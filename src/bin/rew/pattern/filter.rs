@@ -68,9 +68,7 @@ impl Filter {
     pub fn parse(reader: &mut Reader<Char>) -> parse::Result<Self> {
         let position = reader.position();
 
-        if let Some('0'..='9') = reader.peek_char() {
-            Ok(Filter::RegexCapture(parse_integer(reader)?))
-        } else if let Some(char) = reader.read() {
+        if let Some(char) = reader.read() {
             match char.as_char() {
                 // Path filters
                 'w' => Ok(Self::WorkingDir),
@@ -103,6 +101,7 @@ impl Filter {
                 's' => Ok(Self::RegexReplaceFirst(RegexSubstitution::parse(reader)?)),
                 'S' => Ok(Self::RegexReplaceAll(RegexSubstitution::parse(reader)?)),
                 '@' => Ok(Self::RegexSwitch(RegexSwitch::parse(reader)?)),
+                '$' => Ok(Self::RegexCapture(parse_integer(reader)?)),
 
                 // Format filters
                 't' => Ok(Self::Trim),
@@ -609,10 +608,17 @@ mod tests {
 
         #[test]
         fn regex_capture() {
-            assert_eq!(parse("0"), Ok(Filter::RegexCapture(0)));
-            assert_eq!(parse("1"), Ok(Filter::RegexCapture(1)));
-            assert_eq!(parse("2"), Ok(Filter::RegexCapture(2)));
-            assert_eq!(parse("10"), Ok(Filter::RegexCapture(10)));
+            assert_eq!(
+                parse("$"),
+                Err(Error {
+                    kind: ErrorKind::ExpectedNumber,
+                    range: 1..1
+                })
+            );
+            assert_eq!(parse("$0"), Ok(Filter::RegexCapture(0)));
+            assert_eq!(parse("$1"), Ok(Filter::RegexCapture(1)));
+            assert_eq!(parse("$2"), Ok(Filter::RegexCapture(2)));
+            assert_eq!(parse("$10"), Ok(Filter::RegexCapture(10)));
         }
 
         #[test]

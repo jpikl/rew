@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `%` is the default pattern escape character instead of `#`.
+- Capture groups of a global regex need to be prefixed with `$`.
 - More lenient number parsing (`001` is interpreted as `1`).
 
 ## [0.2.0] - 2021-02-14

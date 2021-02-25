@@ -30,6 +30,6 @@ Examples:
 - Option `-E, --regex-filename` matches regex against *filename component* of each input value.
 
 ```bash
-echo 'a/b.c' | rew -e '([a-z])' '{1}' # Will print 'a'
-echo 'a/b.c' | rew -E '([a-z])' '{1}' # Will print 'b'
+echo 'a/b.c' | rew -e '([a-z])' '{$1}' # Will print 'a'
+echo 'a/b.c' | rew -E '([a-z])' '{$1}' # Will print 'b'
 ```
