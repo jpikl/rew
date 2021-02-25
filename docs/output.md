@@ -12,7 +12,7 @@ By default, results are printed as lines to standard output.
 rew '{D}' | xargs mkdir -p       # Pass extracted directories to mkdir command
 rew -Z '{D}' | xargs -0 mkdir -p # Use NUL delimiter in case paths contain newlines
 rew -D$'\r\n'                    # Convert newlines to CR+LF using custom output delimiter
-rew -R '{}#r#n'                  # Same thing but output delimiter is in the pattern
+rew -R '{}%r%n'                  # Same thing but output delimiter is in the pattern
 rew -TD+ '{}' a b c              # Join input values to string "a+b+c"
 ```
 

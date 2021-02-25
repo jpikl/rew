@@ -291,8 +291,8 @@ mod tests {
                 "Expected range delimiter '-' but got 'x'"
             );
             assert_eq!(
-                ErrorKind::ExpectedRangeDelimiter(Some(Char::Escaped('x', ['#', 'y']))).to_string(),
-                "Expected range delimiter '-' but got escape sequence '#y'"
+                ErrorKind::ExpectedRangeDelimiter(Some(Char::Escaped('x', ['%', 'y']))).to_string(),
+                "Expected range delimiter '-' but got escape sequence '%y'"
             );
         }
 
@@ -371,9 +371,9 @@ mod tests {
                 "Expected '<' prefix or number but got 'x'"
             );
             assert_eq!(
-                ErrorKind::PaddingPrefixInvalid('<', Some(Char::Escaped('x', ['#', 'y'])))
+                ErrorKind::PaddingPrefixInvalid('<', Some(Char::Escaped('x', ['%', 'y'])))
                     .to_string(),
-                "Expected '<' prefix or number but got escape sequence '#y'"
+                "Expected '<' prefix or number but got escape sequence '%y'"
             );
         }
 
@@ -432,8 +432,8 @@ mod tests {
                 "Substitution is missing value after delimiter '_'"
             );
             assert_eq!(
-                ErrorKind::SubstitutionWithoutTarget(Char::Escaped('|', ['#', '|'])).to_string(),
-                "Substitution is missing value after delimiter '#|' (escape sequence)"
+                ErrorKind::SubstitutionWithoutTarget(Char::Escaped('|', ['%', '|'])).to_string(),
+                "Substitution is missing value after delimiter '%|' (escape sequence)"
             );
         }
 
@@ -444,16 +444,16 @@ mod tests {
                 "Switch is missing value after delimiter '_' #1"
             );
             assert_eq!(
-                ErrorKind::SwitchWithoutMatcher(Char::Escaped('|', ['#', '|']), 1).to_string(),
-                "Switch is missing value after delimiter '#|' #2 (escape sequence)"
+                ErrorKind::SwitchWithoutMatcher(Char::Escaped('|', ['%', '|']), 1).to_string(),
+                "Switch is missing value after delimiter '%|' #2 (escape sequence)"
             );
         }
 
         #[test]
         fn unknown_escape_sequence() {
             assert_eq!(
-                ErrorKind::UnknownEscapeSequence(['#', 'x']).to_string(),
-                "Unknown escape sequence '#x'"
+                ErrorKind::UnknownEscapeSequence(['%', 'x']).to_string(),
+                "Unknown escape sequence '%x'"
             );
         }
 
@@ -464,8 +464,8 @@ mod tests {
                 "Unknown filter 'x'"
             );
             assert_eq!(
-                ErrorKind::UnknownFilter(Char::Escaped('x', ['#', 'y'])).to_string(),
-                "Unknown filter 'x' written as escape sequence '#y'"
+                ErrorKind::UnknownFilter(Char::Escaped('x', ['%', 'y'])).to_string(),
+                "Unknown filter 'x' written as escape sequence '%y'"
             );
         }
 
@@ -488,8 +488,8 @@ mod tests {
         #[test]
         fn unterminated_escape_sequence() {
             assert_eq!(
-                ErrorKind::UnterminatedEscapeSequence('#').to_string(),
-                "Unterminated escape sequence '#'"
+                ErrorKind::UnterminatedEscapeSequence('%').to_string(),
+                "Unterminated escape sequence '%'"
             );
         }
     }

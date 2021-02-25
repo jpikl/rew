@@ -187,11 +187,11 @@ mod tests {
 
     #[test]
     fn escaped_expr_start() {
-        let mut lexer = Lexer::new("#{");
+        let mut lexer = Lexer::new("%{");
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
-                value: Token::Raw(vec![Char::Escaped('{', ['#', '{'])]),
+                value: Token::Raw(vec![Char::Escaped('{', ['%', '{'])]),
                 range: 0..2,
             }))
         );
@@ -200,11 +200,11 @@ mod tests {
 
     #[test]
     fn escaped_expr_end() {
-        let mut lexer = Lexer::new("#}");
+        let mut lexer = Lexer::new("%}");
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
-                value: Token::Raw(vec![Char::Escaped('}', ['#', '}'])]),
+                value: Token::Raw(vec![Char::Escaped('}', ['%', '}'])]),
                 range: 0..2,
             }))
         );
@@ -213,11 +213,11 @@ mod tests {
 
     #[test]
     fn escaped_pipe() {
-        let mut lexer = Lexer::new("#|");
+        let mut lexer = Lexer::new("%|");
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
-                value: Token::Raw(vec![Char::Escaped('|', ['#', '|'])]),
+                value: Token::Raw(vec![Char::Escaped('|', ['%', '|'])]),
                 range: 0..2,
             }))
         );
@@ -226,13 +226,13 @@ mod tests {
 
     #[test]
     fn escaped_separator() {
-        let mut lexer = Lexer::new("#/");
+        let mut lexer = Lexer::new("%/");
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
                 value: Token::Raw(vec![Char::Escaped(
                     if cfg!(windows) { '\\' } else { '/' },
-                    ['#', '/']
+                    ['%', '/']
                 )]),
                 range: 0..2,
             }))
@@ -242,11 +242,11 @@ mod tests {
 
     #[test]
     fn escaped_lf() {
-        let mut lexer = Lexer::new("#n");
+        let mut lexer = Lexer::new("%n");
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
-                value: Token::Raw(vec![Char::Escaped('\n', ['#', 'n'])]),
+                value: Token::Raw(vec![Char::Escaped('\n', ['%', 'n'])]),
                 range: 0..2,
             }))
         );
@@ -255,11 +255,11 @@ mod tests {
 
     #[test]
     fn escaped_cr() {
-        let mut lexer = Lexer::new("#r");
+        let mut lexer = Lexer::new("%r");
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
-                value: Token::Raw(vec![Char::Escaped('\r', ['#', 'r'])]),
+                value: Token::Raw(vec![Char::Escaped('\r', ['%', 'r'])]),
                 range: 0..2,
             }))
         );
@@ -268,11 +268,11 @@ mod tests {
 
     #[test]
     fn escaped_tab() {
-        let mut lexer = Lexer::new("#t");
+        let mut lexer = Lexer::new("%t");
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
-                value: Token::Raw(vec![Char::Escaped('\t', ['#', 't'])]),
+                value: Token::Raw(vec![Char::Escaped('\t', ['%', 't'])]),
                 range: 0..2,
             }))
         );
@@ -281,11 +281,11 @@ mod tests {
 
     #[test]
     fn escaped_nul() {
-        let mut lexer = Lexer::new("#0");
+        let mut lexer = Lexer::new("%0");
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
-                value: Token::Raw(vec![Char::Escaped('\0', ['#', '0'])]),
+                value: Token::Raw(vec![Char::Escaped('\0', ['%', '0'])]),
                 range: 0..2,
             }))
         );
@@ -294,11 +294,11 @@ mod tests {
 
     #[test]
     fn escaped_escape() {
-        let mut lexer = Lexer::new("##");
+        let mut lexer = Lexer::new("%%");
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
-                value: Token::Raw(vec![Char::Escaped('#', ['#', '#'])]),
+                value: Token::Raw(vec![Char::Escaped('%', ['%', '%'])]),
                 range: 0..2,
             }))
         );
@@ -321,11 +321,11 @@ mod tests {
 
     #[test]
     fn unterminated_escape() {
-        let mut lexer = Lexer::new("#");
+        let mut lexer = Lexer::new("%");
         assert_eq!(
             lexer.read_token(),
             Err(Error {
-                kind: ErrorKind::UnterminatedEscapeSequence('#'),
+                kind: ErrorKind::UnterminatedEscapeSequence('%'),
                 range: 0..1,
             })
         );
@@ -333,11 +333,11 @@ mod tests {
 
     #[test]
     fn unknown_escape() {
-        let mut lexer = Lexer::new("#x");
+        let mut lexer = Lexer::new("%x");
         assert_eq!(
             lexer.read_token(),
             Err(Error {
-                kind: ErrorKind::UnknownEscapeSequence(['#', 'x']),
+                kind: ErrorKind::UnknownEscapeSequence(['%', 'x']),
                 range: 0..2,
             })
         );
@@ -428,7 +428,7 @@ mod tests {
 
     #[test]
     fn various_tokens_and_escapes() {
-        let mut lexer = Lexer::new("a{|}bc#{de#|fg#}hi#n#r#t#0##");
+        let mut lexer = Lexer::new("a{|}bc%{de%|fg%}hi%n%r%t%0%%");
         assert_eq!(
             lexer.read_token(),
             Ok(Some(Parsed {
@@ -463,20 +463,20 @@ mod tests {
                 value: Token::Raw(vec![
                     Char::Raw('b'),
                     Char::Raw('c'),
-                    Char::Escaped('{', ['#', '{']),
+                    Char::Escaped('{', ['%', '{']),
                     Char::Raw('d'),
                     Char::Raw('e'),
-                    Char::Escaped('|', ['#', '|']),
+                    Char::Escaped('|', ['%', '|']),
                     Char::Raw('f'),
                     Char::Raw('g'),
-                    Char::Escaped('}', ['#', '}']),
+                    Char::Escaped('}', ['%', '}']),
                     Char::Raw('h'),
                     Char::Raw('i'),
-                    Char::Escaped('\n', ['#', 'n']),
-                    Char::Escaped('\r', ['#', 'r']),
-                    Char::Escaped('\t', ['#', 't']),
-                    Char::Escaped('\0', ['#', '0']),
-                    Char::Escaped('#', ['#', '#']),
+                    Char::Escaped('\n', ['%', 'n']),
+                    Char::Escaped('\r', ['%', 'r']),
+                    Char::Escaped('\t', ['%', 't']),
+                    Char::Escaped('\0', ['%', '0']),
+                    Char::Escaped('%', ['%', '%']),
                 ]),
                 range: 4..28,
             }))

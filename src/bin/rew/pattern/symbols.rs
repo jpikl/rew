@@ -1,4 +1,4 @@
-pub const ESCAPE: char = '#';
+pub const ESCAPE: char = '%';
 
 pub const EXPR_START: char = '{';
 pub const EXPR_END: char = '}';

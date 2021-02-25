@@ -84,7 +84,7 @@ echo "$PATH" | rew -d: # PATH entries are delimited by ':'
 Replace tabs with 4 spaces in a file.
 
 ````bash
-rew -rR '{R:#t:    }' <input.txt >output.txt # Read/write file content as a whole
+rew -rR '{R:%t:    }' <input.txt >output.txt # Read/write file content as a whole
 ````
 
 Normalize line endings in a file to `LF`.
@@ -97,5 +97,5 @@ Normalize line endings in a file to `CR+LF`.
 
 ````bash
 rew -D$'\r\n'   <input.txt >output.txt # CR+LF delimiter using -D option
-rew -R '{}#r#n' <input.txt >output.txt # CR+LF delimiter in pattern
+rew -R '{}%r%n' <input.txt >output.txt # CR+LF delimiter in pattern
 ````

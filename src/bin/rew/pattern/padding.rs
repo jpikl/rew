@@ -99,13 +99,13 @@ mod tests {
 
         #[test]
         fn invalid_escaped_prefix() {
-            let mut reader = Reader::new(vec![Char::Escaped('x', ['#', 'x'])]);
+            let mut reader = Reader::new(vec![Char::Escaped('x', ['%', 'x'])]);
             assert_eq!(
                 Padding::parse(&mut reader, '<'),
                 Err(Error {
                     kind: ErrorKind::PaddingPrefixInvalid(
                         '<',
-                        Some(Char::Escaped('x', ['#', 'x']))
+                        Some(Char::Escaped('x', ['%', 'x']))
                     ),
                     range: 0..2,
                 })

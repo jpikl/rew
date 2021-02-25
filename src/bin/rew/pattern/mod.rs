@@ -135,9 +135,9 @@ mod tests {
         #[test]
         fn default_escape() {
             assert_eq!(
-                Pattern::parse("_#{{f|v}#}_", None),
+                Pattern::parse("_%{{f|v}%}_", None),
                 Ok(Pattern {
-                    source: String::from("_#{{f|v}#}_"),
+                    source: String::from("_%{{f|v}%}_"),
                     items: vec![
                         Parsed {
                             value: Item::Constant(String::from("_{")),

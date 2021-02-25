@@ -53,23 +53,23 @@ Filters are categorized into the following groups.
 
 ## Escaping
 
-Character `#` starts an escape sequence.
+Character `%` starts an escape sequence.
 
 | Sequence | Description                |
 | -------- |--------------------------- |
-| `#/`     | System directory separator<br>`\` on Windows<br>`/` everywhere else |
-| `#n`     | New line                   |
-| `#r`     | Carriage return            |
-| `#t`     | Horizontal tab             |
-| `#0`     | Null                       |
-| `#{`     | Escaped `{`                |
-| `#|`     | Escaped `|`                |
-| `#}`     | Escaped `{`                |
-| `##`     | Escaped `#`                |
+| `%/`     | System directory separator<br>`\` on Windows<br>`/` everywhere else |
+| `%n`     | New line                   |
+| `%r`     | Carriage return            |
+| `%t`     | Horizontal tab             |
+| `%0`     | Null                       |
+| `%{`     | Escaped `{`                |
+| `%|`     | Escaped `|`                |
+| `%}`     | Escaped `{`                |
+| `%%`     | Escaped `%`                |
 
 Use `--escape` option to set a different escape character.
 
 ```bash
-rew '{R:#t: }'              # Replace tabs with spaces
+rew '{R:%t: }'              # Replace tabs with spaces
 rew '{R:\t: }' --escape='\' # Same thing, different escape character
 ```
