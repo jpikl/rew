@@ -14,4 +14,5 @@
 - [💬 Output](output.md)
 - [🔬 Comparison with similar tools](comparison.md)
 - [🗃 Examples](examples.md)
+- [📈 Changelog](../CHANGELOG.md)
 - [📄 License](../LICENSE.md)
