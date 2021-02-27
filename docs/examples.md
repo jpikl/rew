@@ -18,7 +18,7 @@ find -name '*.jpeg' | rew -b '{B}.jpg' | mvb -v
 Same thing but we use `rew` to generate executable shell code.
 
 ```bash
-find -name '*.jpeg' | rew 'mv -v "{}" "{B}.jpg"' | sh
+find -name '*.jpeg' | rew -q 'mv -v {} {B}.jpg' | sh
 ```
 
 Make backup copy of each `*.txt` file with `.txt.bak` extension in the same directory.

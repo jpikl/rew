@@ -8,9 +8,9 @@
   You have to use accompanying `mvb`/`cpb` utilities or you can generate executable shell code.
 
 ```bash
-find -name '*.jpeg' | xargs rename .jpeg .jpg      # Rename *.jpeg files to *.jpg
-find -name '*.jpeg' | rew '{B}.jpg' -b | mvb       # Same thing using rew + mvb
-find -name '*.jpeg' | rew 'mv "{}" "{B}.jpg"' | sh # Same thing using rew + mv + sh
+find -name '*.jpeg' | xargs rename .jpeg .jpg     # Rename *.jpeg files to *.jpg
+find -name '*.jpeg' | rew -b '{B}.jpg' | mvb      # Same thing using rew + mvb
+find -name '*.jpeg' | rew -q 'mv {} {B}.jpg' | sh # Same thing using rew + mv + sh
 ```
 
 ## rew vs coreutils

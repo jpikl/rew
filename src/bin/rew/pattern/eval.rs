@@ -9,6 +9,7 @@ pub struct Context<'a> {
     pub global_counter: u32,
     pub local_counter: u32,
     pub regex_captures: Option<regex::Captures<'a>>,
+    pub expression_quotes: Option<char>,
 }
 
 impl<'a> Context<'a> {
@@ -82,6 +83,7 @@ mod tests {
                     global_counter: 0,
                     local_counter: 0,
                     regex_captures: None,
+                    expression_quotes: None,
                 }
                 .regex_capture(1),
                 ""
@@ -96,6 +98,7 @@ mod tests {
                     global_counter: 0,
                     local_counter: 0,
                     regex_captures: make_regex_captures(),
+                    expression_quotes: None,
                 }
                 .regex_capture(1),
                 "abc"
@@ -110,6 +113,7 @@ mod tests {
                     global_counter: 0,
                     local_counter: 0,
                     regex_captures: make_regex_captures(),
+                    expression_quotes: None,
                 }
                 .regex_capture(2),
                 ""

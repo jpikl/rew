@@ -40,6 +40,14 @@ Filters are consecutively applied on input value.
 | `old.JPEG` | `new.{e|l}`     | `new.jpeg` | Extension + Lowercase              |
 | `old.JPEG` | `new.{e|l|r:e}` | `new.jpg`  | Extension + Lowercase + Remove `e` |
 
+Use `-q, --quote` flag to automatically wrap  output of every expression in quotes.
+
+```bash
+echo abc | rew {}     # Will print  abc
+echo abc | rew {} -q  # Will print 'abc'
+echo abc | rew {} -qq # Will print "abc" 
+```
+
 ## Filters
 
 Filters are categorized into the following groups.

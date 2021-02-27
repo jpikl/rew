@@ -115,6 +115,12 @@ fn run(cli: &Cli, io: &Io) -> Result {
             env::current_dir()?
         };
 
+        let expression_quotes = match cli.quote {
+            0 => None,
+            1 => Some('\''),
+            _ => Some('"'),
+        };
+
         while let Some(input_value) = input_values.next()? {
             let global_counter = if global_counter_used {
                 global_counter_generator.next()
@@ -139,6 +145,7 @@ fn run(cli: &Cli, io: &Io) -> Result {
                 global_counter,
                 local_counter,
                 regex_captures,
+                expression_quotes,
             };
 
             let output_value = match pattern.eval(input_value, &context) {

@@ -12,6 +12,7 @@ pub fn make_eval_context<'a>() -> eval::Context<'a> {
         local_counter: 1,
         global_counter: 2,
         regex_captures: make_regex_captures(),
+        expression_quotes: None,
     }
 }
 

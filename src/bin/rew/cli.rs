@@ -217,6 +217,20 @@ pub struct Cli {
     #[clap(short = 's', long, help_heading = PROCESSING_HEADING)]
     pub fail_at_end: bool,
 
+    /// Wrap output of every pattern expression in quotes
+    ///
+    /// Use the flag once for single quotes.
+    /// Use the flag twice for double quotes.
+    #[clap(
+        short = 'q',
+        long,
+        multiple_occurrences = true,
+        parse(from_occurrences),
+        verbatim_doc_comment,
+        help_heading = PATTERN_HEADING,
+    )]
+    pub quote: usize,
+
     /// Print explanation of a given pattern
     #[clap(long, requires = "pattern", help_heading = PATTERN_HEADING)]
     pub explain: bool,

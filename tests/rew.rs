@@ -369,6 +369,31 @@ fn working_directory_custom_relative() {
 }
 
 #[test]
+fn single_quotes() {
+    rew()
+        .arg("_{}_")
+        .arg("--quote")
+        .write_stdin("a\nb")
+        .assert()
+        .success()
+        .stdout("_'a'_\n_'b'_\n")
+        .stderr("");
+}
+
+#[test]
+fn double_quotes() {
+    rew()
+        .arg("_{}_")
+        .arg("--quote")
+        .arg("--quote")
+        .write_stdin("a\nb")
+        .assert()
+        .success()
+        .stdout("_\"a\"_\n_\"b\"_\n")
+        .stderr("");
+}
+
+#[test]
 fn help() {
     rew()
         .arg("--help")

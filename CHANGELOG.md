@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `-q, --quote` flag to automatically wrap  output of every pattern expression in quotes.
+
 ### Changed
 
 - `%` is the default pattern escape character instead of `#`.

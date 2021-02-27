@@ -96,7 +96,13 @@ impl Pattern {
                         }
                     }
 
-                    output.push_str(&value);
+                    if let Some(quotes) = context.expression_quotes {
+                        output.push(quotes);
+                        output.push_str(&value);
+                        output.push(quotes);
+                    } else {
+                        output.push_str(&value);
+                    }
                 }
             }
         }
@@ -335,6 +341,24 @@ mod tests {
             assert_eq!(
                 pattern.eval("dir/file.ext", &make_eval_context()),
                 Ok(String::from("prefix_fil_1_2.ET"))
+            );
+        }
+
+        #[test]
+        fn quotes() {
+            let pattern = Pattern {
+                source: String::new(),
+                items: vec![
+                    make_parsed(Item::Constant(String::from(" "))),
+                    make_parsed(Item::Expression(Vec::new())),
+                    make_parsed(Item::Constant(String::from(" "))),
+                ],
+            };
+            let mut context = make_eval_context();
+            context.expression_quotes = Some('\'');
+            assert_eq!(
+                pattern.eval("dir/file.ext", &context),
+                Ok(String::from(" 'dir/file.ext' "))
             );
         }
 
