@@ -14,8 +14,17 @@ echo "$PATH" | rew -d:      # Split PATH variable entries delimited by colon
 rew -r 'A{}B' <data.txt     # Read file as a whole, prepend 'A', append 'B'
 ```
 
-Input values can be also passed as additional arguments, after a pattern.
+Input values can be also passed as additional arguments.
+In such case, standard input will not be read.
 
 ```bash
 rew '{a}' *.txt # Wildcard expansion is done by shell
+```
+
+Use flag `-I, --no-stdin` to enforce this behaviour even if there are no additional arguments.
+
+```bash
+echo 'a' | rew '{}'     # Will print "a"
+echo 'a' | rew '{}' 'b' # Will print "b"
+echo 'a' | rew -I '{}'  # Will print nothing
 ```

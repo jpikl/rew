@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `-q, --quote` flag to automatically wrap  output of every pattern expression in quotes.
+- `-I, --no-stdin` flag to disable reading values from standard input.
 
 ### Changed
 

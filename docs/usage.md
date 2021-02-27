@@ -10,7 +10,7 @@ When no values are provided, they are read from standard input instead.
 input | rew [options] [--] [pattern]
 ```
 
-When no pattern is provided, input values are copied to standard output.
+When no pattern is provided, values are directly copied to standard output.
 
 ```bash
 input | rew [options]

@@ -74,6 +74,18 @@ pub struct Cli {
     )]
     pub read_raw: bool,
 
+    /// Do not read values from standard input.
+    ///
+    /// By default, when no values are passed as arguments, they are read from standard input instead.
+    /// This flag disables such behaviour.
+    #[clap(
+        short = 'I',
+        long,
+        conflicts_with_all = &["read-nul", "read"],
+        help_heading = INPUT_HEADING
+    )]
+    pub no_stdin: bool,
+
     /// Print results delimited by a specific string, not newline
     #[clap(
         short = 'D',

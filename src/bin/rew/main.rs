@@ -35,7 +35,7 @@ fn run(cli: &Cli, io: &Io) -> Result {
         return Ok(EXIT_CODE_OK);
     }
 
-    let mut input_values = if cli.values.is_empty() {
+    let mut input_values = if cli.values.is_empty() && !cli.no_stdin {
         let input_delimiter = if let Some(byte) = cli.read {
             InputDelimiter::Byte(byte)
         } else if cli.read_nul {

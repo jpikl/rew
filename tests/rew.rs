@@ -53,6 +53,18 @@ fn paths_from_args_over_stdin() {
 }
 
 #[test]
+fn force_paths_from_args_over_stdin() {
+    rew()
+        .arg("_{}_")
+        .arg("--no-stdin")
+        .write_stdin("c")
+        .assert()
+        .success()
+        .stdout("")
+        .stderr("");
+}
+
+#[test]
 fn paths_from_stdin() {
     rew()
         .arg("_{}_")
