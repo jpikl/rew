@@ -8,13 +8,6 @@ Use `--explain` flag to print detailed explanation what a certain pattern does.
 rew --explain 'file_{c|<3:0}.{e}'
 ```
 
-When no pattern is provided as an argument, the default pattern `{}` is used.
-
-```bash
-rew '{}' # The default pattern
-rew      # Also uses the default pattern
-```
-
 ## Syntax
 
 By default, pattern characters are directly copied to output.

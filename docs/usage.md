@@ -1,21 +1,25 @@
 # 🚀 Usage
 
-By default, input values are read as lines from standard input.
+```bash
+rew [options] [--] [pattern] [values]...
+````
+
+When no values are provided, they are read from standard input instead.
 
 ```bash
-some_other_command | rew [options] [pattern]
+input | rew [options] [--] [pattern]
 ```
 
-Input values can be also passed as additional arguments.
+When no pattern is provided, input values are copied to standard output.
 
 ```bash
-rew [options] [pattern] [--] <value>...
+input | rew [options]
 ```
 
 Use `-b, --diff` flag when piping output to `mvb`/`cpb` utilities to perform bulk move/copy.
 
 ```bash
-rew [options] [pattern] -b | mvb
+rew [options] [--] [pattern] -b | mvb
 ```
 
 Use `-h` flag to print short help, `--help` to print detailed help.

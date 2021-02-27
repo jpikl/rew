@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Capture groups of a global regex need to be prefixed with `$` (e.g., `{$1}` instead of `{1}`).
 - More lenient number parsing that ignore multiple leading zeros (e.g., `001` is interpreted as `1`).
 
+### Fixed
+
+- `-h, --help` flag displays correct position of `--` argument in usage.
+
 ## [0.2.0] - 2021-02-14
 
 ### Added

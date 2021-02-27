@@ -18,7 +18,7 @@ const HELP_HEADING: Option<&str> = Some("HELP OPTIONS");
 #[clap(
     name = crate_name!(),
     version = crate_version!(),
-    override_usage = "rew [OPTIONS] [pattern] [--] [values]...",
+    override_usage = "rew [options] [--] [pattern] [values]...",
     after_help = highlight_static("Use `-h` for short descriptions and `--help` for more details."),
     setting(AppSettings::ColoredHelp),
     setting(AppSettings::DeriveDisplayOrder),
