@@ -14,8 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `%` is the default pattern escape character instead of `#`.
-- `n` filter (substring) renamed to `#`.
-- `N` filter (substring with backward indexing) replaced by use of `#` with negative indexing (e.g., `#-2`).
+- `n` filter (substring) was renamed to `#`.
+- `N` filter (substring with backward indexing) was replaced by use of `#` with negative indexing (e.g., `#-2`).
 - Capture groups of a global regex need to be prefixed with `$` (e.g., `{$1}` instead of `{1}`).
 - More lenient number parsing that ignore multiple leading zeros (e.g., `001` is interpreted as `1`).
 
@@ -28,8 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- `l` filter (to lowercase) renamed to `v`.
-- `L` filter (to uppercase) renamed to `^`.
+- `l` filter (to lowercase) was renamed to `v`.
+- `L` filter (to uppercase) was renamed to `^`.
 - `0` is now a valid filter a no longer considered error.
 - Simplified error message for an invalid range.
 - Simplified output of `--help-pattern` and `--help-filters` flags.
