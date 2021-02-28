@@ -59,7 +59,7 @@ Character `%` starts an escape sequence.
 | Sequence | Description                |
 | -------- |--------------------------- |
 | `%/`     | System directory separator<br>`\` on Windows<br>`/` everywhere else |
-| `%n`     | New line                   |
+| `%n`     | Line feed                  |
 | `%r`     | Carriage return            |
 | `%t`     | Horizontal tab             |
 | `%0`     | Null                       |

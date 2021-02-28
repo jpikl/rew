@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `N` filter (substring with backward indexing) was replaced by use of `#` with negative indexing (e.g., `#-2`).
 - Capture groups of a global regex need to be prefixed with `$` (e.g., `{$1}` instead of `{1}`).
 - More lenient number parsing that ignore multiple leading zeros (e.g., `001` is interpreted as `1`).
+- Error messages containing escape sequences are more human-readable.
 - `-T, --no-trailing-delimiter` flag was renamed to `-L, --no-print-end`.
 
 ### Fixed

@@ -1,3 +1,5 @@
+use std::fmt;
+use std::fmt::Debug;
 use std::ops::Deref;
 
 pub type EscapeSequence = [char; 2];
@@ -12,6 +14,34 @@ impl From<char> for Char {
     fn from(value: char) -> Self {
         Char::Raw(value)
     }
+}
+
+impl fmt::Display for Char {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::Raw(value) => fmt_char(*value, formatter),
+            Self::Escaped(value, sequence) => {
+                fmt_char(*value, formatter)?;
+                write!(
+                    formatter,
+                    " (escape sequence '{}{}')",
+                    sequence[0], sequence[1]
+                )
+            }
+        }
+    }
+}
+
+fn fmt_char(value: char, formatter: &mut fmt::Formatter) -> fmt::Result {
+    write!(formatter, "'")?;
+    match value {
+        '\0' => write!(formatter, "Null"),
+        '\n' => write!(formatter, "Line feed"),
+        '\r' => write!(formatter, "Carriage return"),
+        '\t' => write!(formatter, "Horizontal tab"),
+        value => write!(formatter, "{}", value),
+    }?;
+    write!(formatter, "'")
 }
 
 pub trait AsChar: From<char> {
@@ -79,7 +109,7 @@ impl<'a, T: AsChar> ToString for Chars<'a, T> {
 mod tests {
     use super::*;
 
-    mod raw {
+    mod char_raw {
         use super::*;
 
         #[test]
@@ -97,9 +127,18 @@ mod tests {
             assert_eq!(Char::Raw('a').len_utf8(), 1);
             assert_eq!(Char::Raw('á').len_utf8(), 2);
         }
+
+        #[test]
+        fn display() {
+            assert_eq!(Char::Raw('a').to_string(), "'a'");
+            assert_eq!(Char::Raw('\0').to_string(), "'Null'");
+            assert_eq!(Char::Raw('\n').to_string(), "'Line feed'");
+            assert_eq!(Char::Raw('\r').to_string(), "'Carriage return'");
+            assert_eq!(Char::Raw('\t').to_string(), "'Horizontal tab'");
+        }
     }
 
-    mod escaped {
+    mod char_escaped {
         use super::*;
 
         #[test]
@@ -111,6 +150,30 @@ mod tests {
         fn len_utf8() {
             assert_eq!(Char::Escaped('a', ['b', 'c']).len_utf8(), 2);
             assert_eq!(Char::Escaped('a', ['á', 'č']).len_utf8(), 4);
+        }
+
+        #[test]
+        fn display() {
+            assert_eq!(
+                Char::Escaped('a', ['b', 'c']).to_string(),
+                "'a' (escape sequence 'bc')"
+            );
+            assert_eq!(
+                Char::Escaped('\0', ['%', '0']).to_string(),
+                "'Null' (escape sequence '%0')"
+            );
+            assert_eq!(
+                Char::Escaped('\n', ['%', 'n']).to_string(),
+                "'Line feed' (escape sequence '%n')"
+            );
+            assert_eq!(
+                Char::Escaped('\r', ['%', 'r']).to_string(),
+                "'Carriage return' (escape sequence '%r')"
+            );
+            assert_eq!(
+                Char::Escaped('\t', ['%', 't']).to_string(),
+                "'Horizontal tab' (escape sequence '%t')"
+            );
         }
     }
 

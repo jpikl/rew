@@ -89,15 +89,10 @@ impl fmt::Display for ErrorKind {
             Self::ExpectedRangeDelimiter(None) => {
                 write!(formatter, "Expected range delimiter '{}'", RANGE)
             }
-            Self::ExpectedRangeDelimiter(Some(Char::Raw(value))) => write!(
+            Self::ExpectedRangeDelimiter(Some(char)) => write!(
                 formatter,
-                "Expected range delimiter '{}' but got '{}'",
-                RANGE, value
-            ),
-            Self::ExpectedRangeDelimiter(Some(Char::Escaped(_, sequence))) => write!(
-                formatter,
-                "Expected range delimiter '{}' but got escape sequence '{}{}'",
-                RANGE, sequence[0], sequence[1]
+                "Expected range delimiter '{}' but got {}",
+                RANGE, char
             ),
             Self::ExpectedRangeLength => {
                 write!(formatter, "Expected range length after '{}'", LENGTH)
@@ -127,15 +122,10 @@ impl fmt::Display for ErrorKind {
             Self::PaddingPrefixInvalid(fixed_prefix, None) => {
                 write!(formatter, "Expected '{}' prefix or number", fixed_prefix)
             }
-            Self::PaddingPrefixInvalid(expected, Some(Char::Raw(value))) => write!(
+            Self::PaddingPrefixInvalid(expected, Some(char)) => write!(
                 formatter,
-                "Expected '{}' prefix or number but got '{}'",
-                expected, value
-            ),
-            Self::PaddingPrefixInvalid(expected, Some(Char::Escaped(_, sequence))) => write!(
-                formatter,
-                "Expected '{}' prefix or number but got escape sequence '{}{}'",
-                expected, sequence[0], sequence[1]
+                "Expected '{}' prefix or number but got {}",
+                expected, char
             ),
             Self::PipeOutsideExpr => write!(formatter, "Unescaped '{}' outside expression", PIPE),
             Self::RangeInvalid(value) => write!(formatter, "Invalid range '{}'", value),
@@ -155,42 +145,25 @@ impl fmt::Display for ErrorKind {
             Self::RepetitionWithoutDelimiter => {
                 write!(formatter, "Repetition is missing delimiter after number")
             }
-            Self::SubstitutionWithoutTarget(Char::Raw(value)) => write!(
+            Self::SubstitutionWithoutTarget(char) => write!(
                 formatter,
-                "Substitution is missing value after delimiter '{}'",
-                value
+                "Substitution is missing value after delimiter {}",
+                char
             ),
-            Self::SubstitutionWithoutTarget(Char::Escaped(_, sequence)) => write!(
+            Self::SwitchWithoutMatcher(char, index) => write!(
                 formatter,
-                "Substitution is missing value after delimiter '{}{}' (escape sequence)",
-                sequence[0], sequence[1]
-            ),
-            Self::SwitchWithoutMatcher(Char::Raw(value), index) => write!(
-                formatter,
-                "Switch is missing value after delimiter '{}' #{}",
-                value,
-                index + 1
-            ),
-            Self::SwitchWithoutMatcher(Char::Escaped(_, sequence), index) => write!(
-                formatter,
-                "Switch is missing value after delimiter '{}{}' #{} (escape sequence)",
-                sequence[0],
-                sequence[1],
-                index + 1
+                "Switch is missing value after #{} delimiter {}",
+                index + 1,
+                char,
             ),
             Self::UnknownEscapeSequence(sequence) => write!(
                 formatter,
                 "Unknown escape sequence '{}{}'",
                 sequence[0], sequence[1]
             ),
-            Self::UnknownFilter(Char::Raw(value)) => {
-                write!(formatter, "Unknown filter '{}'", value)
+            Self::UnknownFilter(char) => {
+                write!(formatter, "Unknown filter {}", char)
             }
-            Self::UnknownFilter(Char::Escaped(value, sequence)) => write!(
-                formatter,
-                "Unknown filter '{}' written as escape sequence '{}{}'",
-                value, sequence[0], sequence[1]
-            ),
             Self::UnmatchedExprEnd => write!(
                 formatter,
                 "No matching '{}' before expression end",
@@ -292,7 +265,7 @@ mod tests {
             );
             assert_eq!(
                 ErrorKind::ExpectedRangeDelimiter(Some(Char::Escaped('x', ['%', 'y']))).to_string(),
-                "Expected range delimiter '-' but got escape sequence '%y'"
+                "Expected range delimiter '-' but got 'x' (escape sequence '%y')"
             );
         }
 
@@ -373,7 +346,7 @@ mod tests {
             assert_eq!(
                 ErrorKind::PaddingPrefixInvalid('<', Some(Char::Escaped('x', ['%', 'y'])))
                     .to_string(),
-                "Expected '<' prefix or number but got escape sequence '%y'"
+                "Expected '<' prefix or number but got 'x' (escape sequence '%y')"
             );
         }
 
@@ -433,7 +406,7 @@ mod tests {
             );
             assert_eq!(
                 ErrorKind::SubstitutionWithoutTarget(Char::Escaped('|', ['%', '|'])).to_string(),
-                "Substitution is missing value after delimiter '%|' (escape sequence)"
+                "Substitution is missing value after delimiter '|' (escape sequence '%|')"
             );
         }
 
@@ -441,11 +414,11 @@ mod tests {
         fn swith_without_matcher() {
             assert_eq!(
                 ErrorKind::SwitchWithoutMatcher(Char::Raw('_'), 0).to_string(),
-                "Switch is missing value after delimiter '_' #1"
+                "Switch is missing value after #1 delimiter '_'"
             );
             assert_eq!(
                 ErrorKind::SwitchWithoutMatcher(Char::Escaped('|', ['%', '|']), 1).to_string(),
-                "Switch is missing value after delimiter '%|' #2 (escape sequence)"
+                "Switch is missing value after #2 delimiter '|' (escape sequence '%|')"
             );
         }
 
@@ -465,7 +438,7 @@ mod tests {
             );
             assert_eq!(
                 ErrorKind::UnknownFilter(Char::Escaped('x', ['%', 'y'])).to_string(),
-                "Unknown filter 'x' written as escape sequence '%y'"
+                "Unknown filter 'x' (escape sequence '%y')"
             );
         }
 
