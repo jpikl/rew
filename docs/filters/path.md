@@ -106,14 +106,14 @@ Canonical path `P` works similarly to `p` but has some differences:
 - Result will always be an absolute path.
 - If path is a symbolic link, it will be resolved.
 
-## Trailing separator
+## Directory separator
 
-| Filter | Description               |
-| ------ | ------------------------- |
-| `z`    | Ensure trailing separator |
-| `Z`    | Remove trailing separator |
+| Filter | Description                         |
+| ------ | ----------------------------------- |
+| `z`    | Ensure trailing directory separator |
+| `Z`    | Remove trailing directory separator |
 
-Trailing separator filters `z` and `Z` can be useful when dealing with root and unnormalized paths.
+Directory separator filters `z` and `Z` can be useful when dealing with root and unnormalized paths.
 
 | Input  | `{}b` | `{}/b` | `{z}b` | `{Z}/b` |
 | ------ | ----- | -------| ------ | ------- |

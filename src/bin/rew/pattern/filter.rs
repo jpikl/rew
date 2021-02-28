@@ -29,8 +29,8 @@ pub enum Filter {
     RemoveExtension,
     Extension,
     ExtensionWithDot,
-    EnsureTrailingSeparator,
-    RemoveTrailingSeparator,
+    EnsureTrailingDirSeparator,
+    RemoveTrailingDirSeparator,
 
     // Substring filters
     Substring(IndexRange),
@@ -85,8 +85,8 @@ impl Filter {
                 'B' => Ok(Self::RemoveExtension),
                 'e' => Ok(Self::Extension),
                 'E' => Ok(Self::ExtensionWithDot),
-                'z' => Ok(Self::EnsureTrailingSeparator),
-                'Z' => Ok(Self::RemoveTrailingSeparator),
+                'z' => Ok(Self::EnsureTrailingDirSeparator),
+                'Z' => Ok(Self::RemoveTrailingDirSeparator),
 
                 // Substring filters
                 '#' => {
@@ -158,8 +158,8 @@ impl Filter {
             Self::RemoveExtension => path::remove_extension(value),
             Self::Extension => path::get_extension(&value),
             Self::ExtensionWithDot => path::get_extension_with_dot(&value),
-            Self::EnsureTrailingSeparator => Ok(path::ensure_trailing_separator(value)),
-            Self::RemoveTrailingSeparator => Ok(path::remove_trailing_separator(value)),
+            Self::EnsureTrailingDirSeparator => Ok(path::ensure_trailing_dir_separator(value)),
+            Self::RemoveTrailingDirSeparator => Ok(path::remove_trailing_dir_separator(value)),
 
             // Substring filters
             Self::Substring(range) => Ok(range.substr(value)),
@@ -216,8 +216,12 @@ impl fmt::Display for Filter {
             Self::RemoveExtension => write!(formatter, "Remove extension"),
             Self::Extension => write!(formatter, "Extension"),
             Self::ExtensionWithDot => write!(formatter, "Extension with dot"),
-            Self::EnsureTrailingSeparator => write!(formatter, "Ensure trailing separator"),
-            Self::RemoveTrailingSeparator => write!(formatter, "Remove trailing separator"),
+            Self::EnsureTrailingDirSeparator => {
+                write!(formatter, "Ensure trailing directory separator")
+            }
+            Self::RemoveTrailingDirSeparator => {
+                write!(formatter, "Remove trailing directory separator")
+            }
 
             // Substring filters
             Self::Substring(range) => write!(formatter, "Substring from {}", range),
@@ -388,13 +392,13 @@ mod tests {
         }
 
         #[test]
-        fn ensure_trailing_separator() {
-            assert_eq!(parse("z"), Ok(Filter::EnsureTrailingSeparator));
+        fn ensure_trailing_dir_separator() {
+            assert_eq!(parse("z"), Ok(Filter::EnsureTrailingDirSeparator));
         }
 
         #[test]
-        fn remove_trailing_separator() {
-            assert_eq!(parse("Z"), Ok(Filter::RemoveTrailingSeparator));
+        fn remove_trailing_dir_separator() {
+            assert_eq!(parse("Z"), Ok(Filter::RemoveTrailingDirSeparator));
         }
 
         #[test]
@@ -880,18 +884,18 @@ mod tests {
         }
 
         #[test]
-        fn ensure_trailing_separator() {
+        fn ensure_trailing_dir_separator() {
             assert_eq!(
-                Filter::EnsureTrailingSeparator
+                Filter::EnsureTrailingDirSeparator
                     .eval(String::from("root/parent"), &make_eval_context()),
                 Ok(format!("root/parent{}", MAIN_SEPARATOR))
             );
         }
 
         #[test]
-        fn remove_trailing_separator() {
+        fn remove_trailing_dir_separator() {
             assert_eq!(
-                Filter::RemoveTrailingSeparator
+                Filter::RemoveTrailingDirSeparator
                     .eval(String::from("root/parent/"), &make_eval_context()),
                 Ok(String::from("root/parent"))
             );
@@ -1198,18 +1202,18 @@ mod tests {
         }
 
         #[test]
-        fn ensure_trailing_separator() {
+        fn ensure_trailing_dir_separator() {
             assert_eq!(
-                Filter::EnsureTrailingSeparator.to_string(),
-                "Ensure trailing separator"
+                Filter::EnsureTrailingDirSeparator.to_string(),
+                "Ensure trailing directory separator"
             );
         }
 
         #[test]
-        fn remove_trailing_separator() {
+        fn remove_trailing_dir_separator() {
             assert_eq!(
-                Filter::RemoveTrailingSeparator.to_string(),
-                "Remove trailing separator"
+                Filter::RemoveTrailingDirSeparator.to_string(),
+                "Remove trailing directory separator"
             );
         }
 

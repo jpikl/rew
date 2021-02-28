@@ -19,17 +19,17 @@ pub const PATTERN: &str = indoc! {r#"
 pub const FILTERS: &str = indoc! {r#"
 # PATH
 
-  `d`  Parent directory             `D`  Remove last name
-  `f`  File name                    `F`  Last name
-  `b`  Base name                    `B`  Remove extension
-  `e`  Extension                    `E`  Extension with dot
+  `d`  Parent directory     `D`  Remove last name
+  `f`  File name            `F`  Last name
+  `b`  Base name            `B`  Remove extension
+  `e`  Extension            `E`  Extension with dot
 
   `w`  Working directory  
-  `a`  Absolute path                `A`  Relative path
-  `p`  Normalized path              `P`  Canonical path
+  `a`  Absolute path        `A`  Relative path
+  `p`  Normalized path      `P`  Canonical path
 
-  `z`  Ensure trailing separator    `Z`  Remove trailing separator
-
+  `z`  Ensure trailing directory separator    
+  `Z`  Remove trailing directory separator
 
 # SUBSTRINGS
 

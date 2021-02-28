@@ -171,7 +171,7 @@ pub fn get_extension_with_dot(value: &str) -> Result {
     Ok(result)
 }
 
-pub fn ensure_trailing_separator(mut value: String) -> String {
+pub fn ensure_trailing_dir_separator(mut value: String) -> String {
     match value.chars().last() {
         Some(last_char) if is_separator(last_char) => {
             if last_char != MAIN_SEPARATOR {
@@ -186,7 +186,7 @@ pub fn ensure_trailing_separator(mut value: String) -> String {
     value
 }
 
-pub fn remove_trailing_separator(mut value: String) -> String {
+pub fn remove_trailing_dir_separator(mut value: String) -> String {
     if let Some(last_char) = value.chars().last() {
         if std::path::is_separator(last_char) {
             value.pop();
@@ -1200,27 +1200,33 @@ mod tests {
         }
     }
 
-    mod ensure_trailing_separator {
+    mod ensure_trailing_dir_separator {
         use super::*;
 
         #[test]
         fn empty() {
             #[cfg(unix)]
-            assert_eq!(ensure_trailing_separator(String::new()), String::from("/"));
+            assert_eq!(
+                ensure_trailing_dir_separator(String::new()),
+                String::from("/")
+            );
             #[cfg(windows)]
-            assert_eq!(ensure_trailing_separator(String::new()), String::from("\\"));
+            assert_eq!(
+                ensure_trailing_dir_separator(String::new()),
+                String::from("\\")
+            );
         }
 
         #[test]
         fn name() {
             #[cfg(unix)]
             assert_eq!(
-                ensure_trailing_separator(String::from("dir")),
+                ensure_trailing_dir_separator(String::from("dir")),
                 String::from("dir/")
             );
             #[cfg(windows)]
             assert_eq!(
-                ensure_trailing_separator(String::from("dir")),
+                ensure_trailing_dir_separator(String::from("dir")),
                 String::from("dir\\")
             );
         }
@@ -1229,17 +1235,17 @@ mod tests {
         fn name_separator() {
             #[cfg(unix)]
             assert_eq!(
-                ensure_trailing_separator(String::from("dir/")),
+                ensure_trailing_dir_separator(String::from("dir/")),
                 String::from("dir/")
             );
             #[cfg(windows)]
             assert_eq!(
-                ensure_trailing_separator(String::from("dir\\")),
+                ensure_trailing_dir_separator(String::from("dir\\")),
                 String::from("dir\\")
             );
             #[cfg(windows)]
             assert_eq!(
-                ensure_trailing_separator(String::from("dir/")),
+                ensure_trailing_dir_separator(String::from("dir/")),
                 String::from("dir\\")
             );
         }
@@ -1248,17 +1254,17 @@ mod tests {
         fn root() {
             #[cfg(unix)]
             assert_eq!(
-                ensure_trailing_separator(String::from("/")),
+                ensure_trailing_dir_separator(String::from("/")),
                 String::from("/")
             );
             #[cfg(windows)]
             assert_eq!(
-                ensure_trailing_separator(String::from("C:\\")),
+                ensure_trailing_dir_separator(String::from("C:\\")),
                 String::from("C:\\")
             );
             #[cfg(windows)]
             assert_eq!(
-                ensure_trailing_separator(String::from("C:/")),
+                ensure_trailing_dir_separator(String::from("C:/")),
                 String::from("C:\\")
             );
         }
@@ -1267,25 +1273,25 @@ mod tests {
         #[cfg(windows)]
         fn prefix() {
             assert_eq!(
-                ensure_trailing_separator(String::from("C:")),
+                ensure_trailing_dir_separator(String::from("C:")),
                 String::from("C:\\")
             );
         }
     }
 
-    mod remove_trailing_separator {
+    mod remove_trailing_dir_separator {
         use super::*;
 
         #[test]
         fn empty() {
-            assert_eq!(remove_trailing_separator(String::new()), String::new());
+            assert_eq!(remove_trailing_dir_separator(String::new()), String::new());
         }
 
         #[test]
         fn name() {
             #[cfg(unix)]
             assert_eq!(
-                remove_trailing_separator(String::from("dir")),
+                remove_trailing_dir_separator(String::from("dir")),
                 String::from("dir")
             );
         }
@@ -1293,12 +1299,12 @@ mod tests {
         #[test]
         fn name_separator() {
             assert_eq!(
-                remove_trailing_separator(String::from("dir/")),
+                remove_trailing_dir_separator(String::from("dir/")),
                 String::from("dir")
             );
             #[cfg(windows)]
             assert_eq!(
-                remove_trailing_separator(String::from("dir\\")),
+                remove_trailing_dir_separator(String::from("dir\\")),
                 String::from("dir")
             );
         }
@@ -1306,15 +1312,18 @@ mod tests {
         #[test]
         fn root() {
             #[cfg(unix)]
-            assert_eq!(remove_trailing_separator(String::from("/")), String::new());
+            assert_eq!(
+                remove_trailing_dir_separator(String::from("/")),
+                String::new()
+            );
             #[cfg(windows)]
             assert_eq!(
-                remove_trailing_separator(String::from("C:\\")),
+                remove_trailing_dir_separator(String::from("C:\\")),
                 String::from("C:")
             );
             #[cfg(windows)]
             assert_eq!(
-                remove_trailing_separator(String::from("C:/")),
+                remove_trailing_dir_separator(String::from("C:/")),
                 String::from("C:")
             );
         }
@@ -1323,7 +1332,7 @@ mod tests {
         #[cfg(windows)]
         fn prefix() {
             assert_eq!(
-                remove_trailing_separator(String::from("C:")),
+                remove_trailing_dir_separator(String::from("C:")),
                 String::from("C:")
             );
         }
