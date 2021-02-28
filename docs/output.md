@@ -6,7 +6,7 @@ By default, results are printed as lines to standard output.
 - Use `-T, --print` option to print results terminated by a specific string.
 - Use `-Z, --print-nul` flag to print results terminated by NUL character.
 - Use `-R, --print-raw` flag to print results without a terminator.
-- Use `-L, --no-print-last` flag to disable printing terminator for the last result.
+- Use `-L, --no-print-end` flag to disable printing terminator for the last result.
 
 ```bash
 rew '{D}' | xargs mkdir -p       # Pass extracted directories to mkdir command
@@ -22,7 +22,7 @@ Apart from this (standard) mode, there are also two other output modes.
 
 - Enabled using `-b, --diff` flag.
 - Respects `--print*` flags/options.l
-- Ignores `--no-print-last` flag.
+- Ignores `--no-print-end` flag.
 - Prints machine-readable transformations as results:
 
 ```text
@@ -46,7 +46,7 @@ find -name '*.txt'  | rew -b '{}.bak'  | cpb # Make backup copy of each *.txt fi
 
 - Enabled using `-p, --pretty` flag.
 - Ignores `--print*` flags/options.
-- Ignores `--no-print-last` flag.
+- Ignores `--no-print-end` flag.
 - Prints human-readable transformations as results:
 
 ```text

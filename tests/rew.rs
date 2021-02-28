@@ -136,10 +136,10 @@ fn custom_input_terminator() {
 }
 
 #[test]
-fn custom_input_terminator_last() {
+fn custom_input_terminator_end() {
     rew()
         .arg("--read=;")
-        .arg("--read-last")
+        .arg("--read-end")
         .arg("_{}_")
         .write_stdin("a;b")
         .assert()
@@ -161,10 +161,10 @@ fn custom_output_terminator() {
 }
 
 #[test]
-fn custom_output_terminator_no_last() {
+fn custom_output_terminator_no_end() {
     rew()
         .arg("--print=;")
-        .arg("--no-print-last")
+        .arg("--no-print-end")
         .arg("_{}_")
         .write_stdin("a\nb")
         .assert()

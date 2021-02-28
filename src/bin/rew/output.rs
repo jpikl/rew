@@ -9,7 +9,7 @@ use termcolor::{Color, WriteColor};
 
 pub enum Mode {
     Standard,
-    StandardNoLastTerminator,
+    StandardNoEnd,
     Diff,
     Pretty,
 }
@@ -39,7 +39,7 @@ impl<O: Write + WriteColor> Values<O> {
                 write!(self.output, "{}{}", output_value, self.terminator)?;
                 self.flush_if_needed()
             }
-            Mode::StandardNoLastTerminator => {
+            Mode::StandardNoEnd => {
                 if self.first_result {
                     self.first_result = false;
                     write!(self.output, "{}", output_value)
@@ -144,13 +144,13 @@ mod tests {
         }
     }
 
-    mod standard_mode_no_last_terminator {
+    mod standard_mode_no_end {
         use super::*;
 
         #[test]
         fn no_terminator() {
             let mut output = ColoredOuput::new();
-            let mut values = Values::new(&mut output, Mode::StandardNoLastTerminator, "");
+            let mut values = Values::new(&mut output, Mode::StandardNoEnd, "");
             write_values(&mut values);
             assert_eq!(output.chunks(), &[OutputChunk::plain("bd")])
         }
@@ -158,7 +158,7 @@ mod tests {
         #[test]
         fn newline_terminator() {
             let mut output = ColoredOuput::new();
-            let mut values = Values::new(&mut output, Mode::StandardNoLastTerminator, "\n");
+            let mut values = Values::new(&mut output, Mode::StandardNoEnd, "\n");
             write_values(&mut values);
             assert_eq!(output.chunks(), &[OutputChunk::plain("b\nd")])
         }
@@ -166,7 +166,7 @@ mod tests {
         #[test]
         fn nul_terminator() {
             let mut output = ColoredOuput::new();
-            let mut values = Values::new(&mut output, Mode::StandardNoLastTerminator, "\0");
+            let mut values = Values::new(&mut output, Mode::StandardNoEnd, "\0");
             write_values(&mut values);
             assert_eq!(output.chunks(), &[OutputChunk::plain("b\0d")])
         }

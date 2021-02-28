@@ -36,7 +36,7 @@ fn run(cli: &Cli, io: &Io) -> Result {
     }
 
     let mut input_values = if cli.values.is_empty() && !cli.no_stdin {
-        let required = cli.read_last;
+        let required = cli.read_end;
         let terminator = if let Some(value) = cli.read {
             Terminator::Byte { value, required }
         } else if cli.read_nul {
@@ -55,8 +55,8 @@ fn run(cli: &Cli, io: &Io) -> Result {
         output::Mode::Pretty
     } else if cli.diff {
         output::Mode::Diff
-    } else if cli.no_print_last {
-        output::Mode::StandardNoLastTerminator
+    } else if cli.no_print_end {
+        output::Mode::StandardNoEnd
     } else {
         output::Mode::Standard
     };

@@ -76,7 +76,7 @@ pub struct Cli {
 
     /// Read the last value (before EOF) only if it is properly terminated
     #[clap(short = 'l', long, help_heading = INPUT_HEADING)]
-    pub read_last: bool,
+    pub read_end: bool,
 
     /// Do not read values from standard input
     ///
@@ -120,7 +120,7 @@ pub struct Cli {
 
     /// Do not print terminator for the last result
     #[clap(short = 'L', long, help_heading = OUTPUT_HEADING)]
-    pub no_print_last: bool,
+    pub no_print_end: bool,
 
     /// Enable diff output mode
     #[clap(
@@ -132,7 +132,7 @@ pub struct Cli {
             Enable diff output mode
 
             Respects `--print*` flags/options.
-            Ignores `--no-print-last` flag.
+            Ignores `--no-print-end` flag.
             Prints machine-readable transformations as results:
            
                 <input_value_1
@@ -158,7 +158,7 @@ pub struct Cli {
             Enable pretty output mode
 
             Ignores `--print*` flags/options.
-            Ignores `--no-print-last` flag.
+            Ignores `--no-print-end` flag.
             Prints human-readable transformations as results:
 
                 input_value_1 -> output_value_1
