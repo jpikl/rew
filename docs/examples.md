@@ -78,7 +78,7 @@ rew '{s/([^:]*):([^:]*):(.*)/$2:$1:$3}' <input.csv >output.csv
 Print `PATH` variable entries as lines.
 
 ````bash
-echo "$PATH" | rew -d: # PATH entries are delimited by ':'
+echo "$PATH" | rew -t: # PATH entries are separated by colon
 ````
 
 Replace tabs with 4 spaces in a file.
@@ -90,12 +90,12 @@ rew -rR '{R:%t:    }' <input.txt >output.txt # Read/write file content as a whol
 Normalize line endings in a file to `LF`.
 
 ````bash
-rew <input.txt >output.txt # LF is the default output delimiter
+rew <input.txt >output.txt # LF is the default output line terminator
 ````
 
 Normalize line endings in a file to `CR+LF`.
 
 ````bash
-rew -D$'\r\n'   <input.txt >output.txt # CR+LF delimiter using -D option
-rew -R '{}%r%n' <input.txt >output.txt # CR+LF delimiter in pattern
+rew -T$'\r\n'   <input.txt >output.txt # CR+LF output terminator using -T option
+rew -R '{}%r%n' <input.txt >output.txt # CR+LF output terminator in pattern
 ````

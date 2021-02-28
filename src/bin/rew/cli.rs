@@ -41,13 +41,13 @@ pub struct Cli {
     )]
     pub pattern: Option<String>,
 
-    /// Input values (read from stdin by default)
+    /// Input values (read from standard input by default)
     #[clap(value_name = "value", setting(ArgSettings::AllowEmptyValues))]
     pub values: Vec<String>,
 
-    /// Read values delimited by a specific character, not newline
+    /// Read values terminated by a specific character, not newline
     #[clap(
-        short = 'd',
+        short = 't',
         long,
         value_name = "char",
         conflicts_with_all = &["read-nul", "read-raw"],
@@ -56,7 +56,7 @@ pub struct Cli {
     )]
     pub read: Option<u8>,
 
-    /// Read values delimited by NUL, not newline
+    /// Read values terminated by NUL character, not newline
     #[clap(
         short = 'z',
         long,
@@ -74,7 +74,7 @@ pub struct Cli {
     )]
     pub read_raw: bool,
 
-    /// Do not read values from standard input.
+    /// Do not read values from standard input
     ///
     /// By default, when no values are passed as arguments, they are read from standard input instead.
     /// This flag disables such behaviour.
@@ -86,9 +86,9 @@ pub struct Cli {
     )]
     pub no_stdin: bool,
 
-    /// Print results delimited by a specific string, not newline
+    /// Print results terminated by a specific string, not newline
     #[clap(
-        short = 'D',
+        short = 'T',
         long,
         value_name = "string",
         conflicts_with_all = &["print-nul", "print-raw"],
@@ -96,7 +96,7 @@ pub struct Cli {
     )]
     pub print: Option<String>,
 
-    /// Print results delimited by NUL, not newline
+    /// Print results terminated by NUL character, not newline
     #[clap(
         short = 'Z',
         long,
@@ -105,7 +105,7 @@ pub struct Cli {
     )]
     pub print_nul: bool,
 
-    /// Print results without a delimiter
+    /// Print results without a terminator
     #[clap(
         short = 'R',
         long,
@@ -114,9 +114,9 @@ pub struct Cli {
     )]
     pub print_raw: bool,
 
-    /// Do not print final delimiter at the end of output
-    #[clap(short = 'T', long, help_heading = OUTPUT_HEADING)]
-    pub no_trailing_delimiter: bool,
+    /// Do not print terminator for the last result
+    #[clap(short = 'L', long, help_heading = OUTPUT_HEADING)]
+    pub no_print_last: bool,
 
     /// Enable diff output mode
     #[clap(
@@ -128,7 +128,7 @@ pub struct Cli {
             Enable diff output mode
 
             Respects `--print*` flags/options.
-            Ignores `--no-trailing-delimiter` flag.
+            Ignores `--no-print-last` flag.
             Prints machine-readable transformations as results:
            
                 <input_value_1
@@ -154,7 +154,7 @@ pub struct Cli {
             Enable pretty output mode
 
             Ignores `--print*` flags/options.
-            Ignores `--no-trailing-delimiter` flag.
+            Ignores `--no-print-last` flag.
             Prints human-readable transformations as results:
 
                 input_value_1 -> output_value_1

@@ -1,7 +1,7 @@
 use crate::utils::str_from_utf8;
 use std::io::{BufRead, Result};
 
-pub enum Delimiter {
+pub enum Terminator {
     Newline,
     Byte(u8),
     None,
@@ -9,15 +9,15 @@ pub enum Delimiter {
 
 pub struct Splitter<I: BufRead> {
     input: I,
-    delimiter: Delimiter,
+    terminator: Terminator,
     buffer: Vec<u8>,
 }
 
 impl<I: BufRead> Splitter<I> {
-    pub fn new(input: I, delimiter: Delimiter) -> Self {
+    pub fn new(input: I, terminator: Terminator) -> Self {
         Self {
             input,
-            delimiter,
+            terminator,
             buffer: Vec::new(),
         }
     }
@@ -25,17 +25,17 @@ impl<I: BufRead> Splitter<I> {
     pub fn read(&mut self) -> Result<Option<(&str, usize)>> {
         self.buffer.clear();
 
-        let mut size = match self.delimiter {
-            Delimiter::Newline => self.input.read_until(b'\n', &mut self.buffer)?,
-            Delimiter::Byte(delimiter) => self.input.read_until(delimiter, &mut self.buffer)?,
-            Delimiter::None => self.input.read_to_end(&mut self.buffer)?,
+        let mut size = match self.terminator {
+            Terminator::Newline => self.input.read_until(b'\n', &mut self.buffer)?,
+            Terminator::Byte(terminator) => self.input.read_until(terminator, &mut self.buffer)?,
+            Terminator::None => self.input.read_to_end(&mut self.buffer)?,
         };
 
         if size > 0 {
             let orig_size = size;
 
-            match self.delimiter {
-                Delimiter::Newline => {
+            match self.terminator {
+                Terminator::Newline => {
                     if size > 0 && self.buffer[size - 1] == b'\n' {
                         size -= 1;
                         if size > 0 && self.buffer[size - 1] == b'\r' {
@@ -43,12 +43,12 @@ impl<I: BufRead> Splitter<I> {
                         }
                     }
                 }
-                Delimiter::Byte(delimiter) => {
-                    if size > 0 && self.buffer[size - 1] == delimiter {
+                Terminator::Byte(terminator) => {
+                    if size > 0 && self.buffer[size - 1] == terminator {
                         size -= 1;
                     }
                 }
-                Delimiter::None => {}
+                Terminator::None => {}
             }
 
             str_from_utf8(&self.buffer[..size]).map(|str| Some((str, orig_size)))
@@ -63,12 +63,12 @@ mod tests {
     use super::*;
     use crate::testing::unpack_io_error;
 
-    mod newline_delimiter {
+    mod newline_terminator {
         use super::*;
 
         #[test]
         fn empty() {
-            let mut splitter = Splitter::new(&[][..], Delimiter::Newline);
+            let mut splitter = Splitter::new(&[][..], Terminator::Newline);
             assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
         }
 
@@ -77,7 +77,7 @@ mod tests {
 
             #[test]
             fn between() {
-                let mut splitter = Splitter::new(&b"abc\0\n\0def"[..], Delimiter::Newline);
+                let mut splitter = Splitter::new(&b"abc\0\n\0def"[..], Terminator::Newline);
                 assert_eq!(
                     splitter.read().map_err(unpack_io_error),
                     Ok(Some(("abc\0", 5)))
@@ -91,7 +91,7 @@ mod tests {
 
             #[test]
             fn between_and_end() {
-                let mut splitter = Splitter::new(&b"abc\0\n\0def\n"[..], Delimiter::Newline);
+                let mut splitter = Splitter::new(&b"abc\0\n\0def\n"[..], Terminator::Newline);
                 assert_eq!(
                     splitter.read().map_err(unpack_io_error),
                     Ok(Some(("abc\0", 5)))
@@ -105,7 +105,7 @@ mod tests {
 
             #[test]
             fn consecutive() {
-                let mut splitter = Splitter::new(&b"\n\n"[..], Delimiter::Newline);
+                let mut splitter = Splitter::new(&b"\n\n"[..], Terminator::Newline);
                 assert_eq!(splitter.read().map_err(unpack_io_error), Ok(Some(("", 1))));
                 assert_eq!(splitter.read().map_err(unpack_io_error), Ok(Some(("", 1))));
                 assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
@@ -117,7 +117,7 @@ mod tests {
 
             #[test]
             fn between() {
-                let mut splitter = Splitter::new(&b"abc\0\r\n\0def"[..], Delimiter::Newline);
+                let mut splitter = Splitter::new(&b"abc\0\r\n\0def"[..], Terminator::Newline);
                 assert_eq!(
                     splitter.read().map_err(unpack_io_error),
                     Ok(Some(("abc\0", 6)))
@@ -131,7 +131,7 @@ mod tests {
 
             #[test]
             fn between_and_end() {
-                let mut splitter = Splitter::new(&b"abc\0\r\n\0def\r\n"[..], Delimiter::Newline);
+                let mut splitter = Splitter::new(&b"abc\0\r\n\0def\r\n"[..], Terminator::Newline);
                 assert_eq!(
                     splitter.read().map_err(unpack_io_error),
                     Ok(Some(("abc\0", 6)))
@@ -145,7 +145,7 @@ mod tests {
 
             #[test]
             fn consecutive() {
-                let mut splitter = Splitter::new(&b"\r\n\n\r\n"[..], Delimiter::Newline);
+                let mut splitter = Splitter::new(&b"\r\n\n\r\n"[..], Terminator::Newline);
                 assert_eq!(splitter.read().map_err(unpack_io_error), Ok(Some(("", 2))));
                 assert_eq!(splitter.read().map_err(unpack_io_error), Ok(Some(("", 1))));
                 assert_eq!(splitter.read().map_err(unpack_io_error), Ok(Some(("", 2))));
@@ -154,18 +154,18 @@ mod tests {
         }
     }
 
-    mod byte_delimiter {
+    mod byte_terminator {
         use super::*;
 
         #[test]
         fn empty() {
-            let mut splitter = Splitter::new(&[][..], Delimiter::Byte(0));
+            let mut splitter = Splitter::new(&[][..], Terminator::Byte(0));
             assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
         }
 
         #[test]
         fn between() {
-            let mut splitter = Splitter::new(&b"abc\n\0\ndef"[..], Delimiter::Byte(0));
+            let mut splitter = Splitter::new(&b"abc\n\0\ndef"[..], Terminator::Byte(0));
             assert_eq!(
                 splitter.read().map_err(unpack_io_error),
                 Ok(Some(("abc\n", 5)))
@@ -179,7 +179,7 @@ mod tests {
 
         #[test]
         fn between_and_end() {
-            let mut splitter = Splitter::new(&b"abc\n\0\ndef\0"[..], Delimiter::Byte(0));
+            let mut splitter = Splitter::new(&b"abc\n\0\ndef\0"[..], Terminator::Byte(0));
             assert_eq!(
                 splitter.read().map_err(unpack_io_error),
                 Ok(Some(("abc\n", 5)))
@@ -193,25 +193,25 @@ mod tests {
 
         #[test]
         fn consecutive() {
-            let mut splitter = Splitter::new(&b"\0\0"[..], Delimiter::Byte(0));
+            let mut splitter = Splitter::new(&b"\0\0"[..], Terminator::Byte(0));
             assert_eq!(splitter.read().map_err(unpack_io_error), Ok(Some(("", 1))));
             assert_eq!(splitter.read().map_err(unpack_io_error), Ok(Some(("", 1))));
             assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
         }
     }
 
-    mod none_delimiter {
+    mod no_terminator {
         use super::*;
 
         #[test]
         fn empty() {
-            let mut splitter = Splitter::new(&[][..], Delimiter::None);
+            let mut splitter = Splitter::new(&[][..], Terminator::None);
             assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
         }
 
         #[test]
         fn nonempty() {
-            let mut splitter = Splitter::new(&b"abc\n\0def"[..], Delimiter::None);
+            let mut splitter = Splitter::new(&b"abc\n\0def"[..], Terminator::None);
             assert_eq!(
                 splitter.read().map_err(unpack_io_error),
                 Ok(Some(("abc\n\0def", 8)))

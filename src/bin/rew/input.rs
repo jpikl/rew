@@ -1,4 +1,4 @@
-use common::input::{Delimiter, Splitter};
+use common::input::{Splitter, Terminator};
 use std::io::{BufRead, Result};
 use std::slice::Iter;
 
@@ -14,9 +14,9 @@ impl<'a, I: BufRead> Values<'a, I> {
         }
     }
 
-    pub fn from_stdin(stdin: I, delimiter: Delimiter) -> Self {
+    pub fn from_stdin(stdin: I, terminator: Terminator) -> Self {
         Values::Stdin {
-            splitter: Splitter::new(stdin, delimiter),
+            splitter: Splitter::new(stdin, terminator),
         }
     }
 
@@ -44,7 +44,7 @@ mod tests {
 
     #[test]
     fn stdin() {
-        let mut values = Values::from_stdin(&b"a\nb"[..], Delimiter::Newline);
+        let mut values = Values::from_stdin(&b"a\nb"[..], Terminator::Newline);
         assert_eq!(values.next().map_err(unpack_io_error), Ok(Some("a")));
         assert_eq!(values.next().map_err(unpack_io_error), Ok(Some("b")));
         assert_eq!(values.next().map_err(unpack_io_error), Ok(None));

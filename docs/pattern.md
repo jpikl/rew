@@ -24,7 +24,7 @@ Empty expression `{}` evaluates directly to input value.
 | `world` | `{}`         | `world`         |
 | `world` | `Hello, {}!` | `Hello, world!` |
 
-Expression may contain one or more filters, delimited by `|`.
+Expression may contain one or more filters, separated by `|`.
 Filters are consecutively applied on input value.
 
 | Input      | Pattern         | Output     | Description                        |

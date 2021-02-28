@@ -1,16 +1,17 @@
 # ⌨️ Input
 
 By default, input values are read as lines from standard input.
-`LF` or `CR+LF` is auto-detected as a delimiter, independent of platform.
+Each line is expected to be terminated either by `LF` or `CR+LF` characters.
+The last line (before `EOF`) does not need to have a terminator.
 
-- Use `-z, --read-nul` flag to read values delimited by NUL character.
+- Use `td, --read` option to read values terminated by a specific character.
+- Use `-z, --read-nul` flag to read values terminated by NUL character.
 - Use `-r, --read-raw` flag to read whole input into memory as a single value.
-- Use `-d, --read` option to read values delimited by a specific character.
 
 ```bash
 find | rew '{a}'            # Convert output of find command to absolute paths
-find -print0 | rew -z '{a}' # Use NUL delimiter in case paths contain newlines
-echo "$PATH" | rew -d:      # Split PATH variable entries delimited by colon
+find -print0 | rew -z '{a}' # Use NUL terminator in case paths contain newlines
+echo "$PATH" | rew -t:      # Split PATH variable entries separated by colon
 rew -r 'A{}B' <data.txt     # Read file as a whole, prepend 'A', append 'B'
 ```
 

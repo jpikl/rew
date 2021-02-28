@@ -2,7 +2,7 @@ use crate::cli::Cli;
 use crate::output::write_pattern_error;
 use crate::pattern::{eval, help, Pattern};
 use common::help::highlight;
-use common::input::Delimiter as InputDelimiter;
+use common::input::Terminator;
 use common::run::{exec_run, Io, Result, EXIT_CODE_OK};
 use std::env;
 use std::io::Write;
@@ -36,16 +36,16 @@ fn run(cli: &Cli, io: &Io) -> Result {
     }
 
     let mut input_values = if cli.values.is_empty() && !cli.no_stdin {
-        let input_delimiter = if let Some(byte) = cli.read {
-            InputDelimiter::Byte(byte)
+        let input_terminator = if let Some(byte) = cli.read {
+            Terminator::Byte(byte)
         } else if cli.read_nul {
-            InputDelimiter::Byte(0)
+            Terminator::Byte(0)
         } else if cli.read_raw {
-            InputDelimiter::None
+            Terminator::None
         } else {
-            InputDelimiter::Newline
+            Terminator::Newline
         };
-        input::Values::from_stdin(io.stdin(), input_delimiter)
+        input::Values::from_stdin(io.stdin(), input_terminator)
     } else {
         input::Values::from_args(cli.values.as_slice())
     };
@@ -54,14 +54,14 @@ fn run(cli: &Cli, io: &Io) -> Result {
         output::Mode::Pretty
     } else if cli.diff {
         output::Mode::Diff
-    } else if cli.no_trailing_delimiter {
-        output::Mode::StandardNoTrailingDelimiter
+    } else if cli.no_print_last {
+        output::Mode::StandardNoLastTerminator
     } else {
         output::Mode::Standard
     };
 
-    let output_delimiter = if let Some(delimiter) = &cli.print {
-        delimiter
+    let output_terminator = if let Some(terminator) = &cli.print {
+        terminator
     } else if cli.print_raw {
         ""
     } else if cli.print_nul {
@@ -70,7 +70,7 @@ fn run(cli: &Cli, io: &Io) -> Result {
         "\n"
     };
 
-    let mut output_values = output::Values::new(io.stdout(), output_mode, output_delimiter);
+    let mut output_values = output::Values::new(io.stdout(), output_mode, output_terminator);
     let mut exit_code = EXIT_CODE_OK;
 
     if let Some(raw_pattern) = cli.pattern.as_ref() {
@@ -169,6 +169,6 @@ fn run(cli: &Cli, io: &Io) -> Result {
         }
     };
 
-    io.stdout().flush()?; // output::Values may not do flush if there is no trailing delimiter.
+    io.stdout().flush()?; // output::Values may not do flush if there is no last terminator.
     Ok(exit_code)
 }

@@ -1,4 +1,4 @@
-use crate::input::Delimiter;
+use crate::input::Terminator;
 use crate::output::write_error;
 use crate::run::{Io, Options, Result, EXIT_CODE_IO_ERROR, EXIT_CODE_OK};
 use crate::transfer::fs::{transfer_path, TransferMode};
@@ -15,13 +15,13 @@ pub fn run_transfer<O>(options: &O, io: &Io, mode: TransferMode) -> Result
 where
     O: Options + TransferOptions,
 {
-    let delimiter = if options.read_nul() {
-        Delimiter::Byte(0)
+    let terminator = if options.read_nul() {
+        Terminator::Byte(0)
     } else {
-        Delimiter::Newline
+        Terminator::Newline
     };
 
-    let mut path_diff = PathDiff::new(io.stdin(), delimiter);
+    let mut path_diff = PathDiff::new(io.stdin(), terminator);
     let mut log = TransferLog::new(io.stdout());
     let mut exit_code = EXIT_CODE_OK;
 

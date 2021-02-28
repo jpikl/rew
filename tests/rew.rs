@@ -76,7 +76,7 @@ fn paths_from_stdin() {
 }
 
 #[test]
-fn nul_input_delimiter() {
+fn nul_input_terminator() {
     rew()
         .arg("--read-nul")
         .arg("_{}_")
@@ -88,7 +88,7 @@ fn nul_input_delimiter() {
 }
 
 #[test]
-fn nul_output_delimiter() {
+fn nul_output_terminator() {
     rew()
         .arg("--print-nul")
         .arg("_{}_")
@@ -100,7 +100,7 @@ fn nul_output_delimiter() {
 }
 
 #[test]
-fn no_input_delimiter() {
+fn no_input_terminator() {
     rew()
         .arg("--read-raw")
         .arg("_{}_")
@@ -112,7 +112,7 @@ fn no_input_delimiter() {
 }
 
 #[test]
-fn no_output_delimiter() {
+fn no_output_terminator() {
     rew()
         .arg("--print-raw")
         .arg("_{}_")
@@ -124,7 +124,7 @@ fn no_output_delimiter() {
 }
 
 #[test]
-fn custom_input_delimiter() {
+fn custom_input_terminator() {
     rew()
         .arg("--read=;")
         .arg("_{}_")
@@ -136,7 +136,7 @@ fn custom_input_delimiter() {
 }
 
 #[test]
-fn custom_output_delimiter() {
+fn custom_output_terminator() {
     rew()
         .arg("--print=;")
         .arg("_{}_")
@@ -148,10 +148,10 @@ fn custom_output_delimiter() {
 }
 
 #[test]
-fn custom_output_no_trailing_delimiter() {
+fn custom_output_terminator_no_last() {
     rew()
         .arg("--print=;")
-        .arg("--no-trailing-delimiter")
+        .arg("--no-print-last")
         .arg("_{}_")
         .write_stdin("a\nb")
         .assert()

@@ -1,4 +1,4 @@
-use crate::input::{Delimiter, Splitter};
+use crate::input::{Splitter, Terminator};
 use crate::symbols::{DIFF_IN, DIFF_OUT};
 use std::fmt;
 use std::io::{BufRead, Error, ErrorKind, Result};
@@ -32,9 +32,9 @@ pub struct PathDiff<I: BufRead> {
 }
 
 impl<I: BufRead> PathDiff<I> {
-    pub fn new(input: I, delimiter: Delimiter) -> Self {
+    pub fn new(input: I, terminator: Terminator) -> Self {
         Self {
-            splitter: Splitter::new(input, delimiter),
+            splitter: Splitter::new(input, terminator),
             position: Position::new(),
         }
     }
@@ -111,7 +111,7 @@ mod tests {
         #[test]
         fn empty() {
             assert_eq!(
-                PathDiff::new(&[][..], Delimiter::Newline)
+                PathDiff::new(&[][..], Terminator::Newline)
                     .read()
                     .map_err(unpack_io_error),
                 Ok(None)
@@ -126,7 +126,7 @@ mod tests {
                 < g h i 
                 > j k l 
             "};
-            let mut path_diff = PathDiff::new(input.as_bytes(), Delimiter::Newline);
+            let mut path_diff = PathDiff::new(input.as_bytes(), Terminator::Newline);
             assert_eq!(
                 path_diff.read().map_err(unpack_io_error),
                 Ok(Some((PathBuf::from("abc"), PathBuf::from("def"))))
@@ -141,7 +141,7 @@ mod tests {
         #[test]
         fn invalid_in_prefix() {
             assert_eq!(
-                PathDiff::new(&b"abc"[..], Delimiter::Newline)
+                PathDiff::new(&b"abc"[..], Terminator::Newline)
                     .read()
                     .map_err(unpack_io_error),
                 Err((
@@ -154,7 +154,7 @@ mod tests {
         #[test]
         fn invalid_out_prefix() {
             assert_eq!(
-                PathDiff::new(&b"<abc\ndef"[..], Delimiter::Newline)
+                PathDiff::new(&b"<abc\ndef"[..], Terminator::Newline)
                     .read()
                     .map_err(unpack_io_error),
                 Err((
@@ -167,7 +167,7 @@ mod tests {
         #[test]
         fn no_in_path() {
             assert_eq!(
-                PathDiff::new(&b"<"[..], Delimiter::Newline)
+                PathDiff::new(&b"<"[..], Terminator::Newline)
                     .read()
                     .map_err(unpack_io_error),
                 Err((
@@ -180,7 +180,7 @@ mod tests {
         #[test]
         fn no_out_path() {
             assert_eq!(
-                PathDiff::new(&b"<abc\n>"[..], Delimiter::Newline)
+                PathDiff::new(&b"<abc\n>"[..], Terminator::Newline)
                     .read()
                     .map_err(unpack_io_error),
                 Err((
@@ -193,7 +193,7 @@ mod tests {
         #[test]
         fn no_out() {
             assert_eq!(
-                PathDiff::new(&b"<abc"[..], Delimiter::Newline)
+                PathDiff::new(&b"<abc"[..], Terminator::Newline)
                     .read()
                     .map_err(unpack_io_error),
                 Err((
@@ -206,7 +206,7 @@ mod tests {
         #[test]
         fn empty_out() {
             assert_eq!(
-                PathDiff::new(&b"<abc\n\n"[..], Delimiter::Newline)
+                PathDiff::new(&b"<abc\n\n"[..], Terminator::Newline)
                     .read()
                     .map_err(unpack_io_error),
                 Err((

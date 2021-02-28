@@ -9,7 +9,7 @@ use termcolor::{Color, WriteColor};
 
 pub enum Mode {
     Standard,
-    StandardNoTrailingDelimiter,
+    StandardNoLastTerminator,
     Diff,
     Pretty,
 }
@@ -17,34 +17,34 @@ pub enum Mode {
 pub struct Values<O: Write + WriteColor> {
     output: O,
     mode: Mode,
-    delimiter: String,
+    terminator: String,
     first_result: bool,
     flush_needed: bool,
 }
 
 impl<O: Write + WriteColor> Values<O> {
-    pub fn new(output: O, mode: Mode, delimiter: &str) -> Self {
+    pub fn new(output: O, mode: Mode, terminator: &str) -> Self {
         Self {
             output,
             mode,
-            delimiter: delimiter.to_string(),
+            terminator: terminator.to_string(),
             first_result: true,
-            flush_needed: !delimiter.ends_with('\n'),
+            flush_needed: !terminator.ends_with('\n'),
         }
     }
 
     pub fn write(&mut self, input_value: &str, output_value: &str) -> Result<()> {
         match self.mode {
             Mode::Standard => {
-                write!(self.output, "{}{}", output_value, self.delimiter)?;
+                write!(self.output, "{}{}", output_value, self.terminator)?;
                 self.flush_if_needed()
             }
-            Mode::StandardNoTrailingDelimiter => {
+            Mode::StandardNoLastTerminator => {
                 if self.first_result {
                     self.first_result = false;
                     write!(self.output, "{}", output_value)
                 } else {
-                    write!(self.output, "{}", self.delimiter)?;
+                    write!(self.output, "{}", self.terminator)?;
                     self.flush_if_needed()?;
                     write!(self.output, "{}", output_value)
                 }
@@ -53,7 +53,7 @@ impl<O: Write + WriteColor> Values<O> {
                 write!(
                     self.output,
                     "{}{}{}{}{}{}",
-                    DIFF_IN, input_value, self.delimiter, DIFF_OUT, output_value, self.delimiter
+                    DIFF_IN, input_value, self.terminator, DIFF_OUT, output_value, self.terminator
                 )?;
                 self.flush_if_needed()
             }
@@ -120,7 +120,7 @@ mod tests {
         use super::*;
 
         #[test]
-        fn no_delimiter() {
+        fn no_terminator() {
             let mut output = ColoredOuput::new();
             let mut values = Values::new(&mut output, Mode::Standard, "");
             write_values(&mut values);
@@ -128,7 +128,7 @@ mod tests {
         }
 
         #[test]
-        fn newline_delimiter() {
+        fn newline_terminator() {
             let mut output = ColoredOuput::new();
             let mut values = Values::new(&mut output, Mode::Standard, "\n");
             write_values(&mut values);
@@ -136,7 +136,7 @@ mod tests {
         }
 
         #[test]
-        fn nul_delimiter() {
+        fn nul_terminator() {
             let mut output = ColoredOuput::new();
             let mut values = Values::new(&mut output, Mode::Standard, "\0");
             write_values(&mut values);
@@ -144,29 +144,29 @@ mod tests {
         }
     }
 
-    mod standard_mode_no_trailing_delimiter {
+    mod standard_mode_no_last_terminator {
         use super::*;
 
         #[test]
-        fn no_delimiter() {
+        fn no_terminator() {
             let mut output = ColoredOuput::new();
-            let mut values = Values::new(&mut output, Mode::StandardNoTrailingDelimiter, "");
+            let mut values = Values::new(&mut output, Mode::StandardNoLastTerminator, "");
             write_values(&mut values);
             assert_eq!(output.chunks(), &[OutputChunk::plain("bd")])
         }
 
         #[test]
-        fn newline_delimiter() {
+        fn newline_terminator() {
             let mut output = ColoredOuput::new();
-            let mut values = Values::new(&mut output, Mode::StandardNoTrailingDelimiter, "\n");
+            let mut values = Values::new(&mut output, Mode::StandardNoLastTerminator, "\n");
             write_values(&mut values);
             assert_eq!(output.chunks(), &[OutputChunk::plain("b\nd")])
         }
 
         #[test]
-        fn nul_delimiter() {
+        fn nul_terminator() {
             let mut output = ColoredOuput::new();
-            let mut values = Values::new(&mut output, Mode::StandardNoTrailingDelimiter, "\0");
+            let mut values = Values::new(&mut output, Mode::StandardNoLastTerminator, "\0");
             write_values(&mut values);
             assert_eq!(output.chunks(), &[OutputChunk::plain("b\0d")])
         }
@@ -176,7 +176,7 @@ mod tests {
         use super::*;
 
         #[test]
-        fn no_delimiter() {
+        fn no_terminator() {
             let mut output = ColoredOuput::new();
             let mut values = Values::new(&mut output, Mode::Diff, "");
             write_values(&mut values);
@@ -184,7 +184,7 @@ mod tests {
         }
 
         #[test]
-        fn newline_delimiter() {
+        fn newline_terminator() {
             let mut output = ColoredOuput::new();
             let mut values = Values::new(&mut output, Mode::Diff, "\n");
             write_values(&mut values);
@@ -192,7 +192,7 @@ mod tests {
         }
 
         #[test]
-        fn null_delimiter() {
+        fn nul_terminator() {
             let mut output = ColoredOuput::new();
             let mut values = Values::new(&mut output, Mode::Diff, "\0");
             write_values(&mut values);

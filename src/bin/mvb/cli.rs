@@ -45,7 +45,7 @@ use termcolor::ColorChoice;
 )]
 /// Bulk move (rename) files and directories
 pub struct Cli {
-    /// Read instructions delimited by NUL, not newline
+    /// Read instructions terminated by NUL character, not newline
     #[clap(short = 'z', long)]
     pub read_nul: bool,
 
