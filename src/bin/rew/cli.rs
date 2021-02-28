@@ -41,7 +41,7 @@ pub struct Cli {
     )]
     pub pattern: Option<String>,
 
-    /// Input values (read from standard input by default)
+    /// Input values (read as lines from standard input by default)
     #[clap(value_name = "value", setting(ArgSettings::AllowEmptyValues))]
     pub values: Vec<String>,
 
@@ -73,6 +73,10 @@ pub struct Cli {
         help_heading = INPUT_HEADING
     )]
     pub read_raw: bool,
+
+    /// Read the last value (before EOF) only if it is properly terminated
+    #[clap(short = 'l', long, help_heading = INPUT_HEADING)]
+    pub read_last: bool,
 
     /// Do not read values from standard input
     ///

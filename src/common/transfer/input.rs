@@ -111,7 +111,7 @@ mod tests {
         #[test]
         fn empty() {
             assert_eq!(
-                PathDiff::new(&[][..], Terminator::Newline)
+                PathDiff::new(&[][..], Terminator::Newline { required: false })
                     .read()
                     .map_err(unpack_io_error),
                 Ok(None)
@@ -126,7 +126,8 @@ mod tests {
                 < g h i 
                 > j k l 
             "};
-            let mut path_diff = PathDiff::new(input.as_bytes(), Terminator::Newline);
+            let mut path_diff =
+                PathDiff::new(input.as_bytes(), Terminator::Newline { required: false });
             assert_eq!(
                 path_diff.read().map_err(unpack_io_error),
                 Ok(Some((PathBuf::from("abc"), PathBuf::from("def"))))
@@ -141,7 +142,7 @@ mod tests {
         #[test]
         fn invalid_in_prefix() {
             assert_eq!(
-                PathDiff::new(&b"abc"[..], Terminator::Newline)
+                PathDiff::new(&b"abc"[..], Terminator::Newline { required: false })
                     .read()
                     .map_err(unpack_io_error),
                 Err((
@@ -154,7 +155,7 @@ mod tests {
         #[test]
         fn invalid_out_prefix() {
             assert_eq!(
-                PathDiff::new(&b"<abc\ndef"[..], Terminator::Newline)
+                PathDiff::new(&b"<abc\ndef"[..], Terminator::Newline { required: false })
                     .read()
                     .map_err(unpack_io_error),
                 Err((
@@ -167,7 +168,7 @@ mod tests {
         #[test]
         fn no_in_path() {
             assert_eq!(
-                PathDiff::new(&b"<"[..], Terminator::Newline)
+                PathDiff::new(&b"<"[..], Terminator::Newline { required: false })
                     .read()
                     .map_err(unpack_io_error),
                 Err((
@@ -180,7 +181,7 @@ mod tests {
         #[test]
         fn no_out_path() {
             assert_eq!(
-                PathDiff::new(&b"<abc\n>"[..], Terminator::Newline)
+                PathDiff::new(&b"<abc\n>"[..], Terminator::Newline { required: false })
                     .read()
                     .map_err(unpack_io_error),
                 Err((
@@ -193,7 +194,7 @@ mod tests {
         #[test]
         fn no_out() {
             assert_eq!(
-                PathDiff::new(&b"<abc"[..], Terminator::Newline)
+                PathDiff::new(&b"<abc"[..], Terminator::Newline { required: false })
                     .read()
                     .map_err(unpack_io_error),
                 Err((
@@ -206,7 +207,7 @@ mod tests {
         #[test]
         fn empty_out() {
             assert_eq!(
-                PathDiff::new(&b"<abc\n\n"[..], Terminator::Newline)
+                PathDiff::new(&b"<abc\n\n"[..], Terminator::Newline { required: false })
                     .read()
                     .map_err(unpack_io_error),
                 Err((

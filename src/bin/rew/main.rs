@@ -36,16 +36,17 @@ fn run(cli: &Cli, io: &Io) -> Result {
     }
 
     let mut input_values = if cli.values.is_empty() && !cli.no_stdin {
-        let input_terminator = if let Some(byte) = cli.read {
-            Terminator::Byte(byte)
+        let required = cli.read_last;
+        let terminator = if let Some(value) = cli.read {
+            Terminator::Byte { value, required }
         } else if cli.read_nul {
-            Terminator::Byte(0)
+            Terminator::Byte { value: 0, required }
         } else if cli.read_raw {
             Terminator::None
         } else {
-            Terminator::Newline
+            Terminator::Newline { required }
         };
-        input::Values::from_stdin(io.stdin(), input_terminator)
+        input::Values::from_stdin(io.stdin(), terminator)
     } else {
         input::Values::from_args(cli.values.as_slice())
     };

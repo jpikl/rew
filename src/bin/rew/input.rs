@@ -44,7 +44,7 @@ mod tests {
 
     #[test]
     fn stdin() {
-        let mut values = Values::from_stdin(&b"a\nb"[..], Terminator::Newline);
+        let mut values = Values::from_stdin(&b"a\nb"[..], Terminator::Newline { required: false });
         assert_eq!(values.next().map_err(unpack_io_error), Ok(Some("a")));
         assert_eq!(values.next().map_err(unpack_io_error), Ok(Some("b")));
         assert_eq!(values.next().map_err(unpack_io_error), Ok(None));

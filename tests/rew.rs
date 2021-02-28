@@ -136,6 +136,19 @@ fn custom_input_terminator() {
 }
 
 #[test]
+fn custom_input_terminator_last() {
+    rew()
+        .arg("--read=;")
+        .arg("--read-last")
+        .arg("_{}_")
+        .write_stdin("a;b")
+        .assert()
+        .success()
+        .stdout("_a_\n")
+        .stderr("");
+}
+
+#[test]
 fn custom_output_terminator() {
     rew()
         .arg("--print=;")

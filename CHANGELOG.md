@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `-q, --quote` flag to automatically wrap  output of every pattern expression in quotes.
+- `-l, --read-last` flag to require the last input value to be properly terminated.
 - `-I, --no-stdin` flag to disable reading values from standard input.
 
 ### Changed
@@ -19,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `N` filter (substring with backward indexing) was replaced by use of `#` with negative indexing (e.g., `#-2`).
 - Capture groups of a global regex need to be prefixed with `$` (e.g., `{$1}` instead of `{1}`).
 - More lenient number parsing that ignore multiple leading zeros (e.g., `001` is interpreted as `1`).
-- `--no-trailing-delimiter` flag was renamed to `--no-print-last`.
+- `-T, --no-trailing-delimiter` flag was renamed to `-L, --no-print-last`.
 
 ### Fixed
 

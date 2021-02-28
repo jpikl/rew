@@ -16,9 +16,12 @@ where
     O: Options + TransferOptions,
 {
     let terminator = if options.read_nul() {
-        Terminator::Byte(0)
+        Terminator::Byte {
+            value: 0,
+            required: false,
+        }
     } else {
-        Terminator::Newline
+        Terminator::Newline { required: false }
     };
 
     let mut path_diff = PathDiff::new(io.stdin(), terminator);
