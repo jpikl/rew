@@ -4,24 +4,28 @@ By default, results are printed as lines to standard output.
 `LF` character is used as a line terminator.
 
 - Use `-T, --print` option to print results terminated by a specific string.
-- Use `-Z, --print-nul` flag to print results terminated by NUL character.
+- Use `-Z, --print-nul` flag to print results terminated by `NUL` character.
 - Use `-R, --print-raw` flag to print results without a terminator.
 - Use `-L, --no-print-end` flag to disable printing terminator for the last result.
 
-```bash
-rew '{D}' | xargs mkdir -p       # Pass extracted directories to mkdir command
-rew -Z '{D}' | xargs -0 mkdir -p # Use NUL terminator in case paths contain newlines
-rew -T$'\r\n'                    # Convert newlines to CR+LF using custom output terminator
-rew -R '{}%r%n'                  # Same thing but output terminator is inside pattern
-rew -LT+ '{}' a b c              # Join input values to string "a+b+c"
-```
+The following table shows how values would be printed for valid combinations of flags/options:
+
+| Values        | Flags    | Output      |
+| ------------- | -------- | ----------- |
+| `a`, `b`, `c` | *(none)* | `a\nb\nc\n` |
+| `a`, `b`, `c` | `-L`     | `a\nb\nc`   |
+| `a`, `b`, `c` | `-Z`     | `a\0b\0c\0` |
+| `a`, `b`, `c` | `-LZ`    | `a\0b\0c`   |
+| `a`, `b`, `c` | `-T:`    | `a:b:c:`    |
+| `a`, `b`, `c` | `-LT:`   | `a:b:c`     |
+| `a`, `b`, `c` | `-R`     | `abc`       |
 
 Apart from this (standard) mode, there are also two other output modes.
 
 ## 🤖 Diff mode
 
 - Enabled using `-b, --diff` flag.
-- Respects `--print*` flags/options.l
+- Respects `--print*` flags/options.
 - Ignores `--no-print-end` flag.
 - Prints machine-readable transformations as results:
 
