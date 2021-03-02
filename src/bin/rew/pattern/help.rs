@@ -35,20 +35,26 @@ pub const FILTERS: &str = indoc! {r#"
 
 # SUBSTRING
 
-  `#A-B`  From `A` to `B`         (`A`, `B` = inclusive 1-based indices)
+  `#A-B`  From `A` to `B`         (`A`, `B` = inclusive 1-based index)
   `#A+L`  From `A` of length `L`    (`-A` = backward indexing)   
   `#A-`   From `A` to end         
   `#A`    Character at `A`
+
+# COLUMN
+
+  `&N:S`  Column `N`, string separator `S`   (`:` = any delimiter char except `/`)
+  `&N/S`  Column `N`, regex separator `S`    (`N` = 1-based index)
+  `&N`    Column `N`, global separator    (`-N` = backward indexing)
 
 # REPLACEMENT
 
   `r:X:Y`  Replace `X` with `Y`      (`r` = first occurence)
   `r:X`    Remove `X`              (`R` = all occurences)
-  `?D`     Replace empty with `D`  (`:` = any separator)
+  `?D`     Replace empty with `D`  (`:` = any delimiter char)
 
 # REGULAR EXPRESSIONS
 
-  `=E`     Match of regex `E`           (`:` = any separator)
+  `=E`     Match of regex `E`           (`:` = any delimiter char)
   `s:X:Y`  Replace match of `X` with `Y`  (`s` = first occurence)  
   `s:X`    Remove match of `X`          (`S` = all occurences)
 
@@ -62,11 +68,11 @@ pub const FILTERS: &str = indoc! {r#"
   `v`  To lowercase    `I`  Remove non-ASCII chars
 
   `<<M`   Left pad with `M`            (`>>` or `>` to right pad)
-  `<N:M`  Left pad `N` times with `M`    (`:` = any separator)
+  `<N:M`  Left pad `N` times with `M`    (`:` = any delimiter char)
 
 # GENERATORS
 
-  `*N:V`  Repeat `N` times `V`    (`:` = any separator)
+  `*N:V`  Repeat `N` times `V`    (`:` = any delimiter char)
 
   `u`  Random 64-bit number    `c`  Local counter           
   `U`  Random UUID             `C`  Global counter   

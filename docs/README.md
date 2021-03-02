@@ -6,6 +6,7 @@
 - [✏️ Pattern](pattern.md)
   - [🛤 Path filters](filters/path.md)
   - [🆎 Substring filters](filters/substr.md)
+  - [📑 Column filters](filters/column.md)
   - [🔍 Replace filters](filters/replace.md)
   - [⭐️ Regex filters](filters/regex.md)
   - [🎨 Format filters](filters/format.md)

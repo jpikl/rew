@@ -1,7 +1,7 @@
 use crate::pattern::char::{AsChar, Char, Chars};
 use crate::pattern::filter::Filter;
 use crate::pattern::lexer::{Lexer, Token};
-use crate::pattern::parse::{Error, ErrorKind, Parsed, Result};
+use crate::pattern::parse::{Config, Error, ErrorKind, Parsed, Result};
 use crate::pattern::reader::Reader;
 use std::fmt;
 use std::ops::Range;
@@ -29,20 +29,19 @@ impl fmt::Display for Item {
     }
 }
 
-pub struct Parser {
+pub struct Parser<'a> {
     lexer: Lexer,
     token: Option<Parsed<Token>>,
+    config: &'a Config,
 }
 
-impl From<&str> for Parser {
-    fn from(string: &str) -> Self {
-        Self::new(Lexer::new(string))
-    }
-}
-
-impl Parser {
-    pub fn new(lexer: Lexer) -> Self {
-        Self { lexer, token: None }
+impl<'a> Parser<'a> {
+    pub fn new(input: &str, config: &'a Config) -> Self {
+        Self {
+            lexer: Lexer::new(input, config.escape),
+            token: None,
+            config,
+        }
     }
 
     pub fn parse_items(&mut self) -> Result<Vec<Parsed<Item>>> {
@@ -56,7 +55,9 @@ impl Parser {
     }
 
     fn parse_item(&mut self) -> Result<Option<Parsed<Item>>> {
-        if let Some(token) = self.fetch_token()? {
+        self.fetch_token()?;
+
+        if let Some(token) = &self.token {
             match &token.value {
                 Token::Raw(raw) => Ok(Some(Parsed {
                     value: Item::Constant(Chars::from(&raw[..]).to_string()),
@@ -102,11 +103,12 @@ impl Parser {
 
     fn parse_filters(&mut self) -> Result<Vec<Parsed<Filter>>> {
         let mut filters: Vec<Parsed<Filter>> = Vec::new();
+        self.fetch_token()?;
 
-        while let Some(token) = self.fetch_token()? {
+        while let Some(token) = &self.token {
             match &token.value {
                 Token::Raw(raw) => {
-                    filters.push(Self::parse_filter(&raw, &token.range)?);
+                    filters.push(self.parse_filter(&raw, &token.range)?);
                 }
                 Token::Pipe => {
                     if filters.is_empty() {
@@ -116,9 +118,11 @@ impl Parser {
                         });
                     } else {
                         let position = self.token_range().end;
-                        if let Some(token) = self.fetch_token()? {
+                        self.fetch_token()?;
+
+                        if let Some(token) = &self.token {
                             if let Token::Raw(raw) = &token.value {
-                                filters.push(Self::parse_filter(&raw, &token.range)?)
+                                filters.push(self.parse_filter(&raw, &token.range)?)
                             } else {
                                 return Err(Error {
                                     kind: ErrorKind::ExpectedFilter,
@@ -143,15 +147,16 @@ impl Parser {
                     break;
                 }
             }
+            self.fetch_token()?;
         }
 
         Ok(filters)
     }
 
-    fn parse_filter(chars: &[Char], range: &Range<usize>) -> Result<Parsed<Filter>> {
+    fn parse_filter(&self, chars: &[Char], range: &Range<usize>) -> Result<Parsed<Filter>> {
         let mut reader = Reader::new(Vec::from(chars));
 
-        let filter = Filter::parse(&mut reader).map_err(|mut error| {
+        let filter = Filter::parse(&mut reader, self.config).map_err(|mut error| {
             let start = range.start + error.range.start;
             let end = range.start + error.range.end;
 
@@ -176,9 +181,9 @@ impl Parser {
         }
     }
 
-    fn fetch_token(&mut self) -> Result<Option<&Parsed<Token>>> {
+    fn fetch_token(&mut self) -> Result<()> {
         self.token = self.lexer.read_token()?;
-        Ok(self.token.as_ref())
+        Ok(())
     }
 
     fn token_value(&self) -> Option<&Token> {
@@ -239,16 +244,17 @@ mod tests {
 
     mod parse {
         use super::*;
+        use crate::pattern::parse::Separator;
 
         #[test]
         fn empty() {
-            assert_eq!(Parser::from("").parse_items(), Ok(Vec::new()));
+            assert_eq!(parse(""), Ok(Vec::new()));
         }
 
         #[test]
         fn constant() {
             assert_eq!(
-                Parser::from("a").parse_items(),
+                parse("a"),
                 Ok(vec![Parsed {
                     value: Item::Constant(String::from("a")),
                     range: 0..1,
@@ -259,7 +265,7 @@ mod tests {
         #[test]
         fn pipe_outside_expr() {
             assert_eq!(
-                Parser::from("|").parse_items(),
+                parse("|"),
                 Err(Error {
                     kind: ErrorKind::PipeOutsideExpr,
                     range: 0..1,
@@ -270,7 +276,7 @@ mod tests {
         #[test]
         fn unmatched_expr_end() {
             assert_eq!(
-                Parser::from("}").parse_items(),
+                parse("}"),
                 Err(Error {
                     kind: ErrorKind::UnmatchedExprEnd,
                     range: 0..1,
@@ -281,7 +287,7 @@ mod tests {
         #[test]
         fn unmatched_expr_start() {
             assert_eq!(
-                Parser::from("{").parse_items(),
+                parse("{"),
                 Err(Error {
                     kind: ErrorKind::UnmatchedExprStart,
                     range: 0..1,
@@ -292,7 +298,7 @@ mod tests {
         #[test]
         fn filter_after_expr_start() {
             assert_eq!(
-                Parser::from("{|").parse_items(),
+                parse("{|"),
                 Err(Error {
                     kind: ErrorKind::ExpectedFilterOrExprEnd,
                     range: 1..2,
@@ -303,7 +309,7 @@ mod tests {
         #[test]
         fn empty_expr() {
             assert_eq!(
-                Parser::from("{}").parse_items(),
+                parse("{}"),
                 Ok(vec![Parsed {
                     value: Item::Expression(Vec::new()),
                     range: 0..2,
@@ -314,7 +320,7 @@ mod tests {
         #[test]
         fn missing_pipe_or_expr_end() {
             assert_eq!(
-                Parser::from("{f").parse_items(),
+                parse("{f"),
                 Err(Error {
                     kind: ErrorKind::UnmatchedExprStart,
                     range: 0..1,
@@ -325,7 +331,7 @@ mod tests {
         #[test]
         fn expr_start_after_filter() {
             assert_eq!(
-                Parser::from("{f{").parse_items(),
+                parse("{f{"),
                 Err(Error {
                     kind: ErrorKind::ExprStartInsideExpr,
                     range: 2..3,
@@ -336,7 +342,7 @@ mod tests {
         #[test]
         fn expr_single_filter() {
             assert_eq!(
-                Parser::from("{f}").parse_items(),
+                parse("{f}"),
                 Ok(vec![Parsed {
                     value: Item::Expression(vec![Parsed {
                         value: Filter::FileName,
@@ -350,7 +356,7 @@ mod tests {
         #[test]
         fn filter_after_filter() {
             assert_eq!(
-                Parser::from("{fg").parse_items(),
+                parse("{fg"),
                 Err(Error {
                     kind: ErrorKind::ExpectedPipeOrExprEnd,
                     range: 2..3,
@@ -361,7 +367,7 @@ mod tests {
         #[test]
         fn missing_filter_after_pipe() {
             assert_eq!(
-                Parser::from("{f|").parse_items(),
+                parse("{f|"),
                 Err(Error {
                     kind: ErrorKind::ExpectedFilter,
                     range: 3..3,
@@ -372,7 +378,7 @@ mod tests {
         #[test]
         fn pipe_after_pipe() {
             assert_eq!(
-                Parser::from("{f||").parse_items(),
+                parse("{f||"),
                 Err(Error {
                     kind: ErrorKind::ExpectedFilter,
                     range: 3..4,
@@ -383,7 +389,7 @@ mod tests {
         #[test]
         fn expr_end_after_pipe() {
             assert_eq!(
-                Parser::from("{f|}").parse_items(),
+                parse("{f|}"),
                 Err(Error {
                     kind: ErrorKind::ExpectedFilter,
                     range: 3..4,
@@ -394,7 +400,7 @@ mod tests {
         #[test]
         fn missing_pipe_or_expr_end_2() {
             assert_eq!(
-                Parser::from("{f|v").parse_items(),
+                parse("{f|v"),
                 Err(Error {
                     kind: ErrorKind::UnmatchedExprStart,
                     range: 0..1,
@@ -405,7 +411,7 @@ mod tests {
         #[test]
         fn filter_after_filter_2() {
             assert_eq!(
-                Parser::from("{f|vv").parse_items(),
+                parse("{f|vv"),
                 Err(Error {
                     kind: ErrorKind::ExpectedPipeOrExprEnd,
                     range: 4..5,
@@ -416,7 +422,7 @@ mod tests {
         #[test]
         fn invalid_filter() {
             assert_eq!(
-                Parser::from("{#2-1}").parse_items(),
+                parse("{#2-1}"),
                 Err(Error {
                     kind: ErrorKind::RangeStartOverEnd(String::from("2"), String::from("1")),
                     range: 2..5,
@@ -427,7 +433,7 @@ mod tests {
         #[test]
         fn expr_multiple_filters() {
             assert_eq!(
-                Parser::from("{e|t|#1-3}").parse_items(),
+                parse("{e|t|#1-3}"),
                 Ok(vec![Parsed {
                     value: Item::Expression(vec![
                         Parsed {
@@ -451,7 +457,7 @@ mod tests {
         #[test]
         fn complex_pattern() {
             assert_eq!(
-                Parser::from("image_{c|<3:0}.{e|v|r_e}2").parse_items(),
+                parse("image_{c|<3:0}.{e|v|r_e}2"),
                 Ok(vec![
                     Parsed {
                         value: Item::Constant(String::from("image_")),
@@ -503,6 +509,17 @@ mod tests {
                     },
                 ])
             );
+        }
+
+        fn parse(value: &str) -> Result<Vec<Parsed<Item>>> {
+            Parser::new(
+                value,
+                &Config {
+                    escape: '%',
+                    separator: Separator::String(String::from('\t')),
+                },
+            )
+            .parse_items()
         }
     }
 }

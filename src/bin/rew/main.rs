@@ -1,6 +1,9 @@
 use crate::cli::Cli;
 use crate::output::write_pattern_error;
-use crate::pattern::{eval, help, Pattern};
+use crate::pattern::parse::Separator;
+use crate::pattern::regex::RegexHolder;
+use crate::pattern::symbols::{DEFAULT_ESCAPE, DEFAULT_SEPARATOR};
+use crate::pattern::{eval, help, parse, Pattern};
 use common::help::highlight;
 use common::input::Terminator;
 use common::run::{exec_run, Io, Result, EXIT_CODE_OK};
@@ -75,7 +78,20 @@ fn run(cli: &Cli, io: &Io) -> Result {
     let mut exit_code = EXIT_CODE_OK;
 
     if let Some(raw_pattern) = cli.pattern.as_ref() {
-        let pattern = match Pattern::parse(raw_pattern, cli.escape) {
+        let separator = if let Some(separator) = &cli.separator {
+            Separator::String(separator.clone())
+        } else if let Some(separator) = &cli.separator_regex {
+            Separator::Regex(RegexHolder(separator.clone()))
+        } else {
+            Separator::String(String::from(DEFAULT_SEPARATOR))
+        };
+
+        let parse_config = parse::Config {
+            escape: cli.escape.unwrap_or(DEFAULT_ESCAPE),
+            separator,
+        };
+
+        let pattern = match Pattern::parse(raw_pattern, &parse_config) {
             Ok(pattern) => pattern,
             Err(error) => {
                 write_pattern_error(&mut io.stderr(), &error, raw_pattern)?;

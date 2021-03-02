@@ -1,11 +1,11 @@
 # 🔍 Replace filters
 
-| Filter  | Description                                             |
-| ------- | ------------------------------------------------------- |
-| `r:X:Y` | Replace first occurrence of `X` with `Y`.<br/>Any other character than `:` can be also used as a delimiter. |
-| `r:X`   | Remove first occurrence of `X`.<br>Equivalent to `r:X:` |
-| `R`     | Same as `r` but replaces/removes all occurrences.       |
-| `?D`    | Replace empty value with `D`.                           |
+| Filter           | Description                                             |
+| ---------------- | ------------------------------------------------------- |
+| `r:X:Y`          | Replace first occurrence of `X` with `Y`.<br>Any other character than `:` can be also used as a delimiter. |
+| `r:X`            | Remove first occurrence of `X`.<br>Equivalent to `r:X:` |
+| `R:X:Y`<br>`R:X` | Same as `r` but replaces/removes all occurrences.       |
+| `?D`             | Replace empty value with `D`.                           |
 
 Examples:
 

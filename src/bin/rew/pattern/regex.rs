@@ -21,7 +21,7 @@ pub fn add_capture_group_brackets(string: &str) -> Cow<str> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct RegexHolder(pub Regex);
 
 impl RegexHolder {

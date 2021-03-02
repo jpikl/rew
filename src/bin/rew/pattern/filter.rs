@@ -1,4 +1,5 @@
 use crate::pattern::char::{AsChar, Char};
+use crate::pattern::column::Column;
 use crate::pattern::index::IndexRange;
 use crate::pattern::integer::parse_integer;
 use crate::pattern::number::NumberRange;
@@ -36,6 +37,10 @@ pub enum Filter {
     Substring(IndexRange),
     SubstringBackward(IndexRange),
 
+    // Column filters
+    GetColumn(Column),
+    GetColumnBackward(Column),
+
     // Replace filters
     ReplaceFirst(StringSubstitution),
     ReplaceAll(StringSubstitution),
@@ -66,7 +71,7 @@ pub enum Filter {
 }
 
 impl Filter {
-    pub fn parse(reader: &mut Reader<Char>) -> parse::Result<Self> {
+    pub fn parse(reader: &mut Reader<Char>, config: &parse::Config) -> parse::Result<Self> {
         let position = reader.position();
 
         if let Some(char) = reader.read() {
@@ -94,6 +99,16 @@ impl Filter {
                         Ok(Self::SubstringBackward(IndexRange::parse(reader)?))
                     } else {
                         Ok(Self::Substring(IndexRange::parse(reader)?))
+                    }
+                }
+
+                // Column filters
+                '&' => {
+                    let separator = &config.separator;
+                    if reader.read_expected(RANGE_DELIMITER) {
+                        Ok(Self::GetColumnBackward(Column::parse(reader, separator)?))
+                    } else {
+                        Ok(Self::GetColumn(Column::parse(reader, separator)?))
                     }
                 }
 
@@ -161,6 +176,10 @@ impl Filter {
             Self::Substring(range) => Ok(range.substr(value)),
             Self::SubstringBackward(range) => Ok(range.substr_back(value)),
 
+            // Column filters
+            Self::GetColumn(column) => Ok(column.get(&value).to_string()),
+            Self::GetColumnBackward(column) => Ok(column.get_backward(&value).to_string()),
+
             // Replace filters
             Self::ReplaceFirst(substitution) => Ok(substitution.replace_first(&value)),
             Self::ReplaceAll(substitution) => Ok(substitution.replace_all(&value)),
@@ -222,8 +241,10 @@ impl fmt::Display for Filter {
             // Substring filters
             Self::Substring(range) => write!(formatter, "Substring from {}", range),
             Self::SubstringBackward(range) => {
-                write!(formatter, "Substring (backward) from {}", range)
+                write!(formatter, "Substring from {} backwards", range)
             }
+            Self::GetColumn(column) => write!(formatter, "Get {}", column),
+            Self::GetColumnBackward(column) => write!(formatter, "Get {} backwards", column),
 
             // Replace filters
             Self::ReplaceFirst(substitution) => write!(formatter, "Replace first {}", substitution),
@@ -282,9 +303,11 @@ mod tests {
 
     use super::Filter;
     use crate::pattern::char::Char;
+    use crate::pattern::column::Column;
     use crate::pattern::index::Index;
     use crate::pattern::number::Number;
     use crate::pattern::padding::Padding;
+    use crate::pattern::parse::Separator;
     use crate::pattern::range::Range;
     use crate::pattern::regex::RegexHolder;
     use crate::pattern::repetition::Repetition;
@@ -296,7 +319,8 @@ mod tests {
 
     mod parse {
         use super::*;
-        use crate::pattern::parse::{Error, ErrorKind, Result};
+        use crate::pattern::column::Column;
+        use crate::pattern::parse::{Config, Error, ErrorKind, Result, Separator};
         use crate::pattern::reader::Reader;
 
         #[test]
@@ -324,7 +348,7 @@ mod tests {
         #[test]
         fn chars_after() {
             let mut reader = Reader::from("a_");
-            Filter::parse(&mut reader).unwrap();
+            Filter::parse(&mut reader, &make_config()).unwrap();
             assert_eq!(reader.position(), 1);
         }
 
@@ -451,6 +475,102 @@ mod tests {
             assert_eq!(
                 parse("#-2+8"),
                 Ok(Filter::SubstringBackward(Range::<Index>(1, Some(9))))
+            );
+        }
+
+        #[test]
+        fn get_column() {
+            assert_eq!(
+                parse("&"),
+                Err(Error {
+                    kind: ErrorKind::ExpectedNumber,
+                    range: 1..1,
+                }),
+            );
+            assert_eq!(
+                parse("&2"),
+                Ok(Filter::GetColumn(Column {
+                    index: 1,
+                    separator: Separator::String(String::from("\t"))
+                })),
+            );
+            assert_eq!(
+                parse("&2:"),
+                Err(Error {
+                    kind: ErrorKind::ExpectedColumnSeparator,
+                    range: 3..3,
+                }),
+            );
+            assert_eq!(
+                parse("&2:/"),
+                Ok(Filter::GetColumn(Column {
+                    index: 1,
+                    separator: Separator::String(String::from("/"))
+                })),
+            );
+            assert_eq!(
+                parse("&1/[0-9]+"),
+                Ok(Filter::GetColumn(Column {
+                    index: 0,
+                    separator: Separator::Regex(RegexHolder(Regex::new("[0-9]+").unwrap()))
+                })),
+            );
+            assert_eq!(
+                parse("&1/[0-9"),
+                Err(Error {
+                    kind: ErrorKind::RegexInvalid(AnyString(String::from(
+                        "This string is not compared by assertion"
+                    ))),
+                    range: 3..7,
+                }),
+            );
+        }
+
+        #[test]
+        fn get_column_backward() {
+            assert_eq!(
+                parse("&-"),
+                Err(Error {
+                    kind: ErrorKind::ExpectedNumber,
+                    range: 2..2,
+                }),
+            );
+            assert_eq!(
+                parse("&-2"),
+                Ok(Filter::GetColumnBackward(Column {
+                    index: 1,
+                    separator: Separator::String(String::from("\t"))
+                })),
+            );
+            assert_eq!(
+                parse("&-2:"),
+                Err(Error {
+                    kind: ErrorKind::ExpectedColumnSeparator,
+                    range: 4..4,
+                }),
+            );
+            assert_eq!(
+                parse("&-2:/"),
+                Ok(Filter::GetColumnBackward(Column {
+                    index: 1,
+                    separator: Separator::String(String::from("/"))
+                })),
+            );
+            assert_eq!(
+                parse("&-1/[0-9]+"),
+                Ok(Filter::GetColumnBackward(Column {
+                    index: 0,
+                    separator: Separator::Regex(RegexHolder(Regex::new("[0-9]+").unwrap()))
+                })),
+            );
+            assert_eq!(
+                parse("&-1/[0-9"),
+                Err(Error {
+                    kind: ErrorKind::RegexInvalid(AnyString(String::from(
+                        "This string is not compared by assertion"
+                    ))),
+                    range: 4..8,
+                }),
             );
         }
 
@@ -742,7 +862,14 @@ mod tests {
         }
 
         fn parse(string: &str) -> Result<Filter> {
-            Filter::parse(&mut Reader::from(string))
+            Filter::parse(&mut Reader::from(string), &make_config())
+        }
+
+        fn make_config() -> Config {
+            Config {
+                escape: '%',
+                separator: Separator::String(String::from("\t")),
+            }
         }
     }
 
@@ -921,6 +1048,46 @@ mod tests {
                 Filter::SubstringBackward(Range::<Index>(1, Some(3)))
                     .eval(String::from("abcde"), &make_eval_context()),
                 Ok(String::from("cd"))
+            );
+        }
+
+        #[test]
+        fn get_column() {
+            assert_eq!(
+                Filter::GetColumn(Column {
+                    index: 1,
+                    separator: Separator::String(String::from("\t"))
+                })
+                .eval(String::from("a \t b \t c \t d"), &make_eval_context()),
+                Ok(String::from(" b "))
+            );
+            assert_eq!(
+                Filter::GetColumn(Column {
+                    index: 1,
+                    separator: Separator::Regex(RegexHolder(Regex::new("\\s+").unwrap()))
+                })
+                .eval(String::from("a \t b \t c \t d"), &make_eval_context()),
+                Ok(String::from("b"))
+            );
+        }
+
+        #[test]
+        fn get_column_backward() {
+            assert_eq!(
+                Filter::GetColumnBackward(Column {
+                    index: 1,
+                    separator: Separator::String(String::from("\t"))
+                })
+                .eval(String::from("a \t b \t c \t d"), &make_eval_context()),
+                Ok(String::from(" c "))
+            );
+            assert_eq!(
+                Filter::GetColumnBackward(Column {
+                    index: 1,
+                    separator: Separator::Regex(RegexHolder(Regex::new("\\s+").unwrap()))
+                })
+                .eval(String::from("a \t b \t c \t d"), &make_eval_context()),
+                Ok(String::from("c"))
             );
         }
 
@@ -1238,7 +1405,47 @@ mod tests {
         fn substring_backward() {
             assert_eq!(
                 Filter::SubstringBackward(Range::<Index>(1, Some(3))).to_string(),
-                "Substring (backward) from 2..3"
+                "Substring from 2..3 backwards"
+            );
+        }
+
+        #[test]
+        fn get_column() {
+            assert_eq!(
+                Filter::GetColumn(Column {
+                    index: 1,
+                    separator: Separator::String(String::from("\t"))
+                })
+                .to_string(),
+                String::from("Get column #2 ('\t' separator)")
+            );
+            assert_eq!(
+                Filter::GetColumn(Column {
+                    index: 1,
+                    separator: Separator::Regex(RegexHolder(Regex::new("\\s+").unwrap()))
+                })
+                .to_string(),
+                String::from("Get column #2 (regular expression '\\s+' separator)")
+            );
+        }
+
+        #[test]
+        fn get_column_backward() {
+            assert_eq!(
+                Filter::GetColumnBackward(Column {
+                    index: 1,
+                    separator: Separator::String(String::from("\t"))
+                })
+                .to_string(),
+                String::from("Get column #2 ('\t' separator) backwards")
+            );
+            assert_eq!(
+                Filter::GetColumnBackward(Column {
+                    index: 1,
+                    separator: Separator::Regex(RegexHolder(Regex::new("\\s+").unwrap()))
+                })
+                .to_string(),
+                String::from("Get column #2 (regular expression '\\s+' separator) backwards")
             );
         }
 

@@ -396,8 +396,8 @@ fn working_directory_custom_relative() {
 #[test]
 fn single_quotes() {
     rew()
-        .arg("_{}_")
         .arg("--quote")
+        .arg("_{}_")
         .write_stdin("a\nb")
         .assert()
         .success()
@@ -408,13 +408,48 @@ fn single_quotes() {
 #[test]
 fn double_quotes() {
     rew()
+        .arg("--quote")
+        .arg("--quote")
         .arg("_{}_")
-        .arg("--quote")
-        .arg("--quote")
         .write_stdin("a\nb")
         .assert()
         .success()
         .stdout("_\"a\"_\n_\"b\"_\n")
+        .stderr("");
+}
+
+#[test]
+fn default_separator() {
+    rew()
+        .arg("{&1}_{&2}")
+        .write_stdin("a\tb c123d")
+        .assert()
+        .success()
+        .stdout("a_b c123d\n")
+        .stderr("");
+}
+
+#[test]
+fn string_separator() {
+    rew()
+        .arg("--separator= ")
+        .arg("{&1}_{&2}")
+        .write_stdin("a\tb c123d")
+        .assert()
+        .success()
+        .stdout("a\tb_c123d\n")
+        .stderr("");
+}
+
+#[test]
+fn regex_separator() {
+    rew()
+        .arg("--separator-regex=[0-9]+")
+        .arg("{&1}_{&2}")
+        .write_stdin("a\tb c123d")
+        .assert()
+        .success()
+        .stdout("a\tb c_d\n")
         .stderr("");
 }
 

@@ -3,15 +3,15 @@
 Unlike other filters, generator output is not produced from its input.
 However, it is still possible (although meaningless) to pipe input into a generator.
 
-| Filter | Description                                        |
-| ------ | -------------------------------------------------- |
-| `*N:V` | Repeat `N` times `V`.<br/>Any other non-digit than `:` can be also used as a delimiter. |
-| `c`    | Local counter                                      |
-| `C`    | Global counter                                     |
-| `uA-B` | Random 64-bit number between `A` and `B` (including `A`, `B`) |
-| `uA-`  | Random 64-bit number greater or equal to `A`       |
-| `u`    | Random 64-bit number                               |
-| `U`    | Random UUID                                        |
+| Filter | Description                            |
+| ------ | -------------------------------------- |
+| `*N:V` | Repeat `N` times `V`.<br>Any other character than `:` can be also used as a delimiter. |
+| `c`    | Local counter                          |
+| `C`    | Global counter                         |
+| `uA-B` | Random 64-bit number (`A` ≤ `u` ≤ `B`) |
+| `uA-`  | Random 64-bit number (`A` ≤ `u`)       |
+| `u`    | Random 64-bit number                   |
+| `U`    | Random UUID                            |
 
 Examples:
 
@@ -20,7 +20,7 @@ Examples:
 | `{*3:ab}` | `ababab`                                          |
 | `{c}`     | *(see below)*                                     |
 | `{C}`     | *(see below)*                                     |
-| `{u0-99}` | *(random number between 0 and 99)*                    |
+| `{u0-99}` | *(random number between 0 and 99)*                |
 | `{U}`     | `5eefc76d-0ca1-4631-8fd0-62eeb401c432` *(random)* |
 
 - Global counter `C` is incremented for every input value.

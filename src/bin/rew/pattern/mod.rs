@@ -1,10 +1,10 @@
 use crate::pattern::filter::Filter;
-use crate::pattern::lexer::Lexer;
 use crate::pattern::parse::Parsed;
 use crate::pattern::parser::Item;
 use crate::pattern::parser::Parser;
 
 mod char;
+mod column;
 pub mod eval;
 mod explain;
 pub mod filter;
@@ -19,11 +19,11 @@ mod parser;
 pub mod path;
 mod range;
 mod reader;
-mod regex;
+pub mod regex;
 mod repetition;
 mod substitution;
 mod switch;
-mod symbols;
+pub mod symbols;
 #[cfg(test)]
 mod testing;
 mod uuid;
@@ -35,19 +35,10 @@ pub struct Pattern {
 }
 
 impl Pattern {
-    pub fn parse(source: &str, escape: Option<char>) -> parse::Result<Self> {
-        let mut lexer = Lexer::new(source);
-
-        if let Some(escape) = escape {
-            lexer.set_escape(escape);
-        }
-
-        let mut parser = Parser::new(lexer);
-        let items = parser.parse_items()?;
-
+    pub fn parse(source: &str, config: &parse::Config) -> parse::Result<Self> {
         Ok(Self {
             source: String::from(source),
-            items,
+            items: Parser::new(source, config).parse_items()?,
         })
     }
 
@@ -125,13 +116,14 @@ mod tests {
     use ntest::*;
 
     mod parse {
-        use super::super::parse::{Error, ErrorKind, Parsed};
+        use super::super::parse::{Config, Error, ErrorKind, Parsed};
         use super::*;
+        use crate::pattern::parse::Separator;
 
         #[test]
         fn invalid() {
             assert_eq!(
-                Pattern::parse("{", None),
+                Pattern::parse("{", &make_config()),
                 Err(Error {
                     kind: ErrorKind::UnmatchedExprStart,
                     range: 0..1
@@ -142,7 +134,7 @@ mod tests {
         #[test]
         fn default_escape() {
             assert_eq!(
-                Pattern::parse("_%{{f|v}%}_", None),
+                Pattern::parse("_%{{f|v}%}_", &make_config()),
                 Ok(Pattern {
                     source: String::from("_%{{f|v}%}_"),
                     items: vec![
@@ -172,37 +164,11 @@ mod tests {
             )
         }
 
-        #[test]
-        fn custom_escape() {
-            assert_eq!(
-                Pattern::parse("_\\{{f|v}\\}_", Some('\\')),
-                Ok(Pattern {
-                    source: String::from("_\\{{f|v}\\}_"),
-                    items: vec![
-                        Parsed {
-                            value: Item::Constant(String::from("_{")),
-                            range: 0..3,
-                        },
-                        Parsed {
-                            value: Item::Expression(vec![
-                                Parsed {
-                                    value: Filter::FileName,
-                                    range: 4..5,
-                                },
-                                Parsed {
-                                    value: Filter::ToLowercase,
-                                    range: 6..7,
-                                }
-                            ]),
-                            range: 3..8,
-                        },
-                        Parsed {
-                            value: Item::Constant(String::from("}_")),
-                            range: 8..11,
-                        },
-                    ]
-                })
-            )
+        fn make_config() -> Config {
+            Config {
+                escape: '%',
+                separator: Separator::String(String::from("\t")),
+            }
         }
     }
 

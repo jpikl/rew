@@ -25,8 +25,7 @@ impl RangeType for Index {
 }
 
 impl Index {
-    #[allow(dead_code)] // Only temporary ... it's going to be used by future development
-    fn parse(reader: &mut Reader<Char>) -> Result<IndexValue> {
+    pub fn parse(reader: &mut Reader<Char>) -> Result<IndexValue> {
         let position = reader.position();
         let index: IndexValue = parse_integer(reader)?;
 

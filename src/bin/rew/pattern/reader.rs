@@ -6,8 +6,8 @@ pub struct Reader<T: AsChar> {
 }
 
 impl<T: AsChar> From<&str> for Reader<T> {
-    fn from(string: &str) -> Self {
-        Self::new(string.chars().map(T::from).collect())
+    fn from(input: &str) -> Self {
+        Self::new(input.chars().map(T::from).collect())
     }
 }
 

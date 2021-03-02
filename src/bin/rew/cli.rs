@@ -233,6 +233,10 @@ pub struct Cli {
     #[clap(short = 'F', long, help_heading = PROCESSING_HEADING)]
     pub fail_at_end: bool,
 
+    /// Print explanation of a given pattern
+    #[clap(long, requires = "pattern", help_heading = PATTERN_HEADING)]
+    pub explain: bool,
+
     /// Wrap output of every pattern expression in quotes
     ///
     /// Use the flag once for single quotes.
@@ -247,9 +251,29 @@ pub struct Cli {
     )]
     pub quote: usize,
 
-    /// Print explanation of a given pattern
-    #[clap(long, requires = "pattern", help_heading = PATTERN_HEADING)]
-    pub explain: bool,
+    /// Global column separator (string)
+    ///
+    /// This value will be used as a separator for column filter.
+    #[clap(
+        short = 's',
+        long,
+        value_name = "string",
+        conflicts_with = "separator-regex",
+        help_heading = PATTERN_HEADING,
+    )]
+    pub separator: Option<String>,
+
+    /// Global column separator (regular expression)
+    ///
+    /// This value will be used as a separator for column filter.
+    #[clap(
+        short = 'S',
+        long,
+        value_name = "regex",
+        conflicts_with = "separator",
+        help_heading = PATTERN_HEADING,
+    )]
+    pub separator_regex: Option<Regex>,
 
     /// Custom escape character to use in pattern
     #[clap(long, value_name = "char", help_heading = PATTERN_HEADING)]

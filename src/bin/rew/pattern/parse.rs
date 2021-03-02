@@ -1,9 +1,21 @@
 use crate::pattern::char::{Char, EscapeSequence};
+use crate::pattern::regex::RegexHolder;
 use crate::pattern::symbols::{EXPR_END, EXPR_START, LENGTH_DELIMITER, PIPE, RANGE_DELIMITER};
 use crate::utils::{AnyString, HasRange};
 use std::convert::Infallible;
 use std::ops::Range;
 use std::{error, fmt, result};
+
+pub struct Config {
+    pub escape: char,
+    pub separator: Separator,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum Separator {
+    String(String),
+    Regex(RegexHolder),
+}
 
 #[derive(Debug, PartialEq)]
 pub struct Parsed<T> {
@@ -22,6 +34,7 @@ pub struct Error {
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum ErrorKind {
+    ExpectedColumnSeparator,
     ExpectedFilter,
     ExpectedNumber,
     ExpectedFilterOrExprEnd,
@@ -51,6 +64,15 @@ pub enum ErrorKind {
     UnterminatedEscapeSequence(char),
 }
 
+impl fmt::Display for Separator {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Separator::String(separator) => write!(formatter, "'{}'", separator),
+            Separator::Regex(separator) => write!(formatter, "regular expression '{}'", separator),
+        }
+    }
+}
+
 impl error::Error for Error {}
 
 impl HasRange for Error {
@@ -74,6 +96,7 @@ impl fmt::Display for Error {
 impl fmt::Display for ErrorKind {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match self {
+            Self::ExpectedColumnSeparator => write!(formatter, "Expected column separator"),
             Self::ExpectedFilter => write!(formatter, "Expected filter after '{}'", PIPE),
             Self::ExpectedNumber => write!(formatter, "Expected number"),
             Self::ExpectedFilterOrExprEnd => {
@@ -182,6 +205,25 @@ impl fmt::Display for ErrorKind {
 mod tests {
     use super::*;
 
+    mod separator_display {
+        use crate::pattern::parse::Separator;
+        use crate::pattern::regex::RegexHolder;
+        use regex::Regex;
+
+        #[test]
+        fn string() {
+            assert_eq!(Separator::String(String::from("\t")).to_string(), "'\t'");
+        }
+
+        #[test]
+        fn regex() {
+            assert_eq!(
+                Separator::Regex(RegexHolder(Regex::new("\\s+").unwrap())).to_string(),
+                "regular expression '\\s+'"
+            );
+        }
+    }
+
     mod error {
         use super::*;
 
@@ -212,6 +254,14 @@ mod tests {
 
     mod error_kind_display {
         use super::*;
+
+        #[test]
+        fn expected_column_separator() {
+            assert_eq!(
+                ErrorKind::ExpectedColumnSeparator.to_string(),
+                "Expected column separator"
+            );
+        }
 
         #[test]
         fn expected_filter() {
