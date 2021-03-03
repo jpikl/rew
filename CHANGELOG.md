@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `%` is the default pattern escape character instead of `#`.
 - `n` filter (substring) was renamed to `#`.
 - `N` filter (substring with backward indexing) was replaced by use of `#` with negative indexing (e.g., `#-2`).
+- Parsing of `A+L` range can no longer fail with overflow error. Such range would be now resolved as `A-` (from `A` to end).
 - Capture groups of a global regex need to be prefixed with `$` (e.g., `{$1}` instead of `{1}`).
 - More lenient number parsing that ignore multiple leading zeros (e.g., `001` is interpreted as `1`).
 - Error messages containing escape sequences are more human-readable.
@@ -26,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `A+L` range is correctly evaluated as "from `A` to `A+L`" (not `A+L+1` as previously).
 - `-h, --help` flag displays correct position of `--` argument in usage.
 
 ## [0.2.0] - 2021-02-14

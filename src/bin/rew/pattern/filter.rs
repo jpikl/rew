@@ -1,7 +1,7 @@
 use crate::pattern::char::{AsChar, Char};
 use crate::pattern::index::IndexRange;
 use crate::pattern::integer::parse_integer;
-use crate::pattern::number::NumberInterval;
+use crate::pattern::number::NumberRange;
 use crate::pattern::padding::Padding;
 use crate::pattern::reader::Reader;
 use crate::pattern::regex::RegexHolder;
@@ -61,7 +61,7 @@ pub enum Filter {
     Repeat(Repetition),
     LocalCounter,
     GlobalCounter,
-    RandomNumber(NumberInterval),
+    RandomNumber(NumberRange),
     RandomUuid,
 }
 
@@ -122,7 +122,7 @@ impl Filter {
                 '*' => Ok(Self::Repeat(Repetition::parse(reader)?)),
                 'c' => Ok(Self::LocalCounter),
                 'C' => Ok(Self::GlobalCounter),
-                'u' => Ok(Self::RandomNumber(NumberInterval::parse(reader)?)),
+                'u' => Ok(Self::RandomNumber(NumberRange::parse(reader)?)),
                 'U' => Ok(Self::RandomUuid),
 
                 _ => Err(parse::Error {
@@ -286,21 +286,22 @@ mod tests {
 
     use super::Filter;
     use crate::pattern::char::Char;
-    use crate::pattern::index::IndexRange;
-    use crate::pattern::number::NumberInterval;
+    use crate::pattern::index::Index;
+    use crate::pattern::number::Number;
     use crate::pattern::padding::Padding;
+    use crate::pattern::range::Range;
     use crate::pattern::regex::RegexHolder;
     use crate::pattern::repetition::Repetition;
     use crate::pattern::substitution::Substitution;
     use crate::pattern::switch::{Case, RegexSwitch};
     use crate::utils::AnyString;
+    use crate::utils::Empty;
     use regex::Regex;
 
     mod parse {
         use super::*;
         use crate::pattern::parse::{Error, ErrorKind, Result};
         use crate::pattern::reader::Reader;
-        use crate::utils::Empty;
 
         #[test]
         fn empty() {
@@ -412,19 +413,16 @@ mod tests {
             );
             assert_eq!(
                 parse("#2"),
-                Ok(Filter::Substring(IndexRange::new(1, Some(1))))
+                Ok(Filter::Substring(Range::<Index>(1, Some(2))))
             );
-            assert_eq!(
-                parse("#2-"),
-                Ok(Filter::Substring(IndexRange::new(1, None)))
-            );
+            assert_eq!(parse("#2-"), Ok(Filter::Substring(Range::<Index>(1, None))));
             assert_eq!(
                 parse("#2-10"),
-                Ok(Filter::Substring(IndexRange::new(1, Some(9))))
+                Ok(Filter::Substring(Range::<Index>(1, Some(10))))
             );
             assert_eq!(
                 parse("#2+8"),
-                Ok(Filter::Substring(IndexRange::new(1, Some(9))))
+                Ok(Filter::Substring(Range::<Index>(1, Some(9))))
             );
         }
 
@@ -439,19 +437,19 @@ mod tests {
             );
             assert_eq!(
                 parse("#-2"),
-                Ok(Filter::SubstringBackward(IndexRange::new(1, Some(1))))
+                Ok(Filter::SubstringBackward(Range::<Index>(1, Some(2))))
             );
             assert_eq!(
                 parse("#-2-"),
-                Ok(Filter::SubstringBackward(IndexRange::new(1, None)))
+                Ok(Filter::SubstringBackward(Range::<Index>(1, None)))
             );
             assert_eq!(
                 parse("#-2-10"),
-                Ok(Filter::SubstringBackward(IndexRange::new(1, Some(9))))
+                Ok(Filter::SubstringBackward(Range::<Index>(1, Some(10))))
             );
             assert_eq!(
                 parse("#-2+8"),
-                Ok(Filter::SubstringBackward(IndexRange::new(1, Some(9))))
+                Ok(Filter::SubstringBackward(Range::<Index>(1, Some(9))))
             );
         }
 
@@ -733,7 +731,7 @@ mod tests {
         fn random_number() {
             assert_eq!(
                 parse("u1-10"),
-                Ok(Filter::RandomNumber(NumberInterval::new(1, Some(10))))
+                Ok(Filter::RandomNumber(Range::<Number>(1, Some(11))))
             );
         }
 
@@ -749,9 +747,7 @@ mod tests {
 
     mod eval {
         use super::*;
-        use crate::pattern::switch::RegexSwitch;
         use crate::pattern::testing::{assert_uuid, make_eval_context};
-        use crate::utils::Empty;
         use std::path::MAIN_SEPARATOR;
 
         #[test]
@@ -904,7 +900,7 @@ mod tests {
         #[test]
         fn substring() {
             assert_eq!(
-                Filter::Substring(IndexRange::new(1, Some(2)))
+                Filter::Substring(Range::<Index>(1, Some(3)))
                     .eval(String::from("abcde"), &make_eval_context()),
                 Ok(String::from("bc"))
             );
@@ -913,7 +909,7 @@ mod tests {
         #[test]
         fn substring_backward() {
             assert_eq!(
-                Filter::SubstringBackward(IndexRange::new(1, Some(2)))
+                Filter::SubstringBackward(Range::<Index>(1, Some(3)))
                     .eval(String::from("abcde"), &make_eval_context()),
                 Ok(String::from("cd"))
             );
@@ -1120,7 +1116,7 @@ mod tests {
         #[test]
         fn random_number() {
             assert_eq!(
-                Filter::RandomNumber(NumberInterval::new(0, Some(0)))
+                Filter::RandomNumber(Range::<Number>(0, Some(0)))
                     .eval(String::new(), &make_eval_context()),
                 Ok(String::from("0"))
             );
@@ -1138,7 +1134,6 @@ mod tests {
 
     mod display {
         use super::*;
-        use crate::utils::Empty;
         use indoc::indoc;
 
         #[test]
@@ -1220,7 +1215,7 @@ mod tests {
         #[test]
         fn substring() {
             assert_eq!(
-                Filter::Substring(IndexRange::new(1, Some(2))).to_string(),
+                Filter::Substring(Range::<Index>(1, Some(3))).to_string(),
                 "Substring from 2..3"
             );
         }
@@ -1228,7 +1223,7 @@ mod tests {
         #[test]
         fn substring_backward() {
             assert_eq!(
-                Filter::SubstringBackward(IndexRange::new(1, Some(2))).to_string(),
+                Filter::SubstringBackward(Range::<Index>(1, Some(3))).to_string(),
                 "Substring (backward) from 2..3"
             );
         }
@@ -1413,7 +1408,7 @@ mod tests {
         #[test]
         fn random_number() {
             assert_eq!(
-                Filter::RandomNumber(NumberInterval::new(0, Some(99))).to_string(),
+                Filter::RandomNumber(Range::<Number>(0, Some(99))).to_string(),
                 "Random number from [0, 99]"
             );
         }

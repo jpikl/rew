@@ -193,8 +193,9 @@ impl Parser {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::pattern::index::IndexRange;
+    use crate::pattern::index::Index;
     use crate::pattern::padding::Padding;
+    use crate::pattern::range::Range;
     use crate::pattern::repetition::Repetition;
     use crate::pattern::substitution::Substitution;
     use crate::pattern::testing::make_parsed;
@@ -438,7 +439,7 @@ mod tests {
                             range: 3..4,
                         },
                         Parsed {
-                            value: Filter::Substring(IndexRange::new(0, Some(2))),
+                            value: Filter::Substring(Range::<Index>(0, Some(3))),
                             range: 5..9,
                         },
                     ]),

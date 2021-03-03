@@ -114,12 +114,13 @@ impl Pattern {
 #[cfg(test)]
 mod tests {
     use super::filter::Filter;
-    use super::index::IndexRange;
     use super::parse::Parsed;
     use super::parser::Item;
     use super::substitution::Substitution;
     use super::testing::{make_eval_context, make_parsed};
     use super::Pattern;
+    use crate::pattern::index::Index;
+    use crate::pattern::range::Range;
     use crate::utils::AnyString;
     use ntest::*;
 
@@ -321,7 +322,7 @@ mod tests {
                     make_parsed(Item::Constant(String::from("prefix_"))),
                     make_parsed(Item::Expression(vec![
                         make_parsed(Filter::BaseName),
-                        make_parsed(Filter::Substring(IndexRange::new(0, Some(2)))),
+                        make_parsed(Filter::Substring(Range::<Index>(0, Some(3)))),
                     ])),
                     make_parsed(Item::Constant(String::from("_"))),
                     make_parsed(Item::Expression(vec![make_parsed(Filter::LocalCounter)])),

@@ -39,7 +39,6 @@ pub enum ErrorKind {
     PipeOutsideExpr,
     RangeInvalid(String),
     RangeStartOverEnd(String, String),
-    RangeLengthOverflow(String, String),
     RegexInvalid(AnyString),
     RepetitionWithoutDelimiter,
     SubstitutionWithoutTarget(Char),
@@ -134,13 +133,6 @@ impl fmt::Display for ErrorKind {
                 "Range start {} is greater than end {}",
                 start, end
             ),
-            Self::RangeLengthOverflow(length, max) => {
-                write!(
-                    formatter,
-                    "Range length {} overflowed maximum {}",
-                    length, max
-                )
-            }
             Self::RegexInvalid(value) => write!(formatter, "Invalid regular expression: {}", value),
             Self::RepetitionWithoutDelimiter => {
                 write!(formatter, "Repetition is missing delimiter after number")
@@ -371,14 +363,6 @@ mod tests {
             assert_eq!(
                 ErrorKind::RangeStartOverEnd(String::from("2"), String::from("1")).to_string(),
                 "Range start 2 is greater than end 1"
-            );
-        }
-
-        #[test]
-        fn range_length_overflow() {
-            assert_eq!(
-                ErrorKind::RangeLengthOverflow(String::from("10"), String::from("5")).to_string(),
-                "Range length 10 overflowed maximum 5"
             );
         }
 

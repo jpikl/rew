@@ -3,15 +3,15 @@ use crate::pattern::parse::{Error, ErrorKind, Result};
 use crate::pattern::reader::Reader;
 use num_traits::PrimInt;
 use std::convert::TryFrom;
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 
 pub const fn get_bits<T>() -> usize {
     std::mem::size_of::<T>() * 8
 }
 
-pub trait ParsableInt: TryFrom<u32> + PrimInt + Display {}
+pub trait ParsableInt: TryFrom<u32> + PrimInt + Display + Debug {}
 
-impl<T: TryFrom<u32> + PrimInt + Display> ParsableInt for T {}
+impl<T: TryFrom<u32> + PrimInt + Display + Debug> ParsableInt for T {}
 
 pub fn parse_integer<T: ParsableInt>(reader: &mut Reader<Char>) -> Result<T> {
     if let Some(ch @ '0'..='9') = reader.peek_char() {
