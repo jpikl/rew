@@ -11,30 +11,32 @@ pub const PATTERN: &str = indoc! {r#"
 
 # RULES
 
-  Constants are directly copied to output.
-  Expression is replaced by input value
-  Filters are consecutively applied on input value.
+  1. Constants are directly copied to output.
+  2. Expression is replaced by input value.
+  3. Filters are consecutively applied on input value.
 "#};
 
 pub const FILTERS: &str = indoc! {r#"
 # PATH
 
-  `d`  Parent directory     `D`  Remove last name
-  `f`  File name            `F`  Last name
-  `b`  Base name            `B`  Remove extension
-  `e`  Extension            `E`  Extension with dot
+  `f`  File name           `d`  Parent directory
+  `F`  Last name           `D`  Remove last name
+  
+  `b`  Base name           `e`  Extension
+  `B`  Remove extension    `E`  Extension with dot         
 
-  `w`  Working directory  
-  `a`  Absolute path        `A`  Relative path
-  `p`  Normalized path      `P`  Canonical path
+  `w`  Working directory
+  
+  `a`  Absolute path       `p`  Normalized path        
+  `A`  Relative path       `P`  Canonical path
 
   `z`  Ensure trailing directory separator    
   `Z`  Remove trailing directory separator
 
-# SUBSTRINGS
+# SUBSTRING
 
   `#A-B`  From `A` to `B`         (`A`, `B` = inclusive 1-based indices)
-  `#A+L`  From `A` of length `L`  (`-A`   = backward indexing)   
+  `#A+L`  From `A` of length `L`    (`-A` = backward indexing)   
   `#A-`   From `A` to end         
   `#A`    Character at `A`
 
@@ -43,7 +45,6 @@ pub const FILTERS: &str = indoc! {r#"
   `r:X:Y`  Replace `X` with `Y`      (`r` = first occurence)
   `r:X`    Remove `X`              (`R` = all occurences)
   `?D`     Replace empty with `D`  (`:` = any separator)
-
 
 # REGULAR EXPRESSIONS
 
@@ -56,20 +57,19 @@ pub const FILTERS: &str = indoc! {r#"
 
 # FORMATTING
 
-  `t`     Trim
-  `v`     To lowercase    `^`  To uppercase
-  `i`     To ASCII        `I`  Remove non-ASCII chars
+  `t`  Trim
+  `^`  To uppercase    `i`  To ASCII
+  `v`  To lowercase    `I`  Remove non-ASCII chars
 
   `<<M`   Left pad with `M`            (`>>` or `>` to right pad)
   `<N:M`  Left pad `N` times with `M`    (`:` = any separator)
 
-
 # GENERATORS
 
-  `*N:V`  Repeat `N` times `V`       (`:` = any separator)
+  `*N:V`  Repeat `N` times `V`    (`:` = any separator)
 
-  `c`     Local counter           `C`  Global counter
-  `u`     Random 64-bit number    `U`  Random UUID
+  `u`  Random 64-bit number    `c`  Local counter           
+  `U`  Random UUID             `C`  Global counter   
 
   `uA-B`  `u` where `A <= u <= B`
   `uA-`   `u` where `A <= u`
