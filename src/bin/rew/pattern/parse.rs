@@ -12,6 +12,7 @@ pub struct Parsed<T> {
 }
 
 pub type Result<T> = result::Result<T, Error>;
+pub type BaseResult<T> = result::Result<T, ErrorKind>;
 
 #[derive(Debug, PartialEq)]
 pub struct Error {

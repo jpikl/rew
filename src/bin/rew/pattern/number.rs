@@ -1,5 +1,5 @@
 use crate::pattern::integer::get_bits;
-use crate::pattern::parse::ErrorKind;
+use crate::pattern::parse::BaseResult;
 use crate::pattern::range::{Range, RangeType};
 use rand::thread_rng;
 use rand::Rng;
@@ -18,7 +18,7 @@ impl RangeType for Number {
 
     type Value = NumberValue;
 
-    fn shift(value: Self::Value) -> std::result::Result<Self::Value, ErrorKind> {
+    fn shift(value: Self::Value) -> BaseResult<Self::Value> {
         Ok(value)
     }
 }

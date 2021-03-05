@@ -138,11 +138,7 @@ impl Filter {
         }
     }
 
-    pub fn eval(
-        &self,
-        mut value: String,
-        context: &eval::Context,
-    ) -> Result<String, eval::ErrorKind> {
+    pub fn eval(&self, mut value: String, context: &eval::Context) -> eval::BaseResult<String> {
         match self {
             // Path filters
             Self::WorkingDir => path::to_string(context.working_dir),

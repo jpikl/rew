@@ -1,9 +1,8 @@
 use crate::pattern::char::Char;
-use crate::pattern::parse::{Error, ErrorKind, Parsed, Result};
+use crate::pattern::parse::{BaseResult, Error, ErrorKind, Parsed, Result};
 use crate::pattern::reader::Reader;
 use crate::pattern::symbols::{CR, ESCAPE, EXPR_END, EXPR_START, LF, NUL, PIPE, SEP, TAB};
 use std::path::MAIN_SEPARATOR;
-use std::result;
 
 #[derive(Debug, PartialEq)]
 pub enum Token {
@@ -88,7 +87,7 @@ impl Lexer {
         Ok(chars)
     }
 
-    fn read_escaped_char(&mut self) -> result::Result<Char, ErrorKind> {
+    fn read_escaped_char(&mut self) -> BaseResult<Char> {
         if let Some(value) = self.reader.read_char() {
             let escape_sequence = [self.escape, value];
             let escaped_value = match value {

@@ -1,3 +1,4 @@
+use crate::pattern::eval::BaseResult;
 use crate::pattern::eval::ErrorKind;
 use crate::utils::AnyString;
 use normpath::PathExt;
@@ -5,9 +6,7 @@ use pathdiff::diff_paths;
 use std::ffi::OsStr;
 use std::path::{is_separator, Component, Path, PathBuf, MAIN_SEPARATOR};
 
-type Result = std::result::Result<String, ErrorKind>;
-
-pub fn to_absolute(value: String, working_dir: &Path) -> Result {
+pub fn to_absolute(value: String, working_dir: &Path) -> BaseResult<String> {
     if value.is_empty() {
         to_string(working_dir)
     } else {
@@ -20,7 +19,7 @@ pub fn to_absolute(value: String, working_dir: &Path) -> Result {
     }
 }
 
-pub fn to_relative(value: String, working_dir: &Path) -> Result {
+pub fn to_relative(value: String, working_dir: &Path) -> BaseResult<String> {
     let path = Path::new(&value);
     if path.is_relative() {
         Ok(value)
@@ -29,7 +28,7 @@ pub fn to_relative(value: String, working_dir: &Path) -> Result {
     }
 }
 
-pub fn canonicalize(value: String, working_dir: &Path) -> Result {
+pub fn canonicalize(value: String, working_dir: &Path) -> BaseResult<String> {
     let absolute_value = to_absolute(value, working_dir)?;
     let absolute_path = Path::new(&absolute_value);
 
@@ -53,7 +52,7 @@ pub fn canonicalize(value: String, working_dir: &Path) -> Result {
     }
 }
 
-pub fn normalize(value: &str) -> Result {
+pub fn normalize(value: &str) -> BaseResult<String> {
     let mut normalized_components = Vec::new();
 
     for component in Path::new(value).components() {
@@ -108,7 +107,7 @@ pub fn normalize(value: &str) -> Result {
     Ok(normalized_value)
 }
 
-pub fn get_parent_directory(value: String) -> Result {
+pub fn get_parent_directory(value: String) -> BaseResult<String> {
     let path = Path::new(&value);
     match path.components().last() {
         Some(Component::Prefix(_)) => into_string(PathBuf::from(value).join(Component::RootDir)),
@@ -127,7 +126,7 @@ pub fn get_parent_directory(value: String) -> Result {
     }
 }
 
-pub fn remove_last_name(value: String) -> Result {
+pub fn remove_last_name(value: String) -> BaseResult<String> {
     if let Some(parent) = Path::new(&value).parent() {
         to_string(parent)
     } else {
@@ -135,11 +134,11 @@ pub fn remove_last_name(value: String) -> Result {
     }
 }
 
-pub fn get_file_name(value: &str) -> Result {
+pub fn get_file_name(value: &str) -> BaseResult<String> {
     to_string(Path::new(value).file_name().unwrap_or_default())
 }
 
-pub fn get_last_name(value: &str) -> Result {
+pub fn get_last_name(value: &str) -> BaseResult<String> {
     match Path::new(value).components().last() {
         Some(component @ Component::Normal(_))
         | Some(component @ Component::CurDir)
@@ -148,22 +147,22 @@ pub fn get_last_name(value: &str) -> Result {
     }
 }
 
-pub fn get_base_name(value: &str) -> Result {
+pub fn get_base_name(value: &str) -> BaseResult<String> {
     to_string(Path::new(value).file_stem().unwrap_or_default())
 }
 
-pub fn remove_extension(mut value: String) -> Result {
+pub fn remove_extension(mut value: String) -> BaseResult<String> {
     if let Some(extension_len) = Path::new(&value).extension().map(OsStr::len) {
         value.replace_range((value.len() - extension_len - 1).., "");
     }
     Ok(value)
 }
 
-pub fn get_extension(value: &str) -> Result {
+pub fn get_extension(value: &str) -> BaseResult<String> {
     to_string(Path::new(value).extension().unwrap_or_default())
 }
 
-pub fn get_extension_with_dot(value: &str) -> Result {
+pub fn get_extension_with_dot(value: &str) -> BaseResult<String> {
     let mut result = get_extension(value)?;
     if !result.is_empty() {
         result.insert(0, '.');
@@ -195,18 +194,18 @@ pub fn remove_trailing_dir_separator(mut value: String) -> String {
     value
 }
 
-pub fn into_string(value: PathBuf) -> Result {
+pub fn into_string(value: PathBuf) -> BaseResult<String> {
     match value.into_os_string().into_string() {
         Ok(result) => Ok(result),
         Err(_) => Err(ErrorKind::InputNotUtf8),
     }
 }
 
-pub fn to_string<S: AsRef<OsStr> + ?Sized>(value: &S) -> Result {
+pub fn to_string<S: AsRef<OsStr> + ?Sized>(value: &S) -> BaseResult<String> {
     to_str(value).map(str::to_string)
 }
 
-fn to_str<S: AsRef<OsStr> + ?Sized>(value: &S) -> std::result::Result<&str, ErrorKind> {
+fn to_str<S: AsRef<OsStr> + ?Sized>(value: &S) -> BaseResult<&str> {
     if let Some(str) = value.as_ref().to_str() {
         Ok(str)
     } else {

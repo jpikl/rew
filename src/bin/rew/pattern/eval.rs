@@ -23,6 +23,7 @@ impl<'a> Context<'a> {
 }
 
 pub type Result<'a, T> = result::Result<T, Error<'a>>;
+pub type BaseResult<T> = result::Result<T, ErrorKind>;
 
 #[derive(Debug, PartialEq)]
 pub struct Error<'a> {

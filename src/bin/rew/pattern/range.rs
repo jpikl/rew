@@ -1,6 +1,6 @@
 use crate::pattern::char::Char;
 use crate::pattern::integer::{parse_integer, ParsableInt};
-use crate::pattern::parse::{Error, ErrorKind, Result};
+use crate::pattern::parse::{BaseResult, Error, ErrorKind, Result};
 use crate::pattern::reader::Reader;
 use crate::pattern::symbols::{LENGTH, RANGE};
 use num_traits::{CheckedAdd, One, Zero};
@@ -12,7 +12,7 @@ pub trait RangeType {
 
     type Value: ParsableInt;
 
-    fn shift(value: Self::Value) -> std::result::Result<Self::Value, ErrorKind>;
+    fn shift(value: Self::Value) -> BaseResult<Self::Value>;
 }
 
 #[derive(Debug, PartialEq)]

@@ -2,7 +2,7 @@ use std::fmt;
 
 use crate::pattern::char::Char;
 use crate::pattern::integer::parse_integer;
-use crate::pattern::parse::{Error, ErrorKind, Result};
+use crate::pattern::parse::{BaseResult, Error, ErrorKind, Result};
 use crate::pattern::range::{Range, RangeType};
 use crate::pattern::reader::Reader;
 
@@ -19,7 +19,7 @@ impl RangeType for Index {
 
     type Value = IndexValue;
 
-    fn shift(value: Self::Value) -> std::result::Result<Self::Value, ErrorKind> {
+    fn shift(value: Self::Value) -> BaseResult<Self::Value> {
         Index::shift(value)
     }
 }
@@ -36,7 +36,7 @@ impl Index {
         })
     }
 
-    fn shift(index: IndexValue) -> std::result::Result<IndexValue, ErrorKind> {
+    fn shift(index: IndexValue) -> BaseResult<IndexValue> {
         if index >= 1 {
             Ok(index - 1)
         } else {
