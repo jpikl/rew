@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - More lenient number parsing that ignore multiple leading zeros (e.g., `001` is interpreted as `1`).
 - Error messages containing escape sequences are more human-readable.
 - `-T, --no-trailing-delimiter` flag was renamed to `-L, --no-print-end`.
+- `-s, --fail-at-end` flag was renamed to `-F, --fail-at-end`.
 - Output of `--help-filters` flag has more readable layout.
 
 ### Fixed

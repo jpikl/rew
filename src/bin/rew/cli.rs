@@ -230,7 +230,7 @@ pub struct Cli {
     pub working_directory: Option<PathBuf>,
 
     /// Continue processing after an error, fail at end
-    #[clap(short = 's', long, help_heading = PROCESSING_HEADING)]
+    #[clap(short = 'F', long, help_heading = PROCESSING_HEADING)]
     pub fail_at_end: bool,
 
     /// Wrap output of every pattern expression in quotes

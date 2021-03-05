@@ -50,7 +50,7 @@ pub struct Cli {
     pub read_nul: bool,
 
     /// Continue processing after an error, fail at end
-    #[clap(short = 's', long)]
+    #[clap(short = 'F', long)]
     pub fail_at_end: bool,
 
     /// Explain what is being done
