@@ -8,7 +8,7 @@ use crate::pattern::regex::RegexHolder;
 use crate::pattern::repetition::Repetition;
 use crate::pattern::substitution::{EmptySubstitution, RegexSubstitution, StringSubstitution};
 use crate::pattern::switch::RegexSwitch;
-use crate::pattern::symbols::RANGE;
+use crate::pattern::symbols::RANGE_DELIMITER;
 use crate::pattern::{eval, parse, path, uuid};
 use std::fmt;
 use unidecode::unidecode;
@@ -90,7 +90,7 @@ impl Filter {
 
                 // Substring filters
                 '#' => {
-                    if reader.read_expected(RANGE) {
+                    if reader.read_expected(RANGE_DELIMITER) {
                         Ok(Self::SubstringBackward(IndexRange::parse(reader)?))
                     } else {
                         Ok(Self::Substring(IndexRange::parse(reader)?))

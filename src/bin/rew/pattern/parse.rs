@@ -1,5 +1,5 @@
 use crate::pattern::char::{Char, EscapeSequence};
-use crate::pattern::symbols::{EXPR_END, EXPR_START, LENGTH, PIPE, RANGE};
+use crate::pattern::symbols::{EXPR_END, EXPR_START, LENGTH_DELIMITER, PIPE, RANGE_DELIMITER};
 use crate::utils::{AnyString, HasRange};
 use std::convert::Infallible;
 use std::ops::Range;
@@ -87,15 +87,19 @@ impl fmt::Display for ErrorKind {
                 "Filter requires range 'A-B' or 'A+B' as a parameter"
             ),
             Self::ExpectedRangeDelimiter(None) => {
-                write!(formatter, "Expected range delimiter '{}'", RANGE)
+                write!(formatter, "Expected range delimiter '{}'", RANGE_DELIMITER)
             }
             Self::ExpectedRangeDelimiter(Some(char)) => write!(
                 formatter,
                 "Expected range delimiter '{}' but got {}",
-                RANGE, char
+                RANGE_DELIMITER, char
             ),
             Self::ExpectedRangeLength => {
-                write!(formatter, "Expected range length after '{}'", LENGTH)
+                write!(
+                    formatter,
+                    "Expected range length after '{}'",
+                    LENGTH_DELIMITER
+                )
             }
             Self::ExpectedRegex => write!(
                 formatter,

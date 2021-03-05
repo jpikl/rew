@@ -1,7 +1,10 @@
 use crate::pattern::char::Char;
 use crate::pattern::parse::{BaseResult, Error, ErrorKind, Parsed, Result};
 use crate::pattern::reader::Reader;
-use crate::pattern::symbols::{CR, ESCAPE, EXPR_END, EXPR_START, LF, NUL, PIPE, SEP, TAB};
+use crate::pattern::symbols::{
+    CARRIAGE_RETURN, DEFAULT_ESCAPE, DIR_SEPARATOR, EXPR_END, EXPR_START, HORIZONTAL_TAB,
+    LINE_FEED, NULL, PIPE,
+};
 use std::path::MAIN_SEPARATOR;
 
 #[derive(Debug, PartialEq)]
@@ -21,7 +24,7 @@ impl Lexer {
     pub fn new(string: &str) -> Self {
         Self {
             reader: Reader::from(string),
-            escape: ESCAPE,
+            escape: DEFAULT_ESCAPE,
         }
     }
 
@@ -94,11 +97,11 @@ impl Lexer {
                 EXPR_START => EXPR_START,
                 EXPR_END => EXPR_END,
                 PIPE => PIPE,
-                SEP => MAIN_SEPARATOR,
-                LF => '\n',
-                CR => '\r',
-                TAB => '\t',
-                NUL => '\0',
+                DIR_SEPARATOR => MAIN_SEPARATOR,
+                LINE_FEED => '\n',
+                CARRIAGE_RETURN => '\r',
+                HORIZONTAL_TAB => '\t',
+                NULL => '\0',
                 _ if value == self.escape => value,
                 _ => return Err(ErrorKind::UnknownEscapeSequence(escape_sequence)),
             };

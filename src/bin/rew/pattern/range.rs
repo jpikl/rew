@@ -2,7 +2,7 @@ use crate::pattern::char::Char;
 use crate::pattern::integer::{parse_integer, ParsableInt};
 use crate::pattern::parse::{BaseResult, Error, ErrorKind, Result};
 use crate::pattern::reader::Reader;
-use crate::pattern::symbols::{LENGTH, RANGE};
+use crate::pattern::symbols::{LENGTH_DELIMITER, RANGE_DELIMITER};
 use num_traits::{CheckedAdd, One, Zero};
 
 pub trait RangeType {
@@ -31,7 +31,7 @@ impl<T: RangeType> Range<T> {
                 })?;
 
                 match reader.peek_char() {
-                    Some(RANGE) => {
+                    Some(RANGE_DELIMITER) => {
                         reader.seek();
 
                         if let Some('0'..='9') = reader.peek_char() {
@@ -61,7 +61,7 @@ impl<T: RangeType> Range<T> {
                         }
                     }
 
-                    Some(LENGTH) if T::LENGTH_DELIMITER_ALLOWED => {
+                    Some(LENGTH_DELIMITER) if T::LENGTH_DELIMITER_ALLOWED => {
                         reader.seek();
 
                         if let Some('0'..='9') = reader.peek_char() {
