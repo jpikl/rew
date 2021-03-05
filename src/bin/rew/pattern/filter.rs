@@ -363,13 +363,18 @@ mod tests {
         }
 
         #[test]
-        fn remove_file_name() {
+        fn remove_last_name() {
             assert_eq!(parse("D"), Ok(Filter::RemoveLastName));
         }
 
         #[test]
         fn file_name() {
             assert_eq!(parse("f"), Ok(Filter::FileName));
+        }
+
+        #[test]
+        fn last_name() {
+            assert_eq!(parse("F"), Ok(Filter::LastName));
         }
 
         #[test]
@@ -846,6 +851,14 @@ mod tests {
         }
 
         #[test]
+        fn last_name() {
+            assert_eq!(
+                Filter::LastName.eval(String::from("root/parent/file.ext"), &make_eval_context()),
+                Ok(String::from("file.ext"))
+            );
+        }
+
+        #[test]
         fn base_name() {
             assert_eq!(
                 Filter::BaseName.eval(String::from("root/parent/file.ext"), &make_eval_context()),
@@ -1174,6 +1187,11 @@ mod tests {
         #[test]
         fn file_name() {
             assert_eq!(Filter::FileName.to_string(), "File name");
+        }
+
+        #[test]
+        fn last_name() {
+            assert_eq!(Filter::LastName.to_string(), "Last name");
         }
 
         #[test]
