@@ -1,3 +1,4 @@
+use crate::pattern::escape::escape_char;
 use std::fmt;
 use std::fmt::Debug;
 use std::ops::Deref;
@@ -19,29 +20,18 @@ impl From<char> for Char {
 impl fmt::Display for Char {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::Raw(value) => fmt_char(*value, formatter),
+            Self::Raw(value) => write!(formatter, "'{}'", escape_char(*value)),
             Self::Escaped(value, sequence) => {
-                fmt_char(*value, formatter)?;
                 write!(
                     formatter,
-                    " (escape sequence '{}{}')",
-                    sequence[0], sequence[1]
+                    "'{}' (escape sequence '{}{}')",
+                    escape_char(*value),
+                    escape_char(sequence[0]),
+                    escape_char(sequence[1])
                 )
             }
         }
     }
-}
-
-fn fmt_char(value: char, formatter: &mut fmt::Formatter) -> fmt::Result {
-    write!(formatter, "'")?;
-    match value {
-        '\0' => write!(formatter, "Null"),
-        '\n' => write!(formatter, "Line feed"),
-        '\r' => write!(formatter, "Carriage return"),
-        '\t' => write!(formatter, "Horizontal tab"),
-        value => write!(formatter, "{}", value),
-    }?;
-    write!(formatter, "'")
 }
 
 pub trait AsChar: From<char> {
@@ -131,10 +121,10 @@ mod tests {
         #[test]
         fn display() {
             assert_eq!(Char::Raw('a').to_string(), "'a'");
-            assert_eq!(Char::Raw('\0').to_string(), "'Null'");
-            assert_eq!(Char::Raw('\n').to_string(), "'Line feed'");
-            assert_eq!(Char::Raw('\r').to_string(), "'Carriage return'");
-            assert_eq!(Char::Raw('\t').to_string(), "'Horizontal tab'");
+            assert_eq!(Char::Raw('\0').to_string(), "'\\0'");
+            assert_eq!(Char::Raw('\n').to_string(), "'\\n'");
+            assert_eq!(Char::Raw('\r').to_string(), "'\\r'");
+            assert_eq!(Char::Raw('\t').to_string(), "'\\t'");
         }
     }
 
@@ -160,19 +150,19 @@ mod tests {
             );
             assert_eq!(
                 Char::Escaped('\0', ['%', '0']).to_string(),
-                "'Null' (escape sequence '%0')"
+                "'\\0' (escape sequence '%0')"
             );
             assert_eq!(
                 Char::Escaped('\n', ['%', 'n']).to_string(),
-                "'Line feed' (escape sequence '%n')"
+                "'\\n' (escape sequence '%n')"
             );
             assert_eq!(
                 Char::Escaped('\r', ['%', 'r']).to_string(),
-                "'Carriage return' (escape sequence '%r')"
+                "'\\r' (escape sequence '%r')"
             );
             assert_eq!(
                 Char::Escaped('\t', ['%', 't']).to_string(),
-                "'Horizontal tab' (escape sequence '%t')"
+                "'\\t' (escape sequence '%t')"
             );
         }
     }

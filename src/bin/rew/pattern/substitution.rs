@@ -1,4 +1,5 @@
 use crate::pattern::char::Char;
+use crate::pattern::escape::escape_str;
 use crate::pattern::parse::{Error, ErrorKind, Result};
 use crate::pattern::reader::Reader;
 use crate::pattern::regex::{add_capture_group_brackets, RegexHolder};
@@ -91,13 +92,29 @@ impl RegexSubstitution {
 
 impl fmt::Display for EmptySubstitution {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(formatter, "empty with '{}'", self.replacement)
+        write!(formatter, "empty with '{}'", escape_str(&self.replacement))
     }
 }
 
-impl<T: fmt::Display> fmt::Display for Substitution<T> {
+impl fmt::Display for StringSubstitution {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(formatter, "'{}' with '{}'", self.target, self.replacement)
+        write!(
+            formatter,
+            "'{}' with '{}'",
+            escape_str(&self.target),
+            escape_str(&self.replacement)
+        )
+    }
+}
+
+impl fmt::Display for RegexSubstitution {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            formatter,
+            "'{}' with '{}'",
+            self.target,
+            escape_str(&self.replacement)
+        )
     }
 }
 
@@ -699,7 +716,7 @@ mod tests {
         fn display() {
             assert_eq!(
                 Substitution {
-                    target: Regex::new("([a-z]+)").unwrap(),
+                    target: RegexHolder(Regex::new("([a-z]+)").unwrap()),
                     replacement: String::from("_$1_")
                 }
                 .to_string(),

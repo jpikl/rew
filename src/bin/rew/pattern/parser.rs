@@ -1,4 +1,5 @@
 use crate::pattern::char::{AsChar, Char, Chars};
+use crate::pattern::escape::escape_str;
 use crate::pattern::filter::Filter;
 use crate::pattern::lexer::{Lexer, Token};
 use crate::pattern::parse::{Config, Error, ErrorKind, Parsed, Result};
@@ -15,7 +16,7 @@ pub enum Item {
 impl fmt::Display for Item {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::Constant(value) => write!(formatter, "Constant '{}'", value),
+            Self::Constant(value) => write!(formatter, "Constant '{}'", escape_str(&value)),
             Self::Expression(filters) if filters.is_empty() => {
                 write!(formatter, "Empty expression")
             }

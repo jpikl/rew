@@ -1,4 +1,5 @@
 use crate::pattern::char::Char;
+use crate::pattern::escape::escape_str;
 use crate::pattern::integer::parse_integer;
 use crate::pattern::parse::{Error, ErrorKind, Result};
 use crate::pattern::reader::Reader;
@@ -38,7 +39,7 @@ impl Repetition {
 
 impl fmt::Display for Repetition {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(formatter, "{}x '{}'", self.count, self.value)
+        write!(formatter, "{}x '{}'", self.count, escape_str(&self.value))
     }
 }
 

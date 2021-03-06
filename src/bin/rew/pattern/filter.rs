@@ -1417,7 +1417,7 @@ mod tests {
                     separator: Separator::String(String::from("\t"))
                 })
                 .to_string(),
-                String::from("Get column #2 ('\t' separator)")
+                String::from("Get column #2 ('\\t' separator)")
             );
             assert_eq!(
                 Filter::GetColumn(Column {
@@ -1437,7 +1437,7 @@ mod tests {
                     separator: Separator::String(String::from("\t"))
                 })
                 .to_string(),
-                String::from("Get column #2 ('\t' separator) backwards")
+                String::from("Get column #2 ('\\t' separator) backwards")
             );
             assert_eq!(
                 Filter::GetColumnBackward(Column {

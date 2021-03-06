@@ -1,4 +1,5 @@
 use crate::pattern::char::{AsChar, Char};
+use crate::pattern::escape::escape_str;
 use crate::pattern::parse::{Error, ErrorKind, Result};
 use crate::pattern::reader::Reader;
 use crate::pattern::repetition::Repetition;
@@ -58,7 +59,7 @@ impl Padding {
 impl fmt::Display for Padding {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::Fixed(value) => write!(formatter, "'{}'", value),
+            Self::Fixed(value) => write!(formatter, "'{}'", escape_str(&value)),
             Self::Repeated(repetition) => write!(formatter, "{}", repetition),
         }
     }

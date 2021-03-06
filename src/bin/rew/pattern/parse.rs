@@ -1,4 +1,5 @@
 use crate::pattern::char::{Char, EscapeSequence};
+use crate::pattern::escape::{escape_char, escape_str};
 use crate::pattern::regex::RegexHolder;
 use crate::pattern::symbols::{EXPR_END, EXPR_START, LENGTH_DELIMITER, PIPE, RANGE_DELIMITER};
 use crate::utils::{AnyString, HasRange};
@@ -67,7 +68,7 @@ pub enum ErrorKind {
 impl fmt::Display for Separator {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Separator::String(separator) => write!(formatter, "'{}'", separator),
+            Separator::String(separator) => write!(formatter, "'{}'", escape_str(&separator)),
             Separator::Regex(separator) => write!(formatter, "regular expression '{}'", separator),
         }
     }
@@ -155,7 +156,9 @@ impl fmt::Display for ErrorKind {
                 expected, char
             ),
             Self::PipeOutsideExpr => write!(formatter, "Unescaped '{}' outside expression", PIPE),
-            Self::RangeInvalid(value) => write!(formatter, "Invalid range '{}'", value),
+            Self::RangeInvalid(value) => {
+                write!(formatter, "Invalid range '{}'", escape_str(&value))
+            }
             Self::RangeStartOverEnd(start, end) => write!(
                 formatter,
                 "Range start {} is greater than end {}",
@@ -179,7 +182,8 @@ impl fmt::Display for ErrorKind {
             Self::UnknownEscapeSequence(sequence) => write!(
                 formatter,
                 "Unknown escape sequence '{}{}'",
-                sequence[0], sequence[1]
+                escape_char(sequence[0]),
+                escape_char(sequence[1])
             ),
             Self::UnknownFilter(char) => {
                 write!(formatter, "Unknown filter {}", char)
@@ -195,7 +199,11 @@ impl fmt::Display for ErrorKind {
                 EXPR_END
             ),
             Self::UnterminatedEscapeSequence(escape) => {
-                write!(formatter, "Unterminated escape sequence '{}'", escape)
+                write!(
+                    formatter,
+                    "Unterminated escape sequence '{}'",
+                    escape_char(*escape)
+                )
             }
         }
     }
@@ -212,7 +220,7 @@ mod tests {
 
         #[test]
         fn string() {
-            assert_eq!(Separator::String(String::from("\t")).to_string(), "'\t'");
+            assert_eq!(Separator::String(String::from("\t")).to_string(), "'\\t'");
         }
 
         #[test]

@@ -5,6 +5,7 @@ use crate::pattern::parser::Parser;
 
 mod char;
 mod column;
+mod escape;
 pub mod eval;
 mod explain;
 pub mod filter;

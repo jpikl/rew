@@ -1,4 +1,5 @@
 use crate::pattern::char::{AsChar, Char};
+use crate::pattern::escape::escape_str;
 use crate::pattern::parse::{Error, ErrorKind, Result};
 use crate::pattern::reader::Reader;
 use crate::pattern::regex::{add_capture_group_brackets, RegexHolder};
@@ -83,7 +84,7 @@ impl RegexSwitch {
 impl fmt::Display for RegexSwitch {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         if self.cases.is_empty() {
-            write!(formatter, "constant output '{}'", self.default)
+            write!(formatter, "constant output '{}'", escape_str(&self.default))
         } else {
             writeln!(formatter, "variable output:")?;
             for (index, case) in self.cases.iter().enumerate() {
@@ -94,13 +95,14 @@ impl fmt::Display for RegexSwitch {
                 write!(
                     formatter,
                     "if input matches '{}'\n        output is '{}'",
-                    case.matcher, case.result
+                    case.matcher,
+                    escape_str(&case.result)
                 )?;
             }
             write!(
                 formatter,
                 "\n    else\n        output is '{}'",
-                self.default
+                escape_str(&self.default)
             )
         }
     }
