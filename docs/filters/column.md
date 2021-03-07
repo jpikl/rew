@@ -1,10 +1,10 @@
-#  📑 Column filters
+# 📊 Column filters
 
-| Filter  | Description                                                    |
-| ------- | -------------------------------------------------------------- |
+| Filter  | Description                                                     |
+| ------- | --------------------------------------------------------------- |
 | `&N:S`  | Split value using separator `S`, output `N`-th column.<br>Column indices `N` start from 1.<br>Use `-N` for backward indexing.<br>Any other character than `:` can be also used as a delimiter.<br>Use of `/` as a delimiter has special meaning (see below). |
 | `&N/S`  | Split value using regular expression `S`, output `N`-th column. |
-| `&N`    | Split value using global separator, output `N`-th column.     | 
+| `&N`    | Split value using global separator, output `N`-th column.       |
 
 By default, the global separator is *horizontal tab*.
 
@@ -18,13 +18,13 @@ echo a1-b2 | rew '{&1} {&2}' -S'[^a-z]+' # Will print "a b"
 
 Examples:
 
-| Input           | Pattern        | Output    | | Input          | Pattern         | Output    |
-| --------------- | -------------- | --------- |-| -------------- | --------------- | --------- |
-| `a1` `TAB` `b2` | `{&1}`         | `a1`      | | `a1` `TAB` `b2`| `{&-1}`         | `b2`      |
-| `a1` `TAB` `b2` | `{&2}`         | `b2`      | | `a1` `TAB` `b2`| `{&-2}`         | `a1`      | 
-| `a1--b2`        | `{&1:-}`       | `a1`      | | `a1--b2`       | `{&-1:-}`       | `b2`      |
-| `a1--b2`        | `{&2:-}`       | *(empty)* | | `a1--b2`       | `{&-2:-}`       | *(empty)* |
-| `a1--b2`        | `{&3:-}`       | `b2`      | | `a1--b2`       | `{&-3:-}`       | `a1`      |
-| `a1--b2`        | `{&1/[^a-z]+}` | `a`       | | `a1--b2`       | `{&-1/[^a-z]+}` | *(empty)* |
-| `a1--b2`        | `{&2/[^a-z]+}` | `b`       | | `a1--b2`       | `{&-2/[^a-z]+}` | `b`       |
-| `a1--b2`        | `{&3/[^a-z]+}` | *(empty)* | | `a1--b2`       | `{&-3/[^a-z]+}` | `a`       |
+| Input    | Pattern        | Output    | | Input    | Pattern         | Output    |
+| -------- | -------------- | --------- |-| -------- | --------------- | --------- |
+| `a1\tb2` | `{&1}`         | `a1`      | | `a1\tb2` | `{&-1}`         | `b2`      |
+| `a1\tb2` | `{&2}`         | `b2`      | | `a1\tb2` | `{&-2}`         | `a1`      |
+| `a1--b2` | `{&1:-}`       | `a1`      | | `a1--b2` | `{&-1:-}`       | `b2`      |
+| `a1--b2` | `{&2:-}`       | *(empty)* | | `a1--b2` | `{&-2:-}`       | *(empty)* |
+| `a1--b2` | `{&3:-}`       | `b2`      | | `a1--b2` | `{&-3:-}`       | `a1`      |
+| `a1--b2` | `{&1/[^a-z]+}` | `a`       | | `a1--b2` | `{&-1/[^a-z]+}` | *(empty)* |
+| `a1--b2` | `{&2/[^a-z]+}` | `b`       | | `a1--b2` | `{&-2/[^a-z]+}` | `b`       |
+| `a1--b2` | `{&3/[^a-z]+}` | *(empty)* | | `a1--b2` | `{&-3/[^a-z]+}` | `a`       |

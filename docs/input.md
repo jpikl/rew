@@ -3,7 +3,7 @@
 By default, input values are read as lines from standard input.
 Each line is expected to be terminated either by `LF` or `CR+LF` characters.
 The last line (before `EOF`) does not need to have a terminator.
- 
+
 - Use `-t, --read` option to read values terminated by a specific character.
 - Use `-z, --read-nul` flag to read values terminated by `NUL` character.
 - Use `-r, --read-raw` flag to read whole input into memory as a single value.
@@ -13,7 +13,7 @@ The following table shows how an input would be parsed for valid combinations of
 
 | Input    | *(no flag)* | `-l`     | `-z`     | `-lz`    | `-t:`    | `-lt:`   | `-r`    |
 | -------- | ----------- | -------- | -------- | -------- | -------- | -------- | ------- |
-| `a\nb`   | `a`, `b`    | `a`      | `a\nb`   | *(none)* | `a\nb`   | *(none)* |`a\nb`   | 
+| `a\nb`   | `a`, `b`    | `a`      | `a\nb`   | *(none)* | `a\nb`   | *(none)* |`a\nb`   |
 | `a\nb\n` | `a`, `b`    | `a`, `b` | `a\nb\n` | *(none)* | `a\nb\n` | *(none)* |`a\nb\n` |
 | `a\0b`   | `a\0b`      | *(none)* | `a`, `b` | `a`      | `a\0b`   | *(none)* |`a\0b`   |
 | `a\0b\0` | `a\0b\0`    | *(none)* | `a`, `b` | `a`, `b` | `a\0b\0` | *(none)* |`a\0b\0` |

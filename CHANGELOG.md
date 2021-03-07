@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `&` filter which splits value using a separator and outputs N-th column.
 - `-q, --quote` flag to automatically wrap  output of every pattern expression in quotes.
 - `-l, --read-end` flag to require the last input value to be properly terminated.
 - `-I, --no-stdin` flag to disable reading values from standard input.

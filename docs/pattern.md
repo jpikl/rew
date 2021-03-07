@@ -38,7 +38,7 @@ Use `-q, --quote` flag to automatically wrap  output of every expression in quot
 ```bash
 echo abc | rew {}     # Will print  abc
 echo abc | rew {} -q  # Will print 'abc'
-echo abc | rew {} -qq # Will print "abc" 
+echo abc | rew {} -qq # Will print "abc"
 ```
 
 ## Filters
