@@ -7,13 +7,25 @@ pub const PATTERN: &str = indoc! {r#"
   `{}`          Empty expression     
   `{x}`         Expression with a filter    
   `{x|y|z}`     Expression with multiple filters  
-  `a{}b{x|y}c`  Example of a more complex pattern
+  `a{}b{x|y}c`  Mixed constant and expresions.
 
 # RULES
 
   1. Constants are directly copied to output.
   2. Expression is replaced by input value.
   3. Filters are consecutively applied on input value.
+
+# ESCAPING
+
+  `%/`  System directory separator
+  `%n`  Line feed
+  `%r`  Carriage return
+  `%t`  Horizontal tab
+  `%0`  Null
+  `%{`  Escaped `{`
+  `%|`  Escaped `|`
+  `%}`  Escaped `{`
+  `%%`  Escaped `%`
 "#};
 
 pub const FILTERS: &str = indoc! {r#"

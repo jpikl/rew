@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Capture groups of a global regex need to be prefixed with `$` (e.g., `{$1}` instead of `{1}`).
 - More lenient number parsing that ignore multiple leading zeros (e.g., `001` is interpreted as `1`).
 - Output of `--explain` flag and error output have escaped non-printable and other special characters (newline, tab, etc.).
+- Output of `--help-pattern` includes list of escape sequences.
 - Output of `--help-filters` flag has more readable layout.
 - `-T, --no-trailing-delimiter` flag was renamed to `-L, --no-print-end`.
 - `-s, --fail-at-end` flag was renamed to `-F, --fail-at-end`.
