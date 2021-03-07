@@ -103,7 +103,7 @@ mod tests {
             assert_eq!(
                 Column::parse(
                     &mut Reader::from(input),
-                    &Separator::String(String::from("\t"))
+                    &Separator::String(String::from('\t'))
                 ),
                 Err(Error { kind, range })
             );
@@ -115,7 +115,7 @@ mod tests {
             assert_eq!(
                 Column::parse(
                     &mut Reader::from(input),
-                    &Separator::String(String::from("\t"))
+                    &Separator::String(String::from('\t'))
                 ),
                 Ok(Column {
                     index,

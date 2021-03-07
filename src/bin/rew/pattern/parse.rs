@@ -212,9 +212,10 @@ impl fmt::Display for ErrorKind {
 #[cfg(test)]
 impl Config {
     pub fn fixture() -> Self {
+        use crate::pattern::symbols::{DEFAULT_ESCAPE, DEFAULT_SEPARATOR};
         Self {
-            escape: '%',
-            separator: Separator::String(String::from("\t")),
+            escape: DEFAULT_ESCAPE,
+            separator: Separator::String(String::from(DEFAULT_SEPARATOR)),
         }
     }
 }
@@ -236,7 +237,7 @@ mod tests {
 
         #[test]
         fn string() {
-            assert_eq!(Separator::String(String::from("\t")).to_string(), "'\\t'");
+            assert_eq!(Separator::String(String::from('\t')).to_string(), "'\\t'");
         }
 
         #[test]

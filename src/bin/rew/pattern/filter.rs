@@ -491,7 +491,7 @@ mod tests {
                 parse("&2"),
                 Ok(Filter::GetColumn(Column {
                     index: 1,
-                    separator: Separator::String(String::from("\t"))
+                    separator: Separator::String(String::from('\t'))
                 })),
             );
             assert_eq!(
@@ -537,7 +537,7 @@ mod tests {
                 parse("&-2"),
                 Ok(Filter::GetColumnBackward(Column {
                     index: 1,
-                    separator: Separator::String(String::from("\t"))
+                    separator: Separator::String(String::from('\t'))
                 })),
             );
             assert_eq!(
@@ -1038,7 +1038,7 @@ mod tests {
             assert_eq!(
                 Filter::GetColumn(Column {
                     index: 1,
-                    separator: Separator::String(String::from("\t"))
+                    separator: Separator::String(String::from('\t'))
                 })
                 .eval(String::from("a \t b \t c \t d"), &Context::fixture()),
                 Ok(String::from(" b "))
@@ -1058,7 +1058,7 @@ mod tests {
             assert_eq!(
                 Filter::GetColumnBackward(Column {
                     index: 1,
-                    separator: Separator::String(String::from("\t"))
+                    separator: Separator::String(String::from('\t'))
                 })
                 .eval(String::from("a \t b \t c \t d"), &Context::fixture()),
                 Ok(String::from(" c "))
@@ -1396,7 +1396,7 @@ mod tests {
             assert_eq!(
                 Filter::GetColumn(Column {
                     index: 1,
-                    separator: Separator::String(String::from("\t"))
+                    separator: Separator::String(String::from('\t'))
                 })
                 .to_string(),
                 String::from("Get column #2 ('\\t' separator)")
@@ -1416,7 +1416,7 @@ mod tests {
             assert_eq!(
                 Filter::GetColumnBackward(Column {
                     index: 1,
-                    separator: Separator::String(String::from("\t"))
+                    separator: Separator::String(String::from('\t'))
                 })
                 .to_string(),
                 String::from("Get column #2 ('\\t' separator) backwards")

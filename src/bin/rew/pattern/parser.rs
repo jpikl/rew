@@ -244,7 +244,6 @@ mod tests {
 
     mod parse {
         use super::*;
-        use crate::pattern::parse::Separator;
 
         #[test]
         fn empty() {
@@ -512,14 +511,7 @@ mod tests {
         }
 
         fn parse(value: &str) -> Result<Vec<Parsed<Item>>> {
-            Parser::new(
-                value,
-                &Config {
-                    escape: '%',
-                    separator: Separator::String(String::from('\t')),
-                },
-            )
-            .parse_items()
+            Parser::new(value, &Config::fixture()).parse_items()
         }
     }
 }
