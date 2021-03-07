@@ -10,7 +10,8 @@ use crate::pattern::repetition::Repetition;
 use crate::pattern::substitution::{EmptySubstitution, RegexSubstitution, StringSubstitution};
 use crate::pattern::switch::RegexSwitch;
 use crate::pattern::symbols::RANGE_DELIMITER;
-use crate::pattern::{eval, parse, path, uuid};
+use crate::pattern::uuid::random_uuid;
+use crate::pattern::{eval, parse, path};
 use std::fmt;
 use unidecode::unidecode;
 
@@ -209,7 +210,7 @@ impl Filter {
             Self::LocalCounter => Ok(context.local_counter.to_string()),
             Self::GlobalCounter => Ok(context.global_counter.to_string()),
             Self::RandomNumber(interval) => Ok(interval.random().to_string()),
-            Self::RandomUuid => Ok(uuid::random()),
+            Self::RandomUuid => Ok(random_uuid()),
         }
     }
 }
@@ -856,7 +857,7 @@ mod tests {
     mod eval {
         use super::*;
         use crate::pattern::eval::Context;
-        use crate::pattern::testing::assert_uuid;
+        use crate::pattern::uuid::assert_uuid;
         use std::path::MAIN_SEPARATOR;
 
         #[test]

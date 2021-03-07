@@ -25,8 +25,6 @@ mod repetition;
 mod substitution;
 mod switch;
 pub mod symbols;
-#[cfg(test)]
-mod testing;
 mod uuid;
 
 #[derive(Debug, PartialEq)]
