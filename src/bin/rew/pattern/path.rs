@@ -318,9 +318,7 @@ mod tests {
             let working_dir = std::env::current_dir().unwrap();
             assert_eq!(
                 canonicalize(String::from("non-existent"), &working_dir),
-                Err(ErrorKind::CanonicalizationFailed(AnyString(String::from(
-                    "This string is not compared by assertion"
-                ))))
+                Err(ErrorKind::CanonicalizationFailed(AnyString::any()))
             );
         }
 

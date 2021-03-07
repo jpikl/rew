@@ -112,7 +112,6 @@ impl fmt::Display for RegexSwitch {
 mod tests {
     use super::*;
     use crate::utils::AnyString;
-    use regex::Regex;
 
     mod parse {
         use super::*;
@@ -175,9 +174,7 @@ mod tests {
             assert_eq!(
                 RegexSwitch::parse(&mut reader),
                 Err(Error {
-                    kind: ErrorKind::RegexInvalid(AnyString(String::from(
-                        "This string is not compared by assertion"
-                    ))),
+                    kind: ErrorKind::RegexInvalid(AnyString::any()),
                     range: 1..7,
                 })
             );
@@ -191,7 +188,7 @@ mod tests {
                 RegexSwitch::parse(&mut reader),
                 Ok(RegexSwitch {
                     cases: vec![Case {
-                        matcher: RegexHolder(Regex::new("^[a-z]+$").unwrap()),
+                        matcher: RegexHolder::from("^[a-z]+$"),
                         result: String::new()
                     }],
                     default: String::new(),
@@ -207,7 +204,7 @@ mod tests {
                 RegexSwitch::parse(&mut reader),
                 Ok(RegexSwitch {
                     cases: vec![Case {
-                        matcher: RegexHolder(Regex::new("^[a-z]+$").unwrap()),
+                        matcher: RegexHolder::from("^[a-z]+$"),
                         result: String::from("lower")
                     }],
                     default: String::new(),
@@ -223,7 +220,7 @@ mod tests {
                 RegexSwitch::parse(&mut reader),
                 Ok(RegexSwitch {
                     cases: vec![Case {
-                        matcher: RegexHolder(Regex::new("^[a-z]+$").unwrap()),
+                        matcher: RegexHolder::from("^[a-z]+$"),
                         result: String::from("lower")
                     }],
                     default: String::new(),
@@ -239,7 +236,7 @@ mod tests {
                 RegexSwitch::parse(&mut reader),
                 Ok(RegexSwitch {
                     cases: vec![Case {
-                        matcher: RegexHolder(Regex::new("^[a-z]+$").unwrap()),
+                        matcher: RegexHolder::from("^[a-z]+$"),
                         result: String::from("")
                     }],
                     default: String::new(),
@@ -268,7 +265,7 @@ mod tests {
                 RegexSwitch::parse(&mut reader),
                 Ok(RegexSwitch {
                     cases: vec![Case {
-                        matcher: RegexHolder(Regex::new("^[a-z]+$").unwrap()),
+                        matcher: RegexHolder::from("^[a-z]+$"),
                         result: String::from("lower")
                     }],
                     default: String::from("mixed"),
@@ -283,9 +280,7 @@ mod tests {
             assert_eq!(
                 RegexSwitch::parse(&mut reader),
                 Err(Error {
-                    kind: ErrorKind::RegexInvalid(AnyString(String::from(
-                        "This string is not compared by assertion"
-                    ))),
+                    kind: ErrorKind::RegexInvalid(AnyString::any()),
                     range: 16..22,
                 }),
             );
@@ -300,11 +295,11 @@ mod tests {
                 Ok(RegexSwitch {
                     cases: vec![
                         Case {
-                            matcher: RegexHolder(Regex::new("^[a-z]+$").unwrap()),
+                            matcher: RegexHolder::from("^[a-z]+$"),
                             result: String::from("lower")
                         },
                         Case {
-                            matcher: RegexHolder(Regex::new("^[A-Z]+$").unwrap()),
+                            matcher: RegexHolder::from("^[A-Z]+$"),
                             result: String::new()
                         }
                     ],
@@ -322,11 +317,11 @@ mod tests {
                 Ok(RegexSwitch {
                     cases: vec![
                         Case {
-                            matcher: RegexHolder(Regex::new("^[a-z]+$").unwrap()),
+                            matcher: RegexHolder::from("^[a-z]+$"),
                             result: String::from("lower")
                         },
                         Case {
-                            matcher: RegexHolder(Regex::new("^[A-Z]+$").unwrap()),
+                            matcher: RegexHolder::from("^[A-Z]+$"),
                             result: String::from("upper")
                         }
                     ],
@@ -344,11 +339,11 @@ mod tests {
                 Ok(RegexSwitch {
                     cases: vec![
                         Case {
-                            matcher: RegexHolder(Regex::new("^[a-z]+$").unwrap()),
+                            matcher: RegexHolder::from("^[a-z]+$"),
                             result: String::from("lower")
                         },
                         Case {
-                            matcher: RegexHolder(Regex::new("^[A-Z]+$").unwrap()),
+                            matcher: RegexHolder::from("^[A-Z]+$"),
                             result: String::from("upper")
                         }
                     ],
@@ -366,11 +361,11 @@ mod tests {
                 Ok(RegexSwitch {
                     cases: vec![
                         Case {
-                            matcher: RegexHolder(Regex::new("^[a-z]+$").unwrap()),
+                            matcher: RegexHolder::from("^[a-z]+$"),
                             result: String::from("lower")
                         },
                         Case {
-                            matcher: RegexHolder(Regex::new("^[A-Z]+$").unwrap()),
+                            matcher: RegexHolder::from("^[A-Z]+$"),
                             result: String::from("upper")
                         }
                     ],
@@ -409,15 +404,15 @@ mod tests {
             let switch = RegexSwitch {
                 cases: vec![
                     Case {
-                        matcher: RegexHolder(Regex::new("\\d\\d").unwrap()),
+                        matcher: RegexHolder::from("\\d\\d"),
                         result: String::from("contains consecutive digits"),
                     },
                     Case {
-                        matcher: RegexHolder(Regex::new("\\d").unwrap()),
+                        matcher: RegexHolder::from("\\d"),
                         result: String::from("contains digit"),
                     },
                     Case {
-                        matcher: RegexHolder(Regex::new("^[a-z]+$").unwrap()),
+                        matcher: RegexHolder::from("^[a-z]+$"),
                         result: String::from("all lowercase"),
                     },
                 ],
@@ -435,15 +430,15 @@ mod tests {
             let switch = RegexSwitch {
                 cases: vec![
                     Case {
-                        matcher: RegexHolder(Regex::new("(\\d)(\\d)").unwrap()),
+                        matcher: RegexHolder::from("(\\d)(\\d)"),
                         result: String::from("contains consecutive digits $1 and $2"),
                     },
                     Case {
-                        matcher: RegexHolder(Regex::new("\\d").unwrap()),
+                        matcher: RegexHolder::from("\\d"),
                         result: String::from("contains digit $0"),
                     },
                     Case {
-                        matcher: RegexHolder(Regex::new("^.*([A-Z]).*$").unwrap()),
+                        matcher: RegexHolder::from("^.*([A-Z]).*$"),
                         result: String::from("first uppercase letter of '$0' is '$1'"),
                     },
                 ],
@@ -490,7 +485,7 @@ mod tests {
             assert_eq!(
                 RegexSwitch {
                     cases: vec![Case {
-                        matcher: RegexHolder(Regex::new("^[a-z]+$").unwrap()),
+                        matcher: RegexHolder::from("^[a-z]+$"),
                         result: String::from("lower")
                     }],
                     default: String::new()
@@ -513,11 +508,11 @@ mod tests {
                 RegexSwitch {
                     cases: vec![
                         Case {
-                            matcher: RegexHolder(Regex::new("^[a-z]+$").unwrap()),
+                            matcher: RegexHolder::from("^[a-z]+$"),
                             result: String::from("lower")
                         },
                         Case {
-                            matcher: RegexHolder(Regex::new("^[A-Z]+$").unwrap()),
+                            matcher: RegexHolder::from("^[A-Z]+$"),
                             result: String::from("upper")
                         }
                     ],

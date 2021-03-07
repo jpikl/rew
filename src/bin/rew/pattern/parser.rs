@@ -204,7 +204,6 @@ mod tests {
     use crate::pattern::range::Range;
     use crate::pattern::repetition::Repetition;
     use crate::pattern::substitution::Substitution;
-    use crate::pattern::testing::make_parsed;
 
     mod item_display {
         use super::*;
@@ -225,7 +224,7 @@ mod tests {
         #[test]
         fn single_filter_expression() {
             assert_eq!(
-                Item::Expression(vec![make_parsed(Filter::ToUppercase)]).to_string(),
+                Item::Expression(vec![Parsed::from(Filter::ToUppercase)]).to_string(),
                 "Expression with a filter"
             );
         }
@@ -234,8 +233,8 @@ mod tests {
         fn multi_filter_expression() {
             assert_eq!(
                 Item::Expression(vec![
-                    make_parsed(Filter::ToUppercase),
-                    make_parsed(Filter::Trim)
+                    Parsed::from(Filter::ToUppercase),
+                    Parsed::from(Filter::Trim)
                 ])
                 .to_string(),
                 "Expression with 2 filters"

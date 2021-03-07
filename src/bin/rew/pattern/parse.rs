@@ -210,13 +210,29 @@ impl fmt::Display for ErrorKind {
 }
 
 #[cfg(test)]
+impl Config {
+    pub fn fixture() -> Self {
+        Self {
+            escape: '%',
+            separator: Separator::String(String::from("\t")),
+        }
+    }
+}
+
+#[cfg(test)]
+impl<T> From<T> for Parsed<T> {
+    fn from(value: T) -> Self {
+        Self { value, range: 0..0 }
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
 
     mod separator_display {
         use crate::pattern::parse::Separator;
         use crate::pattern::regex::RegexHolder;
-        use regex::Regex;
 
         #[test]
         fn string() {
@@ -226,7 +242,7 @@ mod tests {
         #[test]
         fn regex() {
             assert_eq!(
-                Separator::Regex(RegexHolder(Regex::new("\\s+").unwrap())).to_string(),
+                Separator::Regex(RegexHolder::from("\\s+")).to_string(),
                 "regular expression '\\s+'"
             );
         }

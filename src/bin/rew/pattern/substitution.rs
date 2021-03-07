@@ -526,7 +526,6 @@ mod tests {
         extern crate regex;
         use super::*;
         use crate::utils::AnyString;
-        use regex::Regex;
 
         mod parse {
             use super::*;
@@ -537,7 +536,7 @@ mod tests {
                 assert_eq!(
                     RegexSubstitution::parse(&mut reader),
                     Ok(Substitution {
-                        target: RegexHolder(Regex::new("\\d+").unwrap()),
+                        target: RegexHolder::from("\\d+"),
                         replacement: String::from("def"),
                     })
                 );
@@ -550,9 +549,7 @@ mod tests {
                 assert_eq!(
                     RegexSubstitution::parse(&mut reader),
                     Err(Error {
-                        kind: ErrorKind::RegexInvalid(AnyString(String::from(
-                            "This string is not compared by assertion"
-                        ))),
+                        kind: ErrorKind::RegexInvalid(AnyString::any()),
                         range: 1..6,
                     })
                 );
@@ -567,7 +564,7 @@ mod tests {
             fn empty_with_empty() {
                 assert_eq!(
                     Substitution {
-                        target: RegexHolder(Regex::new("\\d+").unwrap()),
+                        target: RegexHolder::from("\\d+"),
                         replacement: String::new()
                     }
                     .replace_first(""),
@@ -579,7 +576,7 @@ mod tests {
             fn empty_with_nonempty() {
                 assert_eq!(
                     Substitution {
-                        target: RegexHolder(Regex::new("(\\d)(\\d+)").unwrap()),
+                        target: RegexHolder::from("(\\d)(\\d+)"),
                         replacement: String::from("_$2$1_")
                     }
                     .replace_first(""),
@@ -591,7 +588,7 @@ mod tests {
             fn none_with_empty() {
                 assert_eq!(
                     Substitution {
-                        target: RegexHolder(Regex::new("\\d+").unwrap()),
+                        target: RegexHolder::from("\\d+"),
                         replacement: String::new()
                     }
                     .replace_first(""),
@@ -603,7 +600,7 @@ mod tests {
             fn none_with_nonempty() {
                 assert_eq!(
                     Substitution {
-                        target: RegexHolder(Regex::new("(\\d)(\\d+)").unwrap()),
+                        target: RegexHolder::from("(\\d)(\\d+)"),
                         replacement: String::from("_$2$1_")
                     }
                     .replace_first("abc"),
@@ -615,7 +612,7 @@ mod tests {
             fn first_with_empty() {
                 assert_eq!(
                     Substitution {
-                        target: RegexHolder(Regex::new("\\d+").unwrap()),
+                        target: RegexHolder::from("\\d+"),
                         replacement: String::new()
                     }
                     .replace_first("abc123def456"),
@@ -627,7 +624,7 @@ mod tests {
             fn first_with_nonempty() {
                 assert_eq!(
                     Substitution {
-                        target: RegexHolder(Regex::new("(\\d)(\\d+)").unwrap()),
+                        target: RegexHolder::from("(\\d)(\\d+)"),
                         replacement: String::from("_$2$1_")
                     }
                     .replace_first("abc123def456"),
@@ -643,7 +640,7 @@ mod tests {
             fn empty_with_empty() {
                 assert_eq!(
                     Substitution {
-                        target: RegexHolder(Regex::new("\\d+").unwrap()),
+                        target: RegexHolder::from("\\d+"),
                         replacement: String::new()
                     }
                     .replace_all(""),
@@ -655,7 +652,7 @@ mod tests {
             fn empty_with_nonempty() {
                 assert_eq!(
                     Substitution {
-                        target: RegexHolder(Regex::new("(\\d)(\\d+)").unwrap()),
+                        target: RegexHolder::from("(\\d)(\\d+)"),
                         replacement: String::from("_$2$1_")
                     }
                     .replace_all(""),
@@ -667,7 +664,7 @@ mod tests {
             fn none_with_empty() {
                 assert_eq!(
                     Substitution {
-                        target: RegexHolder(Regex::new("\\d+").unwrap()),
+                        target: RegexHolder::from("\\d+"),
                         replacement: String::new()
                     }
                     .replace_all("abc"),
@@ -679,7 +676,7 @@ mod tests {
             fn none_with_nonempty() {
                 assert_eq!(
                     Substitution {
-                        target: RegexHolder(Regex::new("(\\d)(\\d+)").unwrap()),
+                        target: RegexHolder::from("(\\d)(\\d+)"),
                         replacement: String::from("_$2$1_")
                     }
                     .replace_all("abc"),
@@ -691,7 +688,7 @@ mod tests {
             fn all_with_empty() {
                 assert_eq!(
                     Substitution {
-                        target: RegexHolder(Regex::new("\\d+").unwrap()),
+                        target: RegexHolder::from("\\d+"),
                         replacement: String::new()
                     }
                     .replace_all("abc123def456"),
@@ -703,7 +700,7 @@ mod tests {
             fn all_with_nonempty() {
                 assert_eq!(
                     Substitution {
-                        target: RegexHolder(Regex::new("(\\d)(\\d+)").unwrap()),
+                        target: RegexHolder::from("(\\d)(\\d+)"),
                         replacement: String::from("_$2$1_")
                     }
                     .replace_all("abc123def456"),
@@ -716,7 +713,7 @@ mod tests {
         fn display() {
             assert_eq!(
                 Substitution {
-                    target: RegexHolder(Regex::new("([a-z]+)").unwrap()),
+                    target: RegexHolder::from("([a-z]+)"),
                     replacement: String::from("_$1_")
                 }
                 .to_string(),

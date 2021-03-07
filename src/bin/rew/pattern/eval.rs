@@ -1,5 +1,7 @@
 use crate::pattern::filter::Filter;
 use crate::utils::{AnyString, HasRange};
+#[cfg(test)]
+use regex::Regex;
 use std::ops::Range;
 use std::path::Path;
 use std::{error, fmt, result};
@@ -69,56 +71,43 @@ impl fmt::Display for ErrorKind {
 }
 
 #[cfg(test)]
+impl<'a> Context<'a> {
+    pub fn fixture() -> Self {
+        Context {
+            #[cfg(unix)]
+            working_dir: Path::new("/work"),
+            #[cfg(windows)]
+            working_dir: Path::new("C:\\work"),
+            local_counter: 1,
+            global_counter: 2,
+            regex_captures: Regex::new("(.*)").unwrap().captures("abc"),
+            expression_quotes: None,
+        }
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
 
     mod eval_context_regex_capture {
         use super::*;
-        use crate::pattern::testing::make_regex_captures;
 
         #[test]
         fn none() {
-            assert_eq!(
-                Context {
-                    working_dir: Path::new(""),
-                    global_counter: 0,
-                    local_counter: 0,
-                    regex_captures: None,
-                    expression_quotes: None,
-                }
-                .regex_capture(1),
-                ""
-            );
+            let mut context = Context::fixture();
+            context.regex_captures = None;
+            assert_eq!(context.regex_capture(1), "");
         }
 
         #[test]
         fn some() {
-            assert_eq!(
-                Context {
-                    working_dir: Path::new(""),
-                    global_counter: 0,
-                    local_counter: 0,
-                    regex_captures: make_regex_captures(),
-                    expression_quotes: None,
-                }
-                .regex_capture(1),
-                "abc"
-            );
+            assert_eq!(Context::fixture().regex_capture(1), "abc");
         }
 
         #[test]
         fn some_invalid() {
-            assert_eq!(
-                Context {
-                    working_dir: Path::new(""),
-                    global_counter: 0,
-                    local_counter: 0,
-                    regex_captures: make_regex_captures(),
-                    expression_quotes: None,
-                }
-                .regex_capture(2),
-                ""
-            );
+            assert_eq!(Context::fixture().regex_capture(2), "");
         }
     }
 

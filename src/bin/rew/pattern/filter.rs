@@ -315,7 +315,6 @@ mod tests {
     use crate::pattern::switch::{Case, RegexSwitch};
     use crate::utils::AnyString;
     use crate::utils::Empty;
-    use regex::Regex;
 
     mod parse {
         use super::*;
@@ -348,7 +347,7 @@ mod tests {
         #[test]
         fn chars_after() {
             let mut reader = Reader::from("a_");
-            Filter::parse(&mut reader, &make_config()).unwrap();
+            Filter::parse(&mut reader, &Config::fixture()).unwrap();
             assert_eq!(reader.position(), 1);
         }
 
@@ -512,15 +511,13 @@ mod tests {
                 parse("&1/[0-9]+"),
                 Ok(Filter::GetColumn(Column {
                     index: 0,
-                    separator: Separator::Regex(RegexHolder(Regex::new("[0-9]+").unwrap()))
+                    separator: Separator::Regex(RegexHolder::from("[0-9]+"))
                 })),
             );
             assert_eq!(
                 parse("&1/[0-9"),
                 Err(Error {
-                    kind: ErrorKind::RegexInvalid(AnyString(String::from(
-                        "This string is not compared by assertion"
-                    ))),
+                    kind: ErrorKind::RegexInvalid(AnyString::any()),
                     range: 3..7,
                 }),
             );
@@ -560,15 +557,13 @@ mod tests {
                 parse("&-1/[0-9]+"),
                 Ok(Filter::GetColumnBackward(Column {
                     index: 0,
-                    separator: Separator::Regex(RegexHolder(Regex::new("[0-9]+").unwrap()))
+                    separator: Separator::Regex(RegexHolder::from("[0-9]+"))
                 })),
             );
             assert_eq!(
                 parse("&-1/[0-9"),
                 Err(Error {
-                    kind: ErrorKind::RegexInvalid(AnyString(String::from(
-                        "This string is not compared by assertion"
-                    ))),
+                    kind: ErrorKind::RegexInvalid(AnyString::any()),
                     range: 4..8,
                 }),
             );
@@ -646,16 +641,12 @@ mod tests {
             );
             assert_eq!(
                 parse("=[0-9]+"),
-                Ok(Filter::RegexMatch(RegexHolder(
-                    Regex::new("[0-9]+").unwrap()
-                ))),
+                Ok(Filter::RegexMatch(RegexHolder::from("[0-9]+"))),
             );
             assert_eq!(
                 parse("=[0-9+"),
                 Err(Error {
-                    kind: ErrorKind::RegexInvalid(AnyString(String::from(
-                        "This string is not compared by assertion"
-                    ))),
+                    kind: ErrorKind::RegexInvalid(AnyString::any()),
                     range: 1..6,
                 }),
             );
@@ -673,23 +664,21 @@ mod tests {
             assert_eq!(
                 parse("s/[0-9]+"),
                 Ok(Filter::RegexReplaceFirst(Substitution {
-                    target: RegexHolder(Regex::new("[0-9]+").unwrap()),
+                    target: RegexHolder::from("[0-9]+"),
                     replacement: String::new(),
                 })),
             );
             assert_eq!(
                 parse("s/[0-9]+/cd"),
                 Ok(Filter::RegexReplaceFirst(Substitution {
-                    target: RegexHolder(Regex::new("[0-9]+").unwrap()),
+                    target: RegexHolder::from("[0-9]+"),
                     replacement: String::from("cd"),
                 })),
             );
             assert_eq!(
                 parse("s/[0-9+/cd"),
                 Err(Error {
-                    kind: ErrorKind::RegexInvalid(AnyString(String::from(
-                        "This string is not compared by assertion"
-                    ))),
+                    kind: ErrorKind::RegexInvalid(AnyString::any()),
                     range: 2..7,
                 }),
             );
@@ -707,23 +696,21 @@ mod tests {
             assert_eq!(
                 parse("S/[0-9]+"),
                 Ok(Filter::RegexReplaceAll(Substitution {
-                    target: RegexHolder(Regex::new("[0-9]+").unwrap()),
+                    target: RegexHolder::from("[0-9]+"),
                     replacement: String::new(),
                 })),
             );
             assert_eq!(
                 parse("S/[0-9]+/cd"),
                 Ok(Filter::RegexReplaceAll(Substitution {
-                    target: RegexHolder(Regex::new("[0-9]+").unwrap()),
+                    target: RegexHolder::from("[0-9]+"),
                     replacement: String::from("cd"),
                 })),
             );
             assert_eq!(
                 parse("S/[0-9+/cd"),
                 Err(Error {
-                    kind: ErrorKind::RegexInvalid(AnyString(String::from(
-                        "This string is not compared by assertion"
-                    ))),
+                    kind: ErrorKind::RegexInvalid(AnyString::any()),
                     range: 2..7,
                 }),
             );
@@ -735,7 +722,7 @@ mod tests {
                 parse("@:\\d:digit:alpha"),
                 Ok(Filter::RegexSwitch(RegexSwitch {
                     cases: vec![Case {
-                        matcher: RegexHolder(Regex::new("\\d").unwrap()),
+                        matcher: RegexHolder::from("\\d"),
                         result: String::from("digit"),
                     }],
                     default: String::from("alpha")
@@ -862,32 +849,26 @@ mod tests {
         }
 
         fn parse(string: &str) -> Result<Filter> {
-            Filter::parse(&mut Reader::from(string), &make_config())
-        }
-
-        fn make_config() -> Config {
-            Config {
-                escape: '%',
-                separator: Separator::String(String::from("\t")),
-            }
+            Filter::parse(&mut Reader::from(string), &Config::fixture())
         }
     }
 
     mod eval {
         use super::*;
-        use crate::pattern::testing::{assert_uuid, make_eval_context};
+        use crate::pattern::eval::Context;
+        use crate::pattern::testing::assert_uuid;
         use std::path::MAIN_SEPARATOR;
 
         #[test]
         fn working_dir() {
             #[cfg(unix)]
             assert_eq!(
-                Filter::WorkingDir.eval(String::new(), &make_eval_context()),
+                Filter::WorkingDir.eval(String::new(), &Context::fixture()),
                 Ok(String::from("/work"))
             );
             #[cfg(windows)]
             assert_eq!(
-                Filter::WorkingDir.eval(String::new(), &make_eval_context()),
+                Filter::WorkingDir.eval(String::new(), &Context::fixture()),
                 Ok(String::from("C:\\work"))
             );
         }
@@ -896,12 +877,12 @@ mod tests {
         fn absolute_path() {
             #[cfg(unix)]
             assert_eq!(
-                Filter::AbsolutePath.eval(String::from("parent/file.ext"), &make_eval_context()),
+                Filter::AbsolutePath.eval(String::from("parent/file.ext"), &Context::fixture()),
                 Ok(String::from("/work/parent/file.ext"))
             );
             #[cfg(windows)]
             assert_eq!(
-                Filter::AbsolutePath.eval(String::from("parent\\file.ext"), &make_eval_context()),
+                Filter::AbsolutePath.eval(String::from("parent\\file.ext"), &Context::fixture()),
                 Ok(String::from("C:\\work\\parent\\file.ext"))
             );
         }
@@ -910,13 +891,13 @@ mod tests {
         fn relative_path() {
             #[cfg(unix)]
             assert_eq!(
-                Filter::RelativePath.eval(String::from("/parent/file.ext"), &make_eval_context()),
+                Filter::RelativePath.eval(String::from("/parent/file.ext"), &Context::fixture()),
                 Ok(String::from("../parent/file.ext"))
             );
             #[cfg(windows)]
             assert_eq!(
                 Filter::RelativePath
-                    .eval(String::from("C:\\parent\\file.ext"), &make_eval_context()),
+                    .eval(String::from("C:\\parent\\file.ext"), &Context::fixture()),
                 Ok(String::from("..\\parent\\file.ext"))
             );
         }
@@ -926,7 +907,7 @@ mod tests {
             assert_eq!(
                 Filter::NormalizedPath.eval(
                     String::from("root/parent/../new-parent/./dir/"),
-                    &make_eval_context()
+                    &Context::fixture()
                 ),
                 Ok(format!(
                     "root{}new-parent{}dir",
@@ -938,7 +919,7 @@ mod tests {
         #[test]
         fn canonical_path() {
             let working_dir = std::env::current_dir().unwrap();
-            let mut context = make_eval_context();
+            let mut context = Context::fixture();
             context.working_dir = &working_dir;
 
             assert_eq!(
@@ -951,7 +932,7 @@ mod tests {
         fn parent_directory() {
             assert_eq!(
                 Filter::ParentDirectory
-                    .eval(String::from("root/parent/file.ext"), &make_eval_context()),
+                    .eval(String::from("root/parent/file.ext"), &Context::fixture()),
                 Ok(String::from("root/parent"))
             );
         }
@@ -960,7 +941,7 @@ mod tests {
         fn remove_file_name() {
             assert_eq!(
                 Filter::RemoveLastName
-                    .eval(String::from("root/parent/file.ext"), &make_eval_context()),
+                    .eval(String::from("root/parent/file.ext"), &Context::fixture()),
                 Ok(String::from("root/parent"))
             );
         }
@@ -968,7 +949,7 @@ mod tests {
         #[test]
         fn file_name() {
             assert_eq!(
-                Filter::FileName.eval(String::from("root/parent/file.ext"), &make_eval_context()),
+                Filter::FileName.eval(String::from("root/parent/file.ext"), &Context::fixture()),
                 Ok(String::from("file.ext"))
             );
         }
@@ -976,7 +957,7 @@ mod tests {
         #[test]
         fn last_name() {
             assert_eq!(
-                Filter::LastName.eval(String::from("root/parent/file.ext"), &make_eval_context()),
+                Filter::LastName.eval(String::from("root/parent/file.ext"), &Context::fixture()),
                 Ok(String::from("file.ext"))
             );
         }
@@ -984,7 +965,7 @@ mod tests {
         #[test]
         fn base_name() {
             assert_eq!(
-                Filter::BaseName.eval(String::from("root/parent/file.ext"), &make_eval_context()),
+                Filter::BaseName.eval(String::from("root/parent/file.ext"), &Context::fixture()),
                 Ok(String::from("file"))
             );
         }
@@ -993,7 +974,7 @@ mod tests {
         fn remove_extension() {
             assert_eq!(
                 Filter::RemoveExtension
-                    .eval(String::from("root/parent/file.ext"), &make_eval_context()),
+                    .eval(String::from("root/parent/file.ext"), &Context::fixture()),
                 Ok(String::from("root/parent/file"))
             );
         }
@@ -1001,7 +982,7 @@ mod tests {
         #[test]
         fn extension() {
             assert_eq!(
-                Filter::Extension.eval(String::from("root/parent/file.ext"), &make_eval_context()),
+                Filter::Extension.eval(String::from("root/parent/file.ext"), &Context::fixture()),
                 Ok(String::from("ext"))
             );
         }
@@ -1010,7 +991,7 @@ mod tests {
         fn extension_with_dot() {
             assert_eq!(
                 Filter::ExtensionWithDot
-                    .eval(String::from("root/parent/file.ext"), &make_eval_context()),
+                    .eval(String::from("root/parent/file.ext"), &Context::fixture()),
                 Ok(String::from(".ext"))
             );
         }
@@ -1019,7 +1000,7 @@ mod tests {
         fn ensure_trailing_dir_separator() {
             assert_eq!(
                 Filter::EnsureTrailingDirSeparator
-                    .eval(String::from("root/parent"), &make_eval_context()),
+                    .eval(String::from("root/parent"), &Context::fixture()),
                 Ok(format!("root/parent{}", MAIN_SEPARATOR))
             );
         }
@@ -1028,7 +1009,7 @@ mod tests {
         fn remove_trailing_dir_separator() {
             assert_eq!(
                 Filter::RemoveTrailingDirSeparator
-                    .eval(String::from("root/parent/"), &make_eval_context()),
+                    .eval(String::from("root/parent/"), &Context::fixture()),
                 Ok(String::from("root/parent"))
             );
         }
@@ -1037,7 +1018,7 @@ mod tests {
         fn substring() {
             assert_eq!(
                 Filter::Substring(Range::<Index>(1, Some(3)))
-                    .eval(String::from("abcde"), &make_eval_context()),
+                    .eval(String::from("abcde"), &Context::fixture()),
                 Ok(String::from("bc"))
             );
         }
@@ -1046,7 +1027,7 @@ mod tests {
         fn substring_backward() {
             assert_eq!(
                 Filter::SubstringBackward(Range::<Index>(1, Some(3)))
-                    .eval(String::from("abcde"), &make_eval_context()),
+                    .eval(String::from("abcde"), &Context::fixture()),
                 Ok(String::from("cd"))
             );
         }
@@ -1058,15 +1039,15 @@ mod tests {
                     index: 1,
                     separator: Separator::String(String::from("\t"))
                 })
-                .eval(String::from("a \t b \t c \t d"), &make_eval_context()),
+                .eval(String::from("a \t b \t c \t d"), &Context::fixture()),
                 Ok(String::from(" b "))
             );
             assert_eq!(
                 Filter::GetColumn(Column {
                     index: 1,
-                    separator: Separator::Regex(RegexHolder(Regex::new("\\s+").unwrap()))
+                    separator: Separator::Regex(RegexHolder::from("\\s+"))
                 })
-                .eval(String::from("a \t b \t c \t d"), &make_eval_context()),
+                .eval(String::from("a \t b \t c \t d"), &Context::fixture()),
                 Ok(String::from("b"))
             );
         }
@@ -1078,15 +1059,15 @@ mod tests {
                     index: 1,
                     separator: Separator::String(String::from("\t"))
                 })
-                .eval(String::from("a \t b \t c \t d"), &make_eval_context()),
+                .eval(String::from("a \t b \t c \t d"), &Context::fixture()),
                 Ok(String::from(" c "))
             );
             assert_eq!(
                 Filter::GetColumnBackward(Column {
                     index: 1,
-                    separator: Separator::Regex(RegexHolder(Regex::new("\\s+").unwrap()))
+                    separator: Separator::Regex(RegexHolder::from("\\s+"))
                 })
-                .eval(String::from("a \t b \t c \t d"), &make_eval_context()),
+                .eval(String::from("a \t b \t c \t d"), &Context::fixture()),
                 Ok(String::from("c"))
             );
         }
@@ -1098,7 +1079,7 @@ mod tests {
                     target: String::from("ab"),
                     replacement: String::from("x"),
                 })
-                .eval(String::from("abcd_abcd"), &make_eval_context()),
+                .eval(String::from("abcd_abcd"), &Context::fixture()),
                 Ok(String::from("xcd_abcd"))
             );
         }
@@ -1110,7 +1091,7 @@ mod tests {
                     target: String::from("ab"),
                     replacement: String::from("x"),
                 })
-                .eval(String::from("abcd_abcd"), &make_eval_context()),
+                .eval(String::from("abcd_abcd"), &Context::fixture()),
                 Ok(String::from("xcd_xcd"))
             );
         }
@@ -1122,7 +1103,7 @@ mod tests {
                     target: Empty,
                     replacement: String::from("xyz")
                 })
-                .eval(String::new(), &make_eval_context()),
+                .eval(String::new(), &Context::fixture()),
                 Ok(String::from("xyz"))
             );
         }
@@ -1130,8 +1111,8 @@ mod tests {
         #[test]
         fn regex_match() {
             assert_eq!(
-                Filter::RegexMatch(RegexHolder(Regex::new("\\d+").unwrap()))
-                    .eval(String::from("a123y"), &make_eval_context()),
+                Filter::RegexMatch(RegexHolder::from("\\d+"))
+                    .eval(String::from("a123y"), &Context::fixture()),
                 Ok(String::from("123"))
             );
         }
@@ -1140,10 +1121,10 @@ mod tests {
         fn regex_replace_first() {
             assert_eq!(
                 Filter::RegexReplaceFirst(Substitution {
-                    target: RegexHolder(Regex::new("\\d+").unwrap()),
+                    target: RegexHolder::from("\\d+"),
                     replacement: String::from("x"),
                 })
-                .eval(String::from("12_34"), &make_eval_context()),
+                .eval(String::from("12_34"), &Context::fixture()),
                 Ok(String::from("x_34"))
             );
         }
@@ -1152,10 +1133,10 @@ mod tests {
         fn regex_replace_all() {
             assert_eq!(
                 Filter::RegexReplaceAll(Substitution {
-                    target: RegexHolder(Regex::new("\\d+").unwrap()),
+                    target: RegexHolder::from("\\d+"),
                     replacement: String::from("x"),
                 })
-                .eval(String::from("12_34"), &make_eval_context()),
+                .eval(String::from("12_34"), &Context::fixture()),
                 Ok(String::from("x_x"))
             );
         }
@@ -1164,17 +1145,17 @@ mod tests {
         fn regex_switch() {
             let filter = Filter::RegexSwitch(RegexSwitch {
                 cases: vec![Case {
-                    matcher: RegexHolder(Regex::new("\\d").unwrap()),
+                    matcher: RegexHolder::from("\\d"),
                     result: String::from("digit"),
                 }],
                 default: String::from("alpha"),
             });
             assert_eq!(
-                filter.eval(String::from("1"), &make_eval_context()),
+                filter.eval(String::from("1"), &Context::fixture()),
                 Ok(String::from("digit"))
             );
             assert_eq!(
-                filter.eval(String::from("a"), &make_eval_context()),
+                filter.eval(String::from("a"), &Context::fixture()),
                 Ok(String::from("alpha"))
             );
         }
@@ -1182,7 +1163,7 @@ mod tests {
         #[test]
         fn regex_capture() {
             assert_eq!(
-                Filter::RegexCapture(1).eval(String::new(), &make_eval_context()),
+                Filter::RegexCapture(1).eval(String::new(), &Context::fixture()),
                 Ok(String::from("abc"))
             );
         }
@@ -1190,7 +1171,7 @@ mod tests {
         #[test]
         fn trim() {
             assert_eq!(
-                Filter::Trim.eval(String::from(" abcd "), &make_eval_context()),
+                Filter::Trim.eval(String::from(" abcd "), &Context::fixture()),
                 Ok(String::from("abcd"))
             );
         }
@@ -1198,7 +1179,7 @@ mod tests {
         #[test]
         fn to_lowercase() {
             assert_eq!(
-                Filter::ToLowercase.eval(String::from("ábčdÁBČD"), &make_eval_context()),
+                Filter::ToLowercase.eval(String::from("ábčdÁBČD"), &Context::fixture()),
                 Ok(String::from("ábčdábčd"))
             );
         }
@@ -1206,7 +1187,7 @@ mod tests {
         #[test]
         fn to_uppercase() {
             assert_eq!(
-                Filter::ToUppercase.eval(String::from("ábčdÁBČD"), &make_eval_context()),
+                Filter::ToUppercase.eval(String::from("ábčdÁBČD"), &Context::fixture()),
                 Ok(String::from("ÁBČDÁBČD"))
             );
         }
@@ -1214,7 +1195,7 @@ mod tests {
         #[test]
         fn to_ascii() {
             assert_eq!(
-                Filter::ToAscii.eval(String::from("ábčdÁBČD"), &make_eval_context()),
+                Filter::ToAscii.eval(String::from("ábčdÁBČD"), &Context::fixture()),
                 Ok(String::from("abcdABCD"))
             );
         }
@@ -1222,7 +1203,7 @@ mod tests {
         #[test]
         fn remove_non_ascii() {
             assert_eq!(
-                Filter::RemoveNonAscii.eval(String::from("ábčdÁBČD"), &make_eval_context()),
+                Filter::RemoveNonAscii.eval(String::from("ábčdÁBČD"), &Context::fixture()),
                 Ok(String::from("bdBD"))
             );
         }
@@ -1231,7 +1212,7 @@ mod tests {
         fn left_pad() {
             assert_eq!(
                 Filter::LeftPad(Padding::Fixed(String::from("0123")))
-                    .eval(String::from("ab"), &make_eval_context()),
+                    .eval(String::from("ab"), &Context::fixture()),
                 Ok(String::from("01ab"))
             );
             assert_eq!(
@@ -1239,7 +1220,7 @@ mod tests {
                     count: 3,
                     value: String::from("01")
                 }))
-                .eval(String::from("ab"), &make_eval_context()),
+                .eval(String::from("ab"), &Context::fixture()),
                 Ok(String::from("0101ab"))
             );
         }
@@ -1248,7 +1229,7 @@ mod tests {
         fn right_pad() {
             assert_eq!(
                 Filter::RightPad(Padding::Fixed(String::from("0123")))
-                    .eval(String::from("ab"), &make_eval_context()),
+                    .eval(String::from("ab"), &Context::fixture()),
                 Ok(String::from("ab23"))
             );
             assert_eq!(
@@ -1256,7 +1237,7 @@ mod tests {
                     count: 3,
                     value: String::from("01")
                 }))
-                .eval(String::from("ab"), &make_eval_context()),
+                .eval(String::from("ab"), &Context::fixture()),
                 Ok(String::from("ab0101"))
             );
         }
@@ -1268,7 +1249,7 @@ mod tests {
                     count: 3,
                     value: String::from("abc")
                 })
-                .eval(String::new(), &make_eval_context()),
+                .eval(String::new(), &Context::fixture()),
                 Ok(String::from("abcabcabc"))
             );
         }
@@ -1276,7 +1257,7 @@ mod tests {
         #[test]
         fn local_counter() {
             assert_eq!(
-                Filter::LocalCounter.eval(String::new(), &make_eval_context()),
+                Filter::LocalCounter.eval(String::new(), &Context::fixture()),
                 Ok(String::from("1"))
             );
         }
@@ -1284,7 +1265,7 @@ mod tests {
         #[test]
         fn global_counter() {
             assert_eq!(
-                Filter::GlobalCounter.eval(String::new(), &make_eval_context()),
+                Filter::GlobalCounter.eval(String::new(), &Context::fixture()),
                 Ok(String::from("2"))
             );
         }
@@ -1293,7 +1274,7 @@ mod tests {
         fn random_number() {
             assert_eq!(
                 Filter::RandomNumber(Range::<Number>(0, Some(0)))
-                    .eval(String::new(), &make_eval_context()),
+                    .eval(String::new(), &Context::fixture()),
                 Ok(String::from("0"))
             );
         }
@@ -1302,7 +1283,7 @@ mod tests {
         fn random_uuid() {
             assert_uuid(
                 &Filter::RandomUuid
-                    .eval(String::new(), &make_eval_context())
+                    .eval(String::new(), &Context::fixture())
                     .unwrap(),
             );
         }
@@ -1422,7 +1403,7 @@ mod tests {
             assert_eq!(
                 Filter::GetColumn(Column {
                     index: 1,
-                    separator: Separator::Regex(RegexHolder(Regex::new("\\s+").unwrap()))
+                    separator: Separator::Regex(RegexHolder::from("\\s+"))
                 })
                 .to_string(),
                 String::from("Get column #2 (regular expression '\\s+' separator)")
@@ -1442,7 +1423,7 @@ mod tests {
             assert_eq!(
                 Filter::GetColumnBackward(Column {
                     index: 1,
-                    separator: Separator::Regex(RegexHolder(Regex::new("\\s+").unwrap()))
+                    separator: Separator::Regex(RegexHolder::from("\\s+"))
                 })
                 .to_string(),
                 String::from("Get column #2 (regular expression '\\s+' separator) backwards")
@@ -1488,7 +1469,7 @@ mod tests {
         #[test]
         fn regex_match() {
             assert_eq!(
-                Filter::RegexMatch(RegexHolder(Regex::new("a+").unwrap())).to_string(),
+                Filter::RegexMatch(RegexHolder::from("a+")).to_string(),
                 "Match of regular expression 'a+'"
             );
         }
@@ -1497,7 +1478,7 @@ mod tests {
         fn regex_replace_first() {
             assert_eq!(
                 Filter::RegexReplaceFirst(Substitution {
-                    target: RegexHolder(Regex::new("a+").unwrap()),
+                    target: RegexHolder::from("a+"),
                     replacement: String::from("b")
                 })
                 .to_string(),
@@ -1509,7 +1490,7 @@ mod tests {
         fn regex_replace_all() {
             assert_eq!(
                 Filter::RegexReplaceAll(Substitution {
-                    target: RegexHolder(Regex::new("a+").unwrap()),
+                    target: RegexHolder::from("a+"),
                     replacement: String::from("b")
                 })
                 .to_string(),
@@ -1522,7 +1503,7 @@ mod tests {
             assert_eq!(
                 Filter::RegexSwitch(RegexSwitch {
                     cases: vec![Case {
-                        matcher: RegexHolder(Regex::new("\\d").unwrap()),
+                        matcher: RegexHolder::from("\\d"),
                         result: String::from("digit"),
                     }],
                     default: String::from("alpha"),

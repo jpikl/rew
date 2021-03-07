@@ -82,8 +82,8 @@ impl fmt::Display for RegexHolder {
 }
 
 #[cfg(test)]
-impl RegexHolder {
-    pub fn test(value: &str) -> Self {
+impl From<&str> for RegexHolder {
+    fn from(value: &str) -> Self {
         Self(Regex::new(value).unwrap())
     }
 }
@@ -124,7 +124,7 @@ mod tests {
             fn valid() {
                 assert_eq!(
                     RegexHolder::try_from(String::from("[0-9]")),
-                    Ok(RegexHolder(Regex::new("[0-9]").unwrap()))
+                    Ok(RegexHolder::from("[0-9]"))
                 );
             }
 
@@ -132,9 +132,7 @@ mod tests {
             fn invalid() {
                 assert_eq!(
                     RegexHolder::try_from(String::from("[0-9")),
-                    Err(ErrorKind::RegexInvalid(AnyString(String::from(
-                        "This string is not compared by assertion"
-                    ))))
+                    Err(ErrorKind::RegexInvalid(AnyString::any()))
                 );
             }
         }
@@ -160,7 +158,7 @@ mod tests {
                 let mut reader = Reader::from("[0-9]");
                 assert_eq!(
                     RegexHolder::parse(&mut reader),
-                    Ok(RegexHolder(Regex::new("[0-9]").unwrap()))
+                    Ok(RegexHolder::from("[0-9]"))
                 );
                 assert_eq!(reader.position(), 5);
             }
@@ -171,9 +169,7 @@ mod tests {
                 assert_eq!(
                     RegexHolder::parse(&mut reader),
                     Err(Error {
-                        kind: ErrorKind::RegexInvalid(AnyString(String::from(
-                            "This string is not compared by assertion"
-                        ))),
+                        kind: ErrorKind::RegexInvalid(AnyString::any()),
                         range: 0..4,
                     })
                 );
@@ -186,24 +182,18 @@ mod tests {
 
             #[test]
             fn empty() {
-                assert_eq!(
-                    RegexHolder(Regex::new("\\d+").unwrap()).first_match(""),
-                    String::new()
-                );
+                assert_eq!(RegexHolder::from("\\d+").first_match(""), String::new());
             }
 
             #[test]
             fn none() {
-                assert_eq!(
-                    RegexHolder(Regex::new("\\d+").unwrap()).first_match("abc"),
-                    String::new()
-                );
+                assert_eq!(RegexHolder::from("\\d+").first_match("abc"), String::new());
             }
 
             #[test]
             fn first() {
                 assert_eq!(
-                    RegexHolder(Regex::new("\\d+").unwrap()).first_match("abc123def456"),
+                    RegexHolder::from("\\d+").first_match("abc123def456"),
                     String::from("123")
                 );
             }
@@ -211,20 +201,14 @@ mod tests {
 
         #[test]
         fn partial_eq() {
-            assert_eq!(
-                RegexHolder(Regex::new("[a-z]+").unwrap()),
-                RegexHolder(Regex::new("[a-z]+").unwrap())
-            );
-            assert_ne!(
-                RegexHolder(Regex::new("[a-z]+").unwrap()),
-                RegexHolder(Regex::new("[a-z]*").unwrap())
-            );
+            assert_eq!(RegexHolder::from("[a-z]+"), RegexHolder::from("[a-z]+"));
+            assert_ne!(RegexHolder::from("[a-z]+"), RegexHolder::from("[a-z]*"));
         }
 
         #[test]
         fn display() {
             assert_eq!(
-                RegexHolder(Regex::new("[a-z]+").unwrap()).to_string(),
+                RegexHolder::from("[a-z]+").to_string(),
                 String::from("[a-z]+")
             );
         }

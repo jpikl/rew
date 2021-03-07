@@ -187,7 +187,7 @@ mod tests {
             assert_eq!(
                 Column::parse(
                     &mut Reader::from(input),
-                    &Separator::Regex(RegexHolder::test("\\s+"))
+                    &Separator::Regex(RegexHolder::from("\\s+"))
                 ),
                 Err(Error { kind, range })
             );
@@ -199,11 +199,11 @@ mod tests {
             assert_eq!(
                 Column::parse(
                     &mut Reader::from(input),
-                    &Separator::Regex(RegexHolder::test("\\s+"))
+                    &Separator::Regex(RegexHolder::from("\\s+"))
                 ),
                 Ok(Column {
                     index,
-                    separator: Separator::Regex(RegexHolder::test(separator))
+                    separator: Separator::Regex(RegexHolder::from(separator))
                 })
             );
         }
@@ -220,7 +220,7 @@ mod tests {
             assert_eq!(
                 Column {
                     index,
-                    separator: Separator::Regex(RegexHolder::test(separator))
+                    separator: Separator::Regex(RegexHolder::from(separator))
                 }
                 .get(input),
                 output
@@ -239,7 +239,7 @@ mod tests {
             assert_eq!(
                 Column {
                     index,
-                    separator: Separator::Regex(RegexHolder::test(separator))
+                    separator: Separator::Regex(RegexHolder::from(separator))
                 }
                 .get_backward(input),
                 output
@@ -251,7 +251,7 @@ mod tests {
             assert_eq!(
                 Column {
                     index: 1,
-                    separator: Separator::Regex(RegexHolder::test("[0-9]+"))
+                    separator: Separator::Regex(RegexHolder::from("[0-9]+"))
                 }
                 .to_string(),
                 "column #2 (regular expression '[0-9]+' separator)"
