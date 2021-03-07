@@ -89,314 +89,173 @@ impl fmt::Display for Column {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::ops::Range;
 
     mod string {
         use super::*;
+        use test_case::test_case;
 
-        mod parse {
-            use super::*;
-
-            #[test]
-            fn empty() {
-                assert_eq!(
-                    parse(""),
-                    Err(Error {
-                        kind: ErrorKind::ExpectedNumber,
-                        range: 0..0
-                    })
-                );
-            }
-
-            #[test]
-            fn invalid_number() {
-                assert_eq!(
-                    parse("x"),
-                    Err(Error {
-                        kind: ErrorKind::ExpectedNumber,
-                        range: 0..1
-                    })
-                );
-            }
-
-            #[test]
-            fn invalid_index() {
-                assert_eq!(
-                    parse("0"),
-                    Err(Error {
-                        kind: ErrorKind::IndexZero,
-                        range: 0..1
-                    })
-                );
-            }
-
-            #[test]
-            fn valid_index() {
-                assert_eq!(parse("1"), Ok(make_column(0, "\t")));
-            }
-
-            #[test]
-            fn missing_separator() {
-                assert_eq!(
-                    parse("1:"),
-                    Err(Error {
-                        kind: ErrorKind::ExpectedColumnSeparator,
-                        range: 2..2
-                    })
-                );
-            }
-
-            #[test]
-            fn with_separator() {
-                assert_eq!(parse("10:abc"), Ok(make_column(9, "abc")));
-            }
-
-            fn parse(value: &str) -> Result<Column> {
-                Column::parse(&mut Reader::from(value), &make_separator("\t"))
-            }
+        #[test_case("", ErrorKind::ExpectedNumber, 0..0; "empty")]
+        #[test_case("x", ErrorKind::ExpectedNumber, 0..1; "invalid number")]
+        #[test_case("0", ErrorKind::IndexZero, 0..1; "invalid index")]
+        #[test_case("1:", ErrorKind::ExpectedColumnSeparator, 2..2; "missing separator")]
+        fn parse_err(input: &str, kind: ErrorKind, range: Range<usize>) {
+            assert_eq!(
+                Column::parse(
+                    &mut Reader::from(input),
+                    &Separator::String(String::from("\t"))
+                ),
+                Err(Error { kind, range })
+            );
         }
 
-        mod get {
-            use super::*;
-
-            #[test]
-            fn empty_separator() {
-                assert_eq!(make_column(0, "").get("a b c"), "")
-            }
-
-            #[test]
-            fn first() {
-                assert_eq!(make_column(0, " ").get("a b c"), "a")
-            }
-
-            #[test]
-            fn first_when_first_empty() {
-                assert_eq!(make_column(0, " ").get(" a b"), "")
-            }
-
-            #[test]
-            fn first_when_last_empty() {
-                assert_eq!(make_column(0, " ").get("a b "), "a")
-            }
-
-            #[test]
-            fn last() {
-                assert_eq!(make_column(2, " ").get("a b c"), "c")
-            }
-
-            #[test]
-            fn last_when_first_empty() {
-                assert_eq!(make_column(2, " ").get(" a b"), "b")
-            }
-
-            #[test]
-            fn last_when_last_empty() {
-                assert_eq!(make_column(2, " ").get("a b "), "")
-            }
-
-            #[test]
-            fn over_last() {
-                assert_eq!(make_column(2, " ").get("a b"), "")
-            }
+        #[test_case("1", 0, "\t"; "index")]
+        #[test_case("10:abc", 9, "abc"; "index and separator")]
+        fn parse_ok(input: &str, index: IndexValue, separator: &str) {
+            assert_eq!(
+                Column::parse(
+                    &mut Reader::from(input),
+                    &Separator::String(String::from("\t"))
+                ),
+                Ok(Column {
+                    index,
+                    separator: Separator::String(String::from(separator))
+                })
+            );
         }
 
-        mod get_backward {
-            use super::*;
+        #[test_case(0, "",  "a b c", ""; "empty separator")]
+        #[test_case(0, " ", "a b c", "a"; "first")]
+        #[test_case(0, " ", " a b", ""; "first when first empty")]
+        #[test_case(0, " ", "a b ", "a"; "first when last empty")]
+        #[test_case(2, " ", "a b c", "c"; "last")]
+        #[test_case(2, " ", " a b", "b"; "last when first empty")]
+        #[test_case(2, " ", "a b ", ""; "last when last empty")]
+        #[test_case(2, " ", "a b", ""; "over last")]
+        fn get(index: IndexValue, separator: &str, input: &str, output: &str) {
+            assert_eq!(
+                Column {
+                    index,
+                    separator: Separator::String(String::from(separator))
+                }
+                .get(input),
+                output
+            );
+        }
 
-            #[test]
-            fn empty_separator() {
-                assert_eq!(make_column(0, "").get_backward("a b c"), "")
-            }
-
-            #[test]
-            fn first() {
-                assert_eq!(make_column(0, " ").get_backward("a b c"), "c")
-            }
-
-            #[test]
-            fn first_when_first_empty() {
-                assert_eq!(make_column(0, " ").get_backward("a b "), "")
-            }
-
-            #[test]
-            fn first_when_last_empty() {
-                assert_eq!(make_column(0, " ").get_backward(" a b"), "b")
-            }
-
-            #[test]
-            fn last() {
-                assert_eq!(make_column(2, " ").get_backward("a b c"), "a")
-            }
-
-            #[test]
-            fn last_when_first_empty() {
-                assert_eq!(make_column(2, " ").get_backward("a b "), "a")
-            }
-
-            #[test]
-            fn last_when_last_empty() {
-                assert_eq!(make_column(2, " ").get_backward(" a b"), "")
-            }
-
-            #[test]
-            fn over_last() {
-                assert_eq!(make_column(2, " ").get_backward("a b"), "")
-            }
+        #[test_case(0, "",  "a b c", ""; "empty separator")]
+        #[test_case(0, " ", "a b c", "c"; "first")]
+        #[test_case(0, " ", "a b ", ""; "first when first empty")]
+        #[test_case(0, " ", " a b", "b"; "first when last empty")]
+        #[test_case(2, " ", "a b c", "a"; "last")]
+        #[test_case(2, " ", "a b ", "a"; "last when first empty")]
+        #[test_case(2, " ", " a b", ""; "last when last empty")]
+        #[test_case(2, " ", "a b", ""; "over last")]
+        fn get_backward(index: IndexValue, separator: &str, input: &str, output: &str) {
+            assert_eq!(
+                Column {
+                    index,
+                    separator: Separator::String(String::from(separator))
+                }
+                .get_backward(input),
+                output
+            );
         }
 
         #[test]
         fn display() {
-            assert_eq!(make_column(1, "_").to_string(), "column #2 ('_' separator)");
-        }
-
-        fn make_column(index: usize, separator: &str) -> Column {
-            Column {
-                index,
-                separator: make_separator(separator),
-            }
-        }
-
-        fn make_separator(value: &str) -> Separator {
-            Separator::String(String::from(value))
+            assert_eq!(
+                Column {
+                    index: 1,
+                    separator: Separator::String(String::from("_"))
+                }
+                .to_string(),
+                "column #2 ('_' separator)"
+            );
         }
     }
 
     mod regex {
         extern crate regex;
         use super::*;
-        use regex::Regex;
+        use crate::utils::AnyString;
+        use test_case::test_case;
 
-        mod parse {
-            use super::*;
-            use crate::utils::AnyString;
-
-            #[test]
-            fn valid() {
-                assert_eq!(parse("2/[0-9]+"), Ok(make_column(1, "[0-9]+")));
-            }
-
-            #[test]
-            fn invalid() {
-                assert_eq!(
-                    parse("2/[0-9"),
-                    Err(Error {
-                        kind: ErrorKind::RegexInvalid(AnyString(String::from(
-                            "This string is not compared by assertion"
-                        ))),
-                        range: 2..6
-                    })
-                );
-            }
-
-            fn parse(value: &str) -> Result<Column> {
-                Column::parse(&mut Reader::from(value), &make_separator("\\s+"))
-            }
+        #[test_case("1/", ErrorKind::ExpectedColumnSeparator, 2..2; "missing separator")]
+        #[test_case("1/[0-9", ErrorKind::RegexInvalid(AnyString::any()), 2..6; "invalid regex")]
+        fn parse_err(input: &str, kind: ErrorKind, range: Range<usize>) {
+            assert_eq!(
+                Column::parse(
+                    &mut Reader::from(input),
+                    &Separator::Regex(RegexHolder::test("\\s+"))
+                ),
+                Err(Error { kind, range })
+            );
         }
 
-        mod get {
-            use super::*;
-
-            #[test]
-            fn empty_separator() {
-                assert_eq!(make_column(0, "").get("a\t\tb\t\tc"), "")
-            }
-
-            #[test]
-            fn first() {
-                assert_eq!(make_column(0, "\\s+").get("a\t\tb\t\tc"), "a")
-            }
-
-            #[test]
-            fn first_when_first_empty() {
-                assert_eq!(make_column(0, "\\s+").get("\t\ta\t\tb"), "")
-            }
-
-            #[test]
-            fn first_when_last_empty() {
-                assert_eq!(make_column(0, "\\s+").get("a\t\tb\t\t"), "a")
-            }
-
-            #[test]
-            fn last() {
-                assert_eq!(make_column(2, "\\s+").get("a\t\tb\t\tc"), "c")
-            }
-
-            #[test]
-            fn last_when_first_empty() {
-                assert_eq!(make_column(2, "\\s+").get("\t\ta\t\tb"), "b")
-            }
-
-            #[test]
-            fn last_when_last_empty() {
-                assert_eq!(make_column(2, "\\s+").get("a\t\tb\t\t"), "")
-            }
-
-            #[test]
-            fn over_last() {
-                assert_eq!(make_column(2, "\\s+").get("a\t\tb"), "")
-            }
+        #[test_case("1", 0, "\\s+"; "index")]
+        #[test_case("10/[0-9]+", 9, "[0-9]+"; "index and separator")]
+        fn parse_ok(input: &str, index: IndexValue, separator: &str) {
+            assert_eq!(
+                Column::parse(
+                    &mut Reader::from(input),
+                    &Separator::Regex(RegexHolder::test("\\s+"))
+                ),
+                Ok(Column {
+                    index,
+                    separator: Separator::Regex(RegexHolder::test(separator))
+                })
+            );
         }
 
-        mod get_backward {
-            use super::*;
+        #[test_case(0, "", "a\t\tb\t\tc", ""; "empty separator")]
+        #[test_case(0, "\\s+", "a\t\tb\t\tc", "a"; "first")]
+        #[test_case(0, "\\s+", "\t\ta\t\tb", ""; "first when first empty")]
+        #[test_case(0, "\\s+", "a\t\tb\t\t", "a"; "first when last empty")]
+        #[test_case(2, "\\s+", "a\t\tb\t\tc", "c"; "last")]
+        #[test_case(2, "\\s+", "\t\ta\t\tb", "b"; "last when first empty")]
+        #[test_case(2, "\\s+", "a\t\tb\t\t", ""; "last when last empty")]
+        #[test_case(2, "\\s+", "a\t\tb", ""; "over last")]
+        fn get(index: IndexValue, separator: &str, input: &str, output: &str) {
+            assert_eq!(
+                Column {
+                    index,
+                    separator: Separator::Regex(RegexHolder::test(separator))
+                }
+                .get(input),
+                output
+            );
+        }
 
-            #[test]
-            fn empty_separator() {
-                assert_eq!(make_column(0, "").get_backward("a\t\tb\t\tc"), "")
-            }
-
-            #[test]
-            fn first() {
-                assert_eq!(make_column(0, "\\s+").get_backward("a\t\tb\t\tc"), "c")
-            }
-
-            #[test]
-            fn first_when_first_empty() {
-                assert_eq!(make_column(0, "\\s+").get_backward("a\t\tb\t\t"), "")
-            }
-
-            #[test]
-            fn first_when_last_empty() {
-                assert_eq!(make_column(0, "\\s+").get_backward("\t\ta\t\tb"), "b")
-            }
-
-            #[test]
-            fn last() {
-                assert_eq!(make_column(2, "\\s+").get_backward("a\t\tb\t\tc"), "a")
-            }
-
-            #[test]
-            fn last_when_first_empty() {
-                assert_eq!(make_column(2, "\\s+").get_backward("a\t\tb\t\t"), "a")
-            }
-
-            #[test]
-            fn last_when_last_empty() {
-                assert_eq!(make_column(2, "\\s+").get_backward("\t\ta\t\tb"), "")
-            }
-
-            #[test]
-            fn over_last() {
-                assert_eq!(make_column(2, "\\s+").get_backward("a\t\tb"), "")
-            }
+        #[test_case(0, "",  "a\t\tb\t\tc", ""; "empty separator")]
+        #[test_case(0, "\\s+", "a\t\tb\t\tc", "c"; "first")]
+        #[test_case(0, "\\s+", "a\t\tb\t\t", ""; "first when first empty")]
+        #[test_case(0, "\\s+", "\t\ta\t\tb", "b"; "first when last empty")]
+        #[test_case(2, "\\s+", "a\t\tb\t\tc", "a"; "last")]
+        #[test_case(2, "\\s+", "a\t\tb\t\t", "a"; "last when first empty")]
+        #[test_case(2, "\\s+", "\t\ta\t\tb", ""; "last when last empty")]
+        #[test_case(2, "\\s+", "a\t\tb", ""; "over last")]
+        fn get_backward(index: IndexValue, separator: &str, input: &str, output: &str) {
+            assert_eq!(
+                Column {
+                    index,
+                    separator: Separator::Regex(RegexHolder::test(separator))
+                }
+                .get_backward(input),
+                output
+            );
         }
 
         #[test]
         fn display() {
             assert_eq!(
-                make_column(2, "[0-9]+").to_string(),
-                "column #3 (regular expression '[0-9]+' separator)"
+                Column {
+                    index: 1,
+                    separator: Separator::Regex(RegexHolder::test("[0-9]+"))
+                }
+                .to_string(),
+                "column #2 (regular expression '[0-9]+' separator)"
             );
-        }
-
-        fn make_column(index: usize, separator: &str) -> Column {
-            Column {
-                index,
-                separator: make_separator(separator),
-            }
-        }
-
-        fn make_separator(value: &str) -> Separator {
-            Separator::Regex(RegexHolder(Regex::new(value).unwrap()))
         }
     }
 }

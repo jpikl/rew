@@ -26,6 +26,15 @@ pub trait HasRange {
 }
 
 #[cfg(test)]
+impl AnyString {
+    pub fn any() -> Self {
+        Self(String::from(
+            "This value is not compared by test assertions",
+        ))
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
 

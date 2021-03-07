@@ -82,6 +82,13 @@ impl fmt::Display for RegexHolder {
 }
 
 #[cfg(test)]
+impl RegexHolder {
+    pub fn test(value: &str) -> Self {
+        Self(Regex::new(value).unwrap())
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
 
