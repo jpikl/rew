@@ -1,6 +1,10 @@
 use std::fmt::{self, Debug};
 use std::ops::Range;
 
+pub trait HasRange {
+    fn range(&self) -> &Range<usize>;
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Empty;
 
@@ -21,16 +25,17 @@ impl fmt::Display for AnyString {
     }
 }
 
-pub trait HasRange {
-    fn range(&self) -> &Range<usize>;
+#[cfg(test)]
+impl From<&str> for AnyString {
+    fn from(value: &str) -> Self {
+        Self(String::from(value))
+    }
 }
 
 #[cfg(test)]
 impl AnyString {
     pub fn any() -> Self {
-        Self(String::from(
-            "This value is not compared by test assertions",
-        ))
+        Self::from("This value is not compared by test assertions")
     }
 }
 
@@ -40,16 +45,17 @@ mod tests {
 
     mod any_string {
         use super::*;
+        use test_case::test_case;
 
-        #[test]
-        fn partial_eq() {
-            assert_eq!(AnyString(String::from("a")), AnyString(String::from("a")));
-            assert_eq!(AnyString(String::from("a")), AnyString(String::from("b")));
+        #[test_case("a", "a"; "same")]
+        #[test_case("a", "b"; "different")]
+        fn partial_eq(left: &str, right: &str) {
+            assert_eq!(AnyString::from(left), AnyString::from(right));
         }
 
         #[test]
         fn display() {
-            assert_eq!(AnyString(String::from("abc")).to_string(), "abc");
+            assert_eq!(AnyString::from("abc").to_string(), "abc");
         }
     }
 }

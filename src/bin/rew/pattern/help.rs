@@ -99,18 +99,11 @@ mod tests {
     use common::help::highlight;
     use common::testing::ColoredOuput;
     use ntest::*;
+    use test_case::test_case;
 
-    #[test]
-    fn pattern() {
-        test_highlight(PATTERN);
-    }
-
-    #[test]
-    fn filters() {
-        test_highlight(FILTERS);
-    }
-
-    fn test_highlight(text: &str) {
+    #[test_case(PATTERN; "pattern")]
+    #[test_case(FILTERS; "filters")]
+    fn can_highlight(text: &str) {
         let mut output = ColoredOuput::new();
         highlight(&mut output, text).unwrap();
         assert_false!(output.chunks().is_empty());

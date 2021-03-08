@@ -8,7 +8,10 @@ use std::io::{Result, Write};
 use termcolor::{Color, WriteColor};
 
 impl Pattern {
-    pub fn explain<O: Write + WriteColor>(&self, output: &mut O) -> Result<()> {
+    pub fn explain<O>(&self, output: &mut O) -> Result<()>
+    where
+        O: Write + WriteColor,
+    {
         for item in &self.items {
             match &item.value {
                 Item::Constant(_) => self.explain_part(output, &item, Color::Green),
@@ -24,12 +27,11 @@ impl Pattern {
         Ok(())
     }
 
-    fn explain_part<O: Write + WriteColor, T: Display>(
-        &self,
-        output: &mut O,
-        part: &Parsed<T>,
-        color: Color,
-    ) -> Result<()> {
+    fn explain_part<O, T>(&self, output: &mut O, part: &Parsed<T>, color: Color) -> Result<()>
+    where
+        O: Write + WriteColor,
+        T: Display,
+    {
         highlight_range(output, &self.source, &part.range, color)?;
         writeln!(output)?;
         output.set_color(&spec_color(color))?;

@@ -1165,7 +1165,7 @@ mod tests {
         fn regex_capture() {
             assert_eq!(
                 Filter::RegexCapture(1).eval(String::new(), &Context::fixture()),
-                Ok(String::from("abc"))
+                Ok(String::from("a"))
             );
         }
 

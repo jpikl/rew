@@ -449,7 +449,7 @@ mod tests {
         #[test]
         fn regex_invalid() {
             assert_eq!(
-                ErrorKind::RegexInvalid(AnyString(String::from("abc"))).to_string(),
+                ErrorKind::RegexInvalid(AnyString::from("abc")).to_string(),
                 "Invalid regular expression: abc"
             );
         }
