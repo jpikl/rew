@@ -33,20 +33,20 @@ mod tests {
     use super::*;
     use test_case::test_case;
 
-    #[test_case('a' => "a"; "ascii")]
-    #[test_case('á' => "á"; "non-ascii")]
-    #[test_case('\0' => "\\0"; "null")]
-    #[test_case('\x01' => "\\x01"; "0x01")]
-    #[test_case('\n' => "\\n"; "line feed")]
-    #[test_case('\r' => "\\r"; "carriage return")]
-    #[test_case('\t' => "\\t"; "horizontal tab")]
-    fn escape_char(char: char) -> String {
-        super::escape_char(char)
+    #[test_case('a', "a"; "ascii")]
+    #[test_case('á', "á"; "non-ascii")]
+    #[test_case('\0', "\\0"; "null")]
+    #[test_case('\x01', "\\x01"; "0x01")]
+    #[test_case('\n', "\\n"; "line feed")]
+    #[test_case('\r', "\\r"; "carriage return")]
+    #[test_case('\t', "\\t"; "horizontal tab")]
+    fn escape_char(value: char, result: &str) {
+        assert_eq!(super::escape_char(value), result)
     }
 
-    #[test_case("abc123" => "abc123"; "no escaping")]
-    #[test_case("abc\0\0x01\n\r\táčď" => "abc\\0\\0x01\\n\\r\\táčď"; "with escaping")]
-    fn escape_str(string: &str) -> String {
-        super::escape_str(string)
+    #[test_case("abc123", "abc123"; "no escaping")]
+    #[test_case("abc\0\0x01\n\r\táčď", "abc\\0\\0x01\\n\\r\\táčď"; "with escaping")]
+    fn escape_str(value: &str, result: &str) {
+        assert_eq!(super::escape_str(value), result)
     }
 }

@@ -101,6 +101,7 @@ mod tests {
 
     mod char_raw {
         use super::*;
+        use test_case::test_case;
 
         #[test]
         fn from_char() {
@@ -112,58 +113,46 @@ mod tests {
             assert_eq!(Char::Raw('a').as_char(), 'a');
         }
 
-        #[test]
-        fn len_utf8() {
-            assert_eq!(Char::Raw('a').len_utf8(), 1);
-            assert_eq!(Char::Raw('á').len_utf8(), 2);
+        #[test_case('a', 1; "ascii")]
+        #[test_case('á', 2; "non-ascii")]
+        fn len_utf8(value: char, len: usize) {
+            assert_eq!(Char::Raw(value).len_utf8(), len);
         }
 
-        #[test]
-        fn display() {
-            assert_eq!(Char::Raw('a').to_string(), "'a'");
-            assert_eq!(Char::Raw('\0').to_string(), "'\\0'");
-            assert_eq!(Char::Raw('\n').to_string(), "'\\n'");
-            assert_eq!(Char::Raw('\r').to_string(), "'\\r'");
-            assert_eq!(Char::Raw('\t').to_string(), "'\\t'");
+        #[test_case('a', "'a'"; "ascii")]
+        #[test_case('á', "'á'"; "non-ascii")]
+        #[test_case('\0', "'\\0'"; "null")]
+        #[test_case('\n', "'\\n'"; "line feed")]
+        #[test_case('\r', "'\\r'"; "carriage return")]
+        #[test_case('\t', "'\\t'"; "horizontal tab")]
+        fn display(value: char, result: &str) {
+            assert_eq!(Char::Raw(value).to_string(), result);
         }
     }
 
     mod char_escaped {
         use super::*;
+        use test_case::test_case;
 
         #[test]
         fn as_char() {
             assert_eq!(Char::Escaped('a', ['b', 'c']).as_char(), 'a');
         }
 
-        #[test]
-        fn len_utf8() {
-            assert_eq!(Char::Escaped('a', ['b', 'c']).len_utf8(), 2);
-            assert_eq!(Char::Escaped('a', ['á', 'č']).len_utf8(), 4);
+        #[test_case('a', ['b', 'c'], 2; "ascii")]
+        #[test_case('á', ['b', 'č'], 3; "non-ascii")]
+        fn len_utf8(value: char, sequence: EscapeSequence, len: usize) {
+            assert_eq!(Char::Escaped(value, sequence).len_utf8(), len);
         }
 
-        #[test]
-        fn display() {
-            assert_eq!(
-                Char::Escaped('a', ['b', 'c']).to_string(),
-                "'a' (escape sequence 'bc')"
-            );
-            assert_eq!(
-                Char::Escaped('\0', ['%', '0']).to_string(),
-                "'\\0' (escape sequence '%0')"
-            );
-            assert_eq!(
-                Char::Escaped('\n', ['%', 'n']).to_string(),
-                "'\\n' (escape sequence '%n')"
-            );
-            assert_eq!(
-                Char::Escaped('\r', ['%', 'r']).to_string(),
-                "'\\r' (escape sequence '%r')"
-            );
-            assert_eq!(
-                Char::Escaped('\t', ['%', 't']).to_string(),
-                "'\\t' (escape sequence '%t')"
-            );
+        #[test_case('a', ['b', 'c'], "'a' (escape sequence 'bc')"; "ascii")]
+        #[test_case('á', ['b', 'č'], "'á' (escape sequence 'bč')"; "non-ascii")]
+        #[test_case('\0', ['%', '0'], "'\\0' (escape sequence '%0')"; "null")]
+        #[test_case('\n', ['%', 'n'], "'\\n' (escape sequence '%n')"; "line feed")]
+        #[test_case('\r', ['%', 'r'], "'\\r' (escape sequence '%r')"; "carriage return")]
+        #[test_case('\t', ['%', 't'], "'\\t' (escape sequence '%t')"; "horizontal tab")]
+        fn display(value: char, sequence: EscapeSequence, result: &str) {
+            assert_eq!(Char::Escaped(value, sequence).to_string(), result);
         }
     }
 
@@ -185,7 +174,7 @@ mod tests {
         #[test]
         fn to_string() {
             let chars = [Char::Raw('a'), Char::Escaped('b', ['c', 'd'])];
-            assert_eq!(Chars(&chars).to_string(), String::from("ab"));
+            assert_eq!(Chars(&chars).to_string(), "ab");
         }
     }
 }

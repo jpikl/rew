@@ -48,9 +48,7 @@ impl Column {
             })
         }
     }
-}
 
-impl Column {
     pub fn get<'a>(&self, value: &'a str) -> &'a str {
         match &self.separator {
             Separator::String(separator) => value.split(separator).nth(self.index).unwrap_or(""),
