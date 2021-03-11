@@ -68,221 +68,111 @@ impl fmt::Display for Padding {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::ops::Range;
+    use test_case::test_case;
 
-    mod parse {
-        use super::*;
-
-        #[test]
-        fn empty() {
-            let mut reader = Reader::from("");
-            assert_eq!(
-                Padding::parse(&mut reader, '<'),
-                Err(Error {
-                    kind: ErrorKind::PaddingPrefixInvalid('<', None),
-                    range: 0..0,
-                })
-            );
-            assert_eq!(reader.position(), 0);
-        }
-
-        #[test]
-        fn invalid_prefix() {
-            let mut reader = Reader::from(">abc");
-            assert_eq!(
-                Padding::parse(&mut reader, '<'),
-                Err(Error {
-                    kind: ErrorKind::PaddingPrefixInvalid('<', Some(Char::Raw('>'))),
-                    range: 0..1,
-                })
-            );
-            assert_eq!(reader.position(), 0);
-        }
-
-        #[test]
-        fn invalid_escaped_prefix() {
-            let mut reader = Reader::new(vec![Char::Escaped('x', ['%', 'x'])]);
-            assert_eq!(
-                Padding::parse(&mut reader, '<'),
-                Err(Error {
-                    kind: ErrorKind::PaddingPrefixInvalid(
-                        '<',
-                        Some(Char::Escaped('x', ['%', 'x']))
-                    ),
-                    range: 0..2,
-                })
-            );
-            assert_eq!(reader.position(), 0);
-        }
-
-        #[test]
-        fn fixed_empty() {
-            let mut reader = Reader::from("<");
-            assert_eq!(
-                Padding::parse(&mut reader, '<'),
-                Ok(Padding::Fixed(String::new()))
-            );
-            assert_eq!(reader.position(), 1);
-        }
-
-        #[test]
-        fn fixed_nonempty() {
-            let mut reader = Reader::from("<abc");
-            assert_eq!(
-                Padding::parse(&mut reader, '<'),
-                Ok(Padding::Fixed(String::from("abc")))
-            );
-            assert_eq!(reader.position(), 4);
-        }
-
-        #[test]
-        fn repeated_empty() {
-            let mut reader = Reader::from("10:");
-            assert_eq!(
-                Padding::parse(&mut reader, '<'),
-                Ok(Padding::Repeated(Repetition {
-                    count: 10,
-                    value: String::new()
-                }))
-            );
-            assert_eq!(reader.position(), 3);
-        }
-
-        #[test]
-        fn repeated_nonempty() {
-            let mut reader = Reader::from("10:abc");
-            assert_eq!(
-                Padding::parse(&mut reader, '<'),
-                Ok(Padding::Repeated(Repetition {
-                    count: 10,
-                    value: String::from("abc")
-                }))
-            );
-            assert_eq!(reader.position(), 6);
-        }
+    #[test_case("", ErrorKind::PaddingPrefixInvalid('<', None), 0..0; "no prefix")]
+    #[test_case(">abc", ErrorKind::PaddingPrefixInvalid('<', Some(Char::Raw('>'))), 0..1; "invalid prefix")]
+    fn parse_err(input: &str, kind: ErrorKind, range: Range<usize>) {
+        assert_eq!(
+            Padding::parse(&mut Reader::from(input), '<'),
+            Err(Error { kind, range })
+        );
     }
 
-    mod apply_left {
+    mod fixed {
         use super::*;
+        use test_case::test_case;
 
-        #[test]
-        fn empty_with_empty() {
+        #[test_case("<", ""; "empty")]
+        #[test_case("<abc", "abc"; "nonempty")]
+        fn parse(input: &str, padding: &str) {
             assert_eq!(
-                Padding::Fixed(String::new()).apply_left(String::new()),
-                String::new()
+                Padding::parse(&mut Reader::from(input), '<'),
+                Ok(Padding::Fixed(String::from(padding)))
+            );
+        }
+
+        #[test_case("", "", ""; "empty with empty")]
+        #[test_case("", "0123", "0123"; "empty with nonempty")]
+        #[test_case("abcd", "", "abcd"; "nonempty with empty")]
+        #[test_case("abcd", "0123", "abcd"; "nonempty same length")]
+        #[test_case("ab", "0123", "01ab"; "shorter with longer")]
+        fn apply_left(input: &str, padding: &str, output: &str) {
+            assert_eq!(
+                Padding::Fixed(String::from(padding)).apply_left(String::from(input)),
+                String::from(output)
+            );
+        }
+
+        #[test_case("", "", ""; "empty with empty")]
+        #[test_case("", "0123", "0123"; "empty with nonempty")]
+        #[test_case("abcd", "", "abcd"; "nonempty with empty")]
+        #[test_case("abcd", "0123", "abcd"; "nonempty same length")]
+        #[test_case("ab", "0123", "ab23"; "shorter with longer")]
+        fn apply_right(input: &str, padding: &str, output: &str) {
+            assert_eq!(
+                Padding::Fixed(String::from(padding)).apply_right(String::from(input)),
+                String::from(output)
             );
         }
 
         #[test]
-        fn empty_with_nonempty() {
-            assert_eq!(
-                Padding::Fixed(String::from("0123")).apply_left(String::new()),
-                String::from("0123")
-            );
-        }
-
-        #[test]
-        fn nonempty_with_empty() {
-            assert_eq!(
-                Padding::Fixed(String::new()).apply_left(String::from("abcd")),
-                String::from("abcd")
-            );
-        }
-
-        #[test]
-        fn shorter_with_longer() {
-            assert_eq!(
-                Padding::Fixed(String::from("0123")).apply_left(String::from("ab")),
-                String::from("01ab")
-            );
-        }
-
-        #[test]
-        fn longer_with_shorter() {
-            assert_eq!(
-                Padding::Fixed(String::from("0123")).apply_left(String::from("abcd")),
-                String::from("abcd")
-            );
-        }
-
-        #[test]
-        fn repeated() {
-            assert_eq!(
-                Padding::Repeated(Repetition {
-                    count: 3,
-                    value: String::from("01")
-                })
-                .apply_left(String::from("abc")),
-                String::from("010abc")
-            );
-        }
-    }
-
-    mod apply_right {
-        use super::*;
-
-        #[test]
-        fn empty_with_empty() {
-            assert_eq!(
-                Padding::Fixed(String::new()).apply_right(String::new()),
-                String::new()
-            );
-        }
-
-        #[test]
-        fn empty_with_nonempty() {
-            assert_eq!(
-                Padding::Fixed(String::from("0123")).apply_right(String::new()),
-                String::from("0123")
-            );
-        }
-
-        #[test]
-        fn nonempty_with_empty() {
-            assert_eq!(
-                Padding::Fixed(String::new()).apply_right(String::from("abcd")),
-                String::from("abcd")
-            );
-        }
-
-        #[test]
-        fn shorter_with_longer() {
-            assert_eq!(
-                Padding::Fixed(String::from("0123")).apply_right(String::from("ab")),
-                String::from("ab23")
-            );
-        }
-
-        #[test]
-        fn longer_with_shorter() {
-            assert_eq!(
-                Padding::Fixed(String::from("0123")).apply_right(String::from("abcd")),
-                String::from("abcd")
-            );
-        }
-
-        #[test]
-        fn repeated() {
-            assert_eq!(
-                Padding::Repeated(Repetition {
-                    count: 3,
-                    value: String::from("01")
-                })
-                .apply_right(String::from("abc")),
-                String::from("abc101")
-            );
-        }
-    }
-
-    mod display {
-        use super::*;
-
-        #[test]
-        fn fixed() {
+        fn display() {
             assert_eq!(Padding::Fixed(String::from("abc")).to_string(), "'abc'");
         }
+    }
+
+    mod repeated {
+        use super::*;
+        use test_case::test_case;
+
+        #[test_case("10:", 10, ""; "empty")]
+        #[test_case("10:abc", 10, "abc"; "nonempty")]
+        fn parse(input: &str, count: usize, padding: &str) {
+            assert_eq!(
+                Padding::parse(&mut Reader::from(input), '<'),
+                Ok(Padding::Repeated(Repetition {
+                    count,
+                    value: String::from(padding)
+                }))
+            );
+        }
+
+        #[test_case("", 2, "", ""; "empty with empty")]
+        #[test_case("", 2, "012", "012012"; "empty with nonempty")]
+        #[test_case("abc", 2, "", "abc"; "nonempty with empty")]
+        #[test_case("abc", 1, "012", "abc"; "nonempty same length")]
+        #[test_case("ab", 2, "012", "0120ab"; "shorter with longer")]
+        fn apply_left(input: &str, count: usize, padding: &str, output: &str) {
+            assert_eq!(
+                Padding::Repeated(Repetition {
+                    count,
+                    value: String::from(padding)
+                })
+                .apply_left(String::from(input)),
+                String::from(output)
+            );
+        }
+
+        #[test_case("", 2, "", ""; "empty with empty")]
+        #[test_case("", 2, "012", "012012"; "empty with nonempty")]
+        #[test_case("abc", 2, "", "abc"; "nonempty with empty")]
+        #[test_case("abc", 1, "012", "abc"; "nonempty same length")]
+        #[test_case("ab", 2, "012", "ab2012"; "shorter with longer")]
+        fn apply_right(input: &str, count: usize, padding: &str, output: &str) {
+            assert_eq!(
+                Padding::Repeated(Repetition {
+                    count,
+                    value: String::from(padding)
+                })
+                .apply_right(String::from(input)),
+                String::from(output)
+            );
+        }
 
         #[test]
-        fn repeated() {
+        fn display() {
             assert_eq!(
                 Padding::Repeated(Repetition {
                     count: 5,
