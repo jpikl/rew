@@ -8,15 +8,15 @@ use std::convert::TryFrom;
 use std::fmt;
 
 #[derive(Debug, PartialEq)]
-pub struct Case {
-    pub matcher: RegexHolder,
-    pub result: String,
-}
-
-#[derive(Debug, PartialEq)]
 pub struct RegexSwitch {
     pub cases: Vec<Case>,
     pub default: String,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct Case {
+    pub matcher: RegexHolder,
+    pub result: String,
 }
 
 impl RegexSwitch {
@@ -111,372 +111,153 @@ impl fmt::Display for RegexSwitch {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils::AnyString;
+    use crate::utils::{AnyString, ByteRange};
+    use test_case::test_case;
 
-    mod parse {
-        use super::*;
+    #[test_case("", ErrorKind::ExpectedSwitch, 0..0; "empty")]
+    #[test_case("::", ErrorKind::SwitchWithoutMatcher(Char::Raw(':'), 0), 0..1; "delimiter delimiter")]
+    #[test_case(":^[a-z+:", ErrorKind::RegexInvalid(AnyString::any()), 1..7; "invalid")]
+    #[test_case(":^[a-z]+$:::", ErrorKind::SwitchWithoutMatcher(Char::Raw(':'), 2), 10..11; "matcher delimiter delimiter")]
+    #[test_case(":^[a-z]+$:lower:^[A-Z+:", ErrorKind::RegexInvalid(AnyString::any()), 16..22; "matcher result invalid")]
+    fn parse_err(input: &str, kind: ErrorKind, range: ByteRange) {
+        assert_eq!(
+            RegexSwitch::parse(&mut Reader::from(input)),
+            Err(Error { kind, range })
+        );
+    }
 
-        #[test]
-        fn empty() {
-            let mut reader = Reader::from("");
-            assert_eq!(
-                RegexSwitch::parse(&mut reader),
-                Err(Error {
-                    kind: ErrorKind::ExpectedSwitch,
-                    range: 0..0,
-                })
-            );
-            assert_eq!(reader.position(), 0);
-        }
-
-        #[test]
-        fn delimiter() {
-            let mut reader = Reader::from(":");
-            assert_eq!(
-                RegexSwitch::parse(&mut reader),
-                Ok(RegexSwitch {
-                    cases: Vec::new(),
-                    default: String::new(),
-                }),
-            );
-            assert_eq!(reader.position(), 1);
-        }
-
-        #[test]
-        fn delimiter_delimiter() {
-            let mut reader = Reader::from("::");
-            assert_eq!(
-                RegexSwitch::parse(&mut reader),
-                Err(Error {
-                    kind: ErrorKind::SwitchWithoutMatcher(Char::Raw(':'), 0),
-                    range: 0..1
-                }),
-            );
-            assert_eq!(reader.position(), 2);
-        }
-
-        #[test]
-        fn default() {
-            let mut reader = Reader::from(":mixed");
-            assert_eq!(
-                RegexSwitch::parse(&mut reader),
-                Ok(RegexSwitch {
-                    cases: Vec::new(),
-                    default: String::from("mixed"),
-                }),
-            );
-            assert_eq!(reader.position(), 6);
-        }
-
-        #[test]
-        fn invalid() {
-            let mut reader = Reader::from(":^[a-z+:");
-            assert_eq!(
-                RegexSwitch::parse(&mut reader),
-                Err(Error {
-                    kind: ErrorKind::RegexInvalid(AnyString::any()),
-                    range: 1..7,
-                })
-            );
-            assert_eq!(reader.position(), 8);
-        }
-
-        #[test]
-        fn matcher() {
-            let mut reader = Reader::from(":^[a-z]+$:");
-            assert_eq!(
-                RegexSwitch::parse(&mut reader),
-                Ok(RegexSwitch {
-                    cases: vec![Case {
-                        matcher: RegexHolder::from("^[a-z]+$"),
-                        result: String::new()
-                    }],
-                    default: String::new(),
-                }),
-            );
-            assert_eq!(reader.position(), 10);
-        }
-
-        #[test]
-        fn matcher_result() {
-            let mut reader = Reader::from(":^[a-z]+$:lower");
-            assert_eq!(
-                RegexSwitch::parse(&mut reader),
-                Ok(RegexSwitch {
-                    cases: vec![Case {
-                        matcher: RegexHolder::from("^[a-z]+$"),
-                        result: String::from("lower")
-                    }],
-                    default: String::new(),
-                }),
-            );
-            assert_eq!(reader.position(), 15);
-        }
-
-        #[test]
-        fn matcher_result_delimiter() {
-            let mut reader = Reader::from(":^[a-z]+$:lower:");
-            assert_eq!(
-                RegexSwitch::parse(&mut reader),
-                Ok(RegexSwitch {
-                    cases: vec![Case {
-                        matcher: RegexHolder::from("^[a-z]+$"),
-                        result: String::from("lower")
-                    }],
-                    default: String::new(),
-                }),
-            );
-            assert_eq!(reader.position(), 16);
-        }
-
-        #[test]
-        fn matcher_delimiter() {
-            let mut reader = Reader::from(":^[a-z]+$::");
-            assert_eq!(
-                RegexSwitch::parse(&mut reader),
-                Ok(RegexSwitch {
-                    cases: vec![Case {
-                        matcher: RegexHolder::from("^[a-z]+$"),
-                        result: String::from("")
-                    }],
-                    default: String::new(),
-                }),
-            );
-            assert_eq!(reader.position(), 11);
-        }
-
-        #[test]
-        fn matcher_delimiter_delimiter() {
-            let mut reader = Reader::from(":^[a-z]+$:::");
-            assert_eq!(
-                RegexSwitch::parse(&mut reader),
-                Err(Error {
-                    kind: ErrorKind::SwitchWithoutMatcher(Char::Raw(':'), 2),
-                    range: 10..11
-                }),
-            );
-            assert_eq!(reader.position(), 12);
-        }
-
-        #[test]
-        fn matcher_result_default() {
-            let mut reader = Reader::from(":^[a-z]+$:lower:mixed");
-            assert_eq!(
-                RegexSwitch::parse(&mut reader),
-                Ok(RegexSwitch {
-                    cases: vec![Case {
-                        matcher: RegexHolder::from("^[a-z]+$"),
-                        result: String::from("lower")
-                    }],
-                    default: String::from("mixed"),
-                }),
-            );
-            assert_eq!(reader.position(), 21);
-        }
-
-        #[test]
-        fn matcher_result_invalid() {
-            let mut reader = Reader::from(":^[a-z]+$:lower:^[A-Z+:");
-            assert_eq!(
-                RegexSwitch::parse(&mut reader),
-                Err(Error {
-                    kind: ErrorKind::RegexInvalid(AnyString::any()),
-                    range: 16..22,
-                }),
-            );
-            assert_eq!(reader.position(), 23);
-        }
-
-        #[test]
-        fn matcher_result_matcher() {
-            let mut reader = Reader::from(":^[a-z]+$:lower:^[A-Z]+$:");
-            assert_eq!(
-                RegexSwitch::parse(&mut reader),
-                Ok(RegexSwitch {
-                    cases: vec![
-                        Case {
-                            matcher: RegexHolder::from("^[a-z]+$"),
-                            result: String::from("lower")
-                        },
-                        Case {
-                            matcher: RegexHolder::from("^[A-Z]+$"),
-                            result: String::new()
-                        }
-                    ],
-                    default: String::new(),
-                }),
-            );
-            assert_eq!(reader.position(), 25);
-        }
-
-        #[test]
-        fn matcher_result_matcher_result() {
-            let mut reader = Reader::from(":^[a-z]+$:lower:^[A-Z]+$:upper");
-            assert_eq!(
-                RegexSwitch::parse(&mut reader),
-                Ok(RegexSwitch {
-                    cases: vec![
-                        Case {
-                            matcher: RegexHolder::from("^[a-z]+$"),
-                            result: String::from("lower")
-                        },
-                        Case {
-                            matcher: RegexHolder::from("^[A-Z]+$"),
-                            result: String::from("upper")
-                        }
-                    ],
-                    default: String::new(),
-                }),
-            );
-            assert_eq!(reader.position(), 30);
-        }
-
-        #[test]
-        fn matcher_result_matcher_result_delimiter() {
-            let mut reader = Reader::from(":^[a-z]+$:lower:^[A-Z]+$:upper:");
-            assert_eq!(
-                RegexSwitch::parse(&mut reader),
-                Ok(RegexSwitch {
-                    cases: vec![
-                        Case {
-                            matcher: RegexHolder::from("^[a-z]+$"),
-                            result: String::from("lower")
-                        },
-                        Case {
-                            matcher: RegexHolder::from("^[A-Z]+$"),
-                            result: String::from("upper")
-                        }
-                    ],
-                    default: String::new(),
-                }),
-            );
-            assert_eq!(reader.position(), 31);
-        }
-
-        #[test]
-        fn matcher_result_matcher_result_default() {
-            let mut reader = Reader::from(":^[a-z]+$:lower:^[A-Z]+$:upper:mixed");
-            assert_eq!(
-                RegexSwitch::parse(&mut reader),
-                Ok(RegexSwitch {
-                    cases: vec![
-                        Case {
-                            matcher: RegexHolder::from("^[a-z]+$"),
-                            result: String::from("lower")
-                        },
-                        Case {
-                            matcher: RegexHolder::from("^[A-Z]+$"),
-                            result: String::from("upper")
-                        }
-                    ],
-                    default: String::from("mixed"),
-                }),
-            );
-            assert_eq!(reader.position(), 36);
-        }
+    #[test_case(":", &[], ""; "delimiter")]
+    #[test_case(":mixed", &[], "mixed"; "default")]
+    #[test_case(":^[a-z]+$:", &[("^[a-z]+$", "")], ""; "matcher")]
+    #[test_case(":^[a-z]+$::", &[("^[a-z]+$", "")], ""; "matcher delimiter")]
+    #[test_case(":^[a-z]+$:lower", &[("^[a-z]+$", "lower")], ""; "matcher result")]
+    #[test_case(":^[a-z]+$:lower:", &[("^[a-z]+$", "lower")], ""; "matcher result delimiter")]
+    #[test_case(":^[a-z]+$:lower:mixed", &[("^[a-z]+$", "lower")], "mixed"; "matcher result default")]
+    #[test_case(":^[a-z]+$:lower:^[A-Z]+$:", &[("^[a-z]+$", "lower"), ("^[A-Z]+$", "")], ""; "matcher result matcher")]
+    #[test_case(":^[a-z]+$:lower:^[A-Z]+$:upper", &[("^[a-z]+$", "lower"), ("^[A-Z]+$", "upper")], ""; "matcher result matcher result")]
+    #[test_case(":^[a-z]+$:lower:^[A-Z]+$:upper:", &[("^[a-z]+$", "lower"), ("^[A-Z]+$", "upper")], ""; "matcher result matcher result delimiter")]
+    #[test_case(":^[a-z]+$:lower:^[A-Z]+$:upper:mixed", &[("^[a-z]+$", "lower"), ("^[A-Z]+$", "upper")], "mixed"; "matcher result matcher result default")]
+    fn parse_ok(input: &str, cases: &[(&str, &str)], default: &str) {
+        assert_eq!(
+            RegexSwitch::parse(&mut Reader::from(input)),
+            Ok(RegexSwitch {
+                cases: cases
+                    .iter()
+                    .map(|(matcher, result)| Case {
+                        matcher: RegexHolder::from(*matcher),
+                        result: String::from(*result)
+                    })
+                    .collect(),
+                default: String::from(default),
+            })
+        );
     }
 
     mod eval {
         use super::*;
+        use test_case::test_case;
 
-        #[test]
-        fn empty_default() {
-            let switch = RegexSwitch {
-                cases: Vec::new(),
-                default: String::new(),
-            };
-            assert_eq!(switch.eval(""), "");
-            assert_eq!(switch.eval("abc"), "");
+        #[test_case("", ""; "empty")]
+        #[test_case("abc", ""; "nonempty")]
+        fn empty_default(input: &str, output: &str) {
+            assert_eq!(
+                RegexSwitch {
+                    cases: Vec::new(),
+                    default: String::new(),
+                }
+                .eval(input),
+                output
+            );
         }
 
-        #[test]
-        fn nonempty_default() {
-            let switch = RegexSwitch {
-                cases: Vec::new(),
-                default: String::from("default"),
-            };
-            assert_eq!(switch.eval(""), "default");
-            assert_eq!(switch.eval("abc"), "default");
+        #[test_case("", "default"; "empty")]
+        #[test_case("abc", "default"; "nonempty")]
+        fn nonempty_default(input: &str, output: &str) {
+            assert_eq!(
+                RegexSwitch {
+                    cases: Vec::new(),
+                    default: String::from("default"),
+                }
+                .eval(input),
+                output
+            );
         }
 
-        #[test]
-        fn cases_nonempty_default() {
-            let switch = RegexSwitch {
-                cases: vec![
-                    Case {
-                        matcher: RegexHolder::from("\\d\\d"),
-                        result: String::from("contains consecutive digits"),
-                    },
-                    Case {
-                        matcher: RegexHolder::from("\\d"),
-                        result: String::from("contains digit"),
-                    },
-                    Case {
-                        matcher: RegexHolder::from("^[a-z]+$"),
-                        result: String::from("all lowercase"),
-                    },
-                ],
-                default: String::from("other"),
-            };
-            assert_eq!(switch.eval(""), "other");
-            assert_eq!(switch.eval("a12b"), "contains consecutive digits");
-            assert_eq!(switch.eval("a1b"), "contains digit");
-            assert_eq!(switch.eval("ab"), "all lowercase");
-            assert_eq!(switch.eval("Ab"), "other");
+        #[test_case("", "other"; "default empty")]
+        #[test_case("Ab", "other"; "default nonempty")]
+        #[test_case("a12b", "contains consecutive digits"; "first matcher")]
+        #[test_case("a1b", "contains digit"; "second matcher")]
+        #[test_case("ab", "all lowercase"; "third matcher")]
+        fn cases_nonempty_default(input: &str, output: &str) {
+            assert_eq!(
+                RegexSwitch {
+                    cases: vec![
+                        Case {
+                            matcher: RegexHolder::from("\\d\\d"),
+                            result: String::from("contains consecutive digits"),
+                        },
+                        Case {
+                            matcher: RegexHolder::from("\\d"),
+                            result: String::from("contains digit"),
+                        },
+                        Case {
+                            matcher: RegexHolder::from("^[a-z]+$"),
+                            result: String::from("all lowercase"),
+                        },
+                    ],
+                    default: String::from("other"),
+                }
+                .eval(input),
+                output
+            );
         }
 
-        #[test]
-        fn cases_nonempty_default_captures() {
-            let switch = RegexSwitch {
-                cases: vec![
-                    Case {
-                        matcher: RegexHolder::from("(\\d)(\\d)"),
-                        result: String::from("contains consecutive digits $1 and $2"),
-                    },
-                    Case {
-                        matcher: RegexHolder::from("\\d"),
-                        result: String::from("contains digit $0"),
-                    },
-                    Case {
-                        matcher: RegexHolder::from("^.*([A-Z]).*$"),
-                        result: String::from("first uppercase letter of '$0' is '$1'"),
-                    },
-                ],
-                default: String::from("$0, $1 are not capture groups"),
-            };
-            assert_eq!(switch.eval(""), "$0, $1 are not capture groups");
-            assert_eq!(switch.eval("a34b"), "contains consecutive digits 3 and 4");
-            assert_eq!(switch.eval("a3b"), "contains digit 3");
-            assert_eq!(switch.eval("aBc"), "first uppercase letter of 'aBc' is 'B'");
-            assert_eq!(switch.eval("world"), "$0, $1 are not capture groups");
+        #[test_case("", "$0, $1 are not capture groups"; "default empty")]
+        #[test_case("world", "$0, $1 are not capture groups"; "default nonempty")]
+        #[test_case("a34b", "contains consecutive digits 3 and 4"; "first matcher")]
+        #[test_case("a3b", "contains digit 3"; "second matcher")]
+        #[test_case("aBc", "first uppercase letter of 'aBc' is 'B'"; "third matcher")]
+
+        fn cases_nonempty_default_captures(input: &str, output: &str) {
+            assert_eq!(
+                RegexSwitch {
+                    cases: vec![
+                        Case {
+                            matcher: RegexHolder::from("(\\d)(\\d)"),
+                            result: String::from("contains consecutive digits $1 and $2"),
+                        },
+                        Case {
+                            matcher: RegexHolder::from("\\d"),
+                            result: String::from("contains digit $0"),
+                        },
+                        Case {
+                            matcher: RegexHolder::from("^.*([A-Z]).*$"),
+                            result: String::from("first uppercase letter of '$0' is '$1'"),
+                        },
+                    ],
+                    default: String::from("$0, $1 are not capture groups"),
+                }
+                .eval(input),
+                output
+            );
         }
     }
 
     mod display {
         use super::*;
         use indoc::indoc;
+        use test_case::test_case;
 
-        #[test]
-        fn empty_default() {
+        #[test_case("", "constant output ''"; "empty")]
+        #[test_case("abc", "constant output 'abc'"; "nonempty")]
+        fn empty_default(default: &str, result: &str) {
             assert_eq!(
                 RegexSwitch {
                     cases: Vec::new(),
-                    default: String::new()
+                    default: String::from(default)
                 }
                 .to_string(),
-                "constant output ''"
-            );
-        }
-
-        #[test]
-        fn nonempty_default() {
-            assert_eq!(
-                RegexSwitch {
-                    cases: Vec::new(),
-                    default: String::from("abc")
-                }
-                .to_string(),
-                "constant output 'abc'"
+                result
             );
         }
 
