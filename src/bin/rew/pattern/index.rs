@@ -100,455 +100,113 @@ mod tests {
 
     mod index {
         use super::*;
+        use test_case::test_case;
 
-        mod parse {
-            use super::*;
-
-            #[test]
-            fn zero() {
-                let mut reader = Reader::from("0abc");
-                assert_eq!(
-                    Index::parse(&mut reader),
-                    Err(Error {
-                        kind: ErrorKind::IndexZero,
-                        range: 0..1
-                    })
-                );
-                assert_eq!(reader.position(), 1);
-            }
-
-            #[test]
-            fn positive() {
-                let mut reader = Reader::from("123abc");
-                assert_eq!(Index::parse(&mut reader), Ok(122));
-                assert_eq!(reader.position(), 3);
-            }
-
-            #[test]
-            fn invalid() {
-                let mut reader = Reader::from("abc");
-                assert_eq!(
-                    Index::parse(&mut reader),
-                    Err(Error {
-                        kind: ErrorKind::ExpectedNumber,
-                        range: 0..3
-                    })
-                );
-                assert_eq!(reader.position(), 0);
-            }
+        #[test_case("abc", ErrorKind::ExpectedNumber, 0..3; "invalid")]
+        #[test_case("0abc", ErrorKind::IndexZero, 0..1; "zero")]
+        fn parse_err(input: &str, kind: ErrorKind, range: std::ops::Range<usize>) {
+            assert_eq!(
+                Index::parse(&mut Reader::from(input)),
+                Err(Error { kind, range })
+            );
         }
 
-        mod shift {
-            use super::*;
+        #[test_case("1", 0; "one")]
+        #[test_case("123abc", 122; "multiple digits and chars")]
+        fn parse_ok(input: &str, result: IndexValue) {
+            assert_eq!(Index::parse(&mut Reader::from(input)), Ok(result));
+        }
 
-            #[test]
-            fn valid() {
-                assert_eq!(Index::shift(1), Ok(0));
-            }
-
-            #[test]
-            fn invalid() {
-                assert_eq!(Index::shift(0), Err(ErrorKind::IndexZero));
-            }
+        #[test_case(0, Err(ErrorKind::IndexZero); "zero")]
+        #[test_case(1, Ok(0); "positive")]
+        fn shift(index: IndexValue, result: BaseResult<IndexValue>) {
+            assert_eq!(Index::shift(index), result)
         }
     }
 
     mod index_range {
         use super::*;
-        use crate::pattern::range::tests;
+        use test_case::test_case;
 
-        #[test]
-        fn start() {
-            tests::start::<Index>()
+        #[test_case(1, None, "2.."; "open")]
+        #[test_case(1, Some(3), "2..3"; "closed")]
+        fn display(start: IndexValue, end: Option<IndexValue>, result: &str) {
+            assert_eq!(Range::<Index>(start, end).to_string(), result);
         }
 
-        #[test]
-        fn end() {
-            tests::end::<Index>()
+        #[test_case("", ErrorKind::ExpectedRange, 0..0; "empty")]
+        #[test_case("-", ErrorKind::RangeInvalid(String::from("-")), 0..1; "invalid")]
+        #[test_case("0-", ErrorKind::IndexZero, 0..1; "zero start no end")]
+        #[test_case("1-0", ErrorKind::IndexZero, 2..3; "start above zero end")]
+        #[test_case("2-1", ErrorKind::RangeStartOverEnd(String::from("2"), String::from("1")), 0..3; "start above end")]
+        #[test_case("1+", ErrorKind::ExpectedRangeLength, 2..2; "start no length")]
+        #[test_case("1+ab", ErrorKind::ExpectedRangeLength, 2..4; "start no length but chars")]
+        fn parse_err(input: &str, kind: ErrorKind, range: std::ops::Range<usize>) {
+            assert_eq!(
+                IndexRange::parse(&mut Reader::from(input)),
+                Err(Error { kind, range })
+            );
         }
 
-        #[test]
-        fn length() {
-            tests::length::<Index>()
+        #[test_case("1", 0, Some(1); "no delimiter")]
+        #[test_case("2ab", 1, Some(2); "no delimiter but chars")]
+        #[test_case("1-", 0, None; "no end")]
+        #[test_case("1-2", 0, Some(2); "start below end")]
+        #[test_case("1-1", 0, Some(1); "start equals end")]
+        #[test_case("2+0", 1, Some(1); "start with zero length")]
+        #[test_case("2+3", 1, Some(4); "start with positive length")]
+        #[test_case(&format!("2+{}", IndexValue::MAX), 1, None; "start with overflow length")]
+        fn parse_ok(input: &str, start: IndexValue, end: Option<IndexValue>) {
+            assert_eq!(
+                IndexRange::parse(&mut Reader::from(input)),
+                Ok(Range::<Index>(start, end))
+            );
         }
 
-        #[test]
-        fn display() {
-            assert_eq!(Range::<Index>(1, None).to_string(), "2..");
-            assert_eq!(Range::<Index>(1, Some(3)).to_string(), "2..3");
+        #[test_case("", 0, None, ""; "empty")]
+        #[test_case("ábčd", 0, None, "ábčd"; "before first")]
+        #[test_case("ábčd", 3, None, "d"; "before last")]
+        #[test_case("ábčd", 4, None, ""; "after last")]
+        #[test_case("ábčd", 5, None, ""; "over last")]
+        #[test_case("ábčd", 0, Some(0), ""; "before first before first")]
+        #[test_case("ábčd", 0, Some(1), "á"; "before first after first")]
+        #[test_case("ábčd", 0, Some(3), "ábč"; "before first before last")]
+        #[test_case("ábčd", 0, Some(4), "ábčd"; "before first after last")]
+        #[test_case("ábčd", 0, Some(5), "ábčd"; "before first over last")]
+        #[test_case("ábčd", 3, Some(3), ""; "before last before last")]
+        #[test_case("ábčd", 3, Some(4), "d"; "before last after last")]
+        #[test_case("ábčd", 3, Some(5), "d"; "before last over last")]
+        #[test_case("ábčd", 4, Some(4), ""; "after last after last")]
+        #[test_case("ábčd", 4, Some(5), ""; "after last over last")]
+        #[test_case("ábčd", 5, Some(5), ""; "over last over last")]
+        fn substr(input: &str, start: IndexValue, end: Option<IndexValue>, output: &str) {
+            assert_eq!(
+                Range::<Index>(start, end).substr(String::from(input)),
+                output
+            );
         }
 
-        mod parse {
-            use super::*;
-
-            #[test]
-            fn empty() {
-                let mut reader = Reader::from("");
-                assert_eq!(
-                    IndexRange::parse(&mut reader),
-                    Err(Error {
-                        kind: ErrorKind::ExpectedRange,
-                        range: 0..0,
-                    })
-                );
-                assert_eq!(reader.position(), 0);
-            }
-
-            #[test]
-            fn invalid() {
-                let mut reader = Reader::from("-");
-                assert_eq!(
-                    IndexRange::parse(&mut reader),
-                    Err(Error {
-                        kind: ErrorKind::RangeInvalid(String::from("-")),
-                        range: 0..1,
-                    })
-                );
-                assert_eq!(reader.position(), 0);
-            }
-
-            #[test]
-            fn zero_start_no_end() {
-                let mut reader = Reader::from("0-");
-                assert_eq!(
-                    IndexRange::parse(&mut reader),
-                    Err(Error {
-                        kind: ErrorKind::IndexZero,
-                        range: 0..1,
-                    })
-                );
-                assert_eq!(reader.position(), 1);
-            }
-
-            #[test]
-            fn start_no_end() {
-                let mut reader = Reader::from("1-");
-                assert_eq!(IndexRange::parse(&mut reader), Ok(Range::<Index>(0, None)));
-                assert_eq!(reader.position(), 2);
-            }
-
-            #[test]
-            fn start_above_zero_end() {
-                let mut reader = Reader::from("1-0");
-                assert_eq!(
-                    IndexRange::parse(&mut reader),
-                    Err(Error {
-                        kind: ErrorKind::IndexZero,
-                        range: 2..3,
-                    })
-                );
-                assert_eq!(reader.position(), 3);
-            }
-
-            #[test]
-            fn start_below_end() {
-                let mut reader = Reader::from("1-2");
-                assert_eq!(
-                    IndexRange::parse(&mut reader),
-                    Ok(Range::<Index>(0, Some(2)))
-                );
-                assert_eq!(reader.position(), 3);
-            }
-
-            #[test]
-            fn start_equals_end() {
-                let mut reader = Reader::from("1-1");
-                assert_eq!(
-                    IndexRange::parse(&mut reader),
-                    Ok(Range::<Index>(0, Some(1)))
-                );
-                assert_eq!(reader.position(), 3);
-            }
-
-            #[test]
-            fn start_above_end() {
-                let mut reader = Reader::from("2-1");
-                assert_eq!(
-                    IndexRange::parse(&mut reader),
-                    Err(Error {
-                        kind: ErrorKind::RangeStartOverEnd(String::from("2"), String::from("1")),
-                        range: 0..3,
-                    })
-                );
-                assert_eq!(reader.position(), 3);
-            }
-
-            #[test]
-            fn start_no_length() {
-                let mut reader = Reader::from("1+");
-                assert_eq!(
-                    IndexRange::parse(&mut reader),
-                    Err(Error {
-                        kind: ErrorKind::ExpectedRangeLength,
-                        range: 2..2
-                    })
-                );
-                assert_eq!(reader.position(), 2);
-            }
-
-            #[test]
-            fn start_no_length_but_chars() {
-                let mut reader = Reader::from("1+ab");
-                assert_eq!(
-                    IndexRange::parse(&mut reader),
-                    Err(Error {
-                        kind: ErrorKind::ExpectedRangeLength,
-                        range: 2..4
-                    })
-                );
-                assert_eq!(reader.position(), 2);
-            }
-
-            #[test]
-            fn start_with_length() {
-                let mut reader = Reader::from("2+3");
-                assert_eq!(
-                    IndexRange::parse(&mut reader),
-                    Ok(Range::<Index>(1, Some(4)))
-                );
-                assert_eq!(reader.position(), 3);
-            }
-
-            #[test]
-            fn start_with_length_overflow() {
-                let input = format!("2+{}", IndexValue::MAX);
-                let mut reader = Reader::from(input.as_str());
-                assert_eq!(IndexRange::parse(&mut reader), Ok(Range::<Index>(1, None)));
-                assert_eq!(reader.position(), input.len());
-            }
-
-            #[test]
-            fn no_delimiter() {
-                let mut reader = Reader::from("1");
-                assert_eq!(
-                    IndexRange::parse(&mut reader),
-                    Ok(Range::<Index>(0, Some(1)))
-                );
-                assert_eq!(reader.position(), 1);
-            }
-
-            #[test]
-            fn no_delimiter_but_chars() {
-                let mut reader = Reader::from("1ab");
-                assert_eq!(
-                    IndexRange::parse(&mut reader),
-                    Ok(Range::<Index>(0, Some(1)))
-                );
-                assert_eq!(reader.position(), 1);
-            }
-        }
-
-        mod substr {
-            use super::*;
-
-            #[test]
-            fn empty() {
-                assert_eq!(Range::<Index>(0, None).substr(String::new()), String::new());
-            }
-
-            #[test]
-            fn before_first() {
-                assert_eq!(
-                    Range::<Index>(0, None).substr(String::from("ábčd")),
-                    String::from("ábčd")
-                );
-            }
-
-            #[test]
-            fn before_last() {
-                assert_eq!(
-                    Range::<Index>(3, None).substr(String::from("ábčd")),
-                    String::from("d")
-                );
-            }
-
-            #[test]
-            fn after_last() {
-                assert_eq!(
-                    Range::<Index>(4, None).substr(String::from("ábčd")),
-                    String::new()
-                );
-            }
-
-            #[test]
-            fn before_first_before_first() {
-                assert_eq!(
-                    Range::<Index>(0, Some(0)).substr(String::from("ábčd")),
-                    String::new()
-                );
-            }
-
-            #[test]
-            fn before_first_after_first() {
-                assert_eq!(
-                    Range::<Index>(0, Some(1)).substr(String::from("ábčd")),
-                    String::from("á")
-                );
-            }
-
-            #[test]
-            fn before_first_before_last() {
-                assert_eq!(
-                    Range::<Index>(0, Some(3)).substr(String::from("ábčd")),
-                    String::from("ábč")
-                );
-            }
-
-            #[test]
-            fn before_first_after_last() {
-                assert_eq!(
-                    Range::<Index>(0, Some(4)).substr(String::from("ábčd")),
-                    String::from("ábčd")
-                );
-            }
-
-            #[test]
-            fn before_first_over_last() {
-                assert_eq!(
-                    Range::<Index>(0, Some(5)).substr(String::from("ábčd")),
-                    String::from("ábčd")
-                );
-            }
-
-            #[test]
-            fn before_last_after_last() {
-                assert_eq!(
-                    Range::<Index>(3, Some(4)).substr(String::from("ábčd")),
-                    String::from("d")
-                );
-            }
-
-            #[test]
-            fn before_last_over_last() {
-                assert_eq!(
-                    Range::<Index>(3, Some(5)).substr(String::from("ábčd")),
-                    String::from("d")
-                );
-            }
-
-            #[test]
-            fn after_last_over_last() {
-                assert_eq!(
-                    Range::<Index>(4, Some(5)).substr(String::from("ábčd")),
-                    String::new()
-                );
-            }
-
-            #[test]
-            fn over_last_over_last() {
-                assert_eq!(
-                    Range::<Index>(5, Some(5)).substr(String::from("ábčd")),
-                    String::new()
-                );
-            }
-        }
-
-        mod substr_back {
-            use super::*;
-
-            #[test]
-            fn empty() {
-                assert_eq!(
-                    Range::<Index>(0, None).substr_back(String::new()),
-                    String::new()
-                );
-            }
-
-            #[test]
-            fn before_first() {
-                assert_eq!(
-                    Range::<Index>(0, None).substr_back(String::from("ábčd")),
-                    String::from("ábčd")
-                );
-            }
-
-            #[test]
-            fn before_last() {
-                assert_eq!(
-                    Range::<Index>(3, None).substr_back(String::from("ábčd")),
-                    String::from("á")
-                );
-            }
-
-            #[test]
-            fn after_last() {
-                assert_eq!(
-                    Range::<Index>(4, None).substr_back(String::from("ábčd")),
-                    String::new()
-                );
-            }
-
-            #[test]
-            fn before_first_before_first() {
-                assert_eq!(
-                    Range::<Index>(0, Some(0)).substr_back(String::from("ábčd")),
-                    String::new()
-                );
-            }
-
-            #[test]
-            fn before_first_after_first() {
-                assert_eq!(
-                    Range::<Index>(0, Some(1)).substr_back(String::from("ábčd")),
-                    String::from("d")
-                );
-            }
-
-            #[test]
-            fn before_first_before_last() {
-                assert_eq!(
-                    Range::<Index>(0, Some(3)).substr_back(String::from("ábčd")),
-                    String::from("bčd")
-                );
-            }
-
-            #[test]
-            fn before_first_after_last() {
-                assert_eq!(
-                    Range::<Index>(0, Some(4)).substr_back(String::from("ábčd")),
-                    String::from("ábčd")
-                );
-            }
-
-            #[test]
-            fn before_first_over_last() {
-                assert_eq!(
-                    Range::<Index>(0, Some(5)).substr_back(String::from("ábčd")),
-                    String::from("ábčd")
-                );
-            }
-
-            #[test]
-            fn before_last_after_last() {
-                assert_eq!(
-                    Range::<Index>(3, Some(4)).substr_back(String::from("ábčd")),
-                    String::from("á")
-                );
-            }
-
-            #[test]
-            fn before_last_over_last() {
-                assert_eq!(
-                    Range::<Index>(3, Some(5)).substr_back(String::from("ábčd")),
-                    String::from("á")
-                );
-            }
-
-            #[test]
-            fn after_last_over_last() {
-                assert_eq!(
-                    Range::<Index>(4, Some(5)).substr_back(String::from("ábčd")),
-                    String::new()
-                );
-            }
-
-            #[test]
-            fn over_last_over_last() {
-                assert_eq!(
-                    Range::<Index>(5, Some(5)).substr_back(String::from("ábčd")),
-                    String::new()
-                );
-            }
+        #[test_case("", 0, None, ""; "empty")]
+        #[test_case("ábčd", 0, None, "ábčd"; "before first")]
+        #[test_case("ábčd", 3, None, "á"; "before last")]
+        #[test_case("ábčd", 4, None, ""; "after last")]
+        #[test_case("ábčd", 5, None, ""; "over last")]
+        #[test_case("ábčd", 0, Some(0), ""; "before first before first")]
+        #[test_case("ábčd", 0, Some(1), "d"; "before first after first")]
+        #[test_case("ábčd", 0, Some(3), "bčd"; "before first before last")]
+        #[test_case("ábčd", 0, Some(4), "ábčd"; "before first after last")]
+        #[test_case("ábčd", 0, Some(5), "ábčd"; "before first over last")]
+        #[test_case("ábčd", 3, Some(3), ""; "before last before last")]
+        #[test_case("ábčd", 3, Some(4), "á"; "before last after last")]
+        #[test_case("ábčd", 3, Some(5), "á"; "before last over last")]
+        #[test_case("ábčd", 4, Some(4), ""; "after last after last")]
+        #[test_case("ábčd", 4, Some(5), ""; "after last over last")]
+        #[test_case("ábčd", 5, Some(5), ""; "over last over last")]
+        fn substr_back(input: &str, start: IndexValue, end: Option<IndexValue>, output: &str) {
+            assert_eq!(
+                Range::<Index>(start, end).substr_back(String::from(input)),
+                output
+            );
         }
     }
 }

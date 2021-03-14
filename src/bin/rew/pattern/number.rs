@@ -47,163 +47,53 @@ impl fmt::Display for NumberRange {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use test_case::test_case;
+
+    use crate::pattern::char::Char;
     use crate::pattern::parse::{Error, ErrorKind};
-    use crate::pattern::range::tests;
+    use crate::pattern::reader::Reader;
 
-    #[test]
-    fn start() {
-        tests::start::<Number>()
+    use super::*;
+
+    #[test_case(1, None, "[1, 2^64)"; "open")]
+    #[test_case(1, Some(2), "[1, 2]"; "closed")]
+    fn display(start: NumberValue, end: Option<NumberValue>, result: &str) {
+        assert_eq!(Range::<Number>(start, end).to_string(), result);
     }
 
-    #[test]
-    fn end() {
-        tests::end::<Number>()
+    #[test_case("-", ErrorKind::RangeInvalid(String::from("-")), 0..1; "invalid")]
+    #[test_case("2-1", ErrorKind::RangeStartOverEnd(String::from("2"), String::from("1")), 0..3; "start above end")]
+    #[test_case("0+1", ErrorKind::ExpectedRangeDelimiter(Some(Char::Raw('+'))), 1..2; "start with length")]
+    #[test_case("1", ErrorKind::ExpectedRangeDelimiter(None), 1..1; "no delimiter")]
+    #[test_case("1ab", ErrorKind::ExpectedRangeDelimiter(Some(Char::Raw('a'))), 1..2; "wrong delimiter")]
+    fn parse_err(input: &str, kind: ErrorKind, range: std::ops::Range<usize>) {
+        assert_eq!(
+            NumberRange::parse(&mut Reader::from(input)),
+            Err(Error { kind, range })
+        );
     }
 
-    #[test]
-    fn length() {
-        tests::length::<Number>()
+    #[test_case("", 0, None; "empty")]
+    #[test_case("0-", 0, None; "start no end")]
+    #[test_case("0-1", 0, Some(2); "start below end")]
+    #[test_case("1-1", 1, Some(2); "start equals end")]
+    fn parse_ok(input: &str, start: NumberValue, end: Option<NumberValue>) {
+        assert_eq!(
+            NumberRange::parse(&mut Reader::from(input)),
+            Ok(Range::<Number>(start, end))
+        );
     }
 
-    #[test]
-    fn display() {
-        assert_eq!(Range::<Number>(1, None).to_string(), "[1, 2^64)");
-        assert_eq!(Range::<Number>(1, Some(2)).to_string(), "[1, 2]");
+    #[test_case(0, Some(0), 0; "lowest")]
+    #[test_case(NumberValue::MAX, None, NumberValue::MAX; "highest")]
+    fn random_certain(start: NumberValue, end: Option<NumberValue>, result: NumberValue) {
+        assert_eq!(Range::<Number>(start, end).random(), result);
     }
 
-    mod parse {
-        use super::*;
-        use crate::pattern::char::Char;
-        use crate::pattern::reader::Reader;
-
-        #[test]
-        fn empty() {
-            let mut reader = Reader::from("");
-            assert_eq!(
-                NumberRange::parse(&mut reader),
-                Ok(Range::<Number>(0, None))
-            );
-            assert_eq!(reader.position(), 0);
-        }
-
-        #[test]
-        fn invalid() {
-            let mut reader = Reader::from("-");
-            assert_eq!(
-                NumberRange::parse(&mut reader),
-                Err(Error {
-                    kind: ErrorKind::RangeInvalid(String::from("-")),
-                    range: 0..1,
-                })
-            );
-            assert_eq!(reader.position(), 0);
-        }
-
-        #[test]
-        fn start_no_end() {
-            let mut reader = Reader::from("0-");
-            assert_eq!(
-                NumberRange::parse(&mut reader),
-                Ok(Range::<Number>(0, None))
-            );
-            assert_eq!(reader.position(), 2);
-        }
-
-        #[test]
-        fn start_below_end() {
-            let mut reader = Reader::from("0-1");
-            assert_eq!(
-                NumberRange::parse(&mut reader),
-                Ok(Range::<Number>(0, Some(2)))
-            );
-            assert_eq!(reader.position(), 3);
-        }
-
-        #[test]
-        fn start_equals_end() {
-            let mut reader = Reader::from("0-0");
-            assert_eq!(
-                NumberRange::parse(&mut reader),
-                Ok(Range::<Number>(0, Some(1)))
-            );
-            assert_eq!(reader.position(), 3);
-        }
-
-        #[test]
-        fn start_above_end() {
-            let mut reader = Reader::from("1-0");
-            assert_eq!(
-                NumberRange::parse(&mut reader),
-                Err(Error {
-                    kind: ErrorKind::RangeStartOverEnd(String::from("1"), String::from("0")),
-                    range: 0..3,
-                })
-            );
-            assert_eq!(reader.position(), 3);
-        }
-
-        #[test]
-        fn start_with_length() {
-            let mut reader = Reader::from("0+1");
-            assert_eq!(
-                NumberRange::parse(&mut reader),
-                Err(Error {
-                    kind: ErrorKind::ExpectedRangeDelimiter(Some(Char::Raw('+'))),
-                    range: 1..2
-                })
-            );
-            assert_eq!(reader.position(), 2);
-        }
-
-        #[test]
-        fn no_delimiter() {
-            let mut reader = Reader::from("1");
-            assert_eq!(
-                NumberRange::parse(&mut reader),
-                Err(Error {
-                    kind: ErrorKind::ExpectedRangeDelimiter(None),
-                    range: 1..1
-                })
-            );
-            assert_eq!(reader.position(), 1);
-        }
-
-        #[test]
-        fn no_delimiter_but_chars() {
-            let mut reader = Reader::from("1ab");
-            assert_eq!(
-                NumberRange::parse(&mut reader),
-                Err(Error {
-                    kind: ErrorKind::ExpectedRangeDelimiter(Some(Char::Raw('a'))),
-                    range: 1..2
-                })
-            );
-            assert_eq!(reader.position(), 2);
-        }
-    }
-
-    mod random {
-        use super::*;
-
-        #[test]
-        fn lowest() {
-            assert_eq!(Range::<Number>(0, Some(0)).random(), 0);
-        }
-
-        #[test]
-        fn highest() {
-            assert_eq!(
-                Range::<Number>(NumberValue::MAX, None).random(),
-                NumberValue::MAX
-            );
-        }
-
-        #[test]
-        fn lowest_to_highest() {
-            Range::<Number>(0, Some(NumberValue::MAX)).random(); // Should not overflow
-            Range::<Number>(1, Some(NumberValue::MAX)).random();
-            Range::<Number>(0, Some(NumberValue::MAX - 1)).random();
-        }
+    #[test_case(0, Some(NumberValue::MAX); "from 0 to max")] // Should not overflow
+    #[test_case(1, Some(NumberValue::MAX); "from 1 to max")]
+    #[test_case(0, Some(NumberValue::MAX - 1); "from 0 to max-1")]
+    fn random_uncertain(start: NumberValue, end: Option<NumberValue>) {
+        Range::<Number>(start, end).random();
     }
 }

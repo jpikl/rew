@@ -119,7 +119,7 @@ impl<T: RangeType> Range<T> {
     pub fn length(&self) -> Option<T::Value> {
         self.1.map(|end| {
             let start = self.start();
-            assert!(end >= start, "IndexRange start {} > end {}", start, end);
+            assert!(end >= start, "Range start {} >= end {}", start, end);
             end - start
         })
     }
@@ -128,33 +128,47 @@ impl<T: RangeType> Range<T> {
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use num_traits::{One, Zero};
+    use test_case::test_case;
 
-    pub fn start<T: RangeType>() {
-        let v_0 = T::Value::zero();
-        let v_1 = T::Value::one();
+    struct TestType;
+    type TestValue = u32;
 
-        assert_eq!(Range::<T>(v_0, None).start(), v_0);
-        assert_eq!(Range::<T>(v_1, None).start(), v_1);
+    impl RangeType for TestType {
+        const EMPTY_ALLOWED: bool = false;
+        const DELIMITER_REQUIRED: bool = false;
+        const LENGTH_DELIMITER_ALLOWED: bool = false;
+
+        type Value = TestValue;
+
+        fn shift(value: Self::Value) -> BaseResult<Self::Value> {
+            Ok(value)
+        }
     }
 
-    pub fn end<T: RangeType>() {
-        let v_0 = T::Value::zero();
-        let v_1 = T::Value::one();
-
-        assert_eq!(Range::<T>(v_0, None).end(), None);
-        assert_eq!(Range::<T>(v_0, Some(v_0)).end(), Some(v_0));
-        assert_eq!(Range::<T>(v_0, Some(v_1)).end(), Some(v_1));
+    #[test_case(0, None, 0; "from 0 to none")]
+    #[test_case(1, None, 1; "from 1 to none")]
+    #[test_case(0, Some(0), 0; "from 0 to 0")]
+    #[test_case(0, Some(1), 0; "from 0 to 1")]
+    #[test_case(1, Some(1), 1; "from 1 to 1")]
+    fn start(start: TestValue, end: Option<TestValue>, result: TestValue) {
+        assert_eq!(Range::<TestType>(start, end).start(), result);
     }
 
-    pub fn length<T: RangeType>() {
-        let v_0 = T::Value::zero();
-        let v_1 = T::Value::one();
+    #[test_case(0, None, None; "from 0 to none")]
+    #[test_case(1, None, None; "from 1 to none")]
+    #[test_case(0, Some(0), Some(0); "from 0 to 0")]
+    #[test_case(0, Some(1), Some(1); "from 0 to 1")]
+    #[test_case(1, Some(1), Some(1); "from 1 to 1")]
+    fn end(start: TestValue, end: Option<TestValue>, result: Option<TestValue>) {
+        assert_eq!(Range::<TestType>(start, end).end(), result);
+    }
 
-        assert_eq!(Range::<T>(v_0, None).length(), None);
-        assert_eq!(Range::<T>(v_1, None).length(), None);
-        assert_eq!(Range::<T>(v_0, Some(v_0)).length(), Some(v_0));
-        assert_eq!(Range::<T>(v_0, Some(v_1)).length(), Some(v_1));
-        assert_eq!(Range::<T>(v_1, Some(v_1)).length(), Some(v_0));
+    #[test_case(0, None, None; "from 0 to none")]
+    #[test_case(1, None, None; "from 1 to none")]
+    #[test_case(0, Some(0), Some(0); "from 0 to 0")]
+    #[test_case(0, Some(1), Some(1); "from 0 to 1")]
+    #[test_case(1, Some(1), Some(0); "from 1 to 1")]
+    fn length(start: TestValue, end: Option<TestValue>, result: Option<TestValue>) {
+        assert_eq!(Range::<TestType>(start, end).length(), result);
     }
 }
