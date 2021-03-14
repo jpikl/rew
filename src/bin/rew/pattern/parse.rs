@@ -11,16 +11,43 @@ pub struct Config {
     pub separator: Separator,
 }
 
+#[cfg(test)]
+impl Config {
+    pub fn fixture() -> Self {
+        use crate::pattern::symbols::{DEFAULT_ESCAPE, DEFAULT_SEPARATOR};
+        Self {
+            escape: DEFAULT_ESCAPE,
+            separator: Separator::String(String::from(DEFAULT_SEPARATOR)),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, Clone)]
 pub enum Separator {
     String(String),
     Regex(RegexHolder),
 }
 
+impl fmt::Display for Separator {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Separator::String(separator) => write!(formatter, "'{}'", escape_str(&separator)),
+            Separator::Regex(separator) => write!(formatter, "regular expression '{}'", separator),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct Parsed<T> {
     pub value: T,
     pub range: ByteRange,
+}
+
+#[cfg(test)]
+impl<T> From<T> for Parsed<T> {
+    fn from(value: T) -> Self {
+        Self { value, range: 0..0 }
+    }
 }
 
 pub type Result<T> = result::Result<T, Error>;
@@ -30,6 +57,20 @@ pub type BaseResult<T> = result::Result<T, ErrorKind>;
 pub struct Error {
     pub kind: ErrorKind,
     pub range: ByteRange,
+}
+
+impl error::Error for Error {}
+
+impl GetByteRange for Error {
+    fn range(&self) -> &ByteRange {
+        &self.range
+    }
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        write!(formatter, "Invalid pattern: {}", self.kind)
+    }
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -64,32 +105,9 @@ pub enum ErrorKind {
     UnterminatedEscapeSequence(char),
 }
 
-impl fmt::Display for Separator {
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Separator::String(separator) => write!(formatter, "'{}'", escape_str(&separator)),
-            Separator::Regex(separator) => write!(formatter, "regular expression '{}'", separator),
-        }
-    }
-}
-
-impl error::Error for Error {}
-
-impl GetByteRange for Error {
-    fn range(&self) -> &ByteRange {
-        &self.range
-    }
-}
-
 impl From<Infallible> for ErrorKind {
     fn from(_: Infallible) -> Self {
         unreachable!("Infallible to parse::ErrorKind conversion should never happen");
-    }
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(formatter, "Invalid pattern: {}", self.kind)
     }
 }
 
@@ -209,26 +227,9 @@ impl fmt::Display for ErrorKind {
 }
 
 #[cfg(test)]
-impl Config {
-    pub fn fixture() -> Self {
-        use crate::pattern::symbols::{DEFAULT_ESCAPE, DEFAULT_SEPARATOR};
-        Self {
-            escape: DEFAULT_ESCAPE,
-            separator: Separator::String(String::from(DEFAULT_SEPARATOR)),
-        }
-    }
-}
-
-#[cfg(test)]
-impl<T> From<T> for Parsed<T> {
-    fn from(value: T) -> Self {
-        Self { value, range: 0..0 }
-    }
-}
-
-#[cfg(test)]
 mod tests {
     use super::*;
+    use test_case::test_case;
 
     mod separator_display {
         use crate::pattern::parse::Separator;
@@ -276,257 +277,157 @@ mod tests {
         }
     }
 
-    mod error_kind_display {
-        use super::*;
-
-        #[test]
-        fn expected_column_separator() {
-            assert_eq!(
-                ErrorKind::ExpectedColumnSeparator.to_string(),
-                "Expected column separator"
-            );
-        }
-
-        #[test]
-        fn expected_filter() {
-            assert_eq!(
-                ErrorKind::ExpectedFilter.to_string(),
-                "Expected filter after '|'"
-            );
-        }
-
-        #[test]
-        fn expected_number() {
-            assert_eq!(ErrorKind::ExpectedNumber.to_string(), "Expected number");
-        }
-
-        #[test]
-        fn expected_filter_or_expr_end() {
-            assert_eq!(
-                ErrorKind::ExpectedFilterOrExprEnd.to_string(),
-                "Expected filter or closing '}'"
-            );
-        }
-
-        #[test]
-        fn expected_pipe_or_expr_end() {
-            assert_eq!(
-                ErrorKind::ExpectedPipeOrExprEnd.to_string(),
-                "Expected '|' or closing '}'"
-            );
-        }
-
-        #[test]
-        fn expected_range() {
-            assert_eq!(
-                ErrorKind::ExpectedRange.to_string(),
-                "Filter requires range 'A-B' or 'A+B' as a parameter"
-            );
-        }
-
-        #[test]
-        fn expected_range_delimiter() {
-            assert_eq!(
-                ErrorKind::ExpectedRangeDelimiter(None).to_string(),
-                "Expected range delimiter '-'"
-            );
-            assert_eq!(
-                ErrorKind::ExpectedRangeDelimiter(Some(Char::Raw('x'))).to_string(),
-                "Expected range delimiter '-' but got 'x'"
-            );
-            assert_eq!(
-                ErrorKind::ExpectedRangeDelimiter(Some(Char::Escaped('x', ['%', 'y']))).to_string(),
-                "Expected range delimiter '-' but got 'x' (escape sequence '%y')"
-            );
-        }
-
-        #[test]
-        fn expected_range_length() {
-            assert_eq!(
-                ErrorKind::ExpectedRangeLength.to_string(),
-                "Expected range length after '+'"
-            );
-        }
-
-        #[test]
-        fn expected_regex() {
-            assert_eq!(
-                ErrorKind::ExpectedRegex.to_string(),
-                "Filter requires regular expression as a parameter"
-            );
-        }
-
-        #[test]
-        fn expected_repetition() {
-            assert_eq!(
-                ErrorKind::ExpectedRepetition.to_string(),
-                "Filter requires repetition 'N:V' as a parameter"
-            );
-        }
-
-        #[test]
-        fn expected_substitution() {
-            assert_eq!(
-                ErrorKind::ExpectedSubstitution.to_string(),
-                "Filter requires substitution ':A:B' as a parameter"
-            );
-        }
-
-        #[test]
-        fn expected_switch() {
-            assert_eq!(
-                ErrorKind::ExpectedSwitch.to_string(),
-                "Filter requires switch ':X1:Y1:...:Xn:Yn:D' as a parameter"
-            );
-        }
-
-        #[test]
-        fn expr_start_inside_expr() {
-            assert_eq!(
-                ErrorKind::ExprStartInsideExpr.to_string(),
-                "Unescaped '{' inside expression"
-            );
-        }
-
-        #[test]
-        fn index_zero() {
-            assert_eq!(
-                ErrorKind::IndexZero.to_string(),
-                "Indices start from 1, not 0"
-            );
-        }
-
-        #[test]
-        fn integer_overflow() {
-            assert_eq!(
-                ErrorKind::IntegerOverflow(String::from("255")).to_string(),
-                "Cannot parse value greater than 255"
-            );
-        }
-
-        #[test]
-        fn padding_prefix_invalid() {
-            assert_eq!(
-                ErrorKind::PaddingPrefixInvalid('<', None).to_string(),
-                "Expected '<' prefix or number"
-            );
-            assert_eq!(
-                ErrorKind::PaddingPrefixInvalid('<', Some(Char::Raw('x'))).to_string(),
-                "Expected '<' prefix or number but got 'x'"
-            );
-            assert_eq!(
-                ErrorKind::PaddingPrefixInvalid('<', Some(Char::Escaped('x', ['%', 'y'])))
-                    .to_string(),
-                "Expected '<' prefix or number but got 'x' (escape sequence '%y')"
-            );
-        }
-
-        #[test]
-        fn pipe_outside_expr() {
-            assert_eq!(
-                ErrorKind::PipeOutsideExpr.to_string(),
-                "Unescaped '|' outside expression"
-            );
-        }
-
-        #[test]
-        fn range_invalid() {
-            assert_eq!(
-                ErrorKind::RangeInvalid(String::from("abc")).to_string(),
-                "Invalid range 'abc'"
-            );
-        }
-
-        #[test]
-        fn range_start_over_end() {
-            assert_eq!(
-                ErrorKind::RangeStartOverEnd(String::from("2"), String::from("1")).to_string(),
-                "Range start 2 is greater than end 1"
-            );
-        }
-
-        #[test]
-        fn regex_invalid() {
-            assert_eq!(
-                ErrorKind::RegexInvalid(AnyString::from("abc")).to_string(),
-                "Invalid regular expression: abc"
-            );
-        }
-
-        #[test]
-        fn repetition_without_delimiter() {
-            assert_eq!(
-                ErrorKind::RepetitionWithoutDelimiter.to_string(),
-                "Repetition is missing delimiter after number"
-            );
-        }
-
-        #[test]
-        fn substitution_without_target() {
-            assert_eq!(
-                ErrorKind::SubstitutionWithoutTarget(Char::Raw('_')).to_string(),
-                "Substitution is missing value after delimiter '_'"
-            );
-            assert_eq!(
-                ErrorKind::SubstitutionWithoutTarget(Char::Escaped('|', ['%', '|'])).to_string(),
-                "Substitution is missing value after delimiter '|' (escape sequence '%|')"
-            );
-        }
-
-        #[test]
-        fn swith_without_matcher() {
-            assert_eq!(
-                ErrorKind::SwitchWithoutMatcher(Char::Raw('_'), 0).to_string(),
-                "Switch is missing value after #1 delimiter '_'"
-            );
-            assert_eq!(
-                ErrorKind::SwitchWithoutMatcher(Char::Escaped('|', ['%', '|']), 1).to_string(),
-                "Switch is missing value after #2 delimiter '|' (escape sequence '%|')"
-            );
-        }
-
-        #[test]
-        fn unknown_escape_sequence() {
-            assert_eq!(
-                ErrorKind::UnknownEscapeSequence(['%', 'x']).to_string(),
-                "Unknown escape sequence '%x'"
-            );
-        }
-
-        #[test]
-        fn unknown_filter() {
-            assert_eq!(
-                ErrorKind::UnknownFilter(Char::Raw('x')).to_string(),
-                "Unknown filter 'x'"
-            );
-            assert_eq!(
-                ErrorKind::UnknownFilter(Char::Escaped('x', ['%', 'y'])).to_string(),
-                "Unknown filter 'x' (escape sequence '%y')"
-            );
-        }
-
-        #[test]
-        fn unmatched_exprt_end() {
-            assert_eq!(
-                ErrorKind::UnmatchedExprEnd.to_string(),
-                "No matching '{' before expression end"
-            );
-        }
-
-        #[test]
-        fn unmatched_exprt_start() {
-            assert_eq!(
-                ErrorKind::UnmatchedExprStart.to_string(),
-                "No matching '}' after expression start"
-            );
-        }
-
-        #[test]
-        fn unterminated_escape_sequence() {
-            assert_eq!(
-                ErrorKind::UnterminatedEscapeSequence('%').to_string(),
-                "Unterminated escape sequence '%'"
-            );
-        }
+    #[test_case(
+        ErrorKind::ExpectedColumnSeparator,
+        "Expected column separator";
+        "expected column separator"
+    )]
+    #[test_case(
+        ErrorKind::ExpectedFilter,
+        "Expected filter after '|'";
+        "expected filter"
+    )]
+    #[test_case(
+        ErrorKind::ExpectedNumber,
+        "Expected number";
+        "expected number"
+    )]
+    #[test_case(
+        ErrorKind::ExpectedFilterOrExprEnd,
+        "Expected filter or closing '}'";
+        "expected filter or expr end"
+    )]
+    #[test_case(
+        ErrorKind::ExpectedPipeOrExprEnd,
+        "Expected '|' or closing '}'";
+        "expected pipe or expr end"
+    )]
+    #[test_case(
+        ErrorKind::ExpectedRange,
+        "Filter requires range 'A-B' or 'A+B' as a parameter";
+        "expected range"
+    )]
+    #[test_case(
+        ErrorKind::ExpectedRangeDelimiter(None),
+        "Expected range delimiter '-'";
+        "expected delimiter got none"
+    )]
+    #[test_case(
+        ErrorKind::ExpectedRangeDelimiter(Some(Char::Raw('x'))),
+        "Expected range delimiter '-' but got 'x'";
+        "expected delimiter got invalid"
+    )]
+    #[test_case(
+        ErrorKind::ExpectedRangeLength,
+        "Expected range length after '+'";
+        "expected range length"
+    )]
+    #[test_case(
+        ErrorKind::ExpectedRegex,
+        "Filter requires regular expression as a parameter";
+        "expected regex"
+    )]
+    #[test_case(
+        ErrorKind::ExpectedRepetition,
+        "Filter requires repetition 'N:V' as a parameter";
+        "expected repetition"
+    )]
+    #[test_case(
+        ErrorKind::ExpectedSubstitution,
+        "Filter requires substitution ':A:B' as a parameter";
+        "expected substitution"
+    )]
+    #[test_case(
+        ErrorKind::ExpectedSwitch,
+        "Filter requires switch ':X1:Y1:...:Xn:Yn:D' as a parameter";
+        "expected switch"
+    )]
+    #[test_case(
+        ErrorKind::ExprStartInsideExpr,
+        "Unescaped '{' inside expression";
+        "expr start inside expr"
+    )]
+    #[test_case(
+        ErrorKind::IndexZero,
+        "Indices start from 1, not 0";
+        "index zero"
+    )]
+    #[test_case(
+        ErrorKind::IntegerOverflow(String::from("255")),
+        "Cannot parse value greater than 255";
+        "integer overflow"
+    )]
+    #[test_case(
+        ErrorKind::PaddingPrefixInvalid('<', None),
+        "Expected '<' prefix or number";
+        "padding prefix missing"
+    )]
+    #[test_case(
+        ErrorKind::PaddingPrefixInvalid('<', Some(Char::Raw('x'))),
+        "Expected '<' prefix or number but got 'x'";
+        "padding prefix invalid"
+    )]
+    #[test_case(
+        ErrorKind::PipeOutsideExpr,
+        "Unescaped '|' outside expression";
+        "pipe outside expr"
+    )]
+    #[test_case(
+        ErrorKind::RangeInvalid(String::from("abc")),
+        "Invalid range 'abc'";
+        "range invalid"
+    )]
+    #[test_case(
+        ErrorKind::RangeStartOverEnd(String::from("2"), String::from("1")),
+        "Range start 2 is greater than end 1";
+        "range start over end"
+    )]
+    #[test_case(
+        ErrorKind::RegexInvalid(AnyString::from("abc")),
+        "Invalid regular expression: abc";
+        "regex invalid"
+    )]
+    #[test_case(
+        ErrorKind::RepetitionWithoutDelimiter,
+        "Repetition is missing delimiter after number";
+        "repetition without delimiter"
+    )]
+    #[test_case(
+        ErrorKind::SubstitutionWithoutTarget(Char::Raw('_')),
+        "Substitution is missing value after delimiter '_'";
+        "substitution without target"
+    )]
+    #[test_case(
+        ErrorKind::SwitchWithoutMatcher(Char::Raw('_'), 0),
+        "Switch is missing value after #1 delimiter '_'";
+        "switch without matcher"
+    )]
+    #[test_case(
+        ErrorKind::UnknownEscapeSequence(['%', 'x']),
+        "Unknown escape sequence '%x'";
+        "unknown escape sequence"
+    )]
+    #[test_case(
+        ErrorKind::UnknownFilter(Char::Raw('x')),
+        "Unknown filter 'x'";
+        "unknown filter"
+    )]
+    #[test_case(
+        ErrorKind::UnmatchedExprEnd,
+        "No matching '{' before expression end";
+        "unmatched expr end"
+    )]
+    #[test_case(
+        ErrorKind::UnmatchedExprStart,
+        "No matching '}' after expression start";
+        "unmatched expr start"
+    )]
+    #[test_case(
+        ErrorKind::UnterminatedEscapeSequence('%'),
+        "Unterminated escape sequence '%'";
+        "unterminated escape sequence"
+    )]
+    fn error_kind_display(kind: ErrorKind, result: &str) {
+        assert_eq!(kind.to_string(), result);
     }
 }

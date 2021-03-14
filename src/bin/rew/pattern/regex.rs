@@ -50,6 +50,13 @@ impl RegexHolder {
     }
 }
 
+#[cfg(test)]
+impl From<&str> for RegexHolder {
+    fn from(value: &str) -> Self {
+        Self(Regex::new(value).unwrap())
+    }
+}
+
 impl TryFrom<String> for RegexHolder {
     type Error = ErrorKind;
 
@@ -78,13 +85,6 @@ impl PartialEq for RegexHolder {
 impl fmt::Display for RegexHolder {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         self.0.fmt(formatter)
-    }
-}
-
-#[cfg(test)]
-impl From<&str> for RegexHolder {
-    fn from(value: &str) -> Self {
-        Self(Regex::new(value).unwrap())
     }
 }
 

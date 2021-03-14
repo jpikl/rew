@@ -54,12 +54,6 @@ mod tests {
     use crate::utils::ByteRange;
     use test_case::test_case;
 
-    #[test_case(1, None, "[1, 2^64)"; "open")]
-    #[test_case(1, Some(2), "[1, 2]"; "closed")]
-    fn display(start: NumberValue, end: Option<NumberValue>, result: &str) {
-        assert_eq!(Range::<Number>(start, end).to_string(), result);
-    }
-
     #[test_case("-", ErrorKind::RangeInvalid(String::from("-")), 0..1; "invalid")]
     #[test_case("2-1", ErrorKind::RangeStartOverEnd(String::from("2"), String::from("1")), 0..3; "start above end")]
     #[test_case("0+1", ErrorKind::ExpectedRangeDelimiter(Some(Char::Raw('+'))), 1..2; "start with length")]
@@ -94,5 +88,11 @@ mod tests {
     #[test_case(0, Some(NumberValue::MAX - 1); "from 0 to max-1")]
     fn random_uncertain(start: NumberValue, end: Option<NumberValue>) {
         Range::<Number>(start, end).random();
+    }
+
+    #[test_case(1, None, "[1, 2^64)"; "open")]
+    #[test_case(1, Some(2), "[1, 2]"; "closed")]
+    fn display(start: NumberValue, end: Option<NumberValue>, result: &str) {
+        assert_eq!(Range::<Number>(start, end).to_string(), result);
     }
 }

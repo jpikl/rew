@@ -1,10 +1,9 @@
-use std::fmt;
-
 use crate::pattern::char::Char;
 use crate::pattern::integer::parse_integer;
 use crate::pattern::parse::{BaseResult, Error, ErrorKind, Result};
 use crate::pattern::range::{Range, RangeType};
 use crate::pattern::reader::Reader;
+use std::fmt;
 
 #[derive(PartialEq, Debug)]
 pub struct Index;
@@ -129,12 +128,6 @@ mod tests {
         use super::*;
         use test_case::test_case;
 
-        #[test_case(1, None, "2.."; "open")]
-        #[test_case(1, Some(3), "2..3"; "closed")]
-        fn display(start: IndexValue, end: Option<IndexValue>, result: &str) {
-            assert_eq!(Range::<Index>(start, end).to_string(), result);
-        }
-
         #[test_case("", ErrorKind::ExpectedRange, 0..0; "empty")]
         #[test_case("-", ErrorKind::RangeInvalid(String::from("-")), 0..1; "invalid")]
         #[test_case("0-", ErrorKind::IndexZero, 0..1; "zero start no end")]
@@ -208,6 +201,12 @@ mod tests {
                 Range::<Index>(start, end).substr_back(String::from(input)),
                 output
             );
+        }
+
+        #[test_case(1, None, "2.."; "open")]
+        #[test_case(1, Some(3), "2..3"; "closed")]
+        fn display(start: IndexValue, end: Option<IndexValue>, result: &str) {
+            assert_eq!(Range::<Index>(start, end).to_string(), result);
         }
     }
 }
