@@ -124,87 +124,33 @@ mod tests {
 
     mod empty {
         use super::*;
+        use test_case::test_case;
 
-        mod parse {
-            use super::*;
-
-            #[test]
-            fn empty() {
-                let mut reader = Reader::from("");
-                assert_eq!(
-                    EmptySubstitution::parse(&mut reader),
-                    Ok(EmptySubstitution {
-                        target: Empty,
-                        replacement: String::new()
-                    })
-                );
-                assert_eq!(reader.position(), 0);
-            }
-
-            #[test]
-            fn nonempty() {
-                let mut reader = Reader::from("abc");
-                assert_eq!(
-                    EmptySubstitution::parse(&mut reader),
-                    Ok(EmptySubstitution {
-                        target: Empty,
-                        replacement: String::from("abc")
-                    })
-                );
-                assert_eq!(reader.position(), 3);
-            }
+        #[test_case("", ""; "empty")]
+        #[test_case("abc", "abc"; "nonempty")]
+        fn parse(input: &str, replacement: &str) {
+            assert_eq!(
+                EmptySubstitution::parse(&mut Reader::from(input)),
+                Ok(EmptySubstitution {
+                    target: Empty,
+                    replacement: String::from(replacement)
+                })
+            );
         }
 
-        mod replace {
-            use super::*;
-
-            #[test]
-            fn empty_with_empty() {
-                assert_eq!(
-                    Substitution {
-                        target: Empty,
-                        replacement: String::new()
-                    }
-                    .replace(String::new()),
-                    String::new()
-                );
-            }
-
-            #[test]
-            fn empty_with_nonempty() {
-                assert_eq!(
-                    Substitution {
-                        target: Empty,
-                        replacement: String::from("def")
-                    }
-                    .replace(String::new()),
-                    String::from("def")
-                );
-            }
-
-            #[test]
-            fn nonempty_with_empty() {
-                assert_eq!(
-                    Substitution {
-                        target: Empty,
-                        replacement: String::new()
-                    }
-                    .replace(String::from("abc")),
-                    String::from("abc")
-                );
-            }
-
-            #[test]
-            fn nonempty_with_nonempty() {
-                assert_eq!(
-                    Substitution {
-                        target: Empty,
-                        replacement: String::from("def")
-                    }
-                    .replace(String::from("abc")),
-                    String::from("abc")
-                );
-            }
+        #[test_case("", "", ""; "empty with empty")]
+        #[test_case("", "def", "def"; "empty with nonempty")]
+        #[test_case("abc", "", "abc"; "nonempty with empty")]
+        #[test_case("abc", "def", "abc"; "nonempty with nonempty")]
+        fn replace(input: &str, replacement: &str, output: &str) {
+            assert_eq!(
+                Substitution {
+                    target: Empty,
+                    replacement: String::from(replacement)
+                }
+                .replace(String::from(input)),
+                output
+            );
         }
 
         #[test]
@@ -222,291 +168,68 @@ mod tests {
 
     mod string {
         use super::*;
+        use std::ops::Range;
+        use test_case::test_case;
 
-        mod parse {
-            use super::*;
-
-            #[test]
-            fn empty() {
-                let mut reader = Reader::from("");
-                assert_eq!(
-                    StringSubstitution::parse(&mut reader),
-                    Err(Error {
-                        kind: ErrorKind::ExpectedSubstitution,
-                        range: 0..0,
-                    })
-                );
-                assert_eq!(reader.position(), 0);
-            }
-
-            #[test]
-            fn no_target() {
-                let mut reader = Reader::from("/");
-                assert_eq!(
-                    StringSubstitution::parse(&mut reader),
-                    Err(Error {
-                        kind: ErrorKind::SubstitutionWithoutTarget(Char::Raw('/')),
-                        range: 1..1,
-                    })
-                );
-                assert_eq!(reader.position(), 1);
-            }
-
-            #[test]
-            fn empty_target() {
-                let mut reader = Reader::from("//");
-                assert_eq!(
-                    StringSubstitution::parse(&mut reader),
-                    Err(Error {
-                        kind: ErrorKind::SubstitutionWithoutTarget(Char::Raw('/')),
-                        range: 1..1,
-                    })
-                );
-                assert_eq!(reader.position(), 2);
-            }
-
-            #[test]
-            fn short_target_no_replacement() {
-                let mut reader = Reader::from("/a");
-                assert_eq!(
-                    StringSubstitution::parse(&mut reader),
-                    Ok(Substitution {
-                        target: String::from("a"),
-                        replacement: String::new(),
-                    })
-                );
-                assert_eq!(reader.position(), 2)
-            }
-
-            #[test]
-            fn long_target_no_replacement() {
-                let mut reader = Reader::from("/abc");
-                assert_eq!(
-                    StringSubstitution::parse(&mut reader),
-                    Ok(Substitution {
-                        target: String::from("abc"),
-                        replacement: String::new(),
-                    })
-                );
-                assert_eq!(reader.position(), 4);
-            }
-
-            #[test]
-            fn short_target_empty_replacement() {
-                let mut reader = Reader::from("/a/");
-                assert_eq!(
-                    StringSubstitution::parse(&mut reader),
-                    Ok(Substitution {
-                        target: String::from("a"),
-                        replacement: String::new(),
-                    })
-                );
-                assert_eq!(reader.position(), 3);
-            }
-
-            #[test]
-            fn long_target_empty_replacement() {
-                let mut reader = Reader::from("/abc/");
-                assert_eq!(
-                    StringSubstitution::parse(&mut reader),
-                    Ok(Substitution {
-                        target: String::from("abc"),
-                        replacement: String::new(),
-                    })
-                );
-                assert_eq!(reader.position(), 5);
-            }
-
-            #[test]
-            fn short_target_short_replacement() {
-                let mut reader = Reader::from("/a/d");
-                assert_eq!(
-                    StringSubstitution::parse(&mut reader),
-                    Ok(Substitution {
-                        target: String::from("a"),
-                        replacement: String::from("d"),
-                    })
-                );
-                assert_eq!(reader.position(), 4);
-            }
-
-            #[test]
-            fn long_target_long_replacement() {
-                let mut reader = Reader::from("/abc/def");
-                assert_eq!(
-                    StringSubstitution::parse(&mut reader),
-                    Ok(Substitution {
-                        target: String::from("abc"),
-                        replacement: String::from("def"),
-                    })
-                );
-                assert_eq!(reader.position(), 8);
-            }
-
-            #[test]
-            fn long_target_long_replacement_containing_delimiters() {
-                let mut reader = Reader::from("/abc/d//e/");
-                assert_eq!(
-                    StringSubstitution::parse(&mut reader),
-                    Ok(Substitution {
-                        target: String::from("abc"),
-                        replacement: String::from("d//e/"),
-                    })
-                );
-                assert_eq!(reader.position(), 10);
-            }
+        #[test_case("", ErrorKind::ExpectedSubstitution, 0..0; "empty")]
+        #[test_case("/", ErrorKind::SubstitutionWithoutTarget(Char::Raw('/')), 1..1; "no target")]
+        #[test_case("//", ErrorKind::SubstitutionWithoutTarget(Char::Raw('/')), 1..1; "empty target")]
+        fn parse_err(input: &str, kind: ErrorKind, range: Range<usize>) {
+            assert_eq!(
+                StringSubstitution::parse(&mut Reader::from(input)),
+                Err(Error { kind, range })
+            );
         }
 
-        mod replace_first {
-            use super::*;
-
-            #[test]
-            fn empty_with_empty() {
-                assert_eq!(
-                    Substitution {
-                        target: String::from("ab"),
-                        replacement: String::new(),
-                    }
-                    .replace_first(""),
-                    String::new()
-                );
-            }
-
-            #[test]
-            fn empty_with_nonempty() {
-                assert_eq!(
-                    Substitution {
-                        target: String::from("ab"),
-                        replacement: String::from("x"),
-                    }
-                    .replace_first(""),
-                    String::new()
-                );
-            }
-
-            #[test]
-            fn none_with_empty() {
-                assert_eq!(
-                    Substitution {
-                        target: String::from("ab"),
-                        replacement: String::new(),
-                    }
-                    .replace_first("cd"),
-                    String::from("cd")
-                );
-            }
-
-            #[test]
-            fn none_with_nonempty() {
-                assert_eq!(
-                    Substitution {
-                        target: String::from("ab"),
-                        replacement: String::from("x"),
-                    }
-                    .replace_first("cd"),
-                    String::from("cd")
-                );
-            }
-
-            #[test]
-            fn first_with_empty() {
-                assert_eq!(
-                    Substitution {
-                        target: String::from("ab"),
-                        replacement: String::new(),
-                    }
-                    .replace_first("abcd_abcd"),
-                    String::from("cd_abcd")
-                );
-            }
-
-            #[test]
-            fn first_with_nonempty() {
-                assert_eq!(
-                    Substitution {
-                        target: String::from("ab"),
-                        replacement: String::from("x"),
-                    }
-                    .replace_first("abcd_abcd"),
-                    String::from("xcd_abcd")
-                );
-            }
+        #[test_case("/a", "a", ""; "short target no replacement")]
+        #[test_case("/abc", "abc", ""; "long target no replacement")]
+        #[test_case("/a/", "a", ""; "short target empty replacement")]
+        #[test_case("/abc/", "abc", ""; "long target empty replacement")]
+        #[test_case("/a/d", "a", "d"; "short target short replacement")]
+        #[test_case("/abc/def", "abc", "def"; "long target long replacement")]
+        #[test_case("/abc/d//e/", "abc", "d//e/"; "long target long replacement containing delimiter")]
+        fn parse_ok(input: &str, target: &str, replacement: &str) {
+            assert_eq!(
+                StringSubstitution::parse(&mut Reader::from(input)),
+                Ok(Substitution {
+                    target: String::from(target),
+                    replacement: String::from(replacement),
+                })
+            );
         }
 
-        mod replace_all {
-            use super::*;
+        #[test_case("", "ab", "", ""; "empty with empty")]
+        #[test_case("", "ab", "x", ""; "empty with nonempty")]
+        #[test_case("cd", "ab", "", "cd"; "none with empty")]
+        #[test_case("cd", "ab", "x", "cd"; "none with nonempty")]
+        #[test_case("abcd_abcd", "ab", "", "cd_abcd"; "first with empty")]
+        #[test_case("abcd_abcd", "ab", "x", "xcd_abcd"; "first with nonempty")]
+        fn replace_first(input: &str, target: &str, replacement: &str, output: &str) {
+            assert_eq!(
+                Substitution {
+                    target: String::from(target),
+                    replacement: String::from(replacement),
+                }
+                .replace_first(input),
+                output
+            );
+        }
 
-            #[test]
-            fn empty_with_empty() {
-                assert_eq!(
-                    Substitution {
-                        target: String::from("ab"),
-                        replacement: String::new(),
-                    }
-                    .replace_all(""),
-                    String::new()
-                );
-            }
-
-            #[test]
-            fn empty_with_nonempty() {
-                assert_eq!(
-                    Substitution {
-                        target: String::from("ab"),
-                        replacement: String::from("x"),
-                    }
-                    .replace_all(""),
-                    String::new()
-                );
-            }
-
-            #[test]
-            fn none_with_empty() {
-                assert_eq!(
-                    Substitution {
-                        target: String::from("ab"),
-                        replacement: String::new(),
-                    }
-                    .replace_all("cd"),
-                    String::from("cd")
-                );
-            }
-
-            #[test]
-            fn none_with_nonempty() {
-                assert_eq!(
-                    Substitution {
-                        target: String::from("ab"),
-                        replacement: String::from("x"),
-                    }
-                    .replace_all("cd"),
-                    String::from("cd")
-                );
-            }
-
-            #[test]
-            fn all_with_empty() {
-                assert_eq!(
-                    Substitution {
-                        target: String::from("ab"),
-                        replacement: String::new(),
-                    }
-                    .replace_all("abcd_abcd"),
-                    String::from("cd_cd")
-                );
-            }
-
-            #[test]
-            fn all_with_nonempty() {
-                assert_eq!(
-                    Substitution {
-                        target: String::from("ab"),
-                        replacement: String::from("x"),
-                    }
-                    .replace_all("abcd_abcd"),
-                    String::from("xcd_xcd")
-                );
-            }
+        #[test_case("", "ab", "", ""; "empty with empty")]
+        #[test_case("", "ab", "x", ""; "empty with nonempty")]
+        #[test_case("cd", "ab", "", "cd"; "none with empty")]
+        #[test_case("cd", "ab", "x", "cd"; "none with nonempty")]
+        #[test_case("abcd_abcd", "ab", "", "cd_cd"; "all with empty")]
+        #[test_case("abcd_abcd", "ab", "x", "xcd_xcd"; "all with nonempty")]
+        fn replace_all(input: &str, target: &str, replacement: &str, output: &str) {
+            assert_eq!(
+                Substitution {
+                    target: String::from(target),
+                    replacement: String::from(replacement),
+                }
+                .replace_all(input),
+                output
+            );
         }
 
         #[test]
@@ -526,187 +249,66 @@ mod tests {
         extern crate regex;
         use super::*;
         use crate::utils::AnyString;
+        use std::ops::Range;
+        use test_case::test_case;
 
-        mod parse {
-            use super::*;
-
-            #[test]
-            fn valid() {
-                let mut reader = Reader::from("/\\d+/def");
-                assert_eq!(
-                    RegexSubstitution::parse(&mut reader),
-                    Ok(Substitution {
-                        target: RegexHolder::from("\\d+"),
-                        replacement: String::from("def"),
-                    })
-                );
-                assert_eq!(reader.position(), 8);
-            }
-
-            #[test]
-            fn invalid() {
-                let mut reader = Reader::from("/[0-9+/def");
-                assert_eq!(
-                    RegexSubstitution::parse(&mut reader),
-                    Err(Error {
-                        kind: ErrorKind::RegexInvalid(AnyString::any()),
-                        range: 1..6,
-                    })
-                );
-                assert_eq!(reader.position(), 7);
-            }
+        #[test_case("", ErrorKind::ExpectedSubstitution, 0..0; "empty")]
+        #[test_case("/", ErrorKind::SubstitutionWithoutTarget(Char::Raw('/')), 1..1; "no target")]
+        #[test_case("//", ErrorKind::SubstitutionWithoutTarget(Char::Raw('/')), 1..1; "empty target")]
+        #[test_case("/[0-9+/def", ErrorKind::RegexInvalid(AnyString::any()), 1..6; "invalid regex")]
+        fn parse_err(input: &str, kind: ErrorKind, range: Range<usize>) {
+            assert_eq!(
+                RegexSubstitution::parse(&mut Reader::from(input)),
+                Err(Error { kind, range })
+            );
         }
 
-        mod replace_first {
-            use super::*;
-
-            #[test]
-            fn empty_with_empty() {
-                assert_eq!(
-                    Substitution {
-                        target: RegexHolder::from("\\d+"),
-                        replacement: String::new()
-                    }
-                    .replace_first(""),
-                    String::new()
-                );
-            }
-
-            #[test]
-            fn empty_with_nonempty() {
-                assert_eq!(
-                    Substitution {
-                        target: RegexHolder::from("(\\d)(\\d+)"),
-                        replacement: String::from("_$2$1_")
-                    }
-                    .replace_first(""),
-                    String::new()
-                );
-            }
-
-            #[test]
-            fn none_with_empty() {
-                assert_eq!(
-                    Substitution {
-                        target: RegexHolder::from("\\d+"),
-                        replacement: String::new()
-                    }
-                    .replace_first(""),
-                    String::new()
-                );
-            }
-
-            #[test]
-            fn none_with_nonempty() {
-                assert_eq!(
-                    Substitution {
-                        target: RegexHolder::from("(\\d)(\\d+)"),
-                        replacement: String::from("_$2$1_")
-                    }
-                    .replace_first("abc"),
-                    String::from("abc")
-                );
-            }
-
-            #[test]
-            fn first_with_empty() {
-                assert_eq!(
-                    Substitution {
-                        target: RegexHolder::from("\\d+"),
-                        replacement: String::new()
-                    }
-                    .replace_first("abc123def456"),
-                    String::from("abcdef456")
-                );
-            }
-
-            #[test]
-            fn first_with_nonempty() {
-                assert_eq!(
-                    Substitution {
-                        target: RegexHolder::from("(\\d)(\\d+)"),
-                        replacement: String::from("_$2$1_")
-                    }
-                    .replace_first("abc123def456"),
-                    String::from("abc_231_def456")
-                );
-            }
+        #[test_case("/(\\d+)", "(\\d+)", ""; "no replacement")]
+        #[test_case("/(\\d+)/", "(\\d+)", ""; "empty replacement")]
+        #[test_case("/(\\d+)/_$1_", "(\\d+)", "_$1_"; "nonempty replacement")]
+        #[test_case("/(\\d+)//$1/", "(\\d+)", "/$1/"; "replacement containing delimiter")]
+        fn parse_ok(input: &str, target: &str, replacement: &str) {
+            assert_eq!(
+                RegexSubstitution::parse(&mut Reader::from(input)),
+                Ok(Substitution {
+                    target: RegexHolder::from(target),
+                    replacement: String::from(replacement),
+                })
+            );
         }
 
-        mod replace_all {
-            use super::*;
+        #[test_case("", "\\d+", "", ""; "empty with empty")]
+        #[test_case("", "(\\d)(\\d+)", "_$2$1_", ""; "empty with nonempty")]
+        #[test_case("abc", "\\d+", "", "abc"; "none with empty")]
+        #[test_case("abc", "(\\d)(\\d+)", "_$2$1_", "abc"; "none with nonempty")]
+        #[test_case("abc123def456", "\\d+", "", "abcdef456"; "first with empty")]
+        #[test_case("abc123def456", "(\\d)(\\d+)", "_$2$1_", "abc_231_def456"; "first with nonempty")]
+        fn replace_first(input: &str, target: &str, replacement: &str, output: &str) {
+            assert_eq!(
+                Substitution {
+                    target: RegexHolder::from(target),
+                    replacement: String::from(replacement),
+                }
+                .replace_first(input),
+                output
+            );
+        }
 
-            #[test]
-            fn empty_with_empty() {
-                assert_eq!(
-                    Substitution {
-                        target: RegexHolder::from("\\d+"),
-                        replacement: String::new()
-                    }
-                    .replace_all(""),
-                    String::new()
-                );
-            }
-
-            #[test]
-            fn empty_with_nonempty() {
-                assert_eq!(
-                    Substitution {
-                        target: RegexHolder::from("(\\d)(\\d+)"),
-                        replacement: String::from("_$2$1_")
-                    }
-                    .replace_all(""),
-                    String::new()
-                );
-            }
-
-            #[test]
-            fn none_with_empty() {
-                assert_eq!(
-                    Substitution {
-                        target: RegexHolder::from("\\d+"),
-                        replacement: String::new()
-                    }
-                    .replace_all("abc"),
-                    String::from("abc")
-                );
-            }
-
-            #[test]
-            fn none_with_nonempty() {
-                assert_eq!(
-                    Substitution {
-                        target: RegexHolder::from("(\\d)(\\d+)"),
-                        replacement: String::from("_$2$1_")
-                    }
-                    .replace_all("abc"),
-                    String::from("abc")
-                );
-            }
-
-            #[test]
-            fn all_with_empty() {
-                assert_eq!(
-                    Substitution {
-                        target: RegexHolder::from("\\d+"),
-                        replacement: String::new()
-                    }
-                    .replace_all("abc123def456"),
-                    String::from("abcdef")
-                );
-            }
-
-            #[test]
-            fn all_with_nonempty() {
-                assert_eq!(
-                    Substitution {
-                        target: RegexHolder::from("(\\d)(\\d+)"),
-                        replacement: String::from("_$2$1_")
-                    }
-                    .replace_all("abc123def456"),
-                    String::from("abc_231_def_564_")
-                );
-            }
+        #[test_case("", "\\d+", "", ""; "empty with empty")]
+        #[test_case("", "(\\d)(\\d+)", "_$2$1_", ""; "empty with nonempty")]
+        #[test_case("abc", "\\d+", "", "abc"; "none with empty")]
+        #[test_case("abc", "(\\d)(\\d+)", "_$2$1_", "abc"; "none with nonempty")]
+        #[test_case("abc123def456", "\\d+", "", "abcdef"; "all with empty")]
+        #[test_case("abc123def456", "(\\d)(\\d+)", "_$2$1_", "abc_231_def_564_"; "all with nonempty")]
+        fn replace_all(input: &str, target: &str, replacement: &str, output: &str) {
+            assert_eq!(
+                Substitution {
+                    target: RegexHolder::from(target),
+                    replacement: String::from(replacement),
+                }
+                .replace_all(input),
+                output
+            );
         }
 
         #[test]
