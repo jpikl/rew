@@ -48,126 +48,46 @@ mod tests {
     use super::*;
     use crate::pattern::parse::{Error, ErrorKind};
     use crate::pattern::reader::Reader;
+    use std::ops::Range;
+    use test_case::test_case;
 
-    mod parse {
-        use super::*;
-
-        #[test]
-        fn empty() {
-            let mut reader = Reader::from("");
-            assert_eq!(
-                Repetition::parse(&mut reader),
-                Err(Error {
-                    kind: ErrorKind::ExpectedRepetition,
-                    range: 0..0
-                })
-            );
-            assert_eq!(reader.position(), 0);
-        }
-
-        #[test]
-        fn invalid_count() {
-            let mut reader = Reader::from("ab");
-            assert_eq!(
-                Repetition::parse(&mut reader),
-                Err(Error {
-                    kind: ErrorKind::ExpectedNumber,
-                    range: 0..2
-                })
-            );
-            assert_eq!(reader.position(), 0);
-        }
-
-        #[test]
-        fn missing_delimiter() {
-            let mut reader = Reader::from("12");
-            assert_eq!(
-                Repetition::parse(&mut reader),
-                Err(Error {
-                    kind: ErrorKind::RepetitionWithoutDelimiter,
-                    range: 2..2
-                })
-            );
-            assert_eq!(reader.position(), 2);
-        }
-
-        #[test]
-        fn empty_value() {
-            let mut reader = Reader::from("12:");
-            assert_eq!(
-                Repetition::parse(&mut reader),
-                Ok(Repetition {
-                    count: 12,
-                    value: String::new()
-                })
-            );
-            assert_eq!(reader.position(), 3);
-        }
-
-        #[test]
-        fn nonempty_value() {
-            let mut reader = Reader::from("12:ab");
-            assert_eq!(
-                Repetition::parse(&mut reader),
-                Ok(Repetition {
-                    count: 12,
-                    value: String::from("ab")
-                })
-            );
-            assert_eq!(reader.position(), 5);
-        }
+    #[test_case("", ErrorKind::ExpectedRepetition, 0..0; "empty")]
+    #[test_case("ab", ErrorKind::ExpectedNumber, 0..2; "invalid count")]
+    #[test_case("12", ErrorKind::RepetitionWithoutDelimiter, 2..2; "missing delimiter")]
+    fn parse_err(input: &str, kind: ErrorKind, range: Range<usize>) {
+        assert_eq!(
+            Repetition::parse(&mut Reader::from(input)),
+            Err(Error { kind, range })
+        );
     }
 
-    mod expand {
-        use super::*;
+    #[test_case("12:", 12, ""; "empty value")]
+    #[test_case("12:ab", 12, "ab"; "nonempty value")]
+    fn parse_ok(input: &str, count: usize, value: &str) {
+        assert_eq!(
+            Repetition::parse(&mut Reader::from(input)),
+            Ok(Repetition {
+                count,
+                value: String::from(value)
+            })
+        );
+    }
 
-        #[test]
-        fn empty_zero_times() {
-            assert_eq!(
-                Repetition {
-                    count: 0,
-                    value: String::new()
-                }
-                .expand(),
-                String::new()
-            );
-        }
-
-        #[test]
-        fn empty_multiple_times() {
-            assert_eq!(
-                Repetition {
-                    count: 2,
-                    value: String::new()
-                }
-                .expand(),
-                String::new()
-            );
-        }
-
-        #[test]
-        fn nonempty_zero_times() {
-            assert_eq!(
-                Repetition {
-                    count: 0,
-                    value: String::from("ab")
-                }
-                .expand(),
-                String::new()
-            );
-        }
-
-        #[test]
-        fn nonempty_multiple_times() {
-            assert_eq!(
-                Repetition {
-                    count: 2,
-                    value: String::from("ab")
-                }
-                .expand(),
-                String::from("abab")
-            );
-        }
+    #[test_case(0, "", ""; "empty zero times")]
+    #[test_case(1, "", ""; "empty one time")]
+    #[test_case(2, "", ""; "empty multiple times")]
+    #[test_case(0, "ab", ""; "nonempty zero times")]
+    #[test_case(1, "ab", "ab"; "nonempty one time")]
+    #[test_case(2, "ab", "abab"; "nonempty multiple times")]
+    fn expand(count: usize, value: &str, output: &str) {
+        assert_eq!(
+            Repetition {
+                count,
+                value: String::from(value)
+            }
+            .expand(),
+            output
+        )
     }
 
     #[test]
