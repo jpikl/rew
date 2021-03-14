@@ -2,9 +2,8 @@ use crate::pattern::char::{Char, EscapeSequence};
 use crate::pattern::escape::{escape_char, escape_str};
 use crate::pattern::regex::RegexHolder;
 use crate::pattern::symbols::{EXPR_END, EXPR_START, LENGTH_DELIMITER, PIPE, RANGE_DELIMITER};
-use crate::utils::{AnyString, HasRange};
+use crate::utils::{AnyString, ByteRange, GetByteRange};
 use std::convert::Infallible;
-use std::ops::Range;
 use std::{error, fmt, result};
 
 pub struct Config {
@@ -21,7 +20,7 @@ pub enum Separator {
 #[derive(Debug, PartialEq)]
 pub struct Parsed<T> {
     pub value: T,
-    pub range: Range<usize>,
+    pub range: ByteRange,
 }
 
 pub type Result<T> = result::Result<T, Error>;
@@ -30,7 +29,7 @@ pub type BaseResult<T> = result::Result<T, ErrorKind>;
 #[derive(Debug, PartialEq)]
 pub struct Error {
     pub kind: ErrorKind,
-    pub range: Range<usize>,
+    pub range: ByteRange,
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -76,8 +75,8 @@ impl fmt::Display for Separator {
 
 impl error::Error for Error {}
 
-impl HasRange for Error {
-    fn range(&self) -> &Range<usize> {
+impl GetByteRange for Error {
+    fn range(&self) -> &ByteRange {
         &self.range
     }
 }

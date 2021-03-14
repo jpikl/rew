@@ -1,6 +1,5 @@
 use crate::pattern::filter::Filter;
-use crate::utils::{AnyString, HasRange};
-use std::ops::Range;
+use crate::utils::{AnyString, ByteRange, GetByteRange};
 use std::path::Path;
 use std::{error, fmt, result};
 
@@ -44,13 +43,13 @@ pub struct Error<'a> {
     pub kind: ErrorKind,
     pub value: String,
     pub cause: &'a Filter,
-    pub range: &'a Range<usize>,
+    pub range: &'a ByteRange,
 }
 
 impl<'a> error::Error for Error<'a> {}
 
-impl<'a> HasRange for Error<'a> {
-    fn range(&self) -> &Range<usize> {
+impl<'a> GetByteRange for Error<'a> {
+    fn range(&self) -> &ByteRange {
         self.range
     }
 }

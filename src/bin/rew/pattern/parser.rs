@@ -4,8 +4,8 @@ use crate::pattern::filter::Filter;
 use crate::pattern::lexer::{Lexer, Token};
 use crate::pattern::parse::{Config, Error, ErrorKind, Parsed, Result};
 use crate::pattern::reader::Reader;
+use crate::utils::ByteRange;
 use std::fmt;
-use std::ops::Range;
 
 #[derive(Debug, PartialEq)]
 pub enum Item {
@@ -154,7 +154,7 @@ impl<'a> Parser<'a> {
         Ok(filters)
     }
 
-    fn parse_filter(&self, chars: &[Char], range: &Range<usize>) -> Result<Parsed<Filter>> {
+    fn parse_filter(&self, chars: &[Char], range: &ByteRange) -> Result<Parsed<Filter>> {
         let mut reader = Reader::new(Vec::from(chars));
 
         let filter = Filter::parse(&mut reader, self.config).map_err(|mut error| {
@@ -191,7 +191,7 @@ impl<'a> Parser<'a> {
         self.token.as_ref().map(|token| &token.value)
     }
 
-    fn token_range(&self) -> &Range<usize> {
+    fn token_range(&self) -> &ByteRange {
         self.token.as_ref().map_or(&(0..0), |token| &token.range)
     }
 }

@@ -1,8 +1,10 @@
 use std::fmt::{self, Debug};
 use std::ops::Range;
 
-pub trait HasRange {
-    fn range(&self) -> &Range<usize>;
+pub type ByteRange = Range<usize>;
+
+pub trait GetByteRange {
+    fn range(&self) -> &ByteRange;
 }
 
 #[derive(Debug, Clone, PartialEq)]

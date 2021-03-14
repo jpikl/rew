@@ -47,13 +47,12 @@ impl fmt::Display for NumberRange {
 
 #[cfg(test)]
 mod tests {
-    use test_case::test_case;
-
+    use super::*;
     use crate::pattern::char::Char;
     use crate::pattern::parse::{Error, ErrorKind};
     use crate::pattern::reader::Reader;
-
-    use super::*;
+    use crate::utils::ByteRange;
+    use test_case::test_case;
 
     #[test_case(1, None, "[1, 2^64)"; "open")]
     #[test_case(1, Some(2), "[1, 2]"; "closed")]
@@ -66,7 +65,7 @@ mod tests {
     #[test_case("0+1", ErrorKind::ExpectedRangeDelimiter(Some(Char::Raw('+'))), 1..2; "start with length")]
     #[test_case("1", ErrorKind::ExpectedRangeDelimiter(None), 1..1; "no delimiter")]
     #[test_case("1ab", ErrorKind::ExpectedRangeDelimiter(Some(Char::Raw('a'))), 1..2; "wrong delimiter")]
-    fn parse_err(input: &str, kind: ErrorKind, range: std::ops::Range<usize>) {
+    fn parse_err(input: &str, kind: ErrorKind, range: ByteRange) {
         assert_eq!(
             NumberRange::parse(&mut Reader::from(input)),
             Err(Error { kind, range })

@@ -121,6 +121,7 @@ impl fmt::Display for RegexSubstitution {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::utils::ByteRange;
 
     mod empty {
         use super::*;
@@ -168,13 +169,12 @@ mod tests {
 
     mod string {
         use super::*;
-        use std::ops::Range;
         use test_case::test_case;
 
         #[test_case("", ErrorKind::ExpectedSubstitution, 0..0; "empty")]
         #[test_case("/", ErrorKind::SubstitutionWithoutTarget(Char::Raw('/')), 1..1; "no target")]
         #[test_case("//", ErrorKind::SubstitutionWithoutTarget(Char::Raw('/')), 1..1; "empty target")]
-        fn parse_err(input: &str, kind: ErrorKind, range: Range<usize>) {
+        fn parse_err(input: &str, kind: ErrorKind, range: ByteRange) {
             assert_eq!(
                 StringSubstitution::parse(&mut Reader::from(input)),
                 Err(Error { kind, range })
@@ -249,14 +249,13 @@ mod tests {
         extern crate regex;
         use super::*;
         use crate::utils::AnyString;
-        use std::ops::Range;
         use test_case::test_case;
 
         #[test_case("", ErrorKind::ExpectedSubstitution, 0..0; "empty")]
         #[test_case("/", ErrorKind::SubstitutionWithoutTarget(Char::Raw('/')), 1..1; "no target")]
         #[test_case("//", ErrorKind::SubstitutionWithoutTarget(Char::Raw('/')), 1..1; "empty target")]
         #[test_case("/[0-9+/def", ErrorKind::RegexInvalid(AnyString::any()), 1..6; "invalid regex")]
-        fn parse_err(input: &str, kind: ErrorKind, range: Range<usize>) {
+        fn parse_err(input: &str, kind: ErrorKind, range: ByteRange) {
             assert_eq!(
                 RegexSubstitution::parse(&mut Reader::from(input)),
                 Err(Error { kind, range })

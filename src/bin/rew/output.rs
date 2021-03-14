@@ -1,10 +1,9 @@
-use crate::utils::HasRange;
+use crate::utils::{ByteRange, GetByteRange};
 use common::color::{spec_bold_color, spec_color};
 use common::output::write_error;
 use common::symbols::{DIFF_IN, DIFF_OUT};
 use std::error::Error;
 use std::io::{Result, Write};
-use std::ops::Range;
 use termcolor::{Color, WriteColor};
 
 pub enum Mode {
@@ -77,7 +76,7 @@ impl<O: Write + WriteColor> Values<O> {
     }
 }
 
-pub fn write_pattern_error<O: Write + WriteColor, E: Error + HasRange>(
+pub fn write_pattern_error<O: Write + WriteColor, E: Error + GetByteRange>(
     output: &mut O,
     error: &E,
     raw_pattern: &str,
@@ -91,7 +90,7 @@ pub fn write_pattern_error<O: Write + WriteColor, E: Error + HasRange>(
 pub fn highlight_range<O: Write + WriteColor>(
     output: &mut O,
     string: &str,
-    range: &Range<usize>,
+    range: &ByteRange,
     color: Color,
 ) -> Result<()> {
     write!(output, "{}", &string[..range.start])?;
@@ -239,8 +238,8 @@ mod tests {
             }
         }
 
-        impl HasRange for CustomError {
-            fn range(&self) -> &Range<usize> {
+        impl GetByteRange for CustomError {
+            fn range(&self) -> &ByteRange {
                 &(1..3)
             }
         }

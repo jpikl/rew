@@ -103,7 +103,7 @@ mod tests {
 
     mod regex_holder {
         use super::*;
-        use std::ops::Range;
+        use crate::utils::ByteRange;
         use test_case::test_case;
 
         #[test_case("", ""; "empty")]
@@ -125,7 +125,7 @@ mod tests {
 
         #[test_case("", ErrorKind::ExpectedRegex, 0..0; "empty")]
         #[test_case("[0-9", ErrorKind::RegexInvalid(AnyString::any()), 0..4; "invalid")]
-        fn parse_err(input: &str, kind: ErrorKind, range: Range<usize>) {
+        fn parse_err(input: &str, kind: ErrorKind, range: ByteRange) {
             assert_eq!(
                 RegexHolder::parse(&mut Reader::from(input)),
                 Err(Error { kind, range })

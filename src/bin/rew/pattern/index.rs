@@ -97,6 +97,7 @@ impl fmt::Display for IndexRange {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::utils::ByteRange;
 
     mod index {
         use super::*;
@@ -104,7 +105,7 @@ mod tests {
 
         #[test_case("abc", ErrorKind::ExpectedNumber, 0..3; "invalid")]
         #[test_case("0abc", ErrorKind::IndexZero, 0..1; "zero")]
-        fn parse_err(input: &str, kind: ErrorKind, range: std::ops::Range<usize>) {
+        fn parse_err(input: &str, kind: ErrorKind, range: ByteRange) {
             assert_eq!(
                 Index::parse(&mut Reader::from(input)),
                 Err(Error { kind, range })
@@ -141,7 +142,7 @@ mod tests {
         #[test_case("2-1", ErrorKind::RangeStartOverEnd(String::from("2"), String::from("1")), 0..3; "start above end")]
         #[test_case("1+", ErrorKind::ExpectedRangeLength, 2..2; "start no length")]
         #[test_case("1+ab", ErrorKind::ExpectedRangeLength, 2..4; "start no length but chars")]
-        fn parse_err(input: &str, kind: ErrorKind, range: std::ops::Range<usize>) {
+        fn parse_err(input: &str, kind: ErrorKind, range: ByteRange) {
             assert_eq!(
                 IndexRange::parse(&mut Reader::from(input)),
                 Err(Error { kind, range })

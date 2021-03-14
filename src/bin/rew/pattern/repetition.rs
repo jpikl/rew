@@ -48,13 +48,13 @@ mod tests {
     use super::*;
     use crate::pattern::parse::{Error, ErrorKind};
     use crate::pattern::reader::Reader;
-    use std::ops::Range;
+    use crate::utils::ByteRange;
     use test_case::test_case;
 
     #[test_case("", ErrorKind::ExpectedRepetition, 0..0; "empty")]
     #[test_case("ab", ErrorKind::ExpectedNumber, 0..2; "invalid count")]
     #[test_case("12", ErrorKind::RepetitionWithoutDelimiter, 2..2; "missing delimiter")]
-    fn parse_err(input: &str, kind: ErrorKind, range: Range<usize>) {
+    fn parse_err(input: &str, kind: ErrorKind, range: ByteRange) {
         assert_eq!(
             Repetition::parse(&mut Reader::from(input)),
             Err(Error { kind, range })

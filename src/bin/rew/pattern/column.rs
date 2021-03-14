@@ -87,8 +87,7 @@ impl fmt::Display for Column {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils::AnyString;
-    use std::ops::Range;
+    use crate::utils::{AnyString, ByteRange};
     use test_case::test_case;
 
     #[test_case("", ErrorKind::ExpectedNumber, 0..0; "empty")]
@@ -97,7 +96,7 @@ mod tests {
     #[test_case("1:", ErrorKind::ExpectedColumnSeparator, 2..2; "missing string separator")]
     #[test_case("1/", ErrorKind::ExpectedColumnSeparator, 2..2; "missing regex separator")]
     #[test_case("1/[0-9", ErrorKind::RegexInvalid(AnyString::any()), 2..6; "invalid regex separator")]
-    fn parse_err(input: &str, kind: ErrorKind, range: Range<usize>) {
+    fn parse_err(input: &str, kind: ErrorKind, range: ByteRange) {
         assert_eq!(
             Column::parse(
                 &mut Reader::from(input),
