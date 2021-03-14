@@ -91,118 +91,67 @@ impl From<&str> for RegexHolder {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use test_case::test_case;
 
-    mod add_capture_group_brackets {
-        use super::*;
-
-        #[test]
-        fn zero() {
-            assert_eq!(add_capture_group_brackets("ab"), "ab");
-        }
-
-        #[test]
-        fn one() {
-            assert_eq!(add_capture_group_brackets("a$1b"), "a${1}b");
-        }
-
-        #[test]
-        fn multiple() {
-            assert_eq!(
-                add_capture_group_brackets("$1a$12b$123"),
-                "${1}a${12}b${123}"
-            );
-        }
+    #[test_case("", ""; "empty")]
+    #[test_case("ab", "ab"; "zero")]
+    #[test_case("a$1b", "a${1}b"; "one")]
+    #[test_case("$1a$12b$123", "${1}a${12}b${123}"; "multiple")]
+    fn add_capture_group_brackets(input: &str, output: &str) {
+        assert_eq!(super::add_capture_group_brackets(input), output)
     }
 
     mod regex_holder {
         use super::*;
+        use std::ops::Range;
+        use test_case::test_case;
 
-        mod try_from {
-            use super::*;
-
-            #[test]
-            fn valid() {
-                assert_eq!(
-                    RegexHolder::try_from(String::from("[0-9]")),
-                    Ok(RegexHolder::from("[0-9]"))
-                );
-            }
-
-            #[test]
-            fn invalid() {
-                assert_eq!(
-                    RegexHolder::try_from(String::from("[0-9")),
-                    Err(ErrorKind::RegexInvalid(AnyString::any()))
-                );
-            }
-        }
-
-        mod parse {
-            use super::*;
-
-            #[test]
-            fn empty() {
-                let mut reader = Reader::from("");
-                assert_eq!(
-                    RegexHolder::parse(&mut reader),
-                    Err(Error {
-                        kind: ErrorKind::ExpectedRegex,
-                        range: 0..0,
-                    })
-                );
-                assert_eq!(reader.position(), 0);
-            }
-
-            #[test]
-            fn valid() {
-                let mut reader = Reader::from("[0-9]");
-                assert_eq!(
-                    RegexHolder::parse(&mut reader),
-                    Ok(RegexHolder::from("[0-9]"))
-                );
-                assert_eq!(reader.position(), 5);
-            }
-
-            #[test]
-            fn invalid() {
-                let mut reader = Reader::from("[0-9");
-                assert_eq!(
-                    RegexHolder::parse(&mut reader),
-                    Err(Error {
-                        kind: ErrorKind::RegexInvalid(AnyString::any()),
-                        range: 0..4,
-                    })
-                );
-                assert_eq!(reader.position(), 4);
-            }
-        }
-
-        mod first_match {
-            use super::*;
-
-            #[test]
-            fn empty() {
-                assert_eq!(RegexHolder::from("\\d+").first_match(""), String::new());
-            }
-
-            #[test]
-            fn none() {
-                assert_eq!(RegexHolder::from("\\d+").first_match("abc"), String::new());
-            }
-
-            #[test]
-            fn first() {
-                assert_eq!(
-                    RegexHolder::from("\\d+").first_match("abc123def456"),
-                    String::from("123")
-                );
-            }
+        #[test_case("", ""; "empty")]
+        #[test_case("[a-z]+", "[a-z]+"; "noempty")]
+        fn try_from_ok(input: &str, output: &str) {
+            assert_eq!(
+                RegexHolder::try_from(String::from(input)),
+                Ok(RegexHolder::from(output))
+            );
         }
 
         #[test]
-        fn partial_eq() {
-            assert_eq!(RegexHolder::from("[a-z]+"), RegexHolder::from("[a-z]+"));
-            assert_ne!(RegexHolder::from("[a-z]+"), RegexHolder::from("[a-z]*"));
+        fn try_from_err() {
+            assert_eq!(
+                RegexHolder::try_from(String::from("[0-9")),
+                Err(ErrorKind::RegexInvalid(AnyString::any()))
+            );
+        }
+
+        #[test_case("", ErrorKind::ExpectedRegex, 0..0; "empty")]
+        #[test_case("[0-9", ErrorKind::RegexInvalid(AnyString::any()), 0..4; "invalid")]
+        fn parse_err(input: &str, kind: ErrorKind, range: Range<usize>) {
+            assert_eq!(
+                RegexHolder::parse(&mut Reader::from(input)),
+                Err(Error { kind, range })
+            );
+        }
+
+        #[test]
+        fn parse_ok() {
+            assert_eq!(
+                RegexHolder::parse(&mut Reader::from("[0-9]")),
+                Ok(RegexHolder::from("[0-9]"))
+            );
+        }
+
+        #[test_case("", "\\d+", ""; "empty")]
+        #[test_case("abc", "\\d+", ""; "none")]
+        #[test_case("abc123def456", "\\d+", "123"; "first")]
+        fn first_match(input: &str, regex: &str, output: &str) {
+            assert_eq!(RegexHolder::from(regex).first_match(input), output);
+        }
+
+        #[test_case("", "", true; "empty")]
+        #[test_case("[a-z]+", "[a-z]+", true; "same")]
+        #[test_case("[a-z]+", "[a-z]*", false; "different")]
+        fn partial_eq(left: &str, right: &str, result: bool) {
+            assert_eq!(RegexHolder::from(left) == RegexHolder::from(right), result);
         }
 
         #[test]
