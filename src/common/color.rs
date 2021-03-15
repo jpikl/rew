@@ -50,7 +50,7 @@ mod tests {
         use super::*;
 
         #[test]
-        fn valid() {
+        fn ok() {
             assert_eq!(parse_color(COLOR_ALWAYS), Ok(ColorChoice::Always));
             assert_eq!(parse_color(COLOR_ANSI), Ok(ColorChoice::AlwaysAnsi));
             assert_eq!(parse_color(COLOR_AUTO), Ok(ColorChoice::Auto));
@@ -58,7 +58,7 @@ mod tests {
         }
 
         #[test]
-        fn invalid() {
+        fn err() {
             assert_eq!(parse_color(""), Err("invalid value"));
             assert_eq!(parse_color("x"), Err("invalid value"));
         }

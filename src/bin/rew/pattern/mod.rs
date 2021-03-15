@@ -111,14 +111,14 @@ mod tests {
     use crate::pattern::index::Index;
     use crate::pattern::range::Range;
     use crate::utils::AnyString;
-    use ntest::*;
+    use test_case::test_case;
 
     mod parse {
         use super::super::parse::{Config, Error, ErrorKind, Parsed};
         use super::*;
 
         #[test]
-        fn invalid() {
+        fn err() {
             assert_eq!(
                 Pattern::parse("{", &Config::fixture()),
                 Err(Error {
@@ -129,7 +129,7 @@ mod tests {
         }
 
         #[test]
-        fn valid() {
+        fn ok() {
             assert_eq!(
                 Pattern::parse("_%{{f|v}%}_", &Config::fixture()),
                 Ok(Pattern {
@@ -162,55 +162,21 @@ mod tests {
         }
     }
 
-    mod uses {
-        use super::*;
-
-        #[test]
-        fn none() {
-            let pattern = Pattern {
-                source: String::new(),
-                items: vec![
-                    Parsed::from(Item::Constant(String::from("a"))),
-                    Parsed::from(Item::Expression(vec![Parsed::from(Filter::FileName)])),
-                ],
-            };
-            assert_false!(pattern.uses_local_counter());
-            assert_false!(pattern.uses_global_counter());
-            assert_false!(pattern.uses_regex_capture());
-        }
-
-        #[test]
-        fn local_counter() {
-            let pattern = Pattern {
-                source: String::new(),
-                items: vec![Parsed::from(Item::Expression(vec![Parsed::from(
-                    Filter::LocalCounter,
-                )]))],
-            };
-            assert_true!(pattern.uses_local_counter());
-        }
-
-        #[test]
-        fn global_counter() {
-            let pattern = Pattern {
-                source: String::new(),
-                items: vec![Parsed::from(Item::Expression(vec![Parsed::from(
-                    Filter::GlobalCounter,
-                )]))],
-            };
-            assert_true!(pattern.uses_global_counter());
-        }
-
-        #[test]
-        fn regex_capture() {
-            let pattern = Pattern {
-                source: String::new(),
-                items: vec![Parsed::from(Item::Expression(vec![Parsed::from(
-                    Filter::RegexCapture(1),
-                )]))],
-            };
-            assert_true!(pattern.uses_regex_capture());
-        }
+    #[test_case(Filter::FileName, false, false, false; "none")]
+    #[test_case(Filter::LocalCounter, true, false, false; "local counter")]
+    #[test_case(Filter::GlobalCounter, false, true, false; "global counter")]
+    #[test_case(Filter::RegexCapture(1), false, false, true; "regex capture")]
+    fn uses(filter: Filter, local_counter: bool, global_counter: bool, regex_capture: bool) {
+        let pattern = Pattern {
+            source: String::new(),
+            items: vec![
+                Parsed::from(Item::Constant(String::from("a"))),
+                Parsed::from(Item::Expression(vec![Parsed::from(filter)])),
+            ],
+        };
+        assert_eq!(pattern.uses_local_counter(), local_counter);
+        assert_eq!(pattern.uses_global_counter(), global_counter);
+        assert_eq!(pattern.uses_regex_capture(), regex_capture);
     }
 
     mod eval {

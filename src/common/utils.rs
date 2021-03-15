@@ -46,7 +46,7 @@ mod tests {
         use crate::testing::unpack_io_error;
 
         #[test]
-        fn valid() {
+        fn ok() {
             assert_eq!(
                 str_from_utf8(&[b'a', b'b', b'c'][..]).map_err(unpack_io_error),
                 Ok("abc")
@@ -54,7 +54,7 @@ mod tests {
         }
 
         #[test]
-        fn invalid() {
+        fn err() {
             assert_eq!(
                 str_from_utf8(&[0, 159, 146, 150][..]).map_err(unpack_io_error),
                 Err((
