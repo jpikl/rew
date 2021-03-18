@@ -217,7 +217,6 @@ mod tests {
         #[test_case("a34b", "contains consecutive digits 3 and 4"; "first matcher")]
         #[test_case("a3b", "contains digit 3"; "second matcher")]
         #[test_case("aBc", "first uppercase letter of 'aBc' is 'B'"; "third matcher")]
-
         fn cases_nonempty_default_captures(input: &str, output: &str) {
             assert_eq!(
                 RegexSwitch {

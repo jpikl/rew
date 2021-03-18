@@ -6,6 +6,8 @@ use crate::pattern::symbols::{
 };
 use std::path::MAIN_SEPARATOR;
 
+pub type ParsedToken = Parsed<Token>;
+
 #[derive(Debug, PartialEq)]
 pub enum Token {
     Raw(Vec<Char>),
@@ -27,7 +29,7 @@ impl Lexer {
         }
     }
 
-    pub fn read_token(&mut self) -> Result<Option<Parsed<Token>>> {
+    pub fn read_token(&mut self) -> Result<Option<ParsedToken>> {
         let start = self.reader.position();
         let value = match self.reader.peek_char() {
             Some(EXPR_START) => {

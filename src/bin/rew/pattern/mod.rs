@@ -1,7 +1,6 @@
 use crate::pattern::filter::Filter;
-use crate::pattern::parse::Parsed;
-use crate::pattern::parser::Item;
 use crate::pattern::parser::Parser;
+use crate::pattern::parser::{Item, ParsedItem};
 
 mod char;
 mod column;
@@ -30,7 +29,7 @@ mod uuid;
 #[derive(Debug, PartialEq)]
 pub struct Pattern {
     source: String,
-    items: Vec<Parsed<Item>>,
+    items: Vec<ParsedItem>,
 }
 
 impl Pattern {
@@ -102,6 +101,16 @@ impl Pattern {
 }
 
 #[cfg(test)]
+impl From<Vec<ParsedItem>> for Pattern {
+    fn from(items: Vec<ParsedItem>) -> Self {
+        Self {
+            source: String::new(),
+            items,
+        }
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::filter::Filter;
     use super::parse::Parsed;
@@ -167,13 +176,10 @@ mod tests {
     #[test_case(Filter::GlobalCounter, false, true, false; "global counter")]
     #[test_case(Filter::RegexCapture(1), false, false, true; "regex capture")]
     fn uses(filter: Filter, local_counter: bool, global_counter: bool, regex_capture: bool) {
-        let pattern = Pattern {
-            source: String::new(),
-            items: vec![
-                Parsed::from(Item::Constant(String::from("a"))),
-                Parsed::from(Item::Expression(vec![Parsed::from(filter)])),
-            ],
-        };
+        let pattern = Pattern::from(vec![
+            Parsed::from(Item::Constant(String::from("a"))),
+            Parsed::from(Item::Expression(vec![Parsed::from(filter)])),
+        ]);
         assert_eq!(pattern.uses_local_counter(), local_counter);
         assert_eq!(pattern.uses_global_counter(), global_counter);
         assert_eq!(pattern.uses_regex_capture(), regex_capture);
@@ -185,10 +191,7 @@ mod tests {
 
         #[test]
         fn constant() {
-            let pattern = Pattern {
-                source: String::new(),
-                items: vec![Parsed::from(Item::Constant(String::from("abc")))],
-            };
+            let pattern = Pattern::from(vec![Parsed::from(Item::Constant(String::from("abc")))]);
             assert_eq!(
                 pattern.eval("", &Context::fixture()),
                 Ok(String::from("abc"))
@@ -197,10 +200,7 @@ mod tests {
 
         #[test]
         fn empty_expression() {
-            let pattern = Pattern {
-                source: String::new(),
-                items: vec![Parsed::from(Item::Expression(vec![]))],
-            };
+            let pattern = Pattern::from(vec![Parsed::from(Item::Expression(vec![]))]);
             assert_eq!(
                 pattern.eval("dir/file.ext", &Context::fixture()),
                 Ok(String::from("dir/file.ext"))
@@ -209,12 +209,9 @@ mod tests {
 
         #[test]
         fn single_filter_expression() {
-            let pattern = Pattern {
-                source: String::new(),
-                items: vec![Parsed::from(Item::Expression(vec![Parsed::from(
-                    Filter::FileName,
-                )]))],
-            };
+            let pattern = Pattern::from(vec![Parsed::from(Item::Expression(vec![Parsed::from(
+                Filter::FileName,
+            )]))]);
             assert_eq!(
                 pattern.eval("dir/file.ext", &Context::fixture()),
                 Ok(String::from("file.ext"))
@@ -223,13 +220,10 @@ mod tests {
 
         #[test]
         fn multi_filter_expression() {
-            let pattern = Pattern {
-                source: String::new(),
-                items: vec![Parsed::from(Item::Expression(vec![
-                    Parsed::from(Filter::FileName),
-                    Parsed::from(Filter::ToUppercase),
-                ]))],
-            };
+            let pattern = Pattern::from(vec![Parsed::from(Item::Expression(vec![
+                Parsed::from(Filter::FileName),
+                Parsed::from(Filter::ToUppercase),
+            ]))]);
             assert_eq!(
                 pattern.eval("dir/file.ext", &Context::fixture()),
                 Ok(String::from("FILE.EXT"))
@@ -238,29 +232,27 @@ mod tests {
 
         #[test]
         fn multi_constant_and_filter_expressions() {
-            let pattern = Pattern {
-                source: String::new(),
-                items: vec![
-                    Parsed::from(Item::Constant(String::from("prefix_"))),
-                    Parsed::from(Item::Expression(vec![
-                        Parsed::from(Filter::BaseName),
-                        Parsed::from(Filter::Substring(Range::<Index>(0, Some(3)))),
-                    ])),
-                    Parsed::from(Item::Constant(String::from("_"))),
-                    Parsed::from(Item::Expression(vec![Parsed::from(Filter::LocalCounter)])),
-                    Parsed::from(Item::Constant(String::from("_"))),
-                    Parsed::from(Item::Expression(vec![Parsed::from(Filter::GlobalCounter)])),
-                    Parsed::from(Item::Constant(String::from("."))),
-                    Parsed::from(Item::Expression(vec![
-                        Parsed::from(Filter::Extension),
-                        Parsed::from(Filter::ToUppercase),
-                        Parsed::from(Filter::ReplaceAll(Substitution {
-                            target: String::from("X"),
-                            replacement: String::new(),
-                        })),
-                    ])),
-                ],
-            };
+            let pattern = Pattern::from(vec![
+                Parsed::from(Item::Constant(String::from("prefix_"))),
+                Parsed::from(Item::Expression(vec![
+                    Parsed::from(Filter::BaseName),
+                    Parsed::from(Filter::Substring(Range::<Index>(0, Some(3)))),
+                ])),
+                Parsed::from(Item::Constant(String::from("_"))),
+                Parsed::from(Item::Expression(vec![Parsed::from(Filter::LocalCounter)])),
+                Parsed::from(Item::Constant(String::from("_"))),
+                Parsed::from(Item::Expression(vec![Parsed::from(Filter::GlobalCounter)])),
+                Parsed::from(Item::Constant(String::from("."))),
+                Parsed::from(Item::Expression(vec![
+                    Parsed::from(Filter::Extension),
+                    Parsed::from(Filter::ToUppercase),
+                    Parsed::from(Filter::ReplaceAll(Substitution {
+                        target: String::from("X"),
+                        replacement: String::new(),
+                    })),
+                ])),
+            ]);
+
             assert_eq!(
                 pattern.eval("dir/file.ext", &Context::fixture()),
                 Ok(String::from("prefix_fil_1_2.ET"))
@@ -269,16 +261,14 @@ mod tests {
 
         #[test]
         fn quotes() {
-            let pattern = Pattern {
-                source: String::new(),
-                items: vec![
-                    Parsed::from(Item::Constant(String::from(" "))),
-                    Parsed::from(Item::Expression(Vec::new())),
-                    Parsed::from(Item::Constant(String::from(" "))),
-                ],
-            };
             let mut context = Context::fixture();
             context.expression_quotes = Some('\'');
+
+            let pattern = Pattern::from(vec![
+                Parsed::from(Item::Constant(String::from(" "))),
+                Parsed::from(Item::Expression(Vec::new())),
+                Parsed::from(Item::Constant(String::from(" "))),
+            ]);
             assert_eq!(
                 pattern.eval("dir/file.ext", &context),
                 Ok(String::from(" 'dir/file.ext' "))
@@ -287,13 +277,10 @@ mod tests {
 
         #[test]
         fn failure() {
-            let pattern = Pattern {
-                source: String::new(),
-                items: vec![Parsed::from(Item::Expression(vec![Parsed {
-                    value: Filter::CanonicalPath,
-                    range: 1..2,
-                }]))],
-            };
+            let pattern = Pattern::from(vec![Parsed::from(Item::Expression(vec![Parsed {
+                value: Filter::CanonicalPath,
+                range: 1..2,
+            }]))]);
             assert_eq!(
                 pattern.eval("dir/file.ext", &Context::fixture()),
                 Err(Error {
