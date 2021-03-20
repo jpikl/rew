@@ -216,1158 +216,412 @@ fn to_str<S: AsRef<OsStr> + ?Sized>(value: &S) -> BaseResult<&str> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::testing::make_non_utf8_os_string;
+    use std::ffi::OsString;
+    use test_case::test_case;
 
-    mod to_absolute {
-        use super::*;
-
-        #[test]
-        fn empty() {
-            let working_dir = std::env::current_dir().unwrap();
-            assert_eq!(
-                to_absolute(String::new(), &working_dir),
-                Ok(working_dir.to_str().unwrap().to_string())
-            );
-        }
-
-        #[test]
-        fn relative() {
-            let working_dir = std::env::current_dir().unwrap();
-            #[cfg(unix)]
-            assert_eq!(
-                to_absolute(String::from("file.ext"), &working_dir),
-                Ok(format!("{}/file.ext", working_dir.to_str().unwrap()))
-            );
-            #[cfg(windows)]
-            assert_eq!(
-                to_absolute(String::from("file.ext"), &working_dir),
-                Ok(format!("{}\\file.ext", working_dir.to_str().unwrap()))
-            );
-        }
-
-        #[test]
-        fn absolute() {
-            let working_dir = std::env::current_dir().unwrap();
-            #[cfg(unix)]
-            assert_eq!(
-                to_absolute(String::from("/file.ext"), &working_dir),
-                Ok(String::from("/file.ext"))
-            );
-            #[cfg(windows)]
-            assert_eq!(
-                to_absolute(String::from("C:\\file.ext"), &working_dir),
-                Ok(String::from("C:\\file.ext"))
-            );
-        }
+    #[test_case("", "{working_dir}"; "empty")]
+    #[cfg_attr(unix, test_case("file.ext", "{working_dir}/file.ext"; "relative"))]
+    #[cfg_attr(unix, test_case("/file.ext", "/file.ext"; "absolute"))]
+    #[cfg_attr(window, test_case("file.ext", "{working_dir}\\file.ext"; "relative"))]
+    #[cfg_attr(window, test_case("C:\\file.ext", "C:\\file.ext"; "absolute"))]
+    fn to_absolute(input: &str, output: &str) {
+        let working_dir = std::env::current_dir().unwrap();
+        assert_eq!(
+            super::to_absolute(String::from(input), &working_dir),
+            Ok(fmt_working_dir(output, &working_dir))
+        );
     }
 
-    mod to_relative {
-        use super::*;
-
-        #[test]
-        fn empty() {
-            let working_dir = std::env::current_dir().unwrap();
-            assert_eq!(to_relative(String::new(), &working_dir), Ok(String::new()));
-        }
-
-        #[test]
-        fn relative() {
-            let working_dir = std::env::current_dir().unwrap();
-            assert_eq!(
-                to_relative(String::from("file.ext"), &working_dir),
-                Ok(String::from("file.ext"))
-            );
-        }
-
-        #[test]
-        fn absolute() {
-            let working_dir = std::env::current_dir().unwrap();
-            let value = working_dir
-                .join("..")
-                .join("file.ext")
-                .to_str()
-                .unwrap()
-                .to_string();
-
-            #[cfg(unix)]
-            assert_eq!(
-                to_relative(value, &working_dir),
-                Ok(String::from("../file.ext"))
-            );
-            #[cfg(windows)]
-            assert_eq!(
-                to_relative(value, &working_dir),
-                Ok(String::from("..\\file.ext"))
-            );
-        }
+    #[test_case("", ""; "empty")]
+    #[cfg_attr(unix, test_case("file.ext", "file.ext"; "relative" ))]
+    #[cfg_attr(unix, test_case("{working_dir}/../file.ext", "../file.ext"; "absolute"))]
+    #[cfg_attr(window, test_case("file.ext", "{working_dir}\\file.ext"; "relative"))]
+    #[cfg_attr(window, test_case("{working_dir}\\file.ext", "..\\file.ext"; "absolute"))]
+    fn to_relative(input: &str, output: &str) {
+        let working_dir = std::env::current_dir().unwrap();
+        assert_eq!(
+            super::to_relative(fmt_working_dir(input, &working_dir), &working_dir),
+            Ok(fmt_working_dir(output, &working_dir))
+        );
     }
 
-    mod canonicalize {
-        use super::*;
-
-        #[test]
-        fn empty() {
-            let working_dir = std::env::current_dir().unwrap();
-            assert_eq!(
-                canonicalize(String::new(), &working_dir),
-                Ok(working_dir.to_str().unwrap().to_string())
-            );
-        }
-
-        #[test]
-        fn non_existent() {
-            let working_dir = std::env::current_dir().unwrap();
-            assert_eq!(
-                canonicalize(String::from("non-existent"), &working_dir),
-                Err(ErrorKind::CanonicalizationFailed(AnyString::any()))
-            );
-        }
-
-        #[test]
-        fn existent() {
-            let working_dir = std::env::current_dir().unwrap();
-            #[cfg(unix)]
-            assert_eq!(
-                canonicalize(String::from("src/"), &working_dir),
-                Ok(format!("{}/src", working_dir.to_str().unwrap(),))
-            );
-            #[cfg(windows)]
-            assert_eq!(
-                canonicalize(String::from("src\\"), &working_dir),
-                Ok(format!("{}\\src", working_dir.to_str().unwrap()))
-            );
-        }
-
-        #[test]
-        fn root() {
-            let working_dir = std::env::current_dir().unwrap();
-            #[cfg(unix)]
-            assert_eq!(
-                canonicalize(String::from("/"), &working_dir),
-                Ok(String::from("/"))
-            );
-            #[cfg(windows)]
-            assert_eq!(
-                canonicalize(String::from("C:\\"), &working_dir),
-                Ok(String::from("C:\\"))
-            );
-        }
-
-        #[test]
-        #[cfg(windows)]
-        fn prefix() {
-            let working_dir = std::env::current_dir().unwrap();
-            assert_eq!(
-                canonicalize(String::from("C:"), &working_dir),
-                Ok(String::from("C:\\"))
-            );
-        }
+    #[test_case("", "{working_dir}"; "empty")]
+    #[cfg_attr(unix, test_case("src/", "{working_dir}/src"; "existent"))]
+    #[cfg_attr(unix, test_case("/", "/"; "root" ))]
+    #[cfg_attr(windows, test_case("src\\", "{working_dir}\\src"; "existent"))]
+    #[cfg_attr(windows, test_case("C:\\", "C:\\"; "root"))]
+    #[cfg_attr(windows, test_case("C:", "C:\\"; "prefix"))]
+    fn canonicalize(input: &str, output: &str) {
+        let working_dir = std::env::current_dir().unwrap();
+        assert_eq!(
+            super::canonicalize(String::from(input), &working_dir),
+            Ok(fmt_working_dir(output, &working_dir))
+        );
     }
 
-    mod normalize {
-        use super::*;
-
-        #[test]
-        fn empty() {
-            assert_normalized("", ".");
-        }
-
-        #[cfg(unix)]
-        mod unix {
-            use super::*;
-
-            #[test]
-            fn relative_separator() {
-                assert_normalized("abc", "abc");
-                assert_normalized("abc/", "abc");
-                assert_normalized("abc/def", "abc/def");
-                assert_normalized("abc/def/", "abc/def");
-                assert_normalized("abc//", "abc");
-                assert_normalized("abc//def", "abc/def");
-                assert_normalized("abc//def//", "abc/def");
-            }
-
-            #[test]
-            fn relative_dot() {
-                assert_normalized(".", ".");
-                assert_normalized("./", ".");
-                assert_normalized("./.", ".");
-                assert_normalized("././", ".");
-                assert_normalized("./abc", "abc");
-                assert_normalized("./abc/", "abc");
-                assert_normalized("abc/.", "abc");
-                assert_normalized("abc/./", "abc");
-            }
-
-            #[test]
-            fn relative_double_dot() {
-                assert_normalized("..", "..");
-                assert_normalized("../", "..");
-                assert_normalized("../..", "../..");
-                assert_normalized("../../", "../..");
-                assert_normalized("../abc", "../abc");
-                assert_normalized("../abc/", "../abc");
-                assert_normalized("abc/..", ".");
-                assert_normalized("abc/../", ".");
-                assert_normalized("abc/../def", "def");
-                assert_normalized("abc/../def/", "def");
-                assert_normalized("abc/../def/ghi", "def/ghi");
-                assert_normalized("abc/../def/ghi/", "def/ghi");
-                assert_normalized("abc/../../ghi", "../ghi");
-                assert_normalized("abc/../../ghi/", "../ghi");
-                assert_normalized("abc/def/../../ghi", "ghi");
-                assert_normalized("abc/def/../../ghi/", "ghi");
-            }
-
-            #[test]
-            fn absolute_separator() {
-                assert_normalized("/", "/");
-                assert_normalized("/abc", "/abc");
-                assert_normalized("/abc/", "/abc");
-                assert_normalized("/abc/def", "/abc/def");
-                assert_normalized("/abc/def/", "/abc/def");
-                assert_normalized("//abc", "/abc");
-                assert_normalized("//abc//", "/abc");
-                assert_normalized("//abc//def", "/abc/def");
-                assert_normalized("//abc//def//", "/abc/def");
-            }
-
-            #[test]
-            fn absolute_dot() {
-                assert_normalized("/.", "/");
-                assert_normalized("/./", "/");
-                assert_normalized("/./.", "/");
-                assert_normalized("/././", "/");
-                assert_normalized("/./abc", "/abc");
-                assert_normalized("/./abc/", "/abc");
-                assert_normalized("/abc/.", "/abc");
-                assert_normalized("/abc/./", "/abc");
-            }
-
-            #[test]
-            fn absolute_double_dot() {
-                assert_normalized("/..", "/");
-                assert_normalized("/../", "/");
-                assert_normalized("/../..", "/");
-                assert_normalized("/../../", "/");
-                assert_normalized("/../abc", "/abc");
-                assert_normalized("/../abc/", "/abc");
-                assert_normalized("/abc/..", "/");
-                assert_normalized("/abc/../", "/");
-                assert_normalized("/abc/../def", "/def");
-                assert_normalized("/abc/../def/", "/def");
-                assert_normalized("/abc/../def/ghi", "/def/ghi");
-                assert_normalized("/abc/../def/ghi/", "/def/ghi");
-                assert_normalized("/abc/../../ghi", "/ghi");
-                assert_normalized("/abc/../../ghi/", "/ghi");
-                assert_normalized("/abc/def/../../ghi", "/ghi");
-                assert_normalized("/abc/def/../../ghi/", "/ghi");
-            }
-        }
-
-        #[cfg(windows)]
-        mod windows {
-            use super::*;
-
-            #[test]
-            fn relative_separator() {
-                assert_normalized("abc", "abc");
-                assert_normalized("abc\\", "abc");
-                assert_normalized("abc\\def", "abc\\def");
-                assert_normalized("abc\\def\\", "abc\\def");
-                assert_normalized("abc\\\\", "abc");
-                assert_normalized("abc\\\\def", "abc\\def");
-                assert_normalized("abc\\\\def\\\\", "abc\\def");
-            }
-
-            #[test]
-            fn relative_forward_slashes() {
-                assert_normalized("abc", "abc");
-                assert_normalized("abc/", "abc");
-                assert_normalized("abc/def", "abc\\def");
-                assert_normalized("abc/def/", "abc\\def");
-            }
-
-            #[test]
-            fn relative_dot() {
-                assert_normalized(".", ".");
-                assert_normalized(".\\", ".");
-                assert_normalized(".\\.", ".");
-                assert_normalized(".\\.\\", ".");
-                assert_normalized(".\\abc", "abc");
-                assert_normalized(".\\abc\\", "abc");
-                assert_normalized("abc\\.", "abc");
-                assert_normalized("abc\\.\\", "abc");
-            }
-
-            #[test]
-            fn relative_double_dot() {
-                assert_normalized("..", "..");
-                assert_normalized("..\\", "..");
-                assert_normalized("..\\..", "..\\..");
-                assert_normalized("..\\..\\", "..\\..");
-                assert_normalized("..\\abc", "..\\abc");
-                assert_normalized("..\\abc\\", "..\\abc");
-                assert_normalized("abc\\..", ".");
-                assert_normalized("abc\\..\\", ".");
-                assert_normalized("abc\\..\\def", "def");
-                assert_normalized("abc\\..\\def\\", "def");
-                assert_normalized("abc\\..\\def\\ghi", "def\\ghi");
-                assert_normalized("abc\\..\\def\\ghi\\", "def\\ghi");
-                assert_normalized("abc\\..\\..\\ghi", "..\\ghi");
-                assert_normalized("abc\\..\\..\\ghi\\", "..\\ghi");
-                assert_normalized("abc\\def\\..\\..\\ghi", "ghi");
-                assert_normalized("abc\\def\\..\\..\\ghi\\", "ghi");
-            }
-
-            #[test]
-            fn absolute_separator() {
-                assert_normalized("C:", "C:\\");
-                assert_normalized("C:\\", "C:\\");
-                assert_normalized("C:\\abc", "C:\\abc");
-                assert_normalized("C:\\abc\\", "C:\\abc");
-                assert_normalized("C:\\abc\\def", "C:\\abc\\def");
-                assert_normalized("C:\\abc\\def\\", "C:\\abc\\def");
-                assert_normalized("C:\\\\abc", "C:\\abc");
-                assert_normalized("C:\\\\abc\\\\", "C:\\abc");
-                assert_normalized("C:\\\\abc\\\\def", "C:\\abc\\def");
-                assert_normalized("C:\\\\abc\\\\def\\\\", "C:\\abc\\def");
-            }
-
-            #[test]
-            fn absolute_forward_slashes() {
-                assert_normalized("C:/abc", "C:\\abc");
-                assert_normalized("C:/abc/", "C:\\abc");
-                assert_normalized("C:/abc/def", "C:\\abc\\def");
-                assert_normalized("C:/abc/def/", "C:\\abc\\def");
-            }
-
-            #[test]
-            fn absolute_dot() {
-                assert_normalized("C:\\.", "C:\\");
-                assert_normalized("C:\\.\\", "C:\\");
-                assert_normalized("C:\\.\\.", "C:\\");
-                assert_normalized("C:\\.\\.\\", "C:\\");
-                assert_normalized("C:\\.\\abc", "C:\\abc");
-                assert_normalized("C:\\.\\abc\\", "C:\\abc");
-                assert_normalized("C:\\abc\\.", "C:\\abc");
-                assert_normalized("C:\\abc\\.\\", "C:\\abc");
-            }
-
-            #[test]
-            fn absolute_double_dot() {
-                assert_normalized("C:\\..", "C:\\");
-                assert_normalized("C:\\..\\", "C:\\");
-                assert_normalized("C:\\..\\..", "C:\\");
-                assert_normalized("C:\\..\\..\\", "C:\\");
-                assert_normalized("C:\\..\\abc", "C:\\abc");
-                assert_normalized("C:\\..\\abc\\", "C:\\abc");
-                assert_normalized("C:\\abc\\..", "C:\\");
-                assert_normalized("C:\\abc\\..\\", "C:\\");
-                assert_normalized("C:\\abc\\..\\def", "C:\\def");
-                assert_normalized("C:\\abc\\..\\def\\", "C:\\def");
-                assert_normalized("C:\\abc\\..\\def\\ghi", "C:\\def\\ghi");
-                assert_normalized("C:\\abc\\..\\def\\ghi\\", "C:\\def\\ghi");
-                assert_normalized("C:\\abc\\..\\..\\ghi", "C:\\ghi");
-                assert_normalized("C:\\abc\\..\\..\\ghi\\", "C:\\ghi");
-                assert_normalized("C:\\abc\\def\\..\\..\\ghi", "C:\\ghi");
-                assert_normalized("C:\\abc\\def\\..\\..\\ghi\\", "C:\\ghi");
-            }
-        }
-
-        fn assert_normalized(value: &str, result: &str) {
-            assert_eq!(normalize(value), Ok(result.to_string()));
-        }
+    #[test]
+    fn canonicalize_err() {
+        let working_dir = std::env::current_dir().unwrap();
+        assert_eq!(
+            super::canonicalize(String::from("non-existent"), &working_dir),
+            Err(ErrorKind::CanonicalizationFailed(AnyString::any()))
+        );
     }
 
-    mod get_parent_directory {
-        use super::*;
-
-        #[test]
-        fn empty() {
-            assert_eq!(get_parent_directory(String::new()), Ok(String::from("..")));
-        }
-
-        #[test]
-        fn name() {
-            assert_eq!(
-                get_parent_directory(String::from("file.ext")),
-                Ok(String::from("."))
-            );
-        }
-
-        #[test]
-        fn name_parent() {
-            assert_eq!(
-                get_parent_directory(String::from("dir/file.ext")),
-                Ok(String::from("dir"))
-            );
-        }
-
-        #[test]
-        fn dot() {
-            #[cfg(unix)]
-            assert_eq!(
-                get_parent_directory(String::from(".")),
-                Ok(String::from("./.."))
-            );
-            #[cfg(windows)]
-            assert_eq!(
-                get_parent_directory(String::from(".")),
-                Ok(String::from(".\\.."))
-            );
-        }
-
-        #[test]
-        fn dot_parent() {
-            assert_eq!(
-                get_parent_directory(String::from("./file.ext")),
-                Ok(String::from("."))
-            );
-        }
-
-        #[test]
-        fn double_dot() {
-            #[cfg(unix)]
-            assert_eq!(
-                get_parent_directory(String::from("..")),
-                Ok(String::from("../.."))
-            );
-            #[cfg(windows)]
-            assert_eq!(
-                get_parent_directory(String::from("..")),
-                Ok(String::from("..\\.."))
-            );
-        }
-
-        #[test]
-        fn double_dot_parent() {
-            assert_eq!(
-                get_parent_directory(String::from("../file.ext")),
-                Ok(String::from(".."))
-            );
-        }
-
-        #[test]
-        fn root() {
-            #[cfg(unix)]
-            assert_eq!(
-                get_parent_directory(String::from("/")),
-                Ok(String::from("/"))
-            );
-            #[cfg(windows)]
-            assert_eq!(
-                get_parent_directory(String::from("C:\\")),
-                Ok(String::from("C:\\"))
-            );
-        }
-
-        #[test]
-        fn root_parent() {
-            #[cfg(unix)]
-            assert_eq!(
-                get_parent_directory(String::from("/file.ext")),
-                Ok(String::from("/"))
-            );
-            #[cfg(windows)]
-            assert_eq!(
-                get_parent_directory(String::from("C:\\file.ext")),
-                Ok(String::from("C:\\"))
-            );
-        }
-
-        #[test]
-        #[cfg(windows)]
-        fn prefix() {
-            assert_eq!(
-                get_parent_directory(String::from("C:")),
-                Ok(String::from("C:\\"))
-            );
-        }
+    #[test_case("", "."; "empty")]
+    #[test_case("abc", "abc"; "relative separator 1")]
+    #[cfg_attr(unix, test_case("abc/", "abc"; "relative separator 2"))]
+    #[cfg_attr(unix, test_case("abc/def", "abc/def"; "relative separator 3"))]
+    #[cfg_attr(unix, test_case("abc/def/", "abc/def"; "relative separator 4"))]
+    #[cfg_attr(unix, test_case("abc//", "abc"; "relative separator 5"))]
+    #[cfg_attr(unix, test_case("abc//def", "abc/def"; "relative separator 6"))]
+    #[cfg_attr(unix, test_case("abc//def//", "abc/def"; "relative separator 7"))]
+    #[cfg_attr(windows, test_case("abc\\", "abc"; "relative separator 2"))]
+    #[cfg_attr(windows, test_case("abc\\def", "abc\\def"; "relative separator 3"))]
+    #[cfg_attr(windows, test_case("abc\\def\\", "abc\\def"; "relative separator 4"))]
+    #[cfg_attr(windows, test_case("abc\\\\", "abc"; "relative separator 5"))]
+    #[cfg_attr(windows, test_case("abc\\\\def", "abc\\def"; "relative separator 6"))]
+    #[cfg_attr(windows, test_case("abc\\\\def\\\\", "abc\\def"; "relative separator 7"))]
+    #[cfg_attr(windows, test_case("abc/", "abc"; "relative unix separator 1"))]
+    #[cfg_attr(windows, test_case("abc/def", "abc\\def"; "relative unix separator 2"))]
+    #[cfg_attr(windows, test_case("abc/def/", "abc\\def"; "relative unix separator 3"))]
+    #[test_case(".", "."; "relative dot 1")]
+    #[cfg_attr(unix, test_case("./", "."; "relative dot 2"))]
+    #[cfg_attr(unix, test_case("./.", "."; "relative dot 3"))]
+    #[cfg_attr(unix, test_case("././", "."; "relative dot 4"))]
+    #[cfg_attr(unix, test_case("./abc", "abc"; "relative dot 5"))]
+    #[cfg_attr(unix, test_case("./abc/", "abc"; "relative dot 6"))]
+    #[cfg_attr(unix, test_case("abc/.", "abc"; "relative dot 7"))]
+    #[cfg_attr(unix, test_case("abc/./", "abc"; "relative dot 8"))]
+    #[cfg_attr(windows, test_case(".\\", "."; "relative dot 2"))]
+    #[cfg_attr(windows, test_case(".\\.", "."; "relative dot 3"))]
+    #[cfg_attr(windows, test_case(".\\.\\", "."; "relative dot 4"))]
+    #[cfg_attr(windows, test_case(".\\abc", "abc"; "relative dot 5"))]
+    #[cfg_attr(windows, test_case(".\\abc\\", "abc"; "relative dot 6"))]
+    #[cfg_attr(windows, test_case("abc\\.", "abc"; "relative dot 7"))]
+    #[cfg_attr(windows, test_case("abc\\.\\", "abc"; "relative dot 8"))]
+    #[test_case("..", ".."; "relative double dot 1")]
+    #[cfg_attr(unix, test_case("../", ".."; "relative double dot 2"))]
+    #[cfg_attr(unix, test_case("../..", "../.."; "relative double dot 3"))]
+    #[cfg_attr(unix, test_case("../../", "../.."; "relative double dot 4"))]
+    #[cfg_attr(unix, test_case("../abc", "../abc"; "relative double dot 5"))]
+    #[cfg_attr(unix, test_case("../abc/", "../abc"; "relative double dot 6"))]
+    #[cfg_attr(unix, test_case("abc/..", "."; "relative double dot 7"))]
+    #[cfg_attr(unix, test_case("abc/../", "."; "relative double dot 8"))]
+    #[cfg_attr(unix, test_case("abc/../def", "def"; "relative double dot 9"))]
+    #[cfg_attr(unix, test_case("abc/../def/", "def"; "relative double dot 10"))]
+    #[cfg_attr(unix, test_case("abc/../def/ghi", "def/ghi"; "relative double dot 11"))]
+    #[cfg_attr(unix, test_case("abc/../def/ghi/", "def/ghi"; "relative double dot 12"))]
+    #[cfg_attr(unix, test_case("abc/../../ghi", "../ghi"; "relative double dot 13"))]
+    #[cfg_attr(unix, test_case("abc/../../ghi/", "../ghi"; "relative double dot 14"))]
+    #[cfg_attr(unix, test_case("abc/def/../../ghi", "ghi"; "relative double dot 15"))]
+    #[cfg_attr(unix, test_case("abc/def/../../ghi/", "ghi"; "relative double dot 16"))]
+    #[cfg_attr(windows, test_case("..\\", ".."; "relative double dot 2"))]
+    #[cfg_attr(windows, test_case("..\\..", "..\\.."; "relative double dot 3"))]
+    #[cfg_attr(windows, test_case("..\\..\\", "..\\.."; "relative double dot 4"))]
+    #[cfg_attr(windows, test_case("..\\abc", "..\\abc"; "relative double dot 5"))]
+    #[cfg_attr(windows, test_case("..\\abc\\", "..\\abc"; "relative double dot 6"))]
+    #[cfg_attr(windows, test_case("abc\\..", "."; "relative double dot 7"))]
+    #[cfg_attr(windows, test_case("abc\\..\\", "."; "relative double dot 8"))]
+    #[cfg_attr(windows, test_case("abc\\..\\def", "def"; "relative double dot 9"))]
+    #[cfg_attr(windows, test_case("abc\\..\\def\\", "def"; "relative double dot 10"))]
+    #[cfg_attr(windows, test_case("abc\\..\\def\\ghi", "def\\ghi"; "relative double dot 11"))]
+    #[cfg_attr(windows, test_case("abc\\..\\def\\ghi\\", "def\\ghi"; "relative double dot 12"))]
+    #[cfg_attr(windows, test_case("abc\\..\\..\\ghi", "..\\ghi"; "relative double dot 13"))]
+    #[cfg_attr(windows, test_case("abc\\..\\..\\ghi\\", "..\\ghi"; "relative double dot 14"))]
+    #[cfg_attr(windows, test_case("abc\\def\\..\\..\\ghi", "ghi"; "relative double dot 15"))]
+    #[cfg_attr(windows, test_case("abc\\def\\..\\..\\ghi\\", "ghi"; "relative double dot 16"))]
+    #[cfg_attr(unix, test_case("/", "/"; "absolute separator 1"))]
+    #[cfg_attr(unix, test_case("/abc", "/abc"; "absolute separator 2"))]
+    #[cfg_attr(unix, test_case("/abc/", "/abc"; "absolute separator 3"))]
+    #[cfg_attr(unix, test_case("/abc/def", "/abc/def"; "absolute separator 4"))]
+    #[cfg_attr(unix, test_case("/abc/def/", "/abc/def"; "absolute separator 5"))]
+    #[cfg_attr(unix, test_case("//abc", "/abc"; "absolute separator 6"))]
+    #[cfg_attr(unix, test_case("//abc//", "/abc"; "absolute separator 7"))]
+    #[cfg_attr(unix, test_case("//abc//def", "/abc/def"; "absolute separator 8"))]
+    #[cfg_attr(unix, test_case("//abc//def//", "/abc/def"; "absolute separator 9"))]
+    #[cfg_attr(windows, test_case("C:", "C:\\"; "absolute separator 0"))]
+    #[cfg_attr(windows, test_case("C:\\", "C:\\"; "absolute separator 1"))]
+    #[cfg_attr(windows, test_case("C:\\abc", "C:\\abc"; "absolute separator 2"))]
+    #[cfg_attr(windows, test_case("C:\\abc\\", "C:\\abc"; "absolute separator 3"))]
+    #[cfg_attr(windows, test_case("C:\\abc\\def", "C:\\abc\\def"; "absolute separator 4"))]
+    #[cfg_attr(windows, test_case("C:\\abc\\def\\", "C:\\abc\\def"; "absolute separator 5"))]
+    #[cfg_attr(windows, test_case("C:\\\\abc", "C:\\abc"; "absolute separator 6"))]
+    #[cfg_attr(windows, test_case("C:\\\\abc\\\\", "C:\\abc"; "absolute separator 7"))]
+    #[cfg_attr(windows, test_case("C:\\\\abc\\\\def", "C:\\abc\\def"; "absolute separator 8"))]
+    #[cfg_attr(windows, test_case("C:\\\\abc\\\\def\\\\", "C:\\abc\\def"; "absolute separator 9"))]
+    #[cfg_attr(windows, test_case("C:/abc", "C:\\abc"; "absolute unix separator 1"))]
+    #[cfg_attr(windows, test_case("C:/abc/", "C:\\abc"; "absolute unix separator 2"))]
+    #[cfg_attr(windows, test_case("C:/abc/def", "C:\\abc\\def"; "absolute unix separator 3"))]
+    #[cfg_attr(windows, test_case("C:/abc/def/", "C:\\abc\\def"; "absolute unix separator 4"))]
+    #[cfg_attr(unix, test_case("/.", "/"; "absolute dot 1"))]
+    #[cfg_attr(unix, test_case("/./", "/"; "absolute dot 2"))]
+    #[cfg_attr(unix, test_case("/./.", "/"; "absolute dot 3"))]
+    #[cfg_attr(unix, test_case("/././", "/"; "absolute dot 4"))]
+    #[cfg_attr(unix, test_case("/./abc", "/abc"; "absolute dot 5"))]
+    #[cfg_attr(unix, test_case("/./abc/", "/abc"; "absolute dot 6"))]
+    #[cfg_attr(unix, test_case("/abc/.", "/abc"; "absolute dot 7"))]
+    #[cfg_attr(unix, test_case("/abc/./", "/abc"; "absolute dot 8"))]
+    #[cfg_attr(windows, test_case("C:\\.", "C:\\"; "absolute dot 1"))]
+    #[cfg_attr(windows, test_case("C:\\.\\", "C:\\"; "absolute dot 2"))]
+    #[cfg_attr(windows, test_case("C:\\.\\.", "C:\\"; "absolute dot 3"))]
+    #[cfg_attr(windows, test_case("C:\\.\\.\\", "C:\\"; "absolute dot 4"))]
+    #[cfg_attr(windows, test_case("C:\\.\\abc", "C:\\abc"; "absolute dot 5"))]
+    #[cfg_attr(windows, test_case("C:\\.\\abc\\", "C:\\abc"; "absolute dot 6"))]
+    #[cfg_attr(windows, test_case("C:\\abc\\.", "C:\\abc"; "absolute dot 7"))]
+    #[cfg_attr(windows, test_case("C:\\abc\\.\\", "C:\\abc"; "absolute dot 8"))]
+    #[cfg_attr(unix, test_case("/..", "/"; "absolute double dot 1"))]
+    #[cfg_attr(unix, test_case("/../", "/"; "absolute double dot 2"))]
+    #[cfg_attr(unix, test_case("/../..", "/"; "absolute double dot 3"))]
+    #[cfg_attr(unix, test_case("/../../", "/"; "absolute double dot 4"))]
+    #[cfg_attr(unix, test_case("/../abc", "/abc"; "absolute double dot 5"))]
+    #[cfg_attr(unix, test_case("/../abc/", "/abc"; "absolute double dot 6"))]
+    #[cfg_attr(unix, test_case("/abc/..", "/"; "absolute double dot 7"))]
+    #[cfg_attr(unix, test_case("/abc/../", "/"; "absolute double dot 8"))]
+    #[cfg_attr(unix, test_case("/abc/../def", "/def"; "absolute double dot 9"))]
+    #[cfg_attr(unix, test_case("/abc/../def/", "/def"; "absolute double dot 10"))]
+    #[cfg_attr(unix, test_case("/abc/../def/ghi", "/def/ghi"; "absolute double dot 11"))]
+    #[cfg_attr(unix, test_case("/abc/../def/ghi/", "/def/ghi"; "absolute double dot 12"))]
+    #[cfg_attr(unix, test_case("/abc/../../ghi", "/ghi"; "absolute double dot 13"))]
+    #[cfg_attr(unix, test_case("/abc/../../ghi/", "/ghi"; "absolute double dot 14"))]
+    #[cfg_attr(unix, test_case("/abc/def/../../ghi", "/ghi"; "absolute double dot 15"))]
+    #[cfg_attr(unix, test_case("/abc/def/../../ghi/", "/ghi"; "absolute double dot 16"))]
+    #[cfg_attr(windows, test_case("C:\\..", "C:\\"; "absolute double dot 1"))]
+    #[cfg_attr(windows, test_case("C:\\..\\", "C:\\"; "absolute double dot 2"))]
+    #[cfg_attr(windows, test_case("C:\\..\\..", "C:\\"; "absolute double dot 3"))]
+    #[cfg_attr(windows, test_case("C:\\..\\..\\", "C:\\"; "absolute double dot 4"))]
+    #[cfg_attr(windows, test_case("C:\\..\\abc", "C:\\abc"; "absolute double dot 5"))]
+    #[cfg_attr(windows, test_case("C:\\..\\abc\\", "C:\\abc"; "absolute double dot 6"))]
+    #[cfg_attr(windows, test_case("C:\\abc\\..", "C:\\"; "absolute double dot 7"))]
+    #[cfg_attr(windows, test_case("C:\\abc\\..\\", "C:\\"; "absolute double dot 8"))]
+    #[cfg_attr(windows, test_case("C:\\abc\\..\\def", "C:\\def"; "absolute double dot 9"))]
+    #[cfg_attr(windows, test_case("C:\\abc\\..\\def\\", "C:\\def"; "absolute double dot 10"))]
+    #[cfg_attr(windows, test_case("C:\\abc\\..\\def\\ghi", "C:\\def\\ghi"; "absolute double dot 11"))]
+    #[cfg_attr(windows, test_case("C:\\abc\\..\\def\\ghi\\", "C:\\def\\ghi"; "absolute double dot 12"))]
+    #[cfg_attr(windows, test_case("C:\\abc\\..\\..\\ghi", "C:\\ghi"; "absolute double dot 13"))]
+    #[cfg_attr(windows, test_case("C:\\abc\\..\\..\\ghi\\", "C:\\ghi"; "absolute double dot 14"))]
+    #[cfg_attr(windows, test_case("C:\\abc\\def\\..\\..\\ghi", "C:\\ghi"; "absolute double dot 15"))]
+    #[cfg_attr(windows, test_case("C:\\abc\\def\\..\\..\\ghi\\", "C:\\ghi"; "absolute double dot 16"))]
+    fn normalize(input: &str, output: &str) {
+        assert_eq!(super::normalize(input), Ok(String::from(output)));
     }
 
-    mod remove_last_name {
-        use super::*;
-
-        #[test]
-        fn empty() {
-            assert_eq!(remove_last_name(String::new()), Ok(String::new()));
-        }
-
-        #[test]
-        fn name() {
-            assert_eq!(
-                remove_last_name(String::from("file.ext")),
-                Ok(String::new())
-            );
-        }
-
-        #[test]
-        fn name_parent() {
-            assert_eq!(
-                remove_last_name(String::from("dir/file.ext")),
-                Ok(String::from("dir"))
-            );
-        }
-
-        #[test]
-        fn dot() {
-            assert_eq!(remove_last_name(String::from(".")), Ok(String::new()));
-        }
-
-        #[test]
-        fn dot_parent() {
-            assert_eq!(
-                remove_last_name(String::from("./file.ext")),
-                Ok(String::from("."))
-            );
-        }
-
-        #[test]
-        fn double_dot() {
-            assert_eq!(remove_last_name(String::from("..")), Ok(String::new()));
-        }
-
-        #[test]
-        fn double_dot_parent() {
-            assert_eq!(
-                remove_last_name(String::from("../file.ext")),
-                Ok(String::from(".."))
-            );
-        }
-
-        #[test]
-        fn root() {
-            #[cfg(unix)]
-            assert_eq!(remove_last_name(String::from("/")), Ok(String::from("/")));
-            #[cfg(windows)]
-            assert_eq!(
-                remove_last_name(String::from("C:\\")),
-                Ok(String::from("C:\\"))
-            );
-        }
-
-        #[test]
-        fn root_parent() {
-            #[cfg(unix)]
-            assert_eq!(
-                remove_last_name(String::from("/file.ext")),
-                Ok(String::from("/"))
-            );
-            #[cfg(windows)]
-            assert_eq!(
-                remove_last_name(String::from("C:\\file.ext")),
-                Ok(String::from("C:\\"))
-            );
-        }
-
-        #[test]
-        #[cfg(windows)]
-        fn prefix() {
-            assert_eq!(remove_last_name(String::from("C:")), Ok(String::from("C:")));
-        }
+    #[test_case("", ".."; "empty")]
+    #[test_case("file.ext", "."; "name")]
+    #[cfg_attr(unix, test_case("/", "/"; "root"))]
+    #[cfg_attr(unix, test_case("/file.ext", "/"; "root parent"))]
+    #[cfg_attr(unix, test_case(".", "./.."; "dot"))]
+    #[cfg_attr(unix, test_case("..", "../.."; "double dot"))]
+    #[cfg_attr(unix, test_case("./file.ext", "."; "dot parent"))]
+    #[cfg_attr(unix, test_case("../file.ext", ".."; "double dot parent"))]
+    #[cfg_attr(unix, test_case("dir/file.ext", "dir"; "name parent"))]
+    #[cfg_attr(windows, test_case("C:", "C:\\"; "prefix"))]
+    #[cfg_attr(windows, test_case("C:\\", "C:\\"; "root"))]
+    #[cfg_attr(windows, test_case("C:\\file.ext", "C:\\"; "root parent"))]
+    #[cfg_attr(windows, test_case(".", ".\\.."; "dot"))]
+    #[cfg_attr(windows, test_case("..", "..\\.."; "double dot"))]
+    #[cfg_attr(windows, test_case(".\\file.ext", "."; "dot parent"))]
+    #[cfg_attr(windows, test_case("..\\file.ext", ".."; "double dot parent"))]
+    #[cfg_attr(windows, test_case("dir\\file.ext", "dir"; "name parent"))]
+    fn get_parent_directory(input: &str, output: &str) {
+        assert_eq!(
+            super::get_parent_directory(String::from(input)),
+            Ok(String::from(output))
+        );
     }
 
-    mod get_file_name {
-        use super::*;
-
-        #[test]
-        fn empty() {
-            assert_eq!(get_file_name(""), Ok(String::new()));
-        }
-
-        #[test]
-        fn name() {
-            assert_eq!(get_file_name("file.ext"), Ok(String::from("file.ext")));
-        }
-
-        #[test]
-        fn name_parent() {
-            assert_eq!(get_file_name("dir/file.ext"), Ok(String::from("file.ext")));
-        }
-
-        #[test]
-        fn dot() {
-            assert_eq!(get_file_name("."), Ok(String::new()));
-        }
-
-        #[test]
-        fn dot_parent() {
-            assert_eq!(get_file_name("./file.ext"), Ok(String::from("file.ext")));
-        }
-
-        #[test]
-        fn double_dot() {
-            assert_eq!(get_file_name(".."), Ok(String::new()));
-        }
-
-        #[test]
-        fn double_dot_parent() {
-            assert_eq!(get_file_name("../file.ext"), Ok(String::from("file.ext")));
-        }
-
-        #[test]
-        fn root() {
-            #[cfg(unix)]
-            assert_eq!(get_file_name("/"), Ok(String::new()));
-            #[cfg(windows)]
-            assert_eq!(get_file_name("C:\\"), Ok(String::new()));
-        }
-
-        #[test]
-        fn root_parent() {
-            #[cfg(unix)]
-            assert_eq!(get_file_name("/file.ext"), Ok(String::from("file.ext")));
-            #[cfg(windows)]
-            assert_eq!(get_file_name("C:\\file.ext"), Ok(String::from("file.ext")));
-        }
-
-        #[test]
-        #[cfg(windows)]
-        fn prefix() {
-            assert_eq!(get_file_name("C:"), Ok(String::new()));
-        }
+    #[test_case("", ""; "empty")]
+    #[test_case(".", ""; "dot")]
+    #[test_case("..", ""; "double dot")]
+    #[test_case("file.ext", ""; "name")]
+    #[cfg_attr(unix, test_case("/", "/"; "root"))]
+    #[cfg_attr(unix, test_case("/file.ext", "/"; "root parent"))]
+    #[cfg_attr(unix, test_case("./file.ext", "."; "dot parent"))]
+    #[cfg_attr(unix, test_case("../file.ext", ".."; "double dot parent"))]
+    #[cfg_attr(unix, test_case("dir/file.ext", "dir"; "name parent"))]
+    #[cfg_attr(windows, test_case("C:", "C:"; "prefix"))]
+    #[cfg_attr(windows, test_case("C:\\", "C:\\"; "root"))]
+    #[cfg_attr(windows, test_case("C:\\file.ext", "C:\\"; "root parent"))]
+    #[cfg_attr(windows, test_case(".\\file.ext", "."; "dot parent"))]
+    #[cfg_attr(windows, test_case("..\\file.ext", ".."; "double dot parent"))]
+    #[cfg_attr(windows, test_case("dir\\file.ext", "dir"; "name parent"))]
+    fn remove_last_name(input: &str, output: &str) {
+        assert_eq!(
+            super::remove_last_name(String::from(input)),
+            Ok(String::from(output))
+        );
     }
 
-    mod get_last_name {
-        use super::*;
-
-        #[test]
-        fn empty() {
-            assert_eq!(get_last_name(""), Ok(String::new()));
-        }
-
-        #[test]
-        fn name() {
-            assert_eq!(get_last_name("file.ext"), Ok(String::from("file.ext")));
-        }
-
-        #[test]
-        fn name_parent() {
-            assert_eq!(get_last_name("dir/file.ext"), Ok(String::from("file.ext")));
-        }
-
-        #[test]
-        fn dot() {
-            assert_eq!(get_last_name("."), Ok(String::from(".")));
-        }
-
-        #[test]
-        fn dot_parent() {
-            assert_eq!(get_last_name("./file.ext"), Ok(String::from("file.ext")));
-        }
-
-        #[test]
-        fn double_dot() {
-            assert_eq!(get_last_name(".."), Ok(String::from("..")));
-        }
-
-        #[test]
-        fn double_dot_parent() {
-            assert_eq!(get_last_name("../file.ext"), Ok(String::from("file.ext")));
-        }
-
-        #[test]
-        fn root() {
-            #[cfg(unix)]
-            assert_eq!(get_last_name("/"), Ok(String::new()));
-            #[cfg(windows)]
-            assert_eq!(get_last_name("C:\\"), Ok(String::new()));
-        }
-
-        #[test]
-        fn root_parent() {
-            #[cfg(unix)]
-            assert_eq!(get_last_name("/file.ext"), Ok(String::from("file.ext")));
-            #[cfg(windows)]
-            assert_eq!(get_last_name("C:\\file.ext"), Ok(String::from("file.ext")));
-        }
-
-        #[test]
-        #[cfg(windows)]
-        fn prefix() {
-            assert_eq!(get_last_name("C:"), Ok(String::new()));
-        }
+    #[test_case("", ""; "empty")]
+    #[test_case(".", ""; "dot")]
+    #[test_case("..", ""; "double dot")]
+    #[test_case("file.ext", "file.ext"; "name")]
+    #[cfg_attr(unix, test_case("/", ""; "root"))]
+    #[cfg_attr(unix, test_case("/file.ext", "file.ext"; "root parent"))]
+    #[cfg_attr(unix, test_case("./file.ext", "file.ext"; "dot parent"))]
+    #[cfg_attr(unix, test_case("../file.ext", "file.ext"; "double dot parent"))]
+    #[cfg_attr(unix, test_case("dir/file.ext", "file.ext"; "name parent"))]
+    #[cfg_attr(windows, test_case("C:", ""; "prefix"))]
+    #[cfg_attr(windows, test_case("C:\\", ""; "root"))]
+    #[cfg_attr(windows, test_case("C:\\file.ext", "file.ext"; "root parent"))]
+    #[cfg_attr(windows, test_case(".\\file.ext", "file.ext"; "dot parent"))]
+    #[cfg_attr(windows, test_case("..\\file.ext", "file.ext"; "double dot parent"))]
+    #[cfg_attr(windows, test_case("dir\\file.ext", "file.ext"; "name parent"))]
+    fn get_file_name(input: &str, output: &str) {
+        assert_eq!(super::get_file_name(input), Ok(String::from(output)));
     }
 
-    mod get_base_name {
-        use super::*;
-
-        #[test]
-        fn empty() {
-            assert_eq!(get_base_name(""), Ok(String::new()));
-        }
-
-        #[test]
-        fn base() {
-            assert_eq!(get_base_name("file"), Ok(String::from("file")));
-        }
-
-        #[test]
-        fn name() {
-            assert_eq!(get_base_name("file.ext"), Ok(String::from("file")));
-        }
-
-        #[test]
-        fn name_parent() {
-            assert_eq!(get_base_name("dir/file.ext"), Ok(String::from("file")));
-        }
-
-        #[test]
-        fn dot() {
-            assert_eq!(get_base_name("."), Ok(String::new()));
-        }
-
-        #[test]
-        fn dot_parent() {
-            assert_eq!(get_base_name("./file.ext"), Ok(String::from("file")));
-        }
-
-        #[test]
-        fn double_dot() {
-            assert_eq!(get_base_name(".."), Ok(String::new()));
-        }
-
-        #[test]
-        fn double_dot_parent() {
-            assert_eq!(get_base_name("../file.ext"), Ok(String::from("file")));
-        }
-
-        #[test]
-        fn root() {
-            #[cfg(unix)]
-            assert_eq!(get_base_name("/"), Ok(String::new()));
-            #[cfg(windows)]
-            assert_eq!(get_base_name("C:\\"), Ok(String::new()));
-        }
-
-        #[test]
-        fn root_parent() {
-            #[cfg(unix)]
-            assert_eq!(get_base_name("/file.ext"), Ok(String::from("file")));
-            #[cfg(windows)]
-            assert_eq!(get_base_name("C:\\file.ext"), Ok(String::from("file")));
-        }
-
-        #[test]
-        #[cfg(windows)]
-        fn prefix() {
-            assert_eq!(get_base_name("C:"), Ok(String::new()));
-        }
+    #[test_case("", ""; "empty")]
+    #[test_case(".", "."; "dot")]
+    #[test_case("..", ".."; "double dot")]
+    #[test_case("file.ext", "file.ext"; "name")]
+    #[cfg_attr(unix, test_case("/", ""; "root"))]
+    #[cfg_attr(unix, test_case("/file.ext", "file.ext"; "root parent"))]
+    #[cfg_attr(unix, test_case("./file.ext", "file.ext"; "dot parent"))]
+    #[cfg_attr(unix, test_case("../file.ext", "file.ext"; "double dot parent"))]
+    #[cfg_attr(unix, test_case("dir/file.ext", "file.ext"; "name parent"))]
+    #[cfg_attr(windows, test_case("C:", ""; "prefix"))]
+    #[cfg_attr(windows, test_case("C:\\", ""; "root"))]
+    #[cfg_attr(windows, test_case("C:\\file.ext", "file.ext"; "root parent"))]
+    #[cfg_attr(windows, test_case(".\\file.ext", "file.ext"; "dot parent"))]
+    #[cfg_attr(windows, test_case("..\\file.ext", "file.ext"; "double dot parent"))]
+    #[cfg_attr(windows, test_case("dir\\file.ext", "file.ext"; "name parent"))]
+    fn get_last_name(input: &str, output: &str) {
+        assert_eq!(super::get_last_name(input), Ok(String::from(output)));
     }
 
-    mod remove_extension {
-        use super::*;
-
-        #[test]
-        fn empty() {
-            assert_eq!(remove_extension(String::new()), Ok(String::new()));
-        }
-
-        #[test]
-        fn base() {
-            assert_eq!(
-                remove_extension(String::from("file")),
-                Ok(String::from("file"))
-            );
-        }
-
-        #[test]
-        fn name() {
-            assert_eq!(
-                remove_extension(String::from("file.ext")),
-                Ok(String::from("file"))
-            );
-        }
-
-        #[test]
-        fn name_parent() {
-            assert_eq!(
-                remove_extension(String::from("dir/file.ext")),
-                Ok(String::from("dir/file"))
-            );
-        }
-
-        #[test]
-        fn dot() {
-            assert_eq!(remove_extension(String::from(".")), Ok(String::from(".")));
-        }
-
-        #[test]
-        fn dot_parent() {
-            assert_eq!(
-                remove_extension(String::from("./file.ext")),
-                Ok(String::from("./file"))
-            );
-        }
-
-        #[test]
-        fn double_dot() {
-            assert_eq!(remove_extension(String::from("..")), Ok(String::from("..")));
-        }
-
-        #[test]
-        fn double_dot_parent() {
-            assert_eq!(
-                remove_extension(String::from("../file.ext")),
-                Ok(String::from("../file"))
-            );
-        }
-
-        #[test]
-        fn root() {
-            #[cfg(unix)]
-            assert_eq!(remove_extension(String::from("/")), Ok(String::from("/")));
-            #[cfg(windows)]
-            assert_eq!(
-                remove_extension(String::from("C:\\")),
-                Ok(String::from("C:\\"))
-            );
-        }
-
-        #[test]
-        fn root_parent() {
-            #[cfg(unix)]
-            assert_eq!(
-                remove_extension(String::from("/file.ext")),
-                Ok(String::from("/file"))
-            );
-            #[cfg(windows)]
-            assert_eq!(
-                remove_extension(String::from("C:\\file.ext")),
-                Ok(String::from("C:\\file"))
-            );
-        }
-
-        #[test]
-        #[cfg(windows)]
-        fn prefix() {
-            assert_eq!(remove_extension(String::from("C:")), Ok(String::from("C:")));
-        }
+    #[test_case("", ""; "empty")]
+    #[test_case(".", ""; "dot")]
+    #[test_case("..", ""; "double dot")]
+    #[test_case("file.ext", "file"; "name")]
+    #[cfg_attr(unix, test_case("/", ""; "root"))]
+    #[cfg_attr(unix, test_case("/file.ext", "file"; "root parent"))]
+    #[cfg_attr(unix, test_case("./file.ext", "file"; "dot parent"))]
+    #[cfg_attr(unix, test_case("../file.ext", "file"; "double dot parent"))]
+    #[cfg_attr(unix, test_case("dir/file.ext", "file"; "name parent"))]
+    #[cfg_attr(windows, test_case("C:", ""; "prefix"))]
+    #[cfg_attr(windows, test_case("C:\\", ""; "root"))]
+    #[cfg_attr(windows, test_case("C:\\file.ext", "file"; "root parent"))]
+    #[cfg_attr(windows, test_case(".\\file.ext", "file"; "dot parent"))]
+    #[cfg_attr(windows, test_case("..\\file.ext", "file"; "double dot parent"))]
+    #[cfg_attr(windows, test_case("dir\\file.ext", "file"; "name parent"))]
+    fn get_base_name(input: &str, output: &str) {
+        assert_eq!(super::get_base_name(input), Ok(String::from(output)));
     }
 
-    mod get_extension {
-        use super::*;
-
-        #[test]
-        fn empty() {
-            assert_eq!(get_extension(""), Ok(String::new()));
-        }
-
-        #[test]
-        fn base() {
-            assert_eq!(get_extension("file"), Ok(String::new()));
-        }
-
-        #[test]
-        fn name() {
-            assert_eq!(get_extension("file.ext"), Ok(String::from("ext")));
-        }
-
-        #[test]
-        fn name_parent() {
-            assert_eq!(get_extension("dir/file.ext"), Ok(String::from("ext")));
-        }
-
-        #[test]
-        fn dot() {
-            assert_eq!(get_extension("."), Ok(String::new()));
-        }
-
-        #[test]
-        fn dot_parent() {
-            assert_eq!(get_extension("./file.ext"), Ok(String::from("ext")));
-        }
-
-        #[test]
-        fn double_dot() {
-            assert_eq!(get_extension(".."), Ok(String::new()));
-        }
-
-        #[test]
-        fn double_dot_parent() {
-            assert_eq!(get_extension("../file.ext"), Ok(String::from("ext")));
-        }
-
-        #[cfg(unix)]
-        mod unix {
-            use super::*;
-
-            #[test]
-            fn root() {
-                #[cfg(unix)]
-                assert_eq!(get_extension("/"), Ok(String::new()));
-                #[cfg(windows)]
-                assert_eq!(get_extension("C:\\"), Ok(String::new()));
-            }
-
-            #[test]
-            fn root_parent() {
-                #[cfg(unix)]
-                assert_eq!(get_extension("/file.ext"), Ok(String::from("ext")));
-                #[cfg(windows)]
-                assert_eq!(get_extension("C:\\file.ext"), Ok(String::from("ext")));
-            }
-
-            #[test]
-            #[cfg(windows)]
-            fn prefix() {
-                assert_eq!(get_extension("C:"), Ok(String::new()));
-            }
-        }
+    #[test_case("", ""; "empty")]
+    #[test_case(".", "."; "dot")]
+    #[test_case("..", ".."; "double dot")]
+    #[test_case("file.ext", "file"; "name")]
+    #[cfg_attr(unix, test_case("/", "/"; "root"))]
+    #[cfg_attr(unix, test_case("/file.ext", "/file"; "root parent"))]
+    #[cfg_attr(unix, test_case("./file.ext", "./file"; "dot parent"))]
+    #[cfg_attr(unix, test_case("../file.ext", "../file"; "double dot parent"))]
+    #[cfg_attr(unix, test_case("dir/file.ext", "dir/file"; "name parent"))]
+    #[cfg_attr(windows, test_case("C:", "C:"; "prefix"))]
+    #[cfg_attr(windows, test_case("C:\\", "C:\\"; "root"))]
+    #[cfg_attr(windows, test_case("C:\\file.ext", "C:\\file"; "root parent"))]
+    #[cfg_attr(windows, test_case(".\\file.ext", ".\\file"; "dot parent"))]
+    #[cfg_attr(windows, test_case("..\\file.ext", "..\\file"; "double dot parent"))]
+    #[cfg_attr(windows, test_case("dir\\file.ext", "dir\\file"; "name parent"))]
+    fn remove_extension(input: &str, output: &str) {
+        assert_eq!(
+            super::remove_extension(String::from(input)),
+            Ok(String::from(output))
+        );
     }
 
-    mod get_extension_with_dot {
-        use super::*;
-
-        #[test]
-        fn empty() {
-            assert_eq!(get_extension_with_dot(""), Ok(String::new()));
-        }
-
-        #[test]
-        fn base() {
-            assert_eq!(get_extension_with_dot("file"), Ok(String::new()));
-        }
-
-        #[test]
-        fn name() {
-            assert_eq!(get_extension_with_dot("file.ext"), Ok(String::from(".ext")));
-        }
-
-        #[test]
-        fn name_parent() {
-            assert_eq!(
-                get_extension_with_dot("dir/file.ext"),
-                Ok(String::from(".ext"))
-            );
-        }
-
-        #[test]
-        fn dot() {
-            assert_eq!(get_extension_with_dot("."), Ok(String::new()));
-        }
-
-        #[test]
-        fn dot_parent() {
-            assert_eq!(
-                get_extension_with_dot("./file.ext"),
-                Ok(String::from(".ext"))
-            );
-        }
-
-        #[test]
-        fn double_dot() {
-            assert_eq!(get_extension_with_dot(".."), Ok(String::new()));
-        }
-
-        #[test]
-        fn double_dot_parent() {
-            assert_eq!(
-                get_extension_with_dot("../file.ext"),
-                Ok(String::from(".ext"))
-            );
-        }
-
-        #[test]
-        fn root() {
-            #[cfg(unix)]
-            assert_eq!(get_extension_with_dot("/"), Ok(String::new()));
-            #[cfg(windows)]
-            assert_eq!(get_extension_with_dot("C:\\"), Ok(String::new()));
-        }
-
-        #[test]
-        fn root_parent() {
-            #[cfg(unix)]
-            assert_eq!(
-                get_extension_with_dot("/file.ext"),
-                Ok(String::from(".ext"))
-            );
-            #[cfg(windows)]
-            assert_eq!(
-                get_extension_with_dot("C:\\file.ext"),
-                Ok(String::from(".ext"))
-            );
-        }
-
-        #[test]
-        #[cfg(windows)]
-        fn prefix() {
-            assert_eq!(get_extension_with_dot("C:"), Ok(String::new()));
-        }
+    #[test_case("", ""; "empty")]
+    #[test_case(".", ""; "dot")]
+    #[test_case("..", ""; "double dot")]
+    #[test_case("file.ext", "ext"; "name")]
+    #[cfg_attr(unix, test_case("/", ""; "root"))]
+    #[cfg_attr(unix, test_case("/file.ext", "ext"; "root parent"))]
+    #[cfg_attr(unix, test_case("./file.ext", "ext"; "dot parent"))]
+    #[cfg_attr(unix, test_case("../file.ext", "ext"; "double dot parent"))]
+    #[cfg_attr(unix, test_case("dir/file.ext", "ext"; "name parent"))]
+    #[cfg_attr(windows, test_case("C:", ""; "prefix"))]
+    #[cfg_attr(windows, test_case("C:\\", ""; "root"))]
+    #[cfg_attr(windows, test_case("C:\\file.ext", "ext"; "root parent"))]
+    #[cfg_attr(windows, test_case(".\\file.ext", "ext"; "dot parent"))]
+    #[cfg_attr(windows, test_case("..\\file.ext", "ext"; "double dot parent"))]
+    #[cfg_attr(windows, test_case("dir\\file.ext", "ext"; "name parent"))]
+    fn get_extension(input: &str, output: &str) {
+        assert_eq!(super::get_extension(input), Ok(String::from(output)));
     }
 
-    mod ensure_trailing_dir_separator {
-        use super::*;
-
-        #[test]
-        fn empty() {
-            #[cfg(unix)]
-            assert_eq!(
-                ensure_trailing_dir_separator(String::new()),
-                String::from("/")
-            );
-            #[cfg(windows)]
-            assert_eq!(
-                ensure_trailing_dir_separator(String::new()),
-                String::from("\\")
-            );
-        }
-
-        #[test]
-        fn name() {
-            #[cfg(unix)]
-            assert_eq!(
-                ensure_trailing_dir_separator(String::from("dir")),
-                String::from("dir/")
-            );
-            #[cfg(windows)]
-            assert_eq!(
-                ensure_trailing_dir_separator(String::from("dir")),
-                String::from("dir\\")
-            );
-        }
-
-        #[test]
-        fn name_separator() {
-            #[cfg(unix)]
-            assert_eq!(
-                ensure_trailing_dir_separator(String::from("dir/")),
-                String::from("dir/")
-            );
-            #[cfg(windows)]
-            assert_eq!(
-                ensure_trailing_dir_separator(String::from("dir\\")),
-                String::from("dir\\")
-            );
-            #[cfg(windows)]
-            assert_eq!(
-                ensure_trailing_dir_separator(String::from("dir/")),
-                String::from("dir\\")
-            );
-        }
-
-        #[test]
-        fn root() {
-            #[cfg(unix)]
-            assert_eq!(
-                ensure_trailing_dir_separator(String::from("/")),
-                String::from("/")
-            );
-            #[cfg(windows)]
-            assert_eq!(
-                ensure_trailing_dir_separator(String::from("C:\\")),
-                String::from("C:\\")
-            );
-            #[cfg(windows)]
-            assert_eq!(
-                ensure_trailing_dir_separator(String::from("C:/")),
-                String::from("C:\\")
-            );
-        }
-
-        #[test]
-        #[cfg(windows)]
-        fn prefix() {
-            assert_eq!(
-                ensure_trailing_dir_separator(String::from("C:")),
-                String::from("C:\\")
-            );
-        }
+    #[test_case("", ""; "empty")]
+    #[test_case(".", ""; "dot")]
+    #[test_case("..", ""; "double dot")]
+    #[test_case("file.ext", ".ext"; "name")]
+    #[cfg_attr(unix, test_case("/", ""; "root"))]
+    #[cfg_attr(unix, test_case("/file.ext", ".ext"; "root parent"))]
+    #[cfg_attr(unix, test_case("./file.ext", ".ext"; "dot parent"))]
+    #[cfg_attr(unix, test_case("../file.ext", ".ext"; "double dot parent"))]
+    #[cfg_attr(unix, test_case("dir/file.ext", ".ext"; "name parent"))]
+    #[cfg_attr(windows, test_case("C:", ""; "prefix"))]
+    #[cfg_attr(windows, test_case("C:\\", ""; "root"))]
+    #[cfg_attr(windows, test_case("C:\\file.ext", ".ext"; "root parent"))]
+    #[cfg_attr(windows, test_case(".\\file.ext", ".ext"; "dot parent"))]
+    #[cfg_attr(windows, test_case("..\\file.ext", ".ext"; "double dot parent"))]
+    #[cfg_attr(windows, test_case("dir\\file.ext", ".ext"; "name parent"))]
+    fn get_extension_with_dot(input: &str, output: &str) {
+        assert_eq!(
+            super::get_extension_with_dot(input),
+            Ok(String::from(output))
+        );
     }
 
-    mod remove_trailing_dir_separator {
-        use super::*;
-
-        #[test]
-        fn empty() {
-            assert_eq!(remove_trailing_dir_separator(String::new()), String::new());
-        }
-
-        #[test]
-        fn name() {
-            #[cfg(unix)]
-            assert_eq!(
-                remove_trailing_dir_separator(String::from("dir")),
-                String::from("dir")
-            );
-        }
-
-        #[test]
-        fn name_separator() {
-            assert_eq!(
-                remove_trailing_dir_separator(String::from("dir/")),
-                String::from("dir")
-            );
-            #[cfg(windows)]
-            assert_eq!(
-                remove_trailing_dir_separator(String::from("dir\\")),
-                String::from("dir")
-            );
-        }
-
-        #[test]
-        fn root() {
-            #[cfg(unix)]
-            assert_eq!(
-                remove_trailing_dir_separator(String::from("/")),
-                String::new()
-            );
-            #[cfg(windows)]
-            assert_eq!(
-                remove_trailing_dir_separator(String::from("C:\\")),
-                String::from("C:")
-            );
-            #[cfg(windows)]
-            assert_eq!(
-                remove_trailing_dir_separator(String::from("C:/")),
-                String::from("C:")
-            );
-        }
-
-        #[test]
-        #[cfg(windows)]
-        fn prefix() {
-            assert_eq!(
-                remove_trailing_dir_separator(String::from("C:")),
-                String::from("C:")
-            );
-        }
+    #[cfg_attr(unix, test_case("", "/"; "empty"))]
+    #[cfg_attr(unix, test_case("/", "/"; "root"))]
+    #[cfg_attr(unix, test_case("dir", "dir/"; "name"))]
+    #[cfg_attr(unix, test_case("dir/", "dir/"; "name separator"))]
+    #[cfg_attr(windows, test_case("", "\\"; "empty"))]
+    #[cfg_attr(windows, test_case("C:", "C:\\"; "prefix"))]
+    #[cfg_attr(windows, test_case("C:\\", "C:\\"; "root"))]
+    #[cfg_attr(windows, test_case("C:/", "C:\\"; "root unix separator"))]
+    #[cfg_attr(windows, test_case("dir", "dir\\"; "name"))]
+    #[cfg_attr(windows, test_case("dir\\", "dir\\"; "name separator"))]
+    #[cfg_attr(windows, test_case("dir/", "dir\\"; "name unix separator"))]
+    fn ensure_trailing_dir_separator(input: &str, output: &str) {
+        assert_eq!(
+            super::ensure_trailing_dir_separator(String::from(input)),
+            output
+        );
     }
 
-    mod into_string {
-        use super::*;
-        use crate::testing::make_non_utf8_os_string;
-
-        #[test]
-        fn utf8() {
-            assert_eq!(into_string(PathBuf::from("abc")), Ok(String::from("abc")));
-        }
-
-        #[test]
-        fn non_utf8() {
-            assert_eq!(
-                into_string(PathBuf::from(make_non_utf8_os_string())),
-                Err(ErrorKind::InputNotUtf8)
-            )
-        }
+    #[cfg_attr(unix, test_case("", ""; "empty"))]
+    #[cfg_attr(unix, test_case("/", ""; "root"))]
+    #[cfg_attr(unix, test_case("dir", "dir"; "name"))]
+    #[cfg_attr(unix, test_case("dir/", "dir"; "name separator"))]
+    #[cfg_attr(windows, test_case("", ""; "empty"))]
+    #[cfg_attr(windows, test_case("C:", "C:"; "prefix"))]
+    #[cfg_attr(windows, test_case("C:\\", "C:"; "root"))]
+    #[cfg_attr(windows, test_case("C:/", "C:"; "root unix separator"))]
+    #[cfg_attr(windows, test_case("dir", "dir"; "name"))]
+    #[cfg_attr(windows, test_case("dir\\", "dir"; "name separator"))]
+    #[cfg_attr(windows, test_case("dir/", "dir"; "name unix separator"))]
+    fn remove_trailing_dir_separator(input: &str, output: &str) {
+        assert_eq!(
+            super::remove_trailing_dir_separator(String::from(input)),
+            output
+        );
     }
 
-    mod to_str {
-        use super::*;
-        use crate::testing::make_non_utf8_os_string;
+    #[test_case("abc", Ok(String::from("abc")); "utf-8")]
+    #[test_case(make_non_utf8_os_string(), Err(ErrorKind::InputNotUtf8); "non utf-8")]
+    fn into_string<T: Into<PathBuf>>(input: T, result: BaseResult<String>) {
+        assert_eq!(super::into_string(input.into()), result);
+    }
 
-        #[test]
-        fn utf8() {
-            assert_eq!(to_str(OsStr::new("abc")), Ok("abc"));
-        }
+    #[test_case("abc", Ok("abc"); "utf-8")]
+    #[test_case(make_non_utf8_os_string(), Err(ErrorKind::InputNotUtf8); "non utf-8")]
+    fn to_str<T: Into<OsString>>(input: T, result: BaseResult<&str>) {
+        assert_eq!(super::to_str(&input.into()), result);
+    }
 
-        #[test]
-        fn non_utf8() {
-            assert_eq!(
-                to_str(&make_non_utf8_os_string()),
-                Err(ErrorKind::InputNotUtf8)
-            )
-        }
+    fn fmt_working_dir(template: &str, working_dir: &Path) -> String {
+        template.replace("{working_dir}", working_dir.to_str().unwrap())
     }
 }
