@@ -72,125 +72,45 @@ fn parse_u32<T: TryFrom<u32>>(value: u32) -> T {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use test_case::test_case;
 
-    #[test]
-    fn gets_bits() {
-        assert_eq!(get_bits::<u8>(), 8);
-        assert_eq!(get_bits::<u16>(), 16);
-        assert_eq!(get_bits::<u32>(), 32);
-        assert_eq!(get_bits::<u64>(), 64);
-        assert_eq!(get_bits::<u128>(), 128);
+    #[test_case(0u8, 8; "8-bit")]
+    #[test_case(0u16, 16; "16-bit")]
+    #[test_case(0u32, 32; "32-bit")]
+    #[test_case(0u64, 64; "64-bit")]
+    #[test_case(0u128, 128; "128-bit")]
+    fn gets_bits<T>(_: T, bits: usize) {
+        assert_eq!(super::get_bits::<T>(), bits);
     }
 
     mod parse_integer {
         use super::*;
+        use crate::utils::ByteRange;
+        use test_case::test_case;
 
-        #[test]
-        fn empty() {
-            let mut reader = Reader::from("");
+        #[test_case("", ErrorKind::ExpectedNumber, 0..0; "empty")]
+        #[test_case("ab", ErrorKind::ExpectedNumber, 0..2; "alpha")]
+        #[test_case("25500", ErrorKind::IntegerOverflow(String::from("255")), 0..4; "mul overflow")]
+        #[test_case("2560", ErrorKind::IntegerOverflow(String::from("255")), 0..3; "add overflow")]
+        fn err(input: &str, kind: ErrorKind, range: ByteRange) {
             assert_eq!(
-                parse_integer::<usize>(&mut reader),
-                Err(Error {
-                    kind: ErrorKind::ExpectedNumber,
-                    range: 0..0,
-                })
+                parse_integer::<u8>(&mut Reader::from(input)),
+                Err(Error { kind, range })
             );
-            assert_eq!(reader.position(), 0);
         }
 
-        #[test]
-        fn alpha() {
-            let mut reader = Reader::from("ab");
-            assert_eq!(
-                parse_integer::<usize>(&mut reader),
-                Err(Error {
-                    kind: ErrorKind::ExpectedNumber,
-                    range: 0..2,
-                })
-            );
-            assert_eq!(reader.position(), 0);
-        }
-
-        #[test]
-        fn zero() {
-            let mut reader = Reader::from("0");
-            assert_eq!(parse_integer(&mut reader), Ok(0));
-            assert_eq!(reader.position(), 1);
-        }
-
-        #[test]
-        fn zero_then_zero() {
-            let mut reader = Reader::from("00");
-            assert_eq!(parse_integer(&mut reader), Ok(0));
-            assert_eq!(reader.position(), 2);
-        }
-
-        #[test]
-        fn zero_then_nonzero() {
-            let mut reader = Reader::from("01");
-            assert_eq!(parse_integer(&mut reader), Ok(1));
-            assert_eq!(reader.position(), 2);
-        }
-
-        #[test]
-        fn zero_then_alpha() {
-            let mut reader = Reader::from("0a");
-            assert_eq!(parse_integer(&mut reader), Ok(0));
-            assert_eq!(reader.position(), 1);
-        }
-
-        #[test]
-        fn single_digit() {
-            let mut reader = Reader::from("1");
-            assert_eq!(parse_integer(&mut reader), Ok(1));
-            assert_eq!(reader.position(), 1);
-        }
-
-        #[test]
-        fn single_digit_then_alpha() {
-            let mut reader = Reader::from("1a");
-            assert_eq!(parse_integer(&mut reader), Ok(1));
-            assert_eq!(reader.position(), 1);
-        }
-
-        #[test]
-        fn multiple_digits() {
-            let mut reader = Reader::from("1234567890");
-            assert_eq!(parse_integer(&mut reader), Ok(1_234_567_890));
-            assert_eq!(reader.position(), 10);
-        }
-
-        #[test]
-        fn multiple_digits_then_alpha() {
-            let mut reader = Reader::from("1234567890a");
-            assert_eq!(parse_integer(&mut reader), Ok(1_234_567_890));
-            assert_eq!(reader.position(), 10);
-        }
-
-        #[test]
-        fn mul_overflow() {
-            let mut reader = Reader::from("25500");
-            assert_eq!(
-                parse_integer::<u8>(&mut reader),
-                Err(Error {
-                    kind: ErrorKind::IntegerOverflow(String::from("255")),
-                    range: 0..4
-                })
-            );
-            assert_eq!(reader.position(), 4);
-        }
-
-        #[test]
-        fn add_overflow() {
-            let mut reader = Reader::from("2560");
-            assert_eq!(
-                parse_integer::<u8>(&mut reader),
-                Err(Error {
-                    kind: ErrorKind::IntegerOverflow(String::from("255")),
-                    range: 0..3
-                })
-            );
-            assert_eq!(reader.position(), 3);
+        #[test_case("0", 0, 1; "zero")]
+        #[test_case("00", 0, 2; "zero then zero")]
+        #[test_case("01", 1, 2; "zero then nonzero")]
+        #[test_case("0a", 0, 1; "zero then alpha")]
+        #[test_case("1", 1, 1; "single digit")]
+        #[test_case("1a", 1, 1; "single digit then alpha")]
+        #[test_case("1234567890", 1_234_567_890, 10; "multiple digits")]
+        #[test_case("1234567890a", 1_234_567_890, 10; "multiple digits then alpha")]
+        fn ok(input: &str, output: usize, position: usize) {
+            let mut reader = Reader::from(input);
+            assert_eq!(parse_integer(&mut reader), Ok(output));
+            assert_eq!(reader.position(), position);
         }
     }
 }
