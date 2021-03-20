@@ -102,259 +102,144 @@ impl<T: AsChar> Reader<T> {
 mod tests {
     use super::*;
     use crate::pattern::char::Char;
-    use ntest::*;
+    use test_case::test_case;
 
-    #[test]
-    fn position() {
-        let mut reader = make_reader();
-        assert_eq!(reader.position(), 0);
+    const CHARS: [Char; 3] = [
+        Char::Raw('a'),
+        Char::Escaped('b', ['x', 'y']),
+        Char::Raw('č'),
+    ];
 
-        reader.seek_to(0);
-        assert_eq!(reader.position(), 0);
-
-        reader.seek_to(1);
-        assert_eq!(reader.position(), 1);
-
-        reader.seek_to(2);
-        assert_eq!(reader.position(), 3);
-
-        reader.seek_to(3);
-        assert_eq!(reader.position(), 5);
+    #[test_case(0, 0; "index 0")]
+    #[test_case(1, 1; "index 1")]
+    #[test_case(2, 3; "index 2")]
+    #[test_case(3, 5; "index 3")]
+    fn position(index: usize, position: usize) {
+        assert_eq!(make_reader_at(index).position(), position);
     }
 
-    #[test]
-    fn end() {
-        assert_eq!(make_reader().end(), 5);
+    #[test_case(0, 5; "index 0")]
+    #[test_case(1, 5; "index 1")]
+    #[test_case(2, 5; "index 2")]
+    #[test_case(3, 5; "index 3")]
+    fn end(index: usize, position: usize) {
+        assert_eq!(make_reader_at(index).end(), position);
     }
 
-    #[test]
-    fn seek() {
-        let mut reader = make_reader();
-
+    #[test_case(0, 1; "index 0")]
+    #[test_case(1, 3; "index 1")]
+    #[test_case(2, 5; "index 2")]
+    #[test_case(3, 5; "index 3")]
+    fn seek(index: usize, position: usize) {
+        let mut reader = make_reader_at(index);
         reader.seek();
-        assert_eq!(reader.position(), 1);
-
-        reader.seek();
-        assert_eq!(reader.position(), 3);
-
-        reader.seek();
-        assert_eq!(reader.position(), 5);
-
-        reader.seek();
-        assert_eq!(reader.position(), 5);
+        assert_eq!(reader.position(), position);
     }
 
-    #[test]
-    fn seek_to_end() {
-        let mut reader = make_reader();
-
+    #[test_case(0, 5; "index 0")]
+    #[test_case(1, 5; "index 1")]
+    #[test_case(2, 5; "index 2")]
+    #[test_case(3, 5; "index 3")]
+    fn seek_to_end(index: usize, position: usize) {
+        let mut reader = make_reader_at(index);
         reader.seek_to_end();
-        assert_eq!(reader.position(), 5);
-
-        reader.seek_to_end();
-        assert_eq!(reader.position(), 5);
+        assert_eq!(reader.position(), position);
     }
 
-    #[test]
-    fn peek() {
-        let mut reader = make_reader();
-
-        reader.seek_to(0);
-        assert_eq!(reader.peek(), Some(&Char::Raw('a')));
-        assert_eq!(reader.position(), 0);
-
-        reader.seek_to(1);
-        assert_eq!(reader.peek(), Some(&Char::Escaped('b', ['x', 'y'])));
-        assert_eq!(reader.position(), 1);
-
-        reader.seek_to(2);
-        assert_eq!(reader.peek(), Some(&Char::Raw('č')));
-        assert_eq!(reader.position(), 3);
-
-        reader.seek_to(3);
-        assert_eq!(reader.peek(), None);
-        assert_eq!(reader.position(), 5);
+    #[test_case(0, Some(&CHARS[0]), 0; "index 0")]
+    #[test_case(1, Some(&CHARS[1]), 1; "index 1")]
+    #[test_case(2, Some(&CHARS[2]), 3; "index 2")]
+    #[test_case(3, None, 5; "index 3")]
+    fn peek(index: usize, result: Option<&Char>, position: usize) {
+        let reader = make_reader_at(index);
+        assert_eq!(reader.peek(), result);
+        assert_eq!(reader.position(), position);
     }
 
-    #[test]
-    fn peek_char() {
-        let mut reader = make_reader();
-
-        reader.seek_to(0);
-        assert_eq!(reader.peek_char(), Some('a'));
-        assert_eq!(reader.position(), 0);
-
-        reader.seek_to(1);
-        assert_eq!(reader.peek_char(), Some('b'));
-        assert_eq!(reader.position(), 1);
-
-        reader.seek_to(2);
-        assert_eq!(reader.peek_char(), Some('č'));
-        assert_eq!(reader.position(), 3);
-
-        reader.seek_to(3);
-        assert_eq!(reader.peek_char(), None);
-        assert_eq!(reader.position(), 5);
+    #[test_case(0, Some('a'), 0; "index 0")]
+    #[test_case(1, Some('b'), 1; "index 1")]
+    #[test_case(2, Some('č'), 3; "index 2")]
+    #[test_case(3, None, 5; "index 3")]
+    fn peek_char(index: usize, result: Option<char>, position: usize) {
+        let reader = make_reader_at(index);
+        assert_eq!(reader.peek_char(), result);
+        assert_eq!(reader.position(), position);
     }
 
-    #[test]
-    fn peek_to_end() {
-        let mut reader = make_reader();
-
-        reader.seek_to(0);
-        assert_eq!(
-            reader.peek_to_end(),
-            Chars::from(
-                &[
-                    Char::Raw('a'),
-                    Char::Escaped('b', ['x', 'y']),
-                    Char::Raw('č')
-                ][..]
-            )
-        );
-        assert_eq!(reader.position(), 0);
-
-        reader.seek_to(1);
-        assert_eq!(
-            reader.peek_to_end(),
-            Chars::from(&[Char::Escaped('b', ['x', 'y']), Char::Raw('č')][..])
-        );
-        assert_eq!(reader.position(), 1);
-
-        reader.seek_to(2);
-        assert_eq!(reader.peek_to_end(), Chars::from(&[Char::Raw('č')][..]));
-        assert_eq!(reader.position(), 3);
-
-        reader.seek_to(3);
-        assert_eq!(reader.peek_to_end(), Chars::from(&[][..]));
-        assert_eq!(reader.position(), 5);
+    #[test_case(0, &CHARS[..], 0; "index 0")]
+    #[test_case(1, &CHARS[1..], 1; "index 1")]
+    #[test_case(2, &CHARS[2..], 3; "index 2")]
+    #[test_case(3, &[][..], 5; "index 3")]
+    fn peek_to_end(index: usize, result: &[Char], position: usize) {
+        let reader = make_reader_at(index);
+        assert_eq!(reader.peek_to_end(), Chars::from(result));
+        assert_eq!(reader.position(), position);
     }
 
-    #[test]
-    fn read() {
-        let mut reader = make_reader();
-
-        assert_eq!(reader.read(), Some(&Char::Raw('a')));
-        assert_eq!(reader.position(), 1);
-
-        assert_eq!(reader.read(), Some(&Char::Escaped('b', ['x', 'y'])));
-        assert_eq!(reader.position(), 3);
-
-        assert_eq!(reader.read(), Some(&Char::Raw('č')));
-        assert_eq!(reader.position(), 5);
-
-        assert_eq!(reader.read(), None);
-        assert_eq!(reader.position(), 5);
+    #[test_case(0, Some(&CHARS[0]), 1; "index 0")]
+    #[test_case(1, Some(&CHARS[1]), 3; "index 1")]
+    #[test_case(2, Some(&CHARS[2]), 5; "index 2")]
+    #[test_case(3, None, 5; "index 3")]
+    fn read(index: usize, result: Option<&Char>, position: usize) {
+        let mut reader = make_reader_at(index);
+        assert_eq!(reader.read(), result);
+        assert_eq!(reader.position(), position);
     }
 
-    #[test]
-    fn read_char() {
-        let mut reader = make_reader();
-
-        assert_eq!(reader.read_char(), Some('a'));
-        assert_eq!(reader.position(), 1);
-
-        assert_eq!(reader.read_char(), Some('b'));
-        assert_eq!(reader.position(), 3);
-
-        assert_eq!(reader.read_char(), Some('č'));
-        assert_eq!(reader.position(), 5);
-
-        assert_eq!(reader.read_char(), None);
-        assert_eq!(reader.position(), 5);
+    #[test_case(0, Some('a'), 1; "index 0")]
+    #[test_case(1, Some('b'), 3; "index 1")]
+    #[test_case(2, Some('č'), 5; "index 2")]
+    #[test_case(3, None, 5; "index 3")]
+    fn read_char(index: usize, result: Option<char>, position: usize) {
+        let mut reader = make_reader_at(index);
+        assert_eq!(reader.read_char(), result);
+        assert_eq!(reader.position(), position);
     }
 
-    #[test]
-    fn read_expected() {
-        let mut reader = make_reader();
-
-        assert_false!(reader.read_expected('b'));
-        assert_eq!(reader.position(), 0);
-
-        assert_true!(reader.read_expected('a'));
-        assert_eq!(reader.position(), 1);
-
-        assert_false!(reader.read_expected('a'));
-        assert_eq!(reader.position(), 1);
-
-        assert_true!(reader.read_expected('b'));
-        assert_eq!(reader.position(), 3);
-
-        assert_true!(reader.read_expected('č'));
-        assert_eq!(reader.position(), 5);
-
-        assert_false!(reader.read_expected('č'));
-        assert_eq!(reader.position(), 5);
+    #[test_case(0, 'a', true, 1; "index 0 hit")]
+    #[test_case(1, 'b', true, 3; "index 1 hit")]
+    #[test_case(2, 'č', true, 5; "index 2 hit")]
+    #[test_case(0, 'x', false, 0; "index 0 miss")]
+    #[test_case(1, 'x', false, 1; "index 1 miss")]
+    #[test_case(2, 'x', false, 3; "index 2 miss")]
+    #[test_case(3, 'x', false, 5; "index 3 miss")]
+    fn read_expected(index: usize, expected: char, result: bool, position: usize) {
+        let mut reader = make_reader_at(index);
+        assert_eq!(reader.read_expected(expected), result);
+        assert_eq!(reader.position(), position);
     }
 
-    #[test]
-    fn read_to_end() {
-        let mut reader = make_reader();
-
-        reader.seek_to(0);
-        assert_eq!(
-            reader.read_to_end(),
-            Chars::from(
-                &[
-                    Char::Raw('a'),
-                    Char::Escaped('b', ['x', 'y']),
-                    Char::Raw('č')
-                ][..]
-            )
-        );
-        assert_eq!(reader.position(), 5);
-
-        reader.seek_to(1);
-        assert_eq!(
-            reader.read_to_end(),
-            Chars::from(&[Char::Escaped('b', ['x', 'y']), Char::Raw('č')][..])
-        );
-        assert_eq!(reader.position(), 5);
-
-        reader.seek_to(2);
-        assert_eq!(reader.read_to_end(), Chars::from(&[Char::Raw('č')][..]));
-        assert_eq!(reader.position(), 5);
-
-        reader.seek_to(3);
-        assert_eq!(reader.read_to_end(), Chars::from(&[][..]));
-        assert_eq!(reader.position(), 5);
+    #[test_case(0, &CHARS[..], 5; "index 0")]
+    #[test_case(1, &CHARS[1..], 5; "index 1")]
+    #[test_case(2, &CHARS[2..], 5; "index 2")]
+    #[test_case(3, &[][..], 5; "index 3")]
+    fn read_to_end(index: usize, result: &[Char], position: usize) {
+        let mut reader = make_reader_at(index);
+        assert_eq!(reader.read_to_end(), Chars::from(result));
+        assert_eq!(reader.position(), position);
     }
 
-    #[test]
-    fn read_until() {
-        let mut reader = make_reader();
-
-        reader.seek_to(0);
-        assert_eq!(reader.read_until(&Char::Raw('a')), Chars::from(&[][..]));
-
-        reader.seek_to(0);
-        assert_eq!(
-            reader.read_until(&Char::Raw('b')),
-            Chars::from(&make_chars()[..1])
-        );
-
-        reader.seek_to(0);
-        assert_eq!(
-            reader.read_until(&Char::Raw('č')),
-            Chars::from(&make_chars()[..2])
-        );
-
-        reader.seek_to(0);
-        assert_eq!(
-            reader.read_until(&Char::Raw('?')),
-            Chars::from(&make_chars()[..])
-        );
+    #[test_case(0, &CHARS[0], &[][..], 1; "index 0 to 0")]
+    #[test_case(1, &CHARS[1], &[][..], 3; "index 1 to 1")]
+    #[test_case(2, &CHARS[2], &[][..], 5; "index 2 to 2")]
+    #[test_case(0, &CHARS[1], &CHARS[..1], 3; "index 0 to 1")]
+    #[test_case(0, &CHARS[2], &CHARS[..2], 5; "index 0 to 2")]
+    #[test_case(1, &CHARS[2], &CHARS[1..2], 5; "index 1 to 2")]
+    #[test_case(1, &Char::Raw('x'), &CHARS[1..], 5; "index 1 to end")]
+    #[test_case(0, &Char::Raw('x'), &CHARS[..], 5; "index 0 to end")]
+    #[test_case(2, &Char::Raw('x'), &CHARS[2..], 5; "index 2 to end")]
+    #[test_case(3, &Char::Raw('x'), &[][..], 5; "index 3 to end")]
+    fn read_until(index: usize, delimiter: &Char, result: &[Char], position: usize) {
+        let mut reader = make_reader_at(index);
+        assert_eq!(reader.read_until(delimiter), Chars::from(result));
+        assert_eq!(reader.position(), position);
     }
 
-    fn make_reader() -> Reader<Char> {
-        Reader::new(make_chars())
-    }
-
-    fn make_chars() -> Vec<Char> {
-        vec![
-            Char::Raw('a'),
-            Char::Escaped('b', ['x', 'y']),
-            Char::Raw('č'),
-        ]
+    fn make_reader_at(index: usize) -> Reader<Char> {
+        let mut reader = Reader::new(CHARS.into());
+        if index > 0 {
+            reader.seek_to(index)
+        }
+        reader
     }
 }
