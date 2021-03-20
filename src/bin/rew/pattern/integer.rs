@@ -2,70 +2,37 @@ use crate::pattern::char::Char;
 use crate::pattern::parse::{Error, ErrorKind, Result};
 use crate::pattern::reader::Reader;
 use num_traits::PrimInt;
-use std::convert::TryFrom;
 use std::fmt::{Debug, Display};
+use std::str::FromStr;
 
 pub const fn get_bits<T>() -> usize {
     std::mem::size_of::<T>() * 8
 }
 
-pub trait ParsableInt: TryFrom<u32> + PrimInt + Display + Debug {}
+pub trait ParsableInt: PrimInt + FromStr + Display + Debug {}
 
-impl<T: TryFrom<u32> + PrimInt + Display + Debug> ParsableInt for T {}
+impl<T: PrimInt + FromStr + Display + Debug> ParsableInt for T {}
 
 pub fn parse_integer<T: ParsableInt>(reader: &mut Reader<Char>) -> Result<T> {
-    if let Some(ch @ '0'..='9') = reader.peek_char() {
-        let position = reader.position();
+    let position = reader.position();
+    let mut buffer = String::new();
+
+    while let Some(digit @ '0'..='9') = reader.peek_char() {
+        buffer.push(digit);
         reader.seek();
+    }
 
-        let base: T = parse_u32(10);
-        let mut number: T = parse_digit(ch);
-
-        while let Some(ch @ '0'..='9') = reader.peek_char() {
-            reader.seek();
-
-            match number.checked_mul(&base) {
-                Some(result) => number = result,
-                None => {
-                    return Err(Error {
-                        kind: ErrorKind::IntegerOverflow(T::max_value().to_string()),
-                        range: position..reader.position(),
-                    })
-                }
-            }
-
-            match number.checked_add(&parse_digit(ch)) {
-                Some(result) => number = result,
-                None => {
-                    return Err(Error {
-                        kind: ErrorKind::IntegerOverflow(T::max_value().to_string()),
-                        range: position..reader.position(),
-                    })
-                }
-            }
-        }
-
-        Ok(number)
-    } else {
+    if buffer.is_empty() {
         Err(Error {
             kind: ErrorKind::ExpectedNumber,
             range: reader.position()..reader.end(),
         })
-    }
-}
-
-fn parse_digit<T: TryFrom<u32>>(value: char) -> T {
-    // This should never fail even for T = u8, the caller makes sure value is a digit
-    parse_u32(value.to_digit(10).expect("Expected a digit"))
-}
-
-fn parse_u32<T: TryFrom<u32>>(value: u32) -> T {
-    // This should never fail even for T = u8, the caller makes sure value is a digit
-    // We are not using .expect() because it requires TryFrom::Error to implement Display
-    // which would introduce another unnecessary function template parameter.
-    match T::try_from(value) {
-        Ok(result) => result,
-        _ => panic!("Expected to convert from u32"),
+    } else {
+        buffer.parse::<T>().map_err(|_| Error {
+            // This is the only possible reason for an error
+            kind: ErrorKind::IntegerOverflow(T::max_value().to_string()),
+            range: position..reader.position(),
+        })
     }
 }
 
@@ -90,8 +57,8 @@ mod tests {
 
         #[test_case("", ErrorKind::ExpectedNumber, 0..0; "empty")]
         #[test_case("ab", ErrorKind::ExpectedNumber, 0..2; "alpha")]
-        #[test_case("25500", ErrorKind::IntegerOverflow(String::from("255")), 0..4; "mul overflow")]
-        #[test_case("2560", ErrorKind::IntegerOverflow(String::from("255")), 0..3; "add overflow")]
+        #[test_case("256", ErrorKind::IntegerOverflow(String::from("255")), 0..3; "overflow")]
+        #[test_case("256a", ErrorKind::IntegerOverflow(String::from("255")), 0..3; "overflow then alpha")]
         fn err(input: &str, kind: ErrorKind, range: ByteRange) {
             assert_eq!(
                 parse_integer::<u8>(&mut Reader::from(input)),
