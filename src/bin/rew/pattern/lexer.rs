@@ -115,7 +115,6 @@ mod tests {
     use super::*;
     use crate::pattern::symbols::DEFAULT_ESCAPE;
     use crate::utils::ByteRange;
-    use claim::*;
     use test_case::test_case;
 
     #[test_case("%", ErrorKind::UnterminatedEscapeSequence('%'), 0..1)]
@@ -218,7 +217,8 @@ mod tests {
     fn token_count(input: &str, count: usize) {
         let mut lexer = Lexer::new(input, DEFAULT_ESCAPE);
         for _ in 0..count {
-            assert_matches!(lexer.read_token(), Ok(Some(_)));
+            // Won't compile with rust nightly which defines its own assert_matches
+            claim::assert_matches!(lexer.read_token(), Ok(Some(_)));
         }
         assert_eq!(lexer.read_token(), Ok(None));
     }
