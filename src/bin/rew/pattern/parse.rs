@@ -236,7 +236,7 @@ mod tests {
 
         #[test]
         fn string() {
-            assert_eq!(Separator::String('\t'.into()).to_string(), "'\\t'");
+            assert_eq!(Separator::String(",".into()).to_string(), "','");
         }
 
         #[test]

@@ -86,6 +86,7 @@ impl fmt::Display for Column {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::pattern::symbols::DEFAULT_SEPARATOR;
     use crate::utils::{AnyString, ByteRange};
     use test_case::test_case;
 
@@ -97,7 +98,10 @@ mod tests {
     #[test_case("1/[0-9", ErrorKind::RegexInvalid(AnyString::any()), 2..6; "invalid regex separator")]
     fn parse_err(input: &str, kind: ErrorKind, range: ByteRange) {
         assert_eq!(
-            Column::parse(&mut Reader::from(input), &Separator::String('\t'.into())),
+            Column::parse(
+                &mut Reader::from(input),
+                &Separator::String(DEFAULT_SEPARATOR.into())
+            ),
             Err(Error { kind, range })
         );
     }
@@ -106,11 +110,14 @@ mod tests {
         use super::*;
         use test_case::test_case;
 
-        #[test_case("1", 0, "\t"; "index")]
+        #[test_case("1", 0, &String::from(DEFAULT_SEPARATOR); "index")]
         #[test_case("10:abc", 9, "abc"; "index and separator")]
         fn parse(input: &str, index: IndexValue, separator: &str) {
             assert_eq!(
-                Column::parse(&mut Reader::from(input), &Separator::String('\t'.into())),
+                Column::parse(
+                    &mut Reader::from(input),
+                    &Separator::String(DEFAULT_SEPARATOR.into())
+                ),
                 Ok(Column {
                     index,
                     separator: Separator::String(separator.into())

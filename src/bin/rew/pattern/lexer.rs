@@ -159,7 +159,7 @@ mod tests {
     #[test_case(9, Token::ExprEnd, 12..13; "token 9")]
     #[test_case(10, Token::Raw(vec![Char::Raw('h'), Char::Raw('i')]), 13..15; "token 10")]
     fn multiple_tokens(index: usize, value: Token, range: ByteRange) {
-        let mut lexer = Lexer::new("a{|}bc{de|fg}hi", '%');
+        let mut lexer = Lexer::new("a{|}bc{de|fg}hi", DEFAULT_ESCAPE);
         for _ in 0..index {
             lexer.read_token().unwrap();
         }

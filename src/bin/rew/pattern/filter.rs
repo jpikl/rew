@@ -264,6 +264,7 @@ mod tests {
         EmptySubstitution, RegexSubstitution, StringSubstitution, Substitution,
     };
     use crate::pattern::switch::{Case, RegexSwitch};
+    use crate::pattern::symbols::DEFAULT_SEPARATOR;
     use crate::utils::Empty;
     use crate::utils::{AnyString, ByteRange};
     use test_case::test_case;
@@ -326,12 +327,12 @@ mod tests {
         #[test_case("#-2-", Filter::SubstringBackward(index_range_from()); "substring backward from")]
         #[test_case("#-2-3", Filter::SubstringBackward(index_range_between()); "substring backward between")]
         #[test_case("#-2+3", Filter::SubstringBackward(index_range_length()); "substring backward length")]
-        #[test_case("&2", Filter::GetColumn(column_string()); "column global separator")]
-        #[test_case("&2:\t", Filter::GetColumn(column_string()); "column string separator")]
-        #[test_case("&2/\\s+", Filter::GetColumn(column_regex()); "column regex separator")]
-        #[test_case("&-2", Filter::GetColumnBackward(column_string()); "column backward global separator")]
-        #[test_case("&-2:\t", Filter::GetColumnBackward(column_string()); "column backward string separator")]
-        #[test_case("&-2/\\s+", Filter::GetColumnBackward(column_regex()); "column backward regex separator")]
+        #[test_case("&2", Filter::GetColumn(column_global()); "column global separator")]
+        #[test_case("&2:,", Filter::GetColumn(column_string()); "column string separator")]
+        #[test_case("&2/[, ]+", Filter::GetColumn(column_regex()); "column regex separator")]
+        #[test_case("&-2", Filter::GetColumnBackward(column_global()); "column backward global separator")]
+        #[test_case("&-2:,", Filter::GetColumnBackward(column_string()); "column backward string separator")]
+        #[test_case("&-2/[, ]+", Filter::GetColumnBackward(column_regex()); "column backward regex separator")]
         #[test_case("r/ab", Filter::ReplaceFirst(substitution_string_1()); "remove first")]
         #[test_case("r/ab/x", Filter::ReplaceFirst(substitution_string_2()); "replace first")]
         #[test_case("R/ab", Filter::ReplaceAll(substitution_string_1()); "remove all")]
@@ -417,10 +418,10 @@ mod tests {
         #[test_case("abcde", Filter::SubstringBackward(index_range_from()), "abcd"; "substring backward from")]
         #[test_case("abcde", Filter::SubstringBackward(index_range_between()), "cd"; "substring backward between")]
         #[test_case("abcde", Filter::SubstringBackward(index_range_length()), "bcd"; "substring backward length")]
-        #[test_case("a \t b \t c \t d", Filter::GetColumn(column_string()), " b "; "column string separator")]
-        #[test_case("a \t b \t c \t d", Filter::GetColumn(column_regex()), "b"; "column regex separator")]
-        #[test_case("a \t b \t c \t d", Filter::GetColumnBackward(column_string()), " c "; "column backward string separator")]
-        #[test_case("a \t b \t c \t d", Filter::GetColumnBackward(column_regex()), "c"; "column backward regex separator")]
+        #[test_case("a , b , c , d", Filter::GetColumn(column_string()), " b "; "column string separator")]
+        #[test_case("a , b , c , d", Filter::GetColumn(column_regex()), "b"; "column regex separator")]
+        #[test_case("a , b , c , d", Filter::GetColumnBackward(column_string()), " c "; "column backward string separator")]
+        #[test_case("a , b , c , d", Filter::GetColumnBackward(column_regex()), "c"; "column backward regex separator")]
         #[test_case("abcd_abcd", Filter::ReplaceFirst(substitution_string_1()), "cd_abcd"; "remove first")]
         #[test_case("abcd_abcd", Filter::ReplaceFirst(substitution_string_2()), "xcd_abcd"; "replace first")]
         #[test_case("abcd_abcd", Filter::ReplaceAll(substitution_string_1()), "cd_cd"; "remove all")]
@@ -496,10 +497,10 @@ mod tests {
     #[test_case(Filter::SubstringBackward(index_range_from()), "Substring from 2.. backward"; "substring backward from")]
     #[test_case(Filter::SubstringBackward(index_range_between()), "Substring from 2..3 backward"; "substring backward between")]
     #[test_case(Filter::SubstringBackward(index_range_length()), "Substring from 2..4 backward"; "substring backward length")]
-    #[test_case(Filter::GetColumn(column_string()), "Get column #2 ('\\t' separator)"; "column string separator")]
-    #[test_case(Filter::GetColumn(column_regex()), "Get column #2 (regular expression '\\s+' separator)"; "column regex separator")]
-    #[test_case(Filter::GetColumnBackward(column_string()), "Get column #2 ('\\t' separator) backward"; "column backward string separator")]
-    #[test_case(Filter::GetColumnBackward(column_regex()), "Get column #2 (regular expression '\\s+' separator) backward"; "column backward regex separator")]
+    #[test_case(Filter::GetColumn(column_string()), "Get column #2 (',' separator)"; "column string separator")]
+    #[test_case(Filter::GetColumn(column_regex()), "Get column #2 (regular expression '[, ]+' separator)"; "column regex separator")]
+    #[test_case(Filter::GetColumnBackward(column_string()), "Get column #2 (',' separator) backward"; "column backward string separator")]
+    #[test_case(Filter::GetColumnBackward(column_regex()), "Get column #2 (regular expression '[, ]+' separator) backward"; "column backward regex separator")]
     #[test_case(Filter::ReplaceFirst(substitution_string_1()), "Replace first 'ab' with ''"; "remove first")]
     #[test_case(Filter::ReplaceFirst(substitution_string_2()), "Replace first 'ab' with 'x'"; "replace first")]
     #[test_case(Filter::ReplaceAll(substitution_string_1()), "Replace all 'ab' with ''"; "remove all")]
@@ -552,17 +553,24 @@ mod tests {
         Range::<Index>(1, Some(4))
     }
 
+    fn column_global() -> Column {
+        Column {
+            index: 1,
+            separator: Separator::String(DEFAULT_SEPARATOR.into()),
+        }
+    }
+
     fn column_string() -> Column {
         Column {
             index: 1,
-            separator: Separator::String('\t'.into()),
+            separator: Separator::String(','.into()),
         }
     }
 
     fn column_regex() -> Column {
         Column {
             index: 1,
-            separator: Separator::Regex("\\s+".into()),
+            separator: Separator::Regex("[, ]+".into()),
         }
     }
 
