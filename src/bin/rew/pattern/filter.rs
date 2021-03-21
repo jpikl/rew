@@ -17,7 +17,6 @@ use unidecode::unidecode;
 
 #[derive(Debug, PartialEq)]
 pub enum Filter {
-    // Path filters
     WorkingDir,
     AbsolutePath,
     RelativePath,
@@ -33,28 +32,18 @@ pub enum Filter {
     ExtensionWithDot,
     EnsureTrailingDirSeparator,
     RemoveTrailingDirSeparator,
-
-    // Substring filters
     Substring(IndexRange),
     SubstringBackward(IndexRange),
-
-    // Column filters
     GetColumn(Column),
     GetColumnBackward(Column),
-
-    // Replace filters
     ReplaceFirst(StringSubstitution),
     ReplaceAll(StringSubstitution),
     ReplaceEmpty(EmptySubstitution),
-
-    // Regex filters
     RegexMatch(RegexHolder),
     RegexReplaceFirst(RegexSubstitution),
     RegexReplaceAll(RegexSubstitution),
     RegexSwitch(RegexSwitch),
     RegexCapture(usize),
-
-    // Format filters
     Trim,
     ToLowercase,
     ToUppercase,
@@ -62,8 +51,6 @@ pub enum Filter {
     RemoveNonAscii,
     LeftPad(Padding),
     RightPad(Padding),
-
-    // Generators
     Repeat(Repetition),
     LocalCounter,
     GlobalCounter,
@@ -77,7 +64,6 @@ impl Filter {
 
         if let Some(char) = reader.read() {
             match char.as_char() {
-                // Path filters
                 'w' => Ok(Self::WorkingDir),
                 'a' => Ok(Self::AbsolutePath),
                 'A' => Ok(Self::RelativePath),
@@ -93,8 +79,6 @@ impl Filter {
                 'E' => Ok(Self::ExtensionWithDot),
                 'z' => Ok(Self::EnsureTrailingDirSeparator),
                 'Z' => Ok(Self::RemoveTrailingDirSeparator),
-
-                // Substring filters
                 '#' => {
                     if reader.read_expected(RANGE_DELIMITER) {
                         Ok(Self::SubstringBackward(IndexRange::parse(reader)?))
@@ -102,8 +86,6 @@ impl Filter {
                         Ok(Self::Substring(IndexRange::parse(reader)?))
                     }
                 }
-
-                // Column filters
                 '&' => {
                     let separator = &config.separator;
                     if reader.read_expected(RANGE_DELIMITER) {
@@ -112,20 +94,14 @@ impl Filter {
                         Ok(Self::GetColumn(Column::parse(reader, separator)?))
                     }
                 }
-
-                // Replace filters
                 'r' => Ok(Self::ReplaceFirst(StringSubstitution::parse(reader)?)),
                 'R' => Ok(Self::ReplaceAll(StringSubstitution::parse(reader)?)),
                 '?' => Ok(Self::ReplaceEmpty(EmptySubstitution::parse(reader)?)),
-
-                // Regex filters
                 '=' => Ok(Self::RegexMatch(RegexHolder::parse(reader)?)),
                 's' => Ok(Self::RegexReplaceFirst(RegexSubstitution::parse(reader)?)),
                 'S' => Ok(Self::RegexReplaceAll(RegexSubstitution::parse(reader)?)),
                 '@' => Ok(Self::RegexSwitch(RegexSwitch::parse(reader)?)),
                 '$' => Ok(Self::RegexCapture(parse_integer(reader)?)),
-
-                // Format filters
                 't' => Ok(Self::Trim),
                 'v' => Ok(Self::ToLowercase),
                 '^' => Ok(Self::ToUppercase),
@@ -133,14 +109,11 @@ impl Filter {
                 'I' => Ok(Self::RemoveNonAscii),
                 '<' => Ok(Self::LeftPad(Padding::parse(reader, '<')?)),
                 '>' => Ok(Self::RightPad(Padding::parse(reader, '>')?)),
-
-                // Generators
                 '*' => Ok(Self::Repeat(Repetition::parse(reader)?)),
                 'c' => Ok(Self::LocalCounter),
                 'C' => Ok(Self::GlobalCounter),
                 'u' => Ok(Self::RandomNumber(NumberRange::parse(reader)?)),
                 'U' => Ok(Self::RandomUuid),
-
                 _ => Err(parse::Error {
                     kind: parse::ErrorKind::UnknownFilter(char.clone()),
                     range: position..reader.position(),
@@ -156,7 +129,6 @@ impl Filter {
 
     pub fn eval(&self, mut value: String, context: &eval::Context) -> eval::BaseResult<String> {
         match self {
-            // Path filters
             Self::WorkingDir => path::to_string(context.working_dir),
             Self::AbsolutePath => path::to_absolute(value, context.working_dir),
             Self::RelativePath => path::to_relative(value, context.working_dir),
@@ -172,28 +144,18 @@ impl Filter {
             Self::ExtensionWithDot => path::get_extension_with_dot(&value),
             Self::EnsureTrailingDirSeparator => Ok(path::ensure_trailing_dir_separator(value)),
             Self::RemoveTrailingDirSeparator => Ok(path::remove_trailing_dir_separator(value)),
-
-            // Substring filters
             Self::Substring(range) => Ok(range.substr(value)),
             Self::SubstringBackward(range) => Ok(range.substr_back(value)),
-
-            // Column filters
             Self::GetColumn(column) => Ok(column.get(&value).to_string()),
             Self::GetColumnBackward(column) => Ok(column.get_backward(&value).to_string()),
-
-            // Replace filters
             Self::ReplaceFirst(substitution) => Ok(substitution.replace_first(&value)),
             Self::ReplaceAll(substitution) => Ok(substitution.replace_all(&value)),
             Self::ReplaceEmpty(substitution) => Ok(substitution.replace(value)),
-
-            // Regex filters
             Self::RegexMatch(regex) => Ok(regex.first_match(&value)),
             Self::RegexReplaceFirst(substitution) => Ok(substitution.replace_first(&value)),
             Self::RegexReplaceAll(substitution) => Ok(substitution.replace_all(&value)),
             Self::RegexSwitch(switch) => Ok(switch.eval(&value).to_string()),
             Self::RegexCapture(number) => Ok(context.regex_capture(*number).to_string()),
-
-            // Format filters
             Self::Trim => Ok(value.trim().to_string()),
             Self::ToLowercase => Ok(value.to_lowercase()),
             Self::ToUppercase => Ok(value.to_uppercase()),
@@ -204,8 +166,6 @@ impl Filter {
             }
             Self::LeftPad(padding) => Ok(padding.apply_left(value)),
             Self::RightPad(padding) => Ok(padding.apply_right(value)),
-
-            // Generators
             Self::Repeat(repetition) => Ok(repetition.expand()),
             Self::LocalCounter => Ok(context.local_counter.to_string()),
             Self::GlobalCounter => Ok(context.global_counter.to_string()),
@@ -218,7 +178,6 @@ impl Filter {
 impl fmt::Display for Filter {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            // Path filters
             Self::WorkingDir => write!(formatter, "Working directory"),
             Self::AbsolutePath => write!(formatter, "Absolute path"),
             Self::RelativePath => write!(formatter, "Relative path"),
@@ -238,23 +197,17 @@ impl fmt::Display for Filter {
             Self::RemoveTrailingDirSeparator => {
                 write!(formatter, "Remove trailing directory separator")
             }
-
-            // Substring filters
             Self::Substring(range) => write!(formatter, "Substring from {}", range),
             Self::SubstringBackward(range) => {
-                write!(formatter, "Substring from {} backwards", range)
+                write!(formatter, "Substring from {} backward", range)
             }
             Self::GetColumn(column) => write!(formatter, "Get {}", column),
-            Self::GetColumnBackward(column) => write!(formatter, "Get {} backwards", column),
-
-            // Replace filters
+            Self::GetColumnBackward(column) => write!(formatter, "Get {} backward", column),
             Self::ReplaceFirst(substitution) => write!(formatter, "Replace first {}", substitution),
             Self::ReplaceAll(substitution) => write!(formatter, "Replace all {}", substitution),
             Self::ReplaceEmpty(substitution) => {
                 write!(formatter, "Replace {}", substitution)
             }
-
-            // Regex filters
             Self::RegexMatch(substitution) => {
                 write!(formatter, "Match of regular expression '{}'", substitution)
             }
@@ -278,8 +231,6 @@ impl fmt::Display for Filter {
                     number
                 )
             }
-
-            // Format filters
             Self::Trim => write!(formatter, "Trim"),
             Self::ToLowercase => write!(formatter, "To lowercase"),
             Self::ToUppercase => write!(formatter, "To uppercase"),
@@ -287,8 +238,6 @@ impl fmt::Display for Filter {
             Self::RemoveNonAscii => write!(formatter, "Remove non-ASCII"),
             Self::LeftPad(padding) => write!(formatter, "Left pad with {}", padding),
             Self::RightPad(padding) => write!(formatter, "Right pad with {}", padding),
-
-            // Generators
             Self::Repeat(repetition) => write!(formatter, "Repeat {}", repetition),
             Self::LocalCounter => write!(formatter, "Local counter"),
             Self::GlobalCounter => write!(formatter, "Global counter"),
@@ -305,1320 +254,398 @@ mod tests {
     use super::Filter;
     use crate::pattern::char::Char;
     use crate::pattern::column::Column;
-    use crate::pattern::index::Index;
-    use crate::pattern::number::Number;
+    use crate::pattern::index::{Index, IndexRange};
+    use crate::pattern::number::{Number, NumberRange};
     use crate::pattern::padding::Padding;
     use crate::pattern::parse::Separator;
     use crate::pattern::range::Range;
-    use crate::pattern::regex::RegexHolder;
     use crate::pattern::repetition::Repetition;
-    use crate::pattern::substitution::Substitution;
+    use crate::pattern::substitution::{
+        EmptySubstitution, RegexSubstitution, StringSubstitution, Substitution,
+    };
     use crate::pattern::switch::{Case, RegexSwitch};
-    use crate::utils::AnyString;
     use crate::utils::Empty;
+    use crate::utils::{AnyString, ByteRange};
+    use test_case::test_case;
 
     mod parse {
         use super::*;
-        use crate::pattern::column::Column;
-        use crate::pattern::parse::{Config, Error, ErrorKind, Result, Separator};
+        use crate::pattern::parse::{Config, Error, ErrorKind};
         use crate::pattern::reader::Reader;
+        use test_case::test_case;
 
-        #[test]
-        fn empty() {
+        #[test_case("", ErrorKind::ExpectedFilter, 0..0; "empty")]
+        #[test_case("-", ErrorKind::UnknownFilter(Char::Raw('-')), 0..1; "unknown")]
+        #[test_case("#", ErrorKind::ExpectedRange, 1..1; "substring expected range")]
+        #[test_case("#-", ErrorKind::ExpectedRange, 2..2; "substring backward expected range")]
+        #[test_case("&", ErrorKind::ExpectedNumber, 1..1; "column expected number")]
+        #[test_case("&-", ErrorKind::ExpectedNumber, 2..2; "column backward expected number")]
+        #[test_case("&1:", ErrorKind::ExpectedColumnSeparator, 3..3; "column expected separator")]
+        #[test_case("&-1:", ErrorKind::ExpectedColumnSeparator, 4..4; "column backward expected separator")]
+        #[test_case("&1/[0-9", ErrorKind::RegexInvalid(AnyString::any()), 3..7; "column regex invalid")]
+        #[test_case("&-1/[0-9", ErrorKind::RegexInvalid(AnyString::any()), 4..8; "column backward regex invalid")]
+        #[test_case("r", ErrorKind::ExpectedSubstitution, 1..1; "replace expected substitution")]
+        #[test_case("R", ErrorKind::ExpectedSubstitution, 1..1; "replace all expected substitution")]
+        #[test_case("=", ErrorKind::ExpectedRegex, 1..1; "regex match expected regex")]
+        #[test_case("=[0-9", ErrorKind::RegexInvalid(AnyString::any()), 1..5; "regex match invalid regex")]
+        #[test_case("s", ErrorKind::ExpectedSubstitution, 1..1; "regex replace expected substitution")]
+        #[test_case("s/[0-9/", ErrorKind::RegexInvalid(AnyString::any()), 2..6; "regex replace invalid regex")]
+        #[test_case("S", ErrorKind::ExpectedSubstitution, 1..1; "regex replace all expected substitution")]
+        #[test_case("S/[0-9/", ErrorKind::RegexInvalid(AnyString::any()), 2..6; "regex replace all invalid regex")]
+        #[test_case("@:[0-9:digit:alpha", ErrorKind::RegexInvalid(AnyString::any()), 2..6; "regex switch invalid regex")]
+        #[test_case("$", ErrorKind::ExpectedNumber, 1..1; "regex capture expected number")]
+        #[test_case("<x", ErrorKind::PaddingPrefixInvalid('<', Some(Char::Raw('x'))), 1..2; "padding left prefix invalid")]
+        #[test_case(">y", ErrorKind::PaddingPrefixInvalid('>', Some(Char::Raw('y'))), 1..2; "padding right prefix invalid")]
+        fn err(input: &str, kind: ErrorKind, range: ByteRange) {
             assert_eq!(
-                parse(""),
-                Err(Error {
-                    kind: ErrorKind::ExpectedFilter,
-                    range: 0..0,
-                }),
+                Filter::parse(&mut Reader::from(input), &Config::fixture()),
+                Err(Error { kind, range }),
             )
         }
 
-        #[test]
-        fn unknown() {
+        #[test_case("w", Filter::WorkingDir; "working dir")]
+        #[test_case("a", Filter::AbsolutePath; "absolute path")]
+        #[test_case("A", Filter::RelativePath; "relative path")]
+        #[test_case("p", Filter::NormalizedPath; "normalized path")]
+        #[test_case("P", Filter::CanonicalPath; "canonical path")]
+        #[test_case("d", Filter::ParentDirectory; "parent directory")]
+        #[test_case("D", Filter::RemoveLastName; "remove last name")]
+        #[test_case("f", Filter::FileName; "file name")]
+        #[test_case("F", Filter::LastName; "last name")]
+        #[test_case("b", Filter::BaseName; "base name")]
+        #[test_case("B", Filter::RemoveExtension; "remove extension")]
+        #[test_case("e", Filter::Extension; "extension")]
+        #[test_case("E", Filter::ExtensionWithDot; "extension with dot")]
+        #[test_case("z", Filter::EnsureTrailingDirSeparator; "ensure trailing separator")]
+        #[test_case("Z", Filter::RemoveTrailingDirSeparator; "remove trailing separator")]
+        #[test_case("#2", Filter::Substring(index_range_at()); "substring at")]
+        #[test_case("#2-", Filter::Substring(index_range_from()); "substring from")]
+        #[test_case("#2-3", Filter::Substring(index_range_between()); "substring between")]
+        #[test_case("#2+3", Filter::Substring(index_range_length()); "substring length")]
+        #[test_case("#-2", Filter::SubstringBackward(index_range_at()); "substring backward at")]
+        #[test_case("#-2-", Filter::SubstringBackward(index_range_from()); "substring backward from")]
+        #[test_case("#-2-3", Filter::SubstringBackward(index_range_between()); "substring backward between")]
+        #[test_case("#-2+3", Filter::SubstringBackward(index_range_length()); "substring backward length")]
+        #[test_case("&2", Filter::GetColumn(column_string()); "column global separator")]
+        #[test_case("&2:\t", Filter::GetColumn(column_string()); "column string separator")]
+        #[test_case("&2/\\s+", Filter::GetColumn(column_regex()); "column regex separator")]
+        #[test_case("&-2", Filter::GetColumnBackward(column_string()); "column backward global separator")]
+        #[test_case("&-2:\t", Filter::GetColumnBackward(column_string()); "column backward string separator")]
+        #[test_case("&-2/\\s+", Filter::GetColumnBackward(column_regex()); "column backward regex separator")]
+        #[test_case("r/ab", Filter::ReplaceFirst(substitution_string_1()); "remove first")]
+        #[test_case("r/ab/x", Filter::ReplaceFirst(substitution_string_2()); "replace first")]
+        #[test_case("R/ab", Filter::ReplaceAll(substitution_string_1()); "remove all")]
+        #[test_case("R/ab/x", Filter::ReplaceAll(substitution_string_2()); "replace all")]
+        #[test_case("?x", Filter::ReplaceEmpty(substitution_empty()); "replace empty")]
+        #[test_case("=[0-9]+", Filter::RegexMatch("[0-9]+".into()); "regex match")]
+        #[test_case("s/[0-9]+", Filter::RegexReplaceFirst(substitution_regex_1()); "regex remove first")]
+        #[test_case("s/[0-9]+/x", Filter::RegexReplaceFirst(substitution_regex_2()); "regex replace first")]
+        #[test_case("S/[0-9]+", Filter::RegexReplaceAll(substitution_regex_1()); "regex remove all")]
+        #[test_case("S/[0-9]+/x", Filter::RegexReplaceAll(substitution_regex_2()); "regex replace all")]
+        #[test_case("@:[0-9]+:digit:alpha", Filter::RegexSwitch(regex_switch()); "regex switch ")]
+        #[test_case("$0", Filter::RegexCapture(0); "regex capture 0")]
+        #[test_case("$10", Filter::RegexCapture(10); "regex capture 10")]
+        #[test_case("t", Filter::Trim; "trim")]
+        #[test_case("v", Filter::ToLowercase; "to lowercase")]
+        #[test_case("^", Filter::ToUppercase; "to uppercase")]
+        #[test_case("i", Filter::ToAscii; "to ascii")]
+        #[test_case("I", Filter::RemoveNonAscii; "remove non-ascii")]
+        #[test_case("<<abcd", Filter::LeftPad(padding_fixed()); "left pad fixed")]
+        #[test_case("<2:abc", Filter::LeftPad(padding_repeated()); "left pad repeated")]
+        #[test_case(">>abcd", Filter::RightPad(padding_fixed()); "right pad fixed")]
+        #[test_case(">2:abc", Filter::RightPad(padding_repeated()); "right pad repeated")]
+        #[test_case("*2:abc", Filter::Repeat(repetition()); "repetition ")]
+        #[test_case("c", Filter::LocalCounter; "local counter")]
+        #[test_case("C", Filter::GlobalCounter; "global counter")]
+        #[test_case("u", Filter::RandomNumber(number_range_full()); "random number")]
+        #[test_case("u2-", Filter::RandomNumber(number_range_from()); "random number from")]
+        #[test_case("u2-10", Filter::RandomNumber(number_range_between()); "random number between")]
+        #[test_case("U", Filter::RandomUuid; "random uuid")]
+        fn ok(input: &str, filter: Filter) {
             assert_eq!(
-                parse("-a"),
-                Err(Error {
-                    kind: ErrorKind::UnknownFilter(Char::Raw('-')),
-                    range: 0..1,
-                }),
-            );
+                Filter::parse(&mut Reader::from(input), &Config::fixture()),
+                Ok(filter),
+            )
         }
 
-        #[test]
-        fn chars_after() {
-            let mut reader = Reader::from("a_");
-            Filter::parse(&mut reader, &Config::fixture()).unwrap();
-            assert_eq!(reader.position(), 1);
-        }
-
-        #[test]
-        fn working_dir() {
-            assert_eq!(parse("w"), Ok(Filter::WorkingDir));
-        }
-
-        #[test]
-        fn absolute_path() {
-            assert_eq!(parse("a"), Ok(Filter::AbsolutePath));
-        }
-
-        #[test]
-        fn relative_path() {
-            assert_eq!(parse("A"), Ok(Filter::RelativePath));
-        }
-
-        #[test]
-        fn normalized_path() {
-            assert_eq!(parse("p"), Ok(Filter::NormalizedPath));
-        }
-
-        #[test]
-        fn canonical_path() {
-            assert_eq!(parse("P"), Ok(Filter::CanonicalPath));
-        }
-
-        #[test]
-        fn parent_directory() {
-            assert_eq!(parse("d"), Ok(Filter::ParentDirectory));
-        }
-
-        #[test]
-        fn remove_last_name() {
-            assert_eq!(parse("D"), Ok(Filter::RemoveLastName));
-        }
-
-        #[test]
-        fn file_name() {
-            assert_eq!(parse("f"), Ok(Filter::FileName));
-        }
-
-        #[test]
-        fn last_name() {
-            assert_eq!(parse("F"), Ok(Filter::LastName));
-        }
-
-        #[test]
-        fn base_name() {
-            assert_eq!(parse("b"), Ok(Filter::BaseName));
-        }
-
-        #[test]
-        fn remove_extension() {
-            assert_eq!(parse("B"), Ok(Filter::RemoveExtension));
-        }
-
-        #[test]
-        fn extension() {
-            assert_eq!(parse("e"), Ok(Filter::Extension));
-        }
-
-        #[test]
-        fn extension_with_dot() {
-            assert_eq!(parse("E"), Ok(Filter::ExtensionWithDot));
-        }
-
-        #[test]
-        fn ensure_trailing_dir_separator() {
-            assert_eq!(parse("z"), Ok(Filter::EnsureTrailingDirSeparator));
-        }
-
-        #[test]
-        fn remove_trailing_dir_separator() {
-            assert_eq!(parse("Z"), Ok(Filter::RemoveTrailingDirSeparator));
-        }
-
-        #[test]
-        fn substring() {
-            assert_eq!(
-                parse("#"),
-                Err(Error {
-                    kind: ErrorKind::ExpectedRange,
-                    range: 1..1,
-                }),
-            );
-            assert_eq!(
-                parse("#2"),
-                Ok(Filter::Substring(Range::<Index>(1, Some(2))))
-            );
-            assert_eq!(parse("#2-"), Ok(Filter::Substring(Range::<Index>(1, None))));
-            assert_eq!(
-                parse("#2-10"),
-                Ok(Filter::Substring(Range::<Index>(1, Some(10))))
-            );
-            assert_eq!(
-                parse("#2+8"),
-                Ok(Filter::Substring(Range::<Index>(1, Some(9))))
-            );
-        }
-
-        #[test]
-        fn substring_backward() {
-            assert_eq!(
-                parse("#-"),
-                Err(Error {
-                    kind: ErrorKind::ExpectedRange,
-                    range: 2..2,
-                }),
-            );
-            assert_eq!(
-                parse("#-2"),
-                Ok(Filter::SubstringBackward(Range::<Index>(1, Some(2))))
-            );
-            assert_eq!(
-                parse("#-2-"),
-                Ok(Filter::SubstringBackward(Range::<Index>(1, None)))
-            );
-            assert_eq!(
-                parse("#-2-10"),
-                Ok(Filter::SubstringBackward(Range::<Index>(1, Some(10))))
-            );
-            assert_eq!(
-                parse("#-2+8"),
-                Ok(Filter::SubstringBackward(Range::<Index>(1, Some(9))))
-            );
-        }
-
-        #[test]
-        fn get_column() {
-            assert_eq!(
-                parse("&"),
-                Err(Error {
-                    kind: ErrorKind::ExpectedNumber,
-                    range: 1..1,
-                }),
-            );
-            assert_eq!(
-                parse("&2"),
-                Ok(Filter::GetColumn(Column {
-                    index: 1,
-                    separator: Separator::String(String::from('\t'))
-                })),
-            );
-            assert_eq!(
-                parse("&2:"),
-                Err(Error {
-                    kind: ErrorKind::ExpectedColumnSeparator,
-                    range: 3..3,
-                }),
-            );
-            assert_eq!(
-                parse("&2:/"),
-                Ok(Filter::GetColumn(Column {
-                    index: 1,
-                    separator: Separator::String(String::from("/"))
-                })),
-            );
-            assert_eq!(
-                parse("&1/[0-9]+"),
-                Ok(Filter::GetColumn(Column {
-                    index: 0,
-                    separator: Separator::Regex(RegexHolder::from("[0-9]+"))
-                })),
-            );
-            assert_eq!(
-                parse("&1/[0-9"),
-                Err(Error {
-                    kind: ErrorKind::RegexInvalid(AnyString::any()),
-                    range: 3..7,
-                }),
-            );
-        }
-
-        #[test]
-        fn get_column_backward() {
-            assert_eq!(
-                parse("&-"),
-                Err(Error {
-                    kind: ErrorKind::ExpectedNumber,
-                    range: 2..2,
-                }),
-            );
-            assert_eq!(
-                parse("&-2"),
-                Ok(Filter::GetColumnBackward(Column {
-                    index: 1,
-                    separator: Separator::String(String::from('\t'))
-                })),
-            );
-            assert_eq!(
-                parse("&-2:"),
-                Err(Error {
-                    kind: ErrorKind::ExpectedColumnSeparator,
-                    range: 4..4,
-                }),
-            );
-            assert_eq!(
-                parse("&-2:/"),
-                Ok(Filter::GetColumnBackward(Column {
-                    index: 1,
-                    separator: Separator::String(String::from("/"))
-                })),
-            );
-            assert_eq!(
-                parse("&-1/[0-9]+"),
-                Ok(Filter::GetColumnBackward(Column {
-                    index: 0,
-                    separator: Separator::Regex(RegexHolder::from("[0-9]+"))
-                })),
-            );
-            assert_eq!(
-                parse("&-1/[0-9"),
-                Err(Error {
-                    kind: ErrorKind::RegexInvalid(AnyString::any()),
-                    range: 4..8,
-                }),
-            );
-        }
-
-        #[test]
-        fn replace_first() {
-            assert_eq!(
-                parse("r"),
-                Err(Error {
-                    kind: ErrorKind::ExpectedSubstitution,
-                    range: 1..1,
-                }),
-            );
-            assert_eq!(
-                parse("r/ab"),
-                Ok(Filter::ReplaceFirst(Substitution {
-                    target: String::from("ab"),
-                    replacement: String::new(),
-                })),
-            );
-            assert_eq!(
-                parse("r/ab/cd"),
-                Ok(Filter::ReplaceFirst(Substitution {
-                    target: String::from("ab"),
-                    replacement: String::from("cd"),
-                })),
-            );
-        }
-
-        #[test]
-        fn replace_all() {
-            assert_eq!(
-                parse("R"),
-                Err(Error {
-                    kind: ErrorKind::ExpectedSubstitution,
-                    range: 1..1,
-                }),
-            );
-            assert_eq!(
-                parse("R/ab"),
-                Ok(Filter::ReplaceAll(Substitution {
-                    target: String::from("ab"),
-                    replacement: String::new(),
-                })),
-            );
-            assert_eq!(
-                parse("R/ab/cd"),
-                Ok(Filter::ReplaceAll(Substitution {
-                    target: String::from("ab"),
-                    replacement: String::from("cd"),
-                })),
-            );
-        }
-
-        #[test]
-        fn replace_empty() {
-            assert_eq!(
-                parse("?abc"),
-                Ok(Filter::ReplaceEmpty(Substitution {
-                    target: Empty,
-                    replacement: String::from("abc")
-                }))
-            );
-        }
-
-        #[test]
-        fn regex_match() {
-            assert_eq!(
-                parse("="),
-                Err(Error {
-                    kind: ErrorKind::ExpectedRegex,
-                    range: 1..1,
-                }),
-            );
-            assert_eq!(
-                parse("=[0-9]+"),
-                Ok(Filter::RegexMatch(RegexHolder::from("[0-9]+"))),
-            );
-            assert_eq!(
-                parse("=[0-9+"),
-                Err(Error {
-                    kind: ErrorKind::RegexInvalid(AnyString::any()),
-                    range: 1..6,
-                }),
-            );
-        }
-
-        #[test]
-        fn regex_replace_first() {
-            assert_eq!(
-                parse("s"),
-                Err(Error {
-                    kind: ErrorKind::ExpectedSubstitution,
-                    range: 1..1,
-                }),
-            );
-            assert_eq!(
-                parse("s/[0-9]+"),
-                Ok(Filter::RegexReplaceFirst(Substitution {
-                    target: RegexHolder::from("[0-9]+"),
-                    replacement: String::new(),
-                })),
-            );
-            assert_eq!(
-                parse("s/[0-9]+/cd"),
-                Ok(Filter::RegexReplaceFirst(Substitution {
-                    target: RegexHolder::from("[0-9]+"),
-                    replacement: String::from("cd"),
-                })),
-            );
-            assert_eq!(
-                parse("s/[0-9+/cd"),
-                Err(Error {
-                    kind: ErrorKind::RegexInvalid(AnyString::any()),
-                    range: 2..7,
-                }),
-            );
-        }
-
-        #[test]
-        fn regex_replace_all() {
-            assert_eq!(
-                parse("S"),
-                Err(Error {
-                    kind: ErrorKind::ExpectedSubstitution,
-                    range: 1..1,
-                }),
-            );
-            assert_eq!(
-                parse("S/[0-9]+"),
-                Ok(Filter::RegexReplaceAll(Substitution {
-                    target: RegexHolder::from("[0-9]+"),
-                    replacement: String::new(),
-                })),
-            );
-            assert_eq!(
-                parse("S/[0-9]+/cd"),
-                Ok(Filter::RegexReplaceAll(Substitution {
-                    target: RegexHolder::from("[0-9]+"),
-                    replacement: String::from("cd"),
-                })),
-            );
-            assert_eq!(
-                parse("S/[0-9+/cd"),
-                Err(Error {
-                    kind: ErrorKind::RegexInvalid(AnyString::any()),
-                    range: 2..7,
-                }),
-            );
-        }
-
-        #[test]
-        fn regex_switch() {
-            assert_eq!(
-                parse("@:\\d:digit:alpha"),
-                Ok(Filter::RegexSwitch(RegexSwitch {
-                    cases: vec![Case {
-                        matcher: RegexHolder::from("\\d"),
-                        result: String::from("digit"),
-                    }],
-                    default: String::from("alpha")
-                }))
-            );
-        }
-
-        #[test]
-        fn regex_capture() {
-            assert_eq!(
-                parse("$"),
-                Err(Error {
-                    kind: ErrorKind::ExpectedNumber,
-                    range: 1..1
-                })
-            );
-            assert_eq!(parse("$0"), Ok(Filter::RegexCapture(0)));
-            assert_eq!(parse("$1"), Ok(Filter::RegexCapture(1)));
-            assert_eq!(parse("$2"), Ok(Filter::RegexCapture(2)));
-            assert_eq!(parse("$10"), Ok(Filter::RegexCapture(10)));
-        }
-
-        #[test]
-        fn trim() {
-            assert_eq!(parse("t"), Ok(Filter::Trim));
-        }
-
-        #[test]
-        fn to_lowercase() {
-            assert_eq!(parse("v"), Ok(Filter::ToLowercase));
-        }
-
-        #[test]
-        fn to_uppercase() {
-            assert_eq!(parse("^"), Ok(Filter::ToUppercase));
-        }
-
-        #[test]
-        fn to_ascii() {
-            assert_eq!(parse("i"), Ok(Filter::ToAscii));
-        }
-
-        #[test]
-        fn remove_non_ascii() {
-            assert_eq!(parse("I"), Ok(Filter::RemoveNonAscii));
-        }
-
-        #[test]
-        fn left_pad() {
-            assert_eq!(
-                parse("<abc"),
-                Err(Error {
-                    kind: ErrorKind::PaddingPrefixInvalid('<', Some(Char::Raw('a'))),
-                    range: 1..2
-                })
-            );
-            assert_eq!(
-                parse("<<abc"),
-                Ok(Filter::LeftPad(Padding::Fixed(String::from("abc"))))
-            );
-            assert_eq!(
-                parse("<10:abc"),
-                Ok(Filter::LeftPad(Padding::Repeated(Repetition {
-                    count: 10,
-                    value: String::from("abc")
-                })))
-            );
-        }
-
-        #[test]
-        fn right_pad() {
-            assert_eq!(
-                parse(">abc"),
-                Err(Error {
-                    kind: ErrorKind::PaddingPrefixInvalid('>', Some(Char::Raw('a'))),
-                    range: 1..2
-                })
-            );
-            assert_eq!(
-                parse(">>abc"),
-                Ok(Filter::RightPad(Padding::Fixed(String::from("abc"))))
-            );
-            assert_eq!(
-                parse(">10:abc"),
-                Ok(Filter::RightPad(Padding::Repeated(Repetition {
-                    count: 10,
-                    value: String::from("abc")
-                })))
-            );
-        }
-
-        #[test]
-        fn repeat() {
-            assert_eq!(
-                parse("*3:abc"),
-                Ok(Filter::Repeat(Repetition {
-                    count: 3,
-                    value: String::from("abc")
-                }))
-            );
-        }
-
-        #[test]
-        fn local_counter() {
-            assert_eq!(parse("c"), Ok(Filter::LocalCounter));
-        }
-
-        #[test]
-        fn global_counter() {
-            assert_eq!(parse("C"), Ok(Filter::GlobalCounter));
-        }
-
-        #[test]
-        fn random_number() {
-            assert_eq!(
-                parse("u1-10"),
-                Ok(Filter::RandomNumber(Range::<Number>(1, Some(11))))
-            );
-        }
-
-        #[test]
-        fn random_uuid() {
-            assert_eq!(parse("U"), Ok(Filter::RandomUuid));
-        }
-
-        fn parse(string: &str) -> Result<Filter> {
-            Filter::parse(&mut Reader::from(string), &Config::fixture())
+        #[test_case("a_", 1; "no params")]
+        #[test_case("#1-2_", 4; "with params")]
+        #[test_case("#_", 1; "error params")]
+        fn keep_chars_after(input: &str, position: usize) {
+            let mut reader = Reader::from(input);
+            Filter::parse(&mut reader, &Config::fixture()).unwrap_or(Filter::FileName);
+            assert_eq!(reader.position(), position);
         }
     }
 
     mod eval {
         use super::*;
-        use crate::pattern::eval::Context;
+        use crate::pattern::eval::{Context, ErrorKind};
         use crate::pattern::uuid::assert_uuid;
-        use std::path::MAIN_SEPARATOR;
+        use test_case::test_case;
 
-        #[test]
-        fn working_dir() {
-            #[cfg(unix)]
+        #[test_case("non-existent", Filter::CanonicalPath, ErrorKind::CanonicalizationFailed(AnyString::any()); "canonicalization failed")]
+        fn err(input: &str, filter: Filter, kind: ErrorKind) {
             assert_eq!(
-                Filter::WorkingDir.eval(String::new(), &Context::fixture()),
-                Ok(String::from("/work"))
-            );
-            #[cfg(windows)]
-            assert_eq!(
-                Filter::WorkingDir.eval(String::new(), &Context::fixture()),
-                Ok(String::from("C:\\work"))
-            );
+                filter.eval(String::from(input), &Context::fixture()),
+                Err(kind)
+            )
         }
 
-        #[test]
-        fn absolute_path() {
-            #[cfg(unix)]
-            assert_eq!(
-                Filter::AbsolutePath.eval(String::from("parent/file.ext"), &Context::fixture()),
-                Ok(String::from("/work/parent/file.ext"))
-            );
-            #[cfg(windows)]
-            assert_eq!(
-                Filter::AbsolutePath.eval(String::from("parent\\file.ext"), &Context::fixture()),
-                Ok(String::from("C:\\work\\parent\\file.ext"))
-            );
-        }
-
-        #[test]
-        fn relative_path() {
-            #[cfg(unix)]
-            assert_eq!(
-                Filter::RelativePath.eval(String::from("/parent/file.ext"), &Context::fixture()),
-                Ok(String::from("../parent/file.ext"))
-            );
-            #[cfg(windows)]
-            assert_eq!(
-                Filter::RelativePath
-                    .eval(String::from("C:\\parent\\file.ext"), &Context::fixture()),
-                Ok(String::from("..\\parent\\file.ext"))
-            );
-        }
-
-        #[test]
-        fn normalized_path() {
-            assert_eq!(
-                Filter::NormalizedPath.eval(
-                    String::from("root/parent/../new-parent/./dir/"),
-                    &Context::fixture()
-                ),
-                Ok(format!(
-                    "root{}new-parent{}dir",
-                    MAIN_SEPARATOR, MAIN_SEPARATOR
-                ))
-            );
-        }
-
-        #[test]
-        fn canonical_path() {
-            let working_dir = std::env::current_dir().unwrap();
-            let mut context = Context::fixture();
-            context.working_dir = &working_dir;
-
-            assert_eq!(
-                Filter::CanonicalPath.eval(String::from("Cargo.toml"), &context),
-                Ok(working_dir.join("Cargo.toml").to_str().unwrap().to_string())
-            );
-        }
-
-        #[test]
-        fn parent_directory() {
-            assert_eq!(
-                Filter::ParentDirectory
-                    .eval(String::from("root/parent/file.ext"), &Context::fixture()),
-                Ok(String::from("root/parent"))
-            );
-        }
-
-        #[test]
-        fn remove_file_name() {
-            assert_eq!(
-                Filter::RemoveLastName
-                    .eval(String::from("root/parent/file.ext"), &Context::fixture()),
-                Ok(String::from("root/parent"))
-            );
-        }
-
-        #[test]
-        fn file_name() {
-            assert_eq!(
-                Filter::FileName.eval(String::from("root/parent/file.ext"), &Context::fixture()),
-                Ok(String::from("file.ext"))
-            );
-        }
-
-        #[test]
-        fn last_name() {
-            assert_eq!(
-                Filter::LastName.eval(String::from("root/parent/file.ext"), &Context::fixture()),
-                Ok(String::from("file.ext"))
-            );
-        }
-
-        #[test]
-        fn base_name() {
-            assert_eq!(
-                Filter::BaseName.eval(String::from("root/parent/file.ext"), &Context::fixture()),
-                Ok(String::from("file"))
-            );
-        }
-
-        #[test]
-        fn remove_extension() {
-            assert_eq!(
-                Filter::RemoveExtension
-                    .eval(String::from("root/parent/file.ext"), &Context::fixture()),
-                Ok(String::from("root/parent/file"))
-            );
-        }
-
-        #[test]
-        fn extension() {
-            assert_eq!(
-                Filter::Extension.eval(String::from("root/parent/file.ext"), &Context::fixture()),
-                Ok(String::from("ext"))
-            );
-        }
-
-        #[test]
-        fn extension_with_dot() {
-            assert_eq!(
-                Filter::ExtensionWithDot
-                    .eval(String::from("root/parent/file.ext"), &Context::fixture()),
-                Ok(String::from(".ext"))
-            );
-        }
-
-        #[test]
-        fn ensure_trailing_dir_separator() {
-            assert_eq!(
-                Filter::EnsureTrailingDirSeparator
-                    .eval(String::from("root/parent"), &Context::fixture()),
-                Ok(format!("root/parent{}", MAIN_SEPARATOR))
-            );
-        }
-
-        #[test]
-        fn remove_trailing_dir_separator() {
-            assert_eq!(
-                Filter::RemoveTrailingDirSeparator
-                    .eval(String::from("root/parent/"), &Context::fixture()),
-                Ok(String::from("root/parent"))
-            );
-        }
-
-        #[test]
-        fn substring() {
-            assert_eq!(
-                Filter::Substring(Range::<Index>(1, Some(3)))
-                    .eval(String::from("abcde"), &Context::fixture()),
-                Ok(String::from("bc"))
-            );
-        }
-
-        #[test]
-        fn substring_backward() {
-            assert_eq!(
-                Filter::SubstringBackward(Range::<Index>(1, Some(3)))
-                    .eval(String::from("abcde"), &Context::fixture()),
-                Ok(String::from("cd"))
-            );
-        }
-
-        #[test]
-        fn get_column() {
-            assert_eq!(
-                Filter::GetColumn(Column {
-                    index: 1,
-                    separator: Separator::String(String::from('\t'))
-                })
-                .eval(String::from("a \t b \t c \t d"), &Context::fixture()),
-                Ok(String::from(" b "))
-            );
-            assert_eq!(
-                Filter::GetColumn(Column {
-                    index: 1,
-                    separator: Separator::Regex(RegexHolder::from("\\s+"))
-                })
-                .eval(String::from("a \t b \t c \t d"), &Context::fixture()),
-                Ok(String::from("b"))
-            );
-        }
-
-        #[test]
-        fn get_column_backward() {
-            assert_eq!(
-                Filter::GetColumnBackward(Column {
-                    index: 1,
-                    separator: Separator::String(String::from('\t'))
-                })
-                .eval(String::from("a \t b \t c \t d"), &Context::fixture()),
-                Ok(String::from(" c "))
-            );
-            assert_eq!(
-                Filter::GetColumnBackward(Column {
-                    index: 1,
-                    separator: Separator::Regex(RegexHolder::from("\\s+"))
-                })
-                .eval(String::from("a \t b \t c \t d"), &Context::fixture()),
-                Ok(String::from("c"))
-            );
-        }
-
-        #[test]
-        fn replace_first() {
-            assert_eq!(
-                Filter::ReplaceFirst(Substitution {
-                    target: String::from("ab"),
-                    replacement: String::from("x"),
-                })
-                .eval(String::from("abcd_abcd"), &Context::fixture()),
-                Ok(String::from("xcd_abcd"))
-            );
-        }
-
-        #[test]
-        fn replace_all() {
-            assert_eq!(
-                Filter::ReplaceAll(Substitution {
-                    target: String::from("ab"),
-                    replacement: String::from("x"),
-                })
-                .eval(String::from("abcd_abcd"), &Context::fixture()),
-                Ok(String::from("xcd_xcd"))
-            );
-        }
-
-        #[test]
-        fn replace_empty() {
-            assert_eq!(
-                Filter::ReplaceEmpty(Substitution {
-                    target: Empty,
-                    replacement: String::from("xyz")
-                })
-                .eval(String::new(), &Context::fixture()),
-                Ok(String::from("xyz"))
-            );
-        }
-
-        #[test]
-        fn regex_match() {
-            assert_eq!(
-                Filter::RegexMatch(RegexHolder::from("\\d+"))
-                    .eval(String::from("a123y"), &Context::fixture()),
-                Ok(String::from("123"))
-            );
-        }
-
-        #[test]
-        fn regex_replace_first() {
-            assert_eq!(
-                Filter::RegexReplaceFirst(Substitution {
-                    target: RegexHolder::from("\\d+"),
-                    replacement: String::from("x"),
-                })
-                .eval(String::from("12_34"), &Context::fixture()),
-                Ok(String::from("x_34"))
-            );
-        }
-
-        #[test]
-        fn regex_replace_all() {
-            assert_eq!(
-                Filter::RegexReplaceAll(Substitution {
-                    target: RegexHolder::from("\\d+"),
-                    replacement: String::from("x"),
-                })
-                .eval(String::from("12_34"), &Context::fixture()),
-                Ok(String::from("x_x"))
-            );
-        }
-
-        #[test]
-        fn regex_switch() {
-            let filter = Filter::RegexSwitch(RegexSwitch {
-                cases: vec![Case {
-                    matcher: RegexHolder::from("\\d"),
-                    result: String::from("digit"),
-                }],
-                default: String::from("alpha"),
-            });
-            assert_eq!(
-                filter.eval(String::from("1"), &Context::fixture()),
-                Ok(String::from("digit"))
-            );
-            assert_eq!(
-                filter.eval(String::from("a"), &Context::fixture()),
-                Ok(String::from("alpha"))
-            );
-        }
-
-        #[test]
-        fn regex_capture() {
-            assert_eq!(
-                Filter::RegexCapture(1).eval(String::new(), &Context::fixture()),
-                Ok(String::from("a"))
-            );
-        }
-
-        #[test]
-        fn trim() {
-            assert_eq!(
-                Filter::Trim.eval(String::from(" abcd "), &Context::fixture()),
-                Ok(String::from("abcd"))
-            );
-        }
-
-        #[test]
-        fn to_lowercase() {
-            assert_eq!(
-                Filter::ToLowercase.eval(String::from("ábčdÁBČD"), &Context::fixture()),
-                Ok(String::from("ábčdábčd"))
-            );
-        }
-
-        #[test]
-        fn to_uppercase() {
-            assert_eq!(
-                Filter::ToUppercase.eval(String::from("ábčdÁBČD"), &Context::fixture()),
-                Ok(String::from("ÁBČDÁBČD"))
-            );
-        }
-
-        #[test]
-        fn to_ascii() {
-            assert_eq!(
-                Filter::ToAscii.eval(String::from("ábčdÁBČD"), &Context::fixture()),
-                Ok(String::from("abcdABCD"))
-            );
-        }
-
-        #[test]
-        fn remove_non_ascii() {
-            assert_eq!(
-                Filter::RemoveNonAscii.eval(String::from("ábčdÁBČD"), &Context::fixture()),
-                Ok(String::from("bdBD"))
-            );
-        }
-
-        #[test]
-        fn left_pad() {
-            assert_eq!(
-                Filter::LeftPad(Padding::Fixed(String::from("0123")))
-                    .eval(String::from("ab"), &Context::fixture()),
-                Ok(String::from("01ab"))
-            );
-            assert_eq!(
-                Filter::LeftPad(Padding::Repeated(Repetition {
-                    count: 3,
-                    value: String::from("01")
-                }))
-                .eval(String::from("ab"), &Context::fixture()),
-                Ok(String::from("0101ab"))
-            );
-        }
-
-        #[test]
-        fn right_pad() {
-            assert_eq!(
-                Filter::RightPad(Padding::Fixed(String::from("0123")))
-                    .eval(String::from("ab"), &Context::fixture()),
-                Ok(String::from("ab23"))
-            );
-            assert_eq!(
-                Filter::RightPad(Padding::Repeated(Repetition {
-                    count: 3,
-                    value: String::from("01")
-                }))
-                .eval(String::from("ab"), &Context::fixture()),
-                Ok(String::from("ab0101"))
-            );
-        }
-
-        #[test]
-        fn repeat() {
-            assert_eq!(
-                Filter::Repeat(Repetition {
-                    count: 3,
-                    value: String::from("abc")
-                })
-                .eval(String::new(), &Context::fixture()),
-                Ok(String::from("abcabcabc"))
-            );
-        }
-
-        #[test]
-        fn local_counter() {
-            assert_eq!(
-                Filter::LocalCounter.eval(String::new(), &Context::fixture()),
-                Ok(String::from("1"))
-            );
-        }
-
-        #[test]
-        fn global_counter() {
-            assert_eq!(
-                Filter::GlobalCounter.eval(String::new(), &Context::fixture()),
-                Ok(String::from("2"))
-            );
-        }
-
-        #[test]
-        fn random_number() {
-            assert_eq!(
-                Filter::RandomNumber(Range::<Number>(0, Some(0)))
-                    .eval(String::new(), &Context::fixture()),
-                Ok(String::from("0"))
-            );
-        }
-
-        #[test]
-        fn random_uuid() {
-            assert_uuid(
-                &Filter::RandomUuid
-                    .eval(String::new(), &Context::fixture())
-                    .unwrap(),
-            );
+        #[cfg_attr(unix, test_case("", Filter::WorkingDir, "/work"; "working dir"))]
+        #[cfg_attr(unix, test_case("parent/file.ext", Filter::AbsolutePath, "/work/parent/file.ext"; "absolute path"))]
+        #[cfg_attr(unix, test_case("root/parent/../new-parent/./dir/", Filter::NormalizedPath, "root/new-parent/dir"; "normalized path"))]
+        #[cfg_attr(unix, test_case("/parent/file.ext", Filter::RelativePath, "../parent/file.ext"; "relative path"))]
+        #[cfg_attr(unix, test_case("./Cargo.toml", Filter::CanonicalPath, "/work/Cargo.toml"; "canonical path"))]
+        #[cfg_attr(windows, test_case("", Filter::WorkingDir, "C:\\work"; "working dir"))]
+        #[cfg_attr(windows, test_case("parent/file.ext", Filter::AbsolutePath, "C:\\work\\parent\\file.ext"; "absolute path"))]
+        #[cfg_attr(windows, test_case("/parent/file.ext", Filter::RelativePath, "..\\parent\\file.ext"; "relative path"))]
+        #[cfg_attr(windows, test_case("root/parent/../new-parent/./dir/", Filter::NormalizedPath, "root\\new-parent[0-9]ir"; "normalized path"))]
+        #[cfg_attr(windows, test_case("./Cargo.toml", Filter::CanonicalPath, "C:\\work\\Cargo.toml"; "canonical path"))]
+        #[test_case("root/parent/file.ext", Filter::ParentDirectory, "root/parent"; "parent directory")]
+        #[test_case("root/parent/file.ext", Filter::RemoveLastName, "root/parent"; "remove last name")]
+        #[test_case("root/parent/file.ext", Filter::FileName, "file.ext"; "file name")]
+        #[test_case("root/parent/file.ext", Filter::LastName, "file.ext"; "last name")]
+        #[test_case("root/parent/file.ext", Filter::BaseName, "file"; "base name")]
+        #[test_case("root/parent/file.ext", Filter::RemoveExtension, "root/parent/file"; "remove extension")]
+        #[test_case("root/parent/file.ext", Filter::Extension, "ext"; "extension")]
+        #[test_case("root/parent/file.ext", Filter::ExtensionWithDot, ".ext"; "extension with dot")]
+        #[test_case("root/parent", Filter::EnsureTrailingDirSeparator, "root/parent/"; "ensure trailing separator")]
+        #[test_case("root/parent/", Filter::RemoveTrailingDirSeparator, "root/parent"; "remove trailing separator")]
+        #[test_case("abcde", Filter::Substring(index_range_at()), "b"; "substring at")]
+        #[test_case("abcde", Filter::Substring(index_range_from()), "bcde"; "substring from")]
+        #[test_case("abcde", Filter::Substring(index_range_between()), "bc"; "substring between")]
+        #[test_case("abcde", Filter::Substring(index_range_length()), "bcd"; "substring length")]
+        #[test_case("abcde", Filter::SubstringBackward(index_range_at()), "d"; "substring backward at")]
+        #[test_case("abcde", Filter::SubstringBackward(index_range_from()), "abcd"; "substring backward from")]
+        #[test_case("abcde", Filter::SubstringBackward(index_range_between()), "cd"; "substring backward between")]
+        #[test_case("abcde", Filter::SubstringBackward(index_range_length()), "bcd"; "substring backward length")]
+        #[test_case("a \t b \t c \t d", Filter::GetColumn(column_string()), " b "; "column string separator")]
+        #[test_case("a \t b \t c \t d", Filter::GetColumn(column_regex()), "b"; "column regex separator")]
+        #[test_case("a \t b \t c \t d", Filter::GetColumnBackward(column_string()), " c "; "column backward string separator")]
+        #[test_case("a \t b \t c \t d", Filter::GetColumnBackward(column_regex()), "c"; "column backward regex separator")]
+        #[test_case("abcd_abcd", Filter::ReplaceFirst(substitution_string_1()), "cd_abcd"; "remove first")]
+        #[test_case("abcd_abcd", Filter::ReplaceFirst(substitution_string_2()), "xcd_abcd"; "replace first")]
+        #[test_case("abcd_abcd", Filter::ReplaceAll(substitution_string_1()), "cd_cd"; "remove all")]
+        #[test_case("abcd_abcd", Filter::ReplaceAll(substitution_string_2()), "xcd_xcd"; "replace all")]
+        #[test_case("", Filter::ReplaceEmpty(substitution_empty()), "x"; "replace empty")]
+        #[test_case("a123y", Filter::RegexMatch("[0-9]+".into()), "123"; "regex match")]
+        #[test_case("12_34", Filter::RegexReplaceFirst(substitution_regex_1()), "_34"; "regex remove first")]
+        #[test_case("12_34", Filter::RegexReplaceFirst(substitution_regex_2()), "x_34"; "regex replace first")]
+        #[test_case("12_34", Filter::RegexReplaceAll(substitution_regex_1()), "_"; "regex remove all")]
+        #[test_case("12_34", Filter::RegexReplaceAll(substitution_regex_2()), "x_x"; "regex replace all")]
+        #[test_case("1", Filter::RegexSwitch(regex_switch()), "digit"; "regex switch case")]
+        #[test_case("a", Filter::RegexSwitch(regex_switch()), "alpha"; "regex switch default")]
+        #[test_case("", Filter::RegexCapture(1), "a"; "regex capture")]
+        #[test_case(" abcd ", Filter::Trim, "abcd"; "trim")]
+        #[test_case("ábčdÁBČD", Filter::ToLowercase, "ábčdábčd"; "to lowercase")]
+        #[test_case("ábčdÁBČD", Filter::ToUppercase, "ÁBČDÁBČD"; "to uppercase")]
+        #[test_case("ábčdÁBČD", Filter::ToAscii, "abcdABCD"; "to ascii")]
+        #[test_case("ábčdÁBČD", Filter::RemoveNonAscii, "bdBD"; "remove non-ascii")]
+        #[test_case("01", Filter::LeftPad(padding_fixed()), "ab01"; "left pad fixed")]
+        #[test_case("01", Filter::LeftPad(padding_repeated()), "abca01"; "left pad repeated")]
+        #[test_case("01", Filter::RightPad(padding_fixed()), "01cd"; "right pad fixed")]
+        #[test_case("01", Filter::RightPad(padding_repeated()), "01cabc"; "right pad repeated")]
+        #[test_case("", Filter::Repeat(repetition()), "abcabc"; "repetition ")]
+        #[test_case("", Filter::LocalCounter, "1"; "local counter")]
+        #[test_case("", Filter::GlobalCounter, "2"; "global counter")]
+        #[test_case("", Filter::RandomNumber(number_range_zero()), "0"; "random number")]
+        #[test_case("", Filter::RandomUuid, ""; "random uuid")]
+        fn ok(input: &str, filter: Filter, output: &str) {
+            match filter {
+                Filter::CanonicalPath => {
+                    let real_working_dir = std::env::current_dir().unwrap(); // Canonical path filter actually checks existence of the directory
+                    let mut context = Context::fixture();
+                    let output = output.replace(
+                        context.working_dir.to_str().unwrap(),
+                        real_working_dir.to_str().unwrap(),
+                    );
+                    context.working_dir = &real_working_dir;
+                    assert_eq!(filter.eval(String::from(input), &context), Ok(output))
+                }
+                Filter::RandomUuid => {
+                    assert_uuid(
+                        &filter
+                            .eval(String::from(input), &Context::fixture())
+                            .unwrap(),
+                    );
+                }
+                _ => {
+                    assert_eq!(
+                        filter.eval(String::from(input), &Context::fixture()),
+                        Ok(String::from(output))
+                    )
+                }
+            }
         }
     }
 
-    mod display {
-        use super::*;
-        use indoc::indoc;
+    #[test_case(Filter::WorkingDir, "Working directory"; "working directory")]
+    #[test_case(Filter::AbsolutePath, "Absolute path"; "absolute path")]
+    #[test_case(Filter::RelativePath, "Relative path"; "relative path")]
+    #[test_case(Filter::NormalizedPath, "Normalized path"; "normalized path")]
+    #[test_case(Filter::CanonicalPath, "Canonical path"; "canonical path")]
+    #[test_case(Filter::ParentDirectory, "Parent directory"; "parent directory")]
+    #[test_case(Filter::RemoveLastName, "Remove last name"; "remove last name")]
+    #[test_case(Filter::FileName, "File name"; "file name")]
+    #[test_case(Filter::LastName, "Last name"; "last name")]
+    #[test_case(Filter::BaseName, "Base name"; "base name")]
+    #[test_case(Filter::RemoveExtension, "Remove extension"; "remove extension")]
+    #[test_case(Filter::Extension, "Extension"; "extension")]
+    #[test_case(Filter::ExtensionWithDot, "Extension with dot"; "extension with dot")]
+    #[test_case(Filter::EnsureTrailingDirSeparator, "Ensure trailing directory separator"; "ensure trailing separator")]
+    #[test_case(Filter::RemoveTrailingDirSeparator, "Remove trailing directory separator"; "remove trailing separator")]
+    #[test_case(Filter::Substring(index_range_at()), "Substring from 2..2"; "substring at")]
+    #[test_case(Filter::Substring(index_range_from()), "Substring from 2.."; "substring from")]
+    #[test_case(Filter::Substring(index_range_between()), "Substring from 2..3"; "substring between")]
+    #[test_case(Filter::Substring(index_range_length()), "Substring from 2..4"; "substring length")]
+    #[test_case(Filter::SubstringBackward(index_range_at()), "Substring from 2..2 backward"; "substring backward at")]
+    #[test_case(Filter::SubstringBackward(index_range_from()), "Substring from 2.. backward"; "substring backward from")]
+    #[test_case(Filter::SubstringBackward(index_range_between()), "Substring from 2..3 backward"; "substring backward between")]
+    #[test_case(Filter::SubstringBackward(index_range_length()), "Substring from 2..4 backward"; "substring backward length")]
+    #[test_case(Filter::GetColumn(column_string()), "Get column #2 ('\\t' separator)"; "column string separator")]
+    #[test_case(Filter::GetColumn(column_regex()), "Get column #2 (regular expression '\\s+' separator)"; "column regex separator")]
+    #[test_case(Filter::GetColumnBackward(column_string()), "Get column #2 ('\\t' separator) backward"; "column backward string separator")]
+    #[test_case(Filter::GetColumnBackward(column_regex()), "Get column #2 (regular expression '\\s+' separator) backward"; "column backward regex separator")]
+    #[test_case(Filter::ReplaceFirst(substitution_string_1()), "Replace first 'ab' with ''"; "remove first")]
+    #[test_case(Filter::ReplaceFirst(substitution_string_2()), "Replace first 'ab' with 'x'"; "replace first")]
+    #[test_case(Filter::ReplaceAll(substitution_string_1()), "Replace all 'ab' with ''"; "remove all")]
+    #[test_case(Filter::ReplaceAll(substitution_string_2()), "Replace all 'ab' with 'x'"; "replace all")]
+    #[test_case(Filter::ReplaceEmpty(substitution_empty()), "Replace empty with 'x'"; "replace empty")]
+    #[test_case(Filter::RegexMatch("[0-9]+".into()), "Match of regular expression '[0-9]+'"; "regex match")]
+    #[test_case(Filter::RegexReplaceFirst(substitution_regex_1()), "Replace first match of regular expression '[0-9]+' with ''"; "regex remove first")]
+    #[test_case(Filter::RegexReplaceFirst(substitution_regex_2()), "Replace first match of regular expression '[0-9]+' with 'x'"; "regex replace first")]
+    #[test_case(Filter::RegexReplaceAll(substitution_regex_1()), "Replace all matches of regular expression '[0-9]+' with ''"; "regex remove all")]
+    #[test_case(Filter::RegexReplaceAll(substitution_regex_2()), "Replace all matches of regular expression '[0-9]+' with 'x'"; "regex replace all")]
+    #[test_case(
+        Filter::RegexSwitch(regex_switch()),
+        "Regular expression switch with variable output:\n\n    if input matches '[0-9]+'\n        output is 'digit'\n    else\n        output is 'alpha'";
+        "regex switch "
+    )]
+    #[test_case(Filter::RegexCapture(1), "Capture group #1 of a global regular expression"; "regex capture")]
+    #[test_case(Filter::Trim, "Trim"; "trim")]
+    #[test_case(Filter::ToLowercase, "To lowercase"; "to lowercase")]
+    #[test_case(Filter::ToUppercase, "To uppercase"; "to uppercase")]
+    #[test_case(Filter::ToAscii, "To ASCII"; "to ascii")]
+    #[test_case(Filter::RemoveNonAscii, "Remove non-ASCII"; "remove non-ascii")]
+    #[test_case(Filter::LeftPad(padding_fixed()), "Left pad with 'abcd'"; "left pad fixed")]
+    #[test_case(Filter::LeftPad(padding_repeated()), "Left pad with 2x 'abc'"; "left pad repeated")]
+    #[test_case(Filter::RightPad(padding_fixed()), "Right pad with 'abcd'"; "right pad fixed")]
+    #[test_case(Filter::RightPad(padding_repeated()), "Right pad with 2x 'abc'"; "right pad repeated")]
+    #[test_case(Filter::Repeat(repetition()), "Repeat 2x 'abc'"; "repetition ")]
+    #[test_case(Filter::LocalCounter, "Local counter"; "local counter")]
+    #[test_case(Filter::GlobalCounter, "Global counter"; "global counter")]
+    #[test_case(Filter::RandomNumber(number_range_full()), "Random number from [0, 2^64)"; "random number")]
+    #[test_case(Filter::RandomNumber(number_range_from()), "Random number from [2, 2^64)"; "random number from")]
+    #[test_case(Filter::RandomNumber(number_range_between()), "Random number from [2, 10]"; "random number between")]
+    #[test_case(Filter::RandomUuid, "Random UUID"; "random uuid")]
+    fn display(filter: Filter, result: &str) {
+        assert_eq!(filter.to_string(), result);
+    }
 
-        #[test]
-        fn working_dir() {
-            assert_eq!(Filter::WorkingDir.to_string(), "Working directory");
-        }
+    fn index_range_at() -> IndexRange {
+        Range::<Index>(1, Some(2))
+    }
 
-        #[test]
-        fn absolute_path() {
-            assert_eq!(Filter::AbsolutePath.to_string(), "Absolute path");
-        }
+    fn index_range_from() -> IndexRange {
+        Range::<Index>(1, None)
+    }
 
-        #[test]
-        fn relative_path() {
-            assert_eq!(Filter::RelativePath.to_string(), "Relative path");
-        }
+    fn index_range_between() -> IndexRange {
+        Range::<Index>(1, Some(3))
+    }
 
-        #[test]
-        fn normalized_path() {
-            assert_eq!(Filter::NormalizedPath.to_string(), "Normalized path");
-        }
+    fn index_range_length() -> IndexRange {
+        Range::<Index>(1, Some(4))
+    }
 
-        #[test]
-        fn canonical_path() {
-            assert_eq!(Filter::CanonicalPath.to_string(), "Canonical path");
+    fn column_string() -> Column {
+        Column {
+            index: 1,
+            separator: Separator::String('\t'.into()),
         }
+    }
 
-        #[test]
-        fn parent_directory() {
-            assert_eq!(Filter::ParentDirectory.to_string(), "Parent directory");
+    fn column_regex() -> Column {
+        Column {
+            index: 1,
+            separator: Separator::Regex("\\s+".into()),
         }
+    }
 
-        #[test]
-        fn remove_file_name() {
-            assert_eq!(Filter::RemoveLastName.to_string(), "Remove last name");
+    fn substitution_empty() -> EmptySubstitution {
+        Substitution {
+            target: Empty,
+            replacement: "x".into(),
         }
+    }
 
-        #[test]
-        fn file_name() {
-            assert_eq!(Filter::FileName.to_string(), "File name");
+    fn substitution_string_1() -> StringSubstitution {
+        Substitution {
+            target: "ab".into(),
+            replacement: "".into(),
         }
+    }
 
-        #[test]
-        fn last_name() {
-            assert_eq!(Filter::LastName.to_string(), "Last name");
+    fn substitution_string_2() -> StringSubstitution {
+        Substitution {
+            target: "ab".into(),
+            replacement: "x".into(),
         }
+    }
 
-        #[test]
-        fn base_name() {
-            assert_eq!(Filter::BaseName.to_string(), "Base name");
+    fn substitution_regex_1() -> RegexSubstitution {
+        Substitution {
+            target: "[0-9]+".into(),
+            replacement: "".into(),
         }
+    }
 
-        #[test]
-        fn remove_extension() {
-            assert_eq!(Filter::RemoveExtension.to_string(), "Remove extension");
+    fn substitution_regex_2() -> RegexSubstitution {
+        Substitution {
+            target: "[0-9]+".into(),
+            replacement: "x".into(),
         }
+    }
 
-        #[test]
-        fn extension() {
-            assert_eq!(Filter::Extension.to_string(), "Extension");
+    fn regex_switch() -> RegexSwitch {
+        RegexSwitch {
+            cases: vec![Case {
+                matcher: "[0-9]+".into(),
+                result: "digit".into(),
+            }],
+            default: "alpha".into(),
         }
+    }
 
-        #[test]
-        fn extension_with_dot() {
-            assert_eq!(Filter::ExtensionWithDot.to_string(), "Extension with dot");
-        }
+    fn padding_fixed() -> Padding {
+        Padding::Fixed("abcd".into())
+    }
 
-        #[test]
-        fn ensure_trailing_dir_separator() {
-            assert_eq!(
-                Filter::EnsureTrailingDirSeparator.to_string(),
-                "Ensure trailing directory separator"
-            );
-        }
+    fn padding_repeated() -> Padding {
+        Padding::Repeated(repetition())
+    }
 
-        #[test]
-        fn remove_trailing_dir_separator() {
-            assert_eq!(
-                Filter::RemoveTrailingDirSeparator.to_string(),
-                "Remove trailing directory separator"
-            );
+    fn repetition() -> Repetition {
+        Repetition {
+            count: 2,
+            value: "abc".into(),
         }
+    }
 
-        #[test]
-        fn substring() {
-            assert_eq!(
-                Filter::Substring(Range::<Index>(1, Some(3))).to_string(),
-                "Substring from 2..3"
-            );
-        }
+    fn number_range_full() -> NumberRange {
+        Range::<Number>(0, None)
+    }
 
-        #[test]
-        fn substring_backward() {
-            assert_eq!(
-                Filter::SubstringBackward(Range::<Index>(1, Some(3))).to_string(),
-                "Substring from 2..3 backwards"
-            );
-        }
+    fn number_range_from() -> NumberRange {
+        Range::<Number>(2, None)
+    }
 
-        #[test]
-        fn get_column() {
-            assert_eq!(
-                Filter::GetColumn(Column {
-                    index: 1,
-                    separator: Separator::String(String::from('\t'))
-                })
-                .to_string(),
-                String::from("Get column #2 ('\\t' separator)")
-            );
-            assert_eq!(
-                Filter::GetColumn(Column {
-                    index: 1,
-                    separator: Separator::Regex(RegexHolder::from("\\s+"))
-                })
-                .to_string(),
-                String::from("Get column #2 (regular expression '\\s+' separator)")
-            );
-        }
+    fn number_range_between() -> NumberRange {
+        Range::<Number>(2, Some(11))
+    }
 
-        #[test]
-        fn get_column_backward() {
-            assert_eq!(
-                Filter::GetColumnBackward(Column {
-                    index: 1,
-                    separator: Separator::String(String::from('\t'))
-                })
-                .to_string(),
-                String::from("Get column #2 ('\\t' separator) backwards")
-            );
-            assert_eq!(
-                Filter::GetColumnBackward(Column {
-                    index: 1,
-                    separator: Separator::Regex(RegexHolder::from("\\s+"))
-                })
-                .to_string(),
-                String::from("Get column #2 (regular expression '\\s+' separator) backwards")
-            );
-        }
-
-        #[test]
-        fn replace_first() {
-            assert_eq!(
-                Filter::ReplaceFirst(Substitution {
-                    target: String::from("a"),
-                    replacement: String::from("b")
-                })
-                .to_string(),
-                "Replace first 'a' with 'b'"
-            );
-        }
-
-        #[test]
-        fn replace_all() {
-            assert_eq!(
-                Filter::ReplaceAll(Substitution {
-                    target: String::from("a"),
-                    replacement: String::from("b")
-                })
-                .to_string(),
-                "Replace all 'a' with 'b'"
-            );
-        }
-
-        #[test]
-        fn replace_empty() {
-            assert_eq!(
-                Filter::ReplaceEmpty(Substitution {
-                    target: Empty,
-                    replacement: String::from("abc")
-                })
-                .to_string(),
-                "Replace empty with 'abc'"
-            );
-        }
-
-        #[test]
-        fn regex_match() {
-            assert_eq!(
-                Filter::RegexMatch(RegexHolder::from("a+")).to_string(),
-                "Match of regular expression 'a+'"
-            );
-        }
-
-        #[test]
-        fn regex_replace_first() {
-            assert_eq!(
-                Filter::RegexReplaceFirst(Substitution {
-                    target: RegexHolder::from("a+"),
-                    replacement: String::from("b")
-                })
-                .to_string(),
-                "Replace first match of regular expression 'a+' with 'b'"
-            );
-        }
-
-        #[test]
-        fn regex_replace_all() {
-            assert_eq!(
-                Filter::RegexReplaceAll(Substitution {
-                    target: RegexHolder::from("a+"),
-                    replacement: String::from("b")
-                })
-                .to_string(),
-                "Replace all matches of regular expression 'a+' with 'b'"
-            );
-        }
-
-        #[test]
-        fn regex_switch() {
-            assert_eq!(
-                Filter::RegexSwitch(RegexSwitch {
-                    cases: vec![Case {
-                        matcher: RegexHolder::from("\\d"),
-                        result: String::from("digit"),
-                    }],
-                    default: String::from("alpha"),
-                })
-                .to_string(),
-                indoc! {"
-                    Regular expression switch with variable output:
-                    
-                        if input matches '\\d'
-                            output is 'digit'
-                        else
-                            output is 'alpha'"
-                }
-            );
-        }
-
-        #[test]
-        fn regex_capture() {
-            assert_eq!(
-                Filter::RegexCapture(1).to_string(),
-                "Capture group #1 of a global regular expression"
-            );
-        }
-
-        #[test]
-        fn trim() {
-            assert_eq!(Filter::Trim.to_string(), "Trim");
-        }
-
-        #[test]
-        fn to_lowercase() {
-            assert_eq!(Filter::ToLowercase.to_string(), "To lowercase");
-        }
-
-        #[test]
-        fn to_uppercase() {
-            assert_eq!(Filter::ToUppercase.to_string(), "To uppercase");
-        }
-
-        #[test]
-        fn to_ascii() {
-            assert_eq!(Filter::ToAscii.to_string(), "To ASCII");
-        }
-
-        #[test]
-        fn remove_non_ascii() {
-            assert_eq!(Filter::RemoveNonAscii.to_string(), "Remove non-ASCII");
-        }
-
-        #[test]
-        fn left_pad() {
-            assert_eq!(
-                Filter::LeftPad(Padding::Fixed(String::from("abc"))).to_string(),
-                "Left pad with 'abc'"
-            );
-            assert_eq!(
-                Filter::LeftPad(Padding::Repeated(Repetition {
-                    count: 5,
-                    value: String::from("abc")
-                }))
-                .to_string(),
-                "Left pad with 5x 'abc'"
-            );
-        }
-
-        #[test]
-        fn right_pad() {
-            assert_eq!(
-                Filter::RightPad(Padding::Fixed(String::from("abc"))).to_string(),
-                "Right pad with 'abc'"
-            );
-            assert_eq!(
-                Filter::RightPad(Padding::Repeated(Repetition {
-                    count: 5,
-                    value: String::from("abc")
-                }))
-                .to_string(),
-                "Right pad with 5x 'abc'"
-            );
-        }
-
-        #[test]
-        fn repeat() {
-            assert_eq!(
-                Filter::Repeat(Repetition {
-                    count: 5,
-                    value: String::from("abc")
-                })
-                .to_string(),
-                "Repeat 5x 'abc'"
-            );
-        }
-
-        #[test]
-        fn local_counter() {
-            assert_eq!(Filter::LocalCounter.to_string(), "Local counter");
-        }
-
-        #[test]
-        fn global_counter() {
-            assert_eq!(Filter::GlobalCounter.to_string(), "Global counter");
-        }
-
-        #[test]
-        fn random_number() {
-            assert_eq!(
-                Filter::RandomNumber(Range::<Number>(0, Some(99))).to_string(),
-                "Random number from [0, 99]"
-            );
-        }
-
-        #[test]
-        fn random_uuid() {
-            assert_eq!(Filter::RandomUuid.to_string(), "Random UUID");
-        }
+    fn number_range_zero() -> NumberRange {
+        Range::<Number>(0, Some(0))
     }
 }

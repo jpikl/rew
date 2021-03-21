@@ -39,7 +39,7 @@ impl NumberRange {
 impl fmt::Display for NumberRange {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match &self {
-            Range(start, Some(end)) => write!(formatter, "[{}, {}]", start, end),
+            Range(start, Some(end)) => write!(formatter, "[{}, {}]", start, end - 1),
             Range(start, None) => write!(formatter, "[{}, 2^{})", start, get_bits::<NumberValue>()),
         }
     }
@@ -91,7 +91,7 @@ mod tests {
     }
 
     #[test_case(1, None, "[1, 2^64)"; "open")]
-    #[test_case(1, Some(2), "[1, 2]"; "closed")]
+    #[test_case(1, Some(3), "[1, 2]"; "closed")]
     fn display(start: NumberValue, end: Option<NumberValue>, result: &str) {
         assert_eq!(Range::<Number>(start, end).to_string(), result);
     }
