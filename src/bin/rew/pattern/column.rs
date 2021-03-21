@@ -2,8 +2,7 @@ use crate::pattern::char::Char;
 use crate::pattern::index::{Index, IndexValue};
 use crate::pattern::parse::{Error, ErrorKind, Result, Separator};
 use crate::pattern::reader::Reader;
-use crate::pattern::regex::RegexHolder;
-use std::convert::TryFrom;
+use std::convert::TryInto;
 use std::fmt;
 
 #[derive(Debug, PartialEq)]
@@ -28,7 +27,7 @@ impl Column {
             }
 
             let separator = if delimiter == '/' {
-                match RegexHolder::try_from(separator) {
+                match separator.try_into() {
                     Ok(regex) => Separator::Regex(regex),
                     Err(kind) => {
                         return Err(Error {
@@ -98,10 +97,7 @@ mod tests {
     #[test_case("1/[0-9", ErrorKind::RegexInvalid(AnyString::any()), 2..6; "invalid regex separator")]
     fn parse_err(input: &str, kind: ErrorKind, range: ByteRange) {
         assert_eq!(
-            Column::parse(
-                &mut Reader::from(input),
-                &Separator::String(String::from('\t'))
-            ),
+            Column::parse(&mut Reader::from(input), &Separator::String('\t'.into())),
             Err(Error { kind, range })
         );
     }
@@ -114,13 +110,10 @@ mod tests {
         #[test_case("10:abc", 9, "abc"; "index and separator")]
         fn parse(input: &str, index: IndexValue, separator: &str) {
             assert_eq!(
-                Column::parse(
-                    &mut Reader::from(input),
-                    &Separator::String(String::from('\t'))
-                ),
+                Column::parse(&mut Reader::from(input), &Separator::String('\t'.into())),
                 Ok(Column {
                     index,
-                    separator: Separator::String(String::from(separator))
+                    separator: Separator::String(separator.into())
                 })
             );
         }
@@ -137,7 +130,7 @@ mod tests {
             assert_eq!(
                 Column {
                     index,
-                    separator: Separator::String(String::from(separator))
+                    separator: Separator::String(separator.into())
                 }
                 .get(input),
                 output
@@ -156,7 +149,7 @@ mod tests {
             assert_eq!(
                 Column {
                     index,
-                    separator: Separator::String(String::from(separator))
+                    separator: Separator::String(separator.into())
                 }
                 .get_backward(input),
                 output
@@ -168,7 +161,7 @@ mod tests {
             assert_eq!(
                 Column {
                     index: 1,
-                    separator: Separator::String(String::from("_"))
+                    separator: Separator::String("_".into())
                 }
                 .to_string(),
                 "column #2 ('_' separator)"
@@ -185,13 +178,10 @@ mod tests {
         #[test_case("10/[0-9]+", 9, "[0-9]+"; "index and separator")]
         fn parse(input: &str, index: IndexValue, separator: &str) {
             assert_eq!(
-                Column::parse(
-                    &mut Reader::from(input),
-                    &Separator::Regex(RegexHolder::from("\\s+"))
-                ),
+                Column::parse(&mut Reader::from(input), &Separator::Regex("\\s+".into())),
                 Ok(Column {
                     index,
-                    separator: Separator::Regex(RegexHolder::from(separator))
+                    separator: Separator::Regex(separator.into())
                 })
             );
         }
@@ -208,7 +198,7 @@ mod tests {
             assert_eq!(
                 Column {
                     index,
-                    separator: Separator::Regex(RegexHolder::from(separator))
+                    separator: Separator::Regex(separator.into())
                 }
                 .get(input),
                 output
@@ -227,7 +217,7 @@ mod tests {
             assert_eq!(
                 Column {
                     index,
-                    separator: Separator::Regex(RegexHolder::from(separator))
+                    separator: Separator::Regex(separator.into())
                 }
                 .get_backward(input),
                 output
@@ -239,7 +229,7 @@ mod tests {
             assert_eq!(
                 Column {
                     index: 1,
-                    separator: Separator::Regex(RegexHolder::from("[0-9]+"))
+                    separator: Separator::Regex("[0-9]+".into())
                 }
                 .to_string(),
                 "column #2 (regular expression '[0-9]+' separator)"

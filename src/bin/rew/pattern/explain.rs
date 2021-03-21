@@ -64,10 +64,10 @@ mod tests {
     #[test]
     fn complex() {
         let pattern = Pattern {
-            source: String::from("_{f|t}"),
+            source: "_{f|t}".into(),
             items: vec![
                 Parsed {
-                    value: Item::Constant(String::from("_")),
+                    value: Item::Constant("_".into()),
                     range: 0..1,
                 },
                 Parsed {

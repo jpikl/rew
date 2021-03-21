@@ -116,7 +116,7 @@ mod tests {
                 Error {
                     kind: ErrorKind::InputNotUtf8,
                     cause: &Filter::AbsolutePath,
-                    value: String::from("abc"),
+                    value: "abc".into(),
                     range: &(1..2)
                 }
                 .range(),
@@ -130,7 +130,7 @@ mod tests {
                 Error {
                     kind: ErrorKind::InputNotUtf8,
                     cause: &Filter::AbsolutePath,
-                    value: String::from("abc"),
+                    value: "abc".into(),
                     range: &(1..2)
                 }
                     .to_string(),
@@ -145,7 +145,7 @@ mod tests {
         "input not utf-8"
     )]
     #[test_case(
-        ErrorKind::CanonicalizationFailed(AnyString::from("abc")),
+        ErrorKind::CanonicalizationFailed("abc".into()),
         "Path canonicalization failed: abc";
         "canonicalization failed"
     )]

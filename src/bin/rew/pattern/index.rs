@@ -129,10 +129,10 @@ mod tests {
         use test_case::test_case;
 
         #[test_case("", ErrorKind::ExpectedRange, 0..0; "empty")]
-        #[test_case("-", ErrorKind::RangeInvalid(String::from("-")), 0..1; "invalid")]
+        #[test_case("-", ErrorKind::RangeInvalid("-".into()), 0..1; "invalid")]
         #[test_case("0-", ErrorKind::IndexZero, 0..1; "zero start no end")]
         #[test_case("1-0", ErrorKind::IndexZero, 2..3; "start above zero end")]
-        #[test_case("2-1", ErrorKind::RangeStartOverEnd(String::from("2"), String::from("1")), 0..3; "start above end")]
+        #[test_case("2-1", ErrorKind::RangeStartOverEnd("2".into(), "1".into()), 0..3; "start above end")]
         #[test_case("1+", ErrorKind::ExpectedRangeLength, 2..2; "start no length")]
         #[test_case("1+ab", ErrorKind::ExpectedRangeLength, 2..4; "start no length but chars")]
         fn parse_err(input: &str, kind: ErrorKind, range: ByteRange) {
@@ -174,10 +174,7 @@ mod tests {
         #[test_case("ábčd", 4, Some(5), ""; "after last over last")]
         #[test_case("ábčd", 5, Some(5), ""; "over last over last")]
         fn substr(input: &str, start: IndexValue, end: Option<IndexValue>, output: &str) {
-            assert_eq!(
-                Range::<Index>(start, end).substr(String::from(input)),
-                output
-            );
+            assert_eq!(Range::<Index>(start, end).substr(input.into()), output);
         }
 
         #[test_case("", 0, None, ""; "empty")]
@@ -197,10 +194,7 @@ mod tests {
         #[test_case("ábčd", 4, Some(5), ""; "after last over last")]
         #[test_case("ábčd", 5, Some(5), ""; "over last over last")]
         fn substr_back(input: &str, start: IndexValue, end: Option<IndexValue>, output: &str) {
-            assert_eq!(
-                Range::<Index>(start, end).substr_back(String::from(input)),
-                output
-            );
+            assert_eq!(Range::<Index>(start, end).substr_back(input.into()), output);
         }
 
         #[test_case(1, None, "2.."; "open")]

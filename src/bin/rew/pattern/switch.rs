@@ -4,7 +4,7 @@ use crate::pattern::parse::{Error, ErrorKind, Result};
 use crate::pattern::reader::Reader;
 use crate::pattern::regex::{add_capture_group_brackets, RegexHolder};
 use std::borrow::Cow;
-use std::convert::TryFrom;
+use std::convert::TryInto;
 use std::fmt;
 
 #[derive(Debug, PartialEq)]
@@ -42,7 +42,7 @@ impl RegexSwitch {
                     }
 
                     // There was a delimiter after value
-                    let matcher = RegexHolder::try_from(value).map_err(|kind| Error {
+                    let matcher = value.try_into().map_err(|kind| Error {
                         kind,
                         range: value_start..value_end,
                     })?;
@@ -144,11 +144,11 @@ mod tests {
                 cases: cases
                     .iter()
                     .map(|(matcher, result)| Case {
-                        matcher: RegexHolder::from(*matcher),
-                        result: String::from(*result)
+                        matcher: (*matcher).into(),
+                        result: (*result).into()
                     })
                     .collect(),
-                default: String::from(default),
+                default: default.into(),
             })
         );
     }
@@ -176,7 +176,7 @@ mod tests {
             assert_eq!(
                 RegexSwitch {
                     cases: Vec::new(),
-                    default: String::from("default"),
+                    default: "default".into(),
                 }
                 .eval(input),
                 output
@@ -193,19 +193,19 @@ mod tests {
                 RegexSwitch {
                     cases: vec![
                         Case {
-                            matcher: RegexHolder::from("\\d\\d"),
-                            result: String::from("contains consecutive digits"),
+                            matcher: "\\d\\d".into(),
+                            result: "contains consecutive digits".into(),
                         },
                         Case {
-                            matcher: RegexHolder::from("\\d"),
-                            result: String::from("contains digit"),
+                            matcher: "\\d".into(),
+                            result: "contains digit".into(),
                         },
                         Case {
-                            matcher: RegexHolder::from("^[a-z]+$"),
-                            result: String::from("all lowercase"),
+                            matcher: "^[a-z]+$".into(),
+                            result: "all lowercase".into(),
                         },
                     ],
-                    default: String::from("other"),
+                    default: "other".into(),
                 }
                 .eval(input),
                 output
@@ -222,19 +222,19 @@ mod tests {
                 RegexSwitch {
                     cases: vec![
                         Case {
-                            matcher: RegexHolder::from("(\\d)(\\d)"),
-                            result: String::from("contains consecutive digits $1 and $2"),
+                            matcher: "(\\d)(\\d)".into(),
+                            result: "contains consecutive digits $1 and $2".into(),
                         },
                         Case {
-                            matcher: RegexHolder::from("\\d"),
-                            result: String::from("contains digit $0"),
+                            matcher: "\\d".into(),
+                            result: "contains digit $0".into(),
                         },
                         Case {
-                            matcher: RegexHolder::from("^.*([A-Z]).*$"),
-                            result: String::from("first uppercase letter of '$0' is '$1'"),
+                            matcher: "^.*([A-Z]).*$".into(),
+                            result: "first uppercase letter of '$0' is '$1'".into(),
                         },
                     ],
-                    default: String::from("$0, $1 are not capture groups"),
+                    default: "$0, $1 are not capture groups".into(),
                 }
                 .eval(input),
                 output
@@ -253,7 +253,7 @@ mod tests {
             assert_eq!(
                 RegexSwitch {
                     cases: Vec::new(),
-                    default: String::from(default)
+                    default: default.into()
                 }
                 .to_string(),
                 result
@@ -265,8 +265,8 @@ mod tests {
             assert_eq!(
                 RegexSwitch {
                     cases: vec![Case {
-                        matcher: RegexHolder::from("^[a-z]+$"),
-                        result: String::from("lower")
+                        matcher: "^[a-z]+$".into(),
+                        result: "lower".into()
                     }],
                     default: String::new()
                 }
@@ -288,15 +288,15 @@ mod tests {
                 RegexSwitch {
                     cases: vec![
                         Case {
-                            matcher: RegexHolder::from("^[a-z]+$"),
-                            result: String::from("lower")
+                            matcher: "^[a-z]+$".into(),
+                            result: "lower".into()
                         },
                         Case {
-                            matcher: RegexHolder::from("^[A-Z]+$"),
-                            result: String::from("upper")
+                            matcher: "^[A-Z]+$".into(),
+                            result: "upper".into()
                         }
                     ],
-                    default: String::from("mixed")
+                    default: "mixed".into()
                 }
                 .to_string(),
                 indoc! {"

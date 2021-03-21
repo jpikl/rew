@@ -66,7 +66,7 @@ fn extract_path(value: &str, position: &Position, prefix: char) -> Result<PathBu
                     format!("Expected a path after '{}' ({})", prefix, position),
                 ))
             } else {
-                Ok(PathBuf::from(path))
+                Ok(path.into())
             }
         } else {
             Err(Error::new(
@@ -130,11 +130,11 @@ mod tests {
                 PathDiff::new(input.as_bytes(), Terminator::Newline { required: false });
             assert_eq!(
                 path_diff.read().map_err(unpack_io_error),
-                Ok(Some((PathBuf::from("abc"), PathBuf::from("def"))))
+                Ok(Some(("abc".into(), "def".into())))
             );
             assert_eq!(
                 path_diff.read().map_err(unpack_io_error),
-                Ok(Some((PathBuf::from(" g h i "), PathBuf::from(" j k l "))))
+                Ok(Some((" g h i ".into(), " j k l ".into())))
             );
             assert_eq!(path_diff.read().map_err(unpack_io_error), Ok(None));
         }
@@ -147,7 +147,7 @@ mod tests {
                     .map_err(unpack_io_error),
                 Err((
                     ErrorKind::InvalidData,
-                    String::from("Expected '<' but got 'a' (item #1 at offset 0)")
+                    "Expected '<' but got 'a' (item #1 at offset 0)".into()
                 ))
             )
         }
@@ -160,7 +160,7 @@ mod tests {
                     .map_err(unpack_io_error),
                 Err((
                     ErrorKind::InvalidData,
-                    String::from("Expected '>' but got 'd' (item #2 at offset 5)")
+                    "Expected '>' but got 'd' (item #2 at offset 5)".into()
                 ))
             )
         }
@@ -173,7 +173,7 @@ mod tests {
                     .map_err(unpack_io_error),
                 Err((
                     ErrorKind::UnexpectedEof,
-                    String::from("Expected a path after '<' (item #1 at offset 0)")
+                    "Expected a path after '<' (item #1 at offset 0)".into()
                 ))
             )
         }
@@ -186,7 +186,7 @@ mod tests {
                     .map_err(unpack_io_error),
                 Err((
                     ErrorKind::UnexpectedEof,
-                    String::from("Expected a path after '>' (item #2 at offset 5)")
+                    "Expected a path after '>' (item #2 at offset 5)".into()
                 ))
             )
         }
@@ -199,7 +199,7 @@ mod tests {
                     .map_err(unpack_io_error),
                 Err((
                     ErrorKind::UnexpectedEof,
-                    String::from("Expected '>' (item #2 at offset 4)")
+                    "Expected '>' (item #2 at offset 4)".into()
                 ))
             )
         }
@@ -212,7 +212,7 @@ mod tests {
                     .map_err(unpack_io_error),
                 Err((
                     ErrorKind::UnexpectedEof,
-                    String::from("Expected '>' (item #2 at offset 5)")
+                    "Expected '>' (item #2 at offset 5)".into()
                 ))
             )
         }

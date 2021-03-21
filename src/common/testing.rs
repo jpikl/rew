@@ -34,7 +34,7 @@ impl Write for ColoredOuput {
         } else {
             self.chunks.push(OutputChunk {
                 spec: self.spec.clone(),
-                value: String::from(value),
+                value: value.into(),
             })
         }
 
@@ -72,21 +72,21 @@ impl OutputChunk {
     pub fn plain(value: &str) -> Self {
         Self {
             spec: ColorSpec::new(),
-            value: String::from(value),
+            value: value.into(),
         }
     }
 
     pub fn color(color: Color, value: &str) -> Self {
         Self {
             spec: spec_color(color),
-            value: String::from(value),
+            value: value.into(),
         }
     }
 
     pub fn bold_color(color: Color, value: &str) -> Self {
         Self {
             spec: spec_bold_color(color),
-            value: String::from(value),
+            value: value.into(),
         }
     }
 }
@@ -116,7 +116,7 @@ mod tests {
 
         assert_eq!(
             unpack_io_error(Error::new(ErrorKind::Other, "test")),
-            (ErrorKind::Other, String::from("test"))
+            (ErrorKind::Other, "test".into())
         );
     }
 

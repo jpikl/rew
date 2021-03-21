@@ -205,7 +205,7 @@ mod tests {
     use test_case::test_case;
 
     #[test_case(
-        Item::Constant(String::from("abc")),
+        Item::Constant("abc".into()),
         "Constant 'abc'";
         "constant"
     )]
@@ -249,7 +249,7 @@ mod tests {
         #[test_case("{f|}", ErrorKind::ExpectedFilter, 3..4; "expr end after pipe")]
         #[test_case("{f|f", ErrorKind::UnmatchedExprStart, 0..1; "missing pipe or expr end 2")]
         #[test_case("{f|ff", ErrorKind::ExpectedPipeOrExprEnd, 4..5; "filter after filter 2")]
-        #[test_case("{#2-1}", ErrorKind::RangeStartOverEnd(String::from("2"), String::from("1")), 2..5; "invalid filter")]
+        #[test_case("{#2-1}", ErrorKind::RangeStartOverEnd("2".into(), "1".into()), 2..5; "invalid filter")]
         fn err(input: &str, kind: ErrorKind, range: ByteRange) {
             assert_eq!(
                 Parser::new(input, &Config::fixture()).parse_items(),
@@ -272,7 +272,7 @@ mod tests {
 
         fn constant() -> Vec<ParsedItem> {
             vec![Parsed {
-                value: Item::Constant(String::from("a")),
+                value: Item::Constant("a".into()),
                 range: 0..1,
             }]
         }
@@ -317,7 +317,7 @@ mod tests {
         fn complex_pattern() -> Vec<ParsedItem> {
             vec![
                 Parsed {
-                    value: Item::Constant(String::from("image_")),
+                    value: Item::Constant("image_".into()),
                     range: 0..6,
                 },
                 Parsed {
@@ -329,7 +329,7 @@ mod tests {
                         Parsed {
                             value: Filter::LeftPad(Padding::Repeated(Repetition {
                                 count: 3,
-                                value: String::from("0"),
+                                value: "0".into(),
                             })),
                             range: 9..13,
                         },
@@ -337,7 +337,7 @@ mod tests {
                     range: 6..14,
                 },
                 Parsed {
-                    value: Item::Constant(String::from(".")),
+                    value: Item::Constant(".".into()),
                     range: 14..15,
                 },
                 Parsed {
@@ -361,7 +361,7 @@ mod tests {
                     range: 15..24,
                 },
                 Parsed {
-                    value: Item::Constant(String::from("2")),
+                    value: Item::Constant("2".into()),
                     range: 24..25,
                 },
             ]

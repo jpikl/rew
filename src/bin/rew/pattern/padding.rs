@@ -89,7 +89,7 @@ mod tests {
         fn parse(input: &str, padding: &str) {
             assert_eq!(
                 Padding::parse(&mut Reader::from(input), '<'),
-                Ok(Padding::Fixed(String::from(padding)))
+                Ok(Padding::Fixed(padding.into()))
             );
         }
 
@@ -100,8 +100,8 @@ mod tests {
         #[test_case("ab", "0123", "01ab"; "shorter with longer")]
         fn apply_left(input: &str, padding: &str, output: &str) {
             assert_eq!(
-                Padding::Fixed(String::from(padding)).apply_left(String::from(input)),
-                String::from(output)
+                Padding::Fixed(padding.into()).apply_left(input.into()),
+                output
             );
         }
 
@@ -112,14 +112,14 @@ mod tests {
         #[test_case("ab", "0123", "ab23"; "shorter with longer")]
         fn apply_right(input: &str, padding: &str, output: &str) {
             assert_eq!(
-                Padding::Fixed(String::from(padding)).apply_right(String::from(input)),
-                String::from(output)
+                Padding::Fixed(padding.into()).apply_right(input.into()),
+                output
             );
         }
 
         #[test]
         fn display() {
-            assert_eq!(Padding::Fixed(String::from("abc")).to_string(), "'abc'");
+            assert_eq!(Padding::Fixed("abc".into()).to_string(), "'abc'");
         }
     }
 
@@ -134,7 +134,7 @@ mod tests {
                 Padding::parse(&mut Reader::from(input), '<'),
                 Ok(Padding::Repeated(Repetition {
                     count,
-                    value: String::from(padding)
+                    value: padding.into()
                 }))
             );
         }
@@ -148,10 +148,10 @@ mod tests {
             assert_eq!(
                 Padding::Repeated(Repetition {
                     count,
-                    value: String::from(padding)
+                    value: padding.into()
                 })
-                .apply_left(String::from(input)),
-                String::from(output)
+                .apply_left(input.into()),
+                output
             );
         }
 
@@ -164,10 +164,10 @@ mod tests {
             assert_eq!(
                 Padding::Repeated(Repetition {
                     count,
-                    value: String::from(padding)
+                    value: padding.into()
                 })
-                .apply_right(String::from(input)),
-                String::from(output)
+                .apply_right(input.into()),
+                output
             );
         }
 
@@ -176,7 +176,7 @@ mod tests {
             assert_eq!(
                 Padding::Repeated(Repetition {
                     count: 5,
-                    value: String::from("abc")
+                    value: "abc".into()
                 })
                 .to_string(),
                 "5x 'abc'"

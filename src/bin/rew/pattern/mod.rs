@@ -35,7 +35,7 @@ pub struct Pattern {
 impl Pattern {
     pub fn parse(source: &str, config: &parse::Config) -> parse::Result<Self> {
         Ok(Self {
-            source: String::from(source),
+            source: source.into(),
             items: Parser::new(source, config).parse_items()?,
         })
     }
@@ -142,10 +142,10 @@ mod tests {
             assert_eq!(
                 Pattern::parse("_%{{f|v}%}_", &Config::fixture()),
                 Ok(Pattern {
-                    source: String::from("_%{{f|v}%}_"),
+                    source: "_%{{f|v}%}_".into(),
                     items: vec![
                         Parsed {
-                            value: Item::Constant(String::from("_{")),
+                            value: Item::Constant("_{".into()),
                             range: 0..3,
                         },
                         Parsed {
@@ -162,7 +162,7 @@ mod tests {
                             range: 3..8,
                         },
                         Parsed {
-                            value: Item::Constant(String::from("}_")),
+                            value: Item::Constant("}_".into()),
                             range: 8..11,
                         },
                     ]
@@ -177,7 +177,7 @@ mod tests {
     #[test_case(Filter::RegexCapture(1), false, false, true; "regex capture")]
     fn uses(filter: Filter, local_counter: bool, global_counter: bool, regex_capture: bool) {
         let pattern = Pattern::from(vec![
-            Parsed::from(Item::Constant(String::from("a"))),
+            Parsed::from(Item::Constant("a".into())),
             Parsed::from(Item::Expression(vec![Parsed::from(filter)])),
         ]);
         assert_eq!(pattern.uses_local_counter(), local_counter);
@@ -191,11 +191,8 @@ mod tests {
 
         #[test]
         fn constant() {
-            let pattern = Pattern::from(vec![Parsed::from(Item::Constant(String::from("abc")))]);
-            assert_eq!(
-                pattern.eval("", &Context::fixture()),
-                Ok(String::from("abc"))
-            );
+            let pattern = Pattern::from(vec![Parsed::from(Item::Constant("abc".into()))]);
+            assert_eq!(pattern.eval("", &Context::fixture()), Ok("abc".into()));
         }
 
         #[test]
@@ -203,7 +200,7 @@ mod tests {
             let pattern = Pattern::from(vec![Parsed::from(Item::Expression(vec![]))]);
             assert_eq!(
                 pattern.eval("dir/file.ext", &Context::fixture()),
-                Ok(String::from("dir/file.ext"))
+                Ok("dir/file.ext".into())
             );
         }
 
@@ -214,7 +211,7 @@ mod tests {
             )]))]);
             assert_eq!(
                 pattern.eval("dir/file.ext", &Context::fixture()),
-                Ok(String::from("file.ext"))
+                Ok("file.ext".into())
             );
         }
 
@@ -226,28 +223,28 @@ mod tests {
             ]))]);
             assert_eq!(
                 pattern.eval("dir/file.ext", &Context::fixture()),
-                Ok(String::from("FILE.EXT"))
+                Ok("FILE.EXT".into())
             );
         }
 
         #[test]
         fn multi_constant_and_filter_expressions() {
             let pattern = Pattern::from(vec![
-                Parsed::from(Item::Constant(String::from("prefix_"))),
+                Parsed::from(Item::Constant("prefix_".into())),
                 Parsed::from(Item::Expression(vec![
                     Parsed::from(Filter::BaseName),
                     Parsed::from(Filter::Substring(Range::<Index>(0, Some(3)))),
                 ])),
-                Parsed::from(Item::Constant(String::from("_"))),
+                Parsed::from(Item::Constant("_".into())),
                 Parsed::from(Item::Expression(vec![Parsed::from(Filter::LocalCounter)])),
-                Parsed::from(Item::Constant(String::from("_"))),
+                Parsed::from(Item::Constant("_".into())),
                 Parsed::from(Item::Expression(vec![Parsed::from(Filter::GlobalCounter)])),
-                Parsed::from(Item::Constant(String::from("."))),
+                Parsed::from(Item::Constant(".".into())),
                 Parsed::from(Item::Expression(vec![
                     Parsed::from(Filter::Extension),
                     Parsed::from(Filter::ToUppercase),
                     Parsed::from(Filter::ReplaceAll(Substitution {
-                        target: String::from("X"),
+                        target: "X".into(),
                         replacement: String::new(),
                     })),
                 ])),
@@ -255,7 +252,7 @@ mod tests {
 
             assert_eq!(
                 pattern.eval("dir/file.ext", &Context::fixture()),
-                Ok(String::from("prefix_fil_1_2.ET"))
+                Ok("prefix_fil_1_2.ET".into())
             );
         }
 
@@ -265,13 +262,13 @@ mod tests {
             context.expression_quotes = Some('\'');
 
             let pattern = Pattern::from(vec![
-                Parsed::from(Item::Constant(String::from(" "))),
+                Parsed::from(Item::Constant(" ".into())),
                 Parsed::from(Item::Expression(Vec::new())),
-                Parsed::from(Item::Constant(String::from(" "))),
+                Parsed::from(Item::Constant(" ".into())),
             ]);
             assert_eq!(
                 pattern.eval("dir/file.ext", &context),
-                Ok(String::from(" 'dir/file.ext' "))
+                Ok(" 'dir/file.ext' ".into())
             );
         }
 
@@ -285,7 +282,7 @@ mod tests {
                 pattern.eval("dir/file.ext", &Context::fixture()),
                 Err(Error {
                     kind: ErrorKind::CanonicalizationFailed(AnyString::any()),
-                    value: String::from("dir/file.ext"),
+                    value: "dir/file.ext".into(),
                     cause: &Filter::CanonicalPath,
                     range: &(1..2usize),
                 })

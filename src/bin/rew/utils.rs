@@ -30,14 +30,14 @@ impl fmt::Display for AnyString {
 #[cfg(test)]
 impl From<&str> for AnyString {
     fn from(value: &str) -> Self {
-        Self(String::from(value))
+        Self(value.into())
     }
 }
 
 #[cfg(test)]
 impl AnyString {
     pub fn any() -> Self {
-        Self::from("This value is not compared by test assertions")
+        "This value is not compared by test assertions".into()
     }
 }
 

@@ -68,7 +68,7 @@ mod tests {
             Repetition::parse(&mut Reader::from(input)),
             Ok(Repetition {
                 count,
-                value: String::from(value)
+                value: value.into()
             })
         );
     }
@@ -83,7 +83,7 @@ mod tests {
         assert_eq!(
             Repetition {
                 count,
-                value: String::from(value)
+                value: value.into()
             }
             .expand(),
             output
@@ -95,7 +95,7 @@ mod tests {
         assert_eq!(
             Repetition {
                 count: 5,
-                value: String::from("abc")
+                value: "abc".into()
             }
             .to_string(),
             "5x 'abc'"

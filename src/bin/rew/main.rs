@@ -83,7 +83,7 @@ fn run(cli: &Cli, io: &Io) -> Result {
         } else if let Some(separator) = &cli.separator_regex {
             Separator::Regex(RegexHolder(separator.clone()))
         } else {
-            Separator::String(String::from(DEFAULT_SEPARATOR))
+            Separator::String(DEFAULT_SEPARATOR.into())
         };
 
         let parse_config = parse::Config {

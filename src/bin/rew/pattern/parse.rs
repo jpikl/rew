@@ -17,7 +17,7 @@ impl Config {
         use crate::pattern::symbols::{DEFAULT_ESCAPE, DEFAULT_SEPARATOR};
         Self {
             escape: DEFAULT_ESCAPE,
-            separator: Separator::String(String::from(DEFAULT_SEPARATOR)),
+            separator: Separator::String(DEFAULT_SEPARATOR.into()),
         }
     }
 }
@@ -233,17 +233,16 @@ mod tests {
 
     mod separator_display {
         use crate::pattern::parse::Separator;
-        use crate::pattern::regex::RegexHolder;
 
         #[test]
         fn string() {
-            assert_eq!(Separator::String(String::from('\t')).to_string(), "'\\t'");
+            assert_eq!(Separator::String('\t'.into()).to_string(), "'\\t'");
         }
 
         #[test]
         fn regex() {
             assert_eq!(
-                Separator::Regex(RegexHolder::from("\\s+")).to_string(),
+                Separator::Regex("\\s+".into()).to_string(),
                 "regular expression '\\s+'"
             );
         }
@@ -353,7 +352,7 @@ mod tests {
         "index zero"
     )]
     #[test_case(
-        ErrorKind::IntegerOverflow(String::from("255")),
+        ErrorKind::IntegerOverflow("255".into()),
         "Cannot parse value greater than 255";
         "integer overflow"
     )]
@@ -373,17 +372,17 @@ mod tests {
         "pipe outside expr"
     )]
     #[test_case(
-        ErrorKind::RangeInvalid(String::from("abc")),
+        ErrorKind::RangeInvalid("abc".into()),
         "Invalid range 'abc'";
         "range invalid"
     )]
     #[test_case(
-        ErrorKind::RangeStartOverEnd(String::from("2"), String::from("1")),
+        ErrorKind::RangeStartOverEnd("2".into(), "1".into()),
         "Range start 2 is greater than end 1";
         "range start over end"
     )]
     #[test_case(
-        ErrorKind::RegexInvalid(AnyString::from("abc")),
+        ErrorKind::RegexInvalid("abc".into()),
         "Invalid regular expression: abc";
         "regex invalid"
     )]

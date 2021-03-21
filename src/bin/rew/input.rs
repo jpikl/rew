@@ -35,7 +35,7 @@ mod tests {
 
     #[test]
     fn args() {
-        let args = vec![String::from("a"), String::from("b")];
+        let args = vec!["a".into(), "b".into()];
         let mut values: Values<&[u8]> = Values::from_args(&args);
         assert_eq!(values.next().map_err(unpack_io_error), Ok(Some("a")));
         assert_eq!(values.next().map_err(unpack_io_error), Ok(Some("b")));

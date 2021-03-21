@@ -54,8 +54,8 @@ mod tests {
     use crate::utils::ByteRange;
     use test_case::test_case;
 
-    #[test_case("-", ErrorKind::RangeInvalid(String::from("-")), 0..1; "invalid")]
-    #[test_case("2-1", ErrorKind::RangeStartOverEnd(String::from("2"), String::from("1")), 0..3; "start above end")]
+    #[test_case("-", ErrorKind::RangeInvalid("-".into()), 0..1; "invalid")]
+    #[test_case("2-1", ErrorKind::RangeStartOverEnd("2".into(), "1".into()), 0..3; "start above end")]
     #[test_case("0+1", ErrorKind::ExpectedRangeDelimiter(Some(Char::Raw('+'))), 1..2; "start with length")]
     #[test_case("1", ErrorKind::ExpectedRangeDelimiter(None), 1..1; "no delimiter")]
     #[test_case("1ab", ErrorKind::ExpectedRangeDelimiter(Some(Char::Raw('a'))), 1..2; "wrong delimiter")]

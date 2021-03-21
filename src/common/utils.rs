@@ -37,8 +37,8 @@ mod tests {
     fn into_static_str() {
         use super::*;
 
-        assert_eq!(into_static_str(String::from("abc")), "abc");
-        assert_eq!(into_static_str(String::from("def")), "def");
+        assert_eq!(into_static_str("abc".into()), "abc");
+        assert_eq!(into_static_str("def".into()), "def");
     }
 
     mod str_from_utf8 {
@@ -59,7 +59,7 @@ mod tests {
                 str_from_utf8(&[0, 159, 146, 150][..]).map_err(unpack_io_error),
                 Err((
                     ErrorKind::InvalidData,
-                    String::from("Value does not have UTF-8 encoding (offset 1)")
+                    "Value does not have UTF-8 encoding (offset 1)".into()
                 ))
             );
         }

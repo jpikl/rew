@@ -172,7 +172,7 @@ mod tests {
     #[test_case(3, &[][..], 5; "index 3")]
     fn peek_to_end(index: usize, result: &[Char], position: usize) {
         let reader = make_reader_at(index);
-        assert_eq!(reader.peek_to_end(), Chars::from(result));
+        assert_eq!(reader.peek_to_end(), result.into());
         assert_eq!(reader.position(), position);
     }
 
@@ -215,7 +215,7 @@ mod tests {
     #[test_case(3, &[][..], 5; "index 3")]
     fn read_to_end(index: usize, result: &[Char], position: usize) {
         let mut reader = make_reader_at(index);
-        assert_eq!(reader.read_to_end(), Chars::from(result));
+        assert_eq!(reader.read_to_end(), result.into());
         assert_eq!(reader.position(), position);
     }
 
@@ -231,7 +231,7 @@ mod tests {
     #[test_case(3, &Char::Raw('x'), &[][..], 5; "index 3 to end")]
     fn read_until(index: usize, delimiter: &Char, result: &[Char], position: usize) {
         let mut reader = make_reader_at(index);
-        assert_eq!(reader.read_until(delimiter), Chars::from(result));
+        assert_eq!(reader.read_until(delimiter), result.into());
         assert_eq!(reader.position(), position);
     }
 

@@ -228,7 +228,7 @@ mod tests {
     fn to_absolute(input: &str, output: &str) {
         let working_dir = std::env::current_dir().unwrap();
         assert_eq!(
-            super::to_absolute(String::from(input), &working_dir),
+            super::to_absolute(input.into(), &working_dir),
             Ok(fmt_working_dir(output, &working_dir))
         );
     }
@@ -255,7 +255,7 @@ mod tests {
     fn canonicalize(input: &str, output: &str) {
         let working_dir = std::env::current_dir().unwrap();
         assert_eq!(
-            super::canonicalize(String::from(input), &working_dir),
+            super::canonicalize(input.into(), &working_dir),
             Ok(fmt_working_dir(output, &working_dir))
         );
     }
@@ -264,7 +264,7 @@ mod tests {
     fn canonicalize_err() {
         let working_dir = std::env::current_dir().unwrap();
         assert_eq!(
-            super::canonicalize(String::from("non-existent"), &working_dir),
+            super::canonicalize("non-existent".into(), &working_dir),
             Err(ErrorKind::CanonicalizationFailed(AnyString::any()))
         );
     }
@@ -404,7 +404,7 @@ mod tests {
     #[cfg_attr(windows, test_case("C:\\abc\\def\\..\\..\\ghi", "C:\\ghi"; "absolute double dot 15"))]
     #[cfg_attr(windows, test_case("C:\\abc\\def\\..\\..\\ghi\\", "C:\\ghi"; "absolute double dot 16"))]
     fn normalize(input: &str, output: &str) {
-        assert_eq!(super::normalize(input), Ok(String::from(output)));
+        assert_eq!(super::normalize(input), Ok(output.into()));
     }
 
     #[test_case("", ".."; "empty")]
@@ -425,10 +425,7 @@ mod tests {
     #[cfg_attr(windows, test_case("..\\file.ext", ".."; "double dot parent"))]
     #[cfg_attr(windows, test_case("dir\\file.ext", "dir"; "name parent"))]
     fn get_parent_directory(input: &str, output: &str) {
-        assert_eq!(
-            super::get_parent_directory(String::from(input)),
-            Ok(String::from(output))
-        );
+        assert_eq!(super::get_parent_directory(input.into()), Ok(output.into()));
     }
 
     #[test_case("", ""; "empty")]
@@ -447,10 +444,7 @@ mod tests {
     #[cfg_attr(windows, test_case("..\\file.ext", ".."; "double dot parent"))]
     #[cfg_attr(windows, test_case("dir\\file.ext", "dir"; "name parent"))]
     fn remove_last_name(input: &str, output: &str) {
-        assert_eq!(
-            super::remove_last_name(String::from(input)),
-            Ok(String::from(output))
-        );
+        assert_eq!(super::remove_last_name(input.into()), Ok(output.into()));
     }
 
     #[test_case("", ""; "empty")]
@@ -469,7 +463,7 @@ mod tests {
     #[cfg_attr(windows, test_case("..\\file.ext", "file.ext"; "double dot parent"))]
     #[cfg_attr(windows, test_case("dir\\file.ext", "file.ext"; "name parent"))]
     fn get_file_name(input: &str, output: &str) {
-        assert_eq!(super::get_file_name(input), Ok(String::from(output)));
+        assert_eq!(super::get_file_name(input), Ok(output.into()));
     }
 
     #[test_case("", ""; "empty")]
@@ -488,7 +482,7 @@ mod tests {
     #[cfg_attr(windows, test_case("..\\file.ext", "file.ext"; "double dot parent"))]
     #[cfg_attr(windows, test_case("dir\\file.ext", "file.ext"; "name parent"))]
     fn get_last_name(input: &str, output: &str) {
-        assert_eq!(super::get_last_name(input), Ok(String::from(output)));
+        assert_eq!(super::get_last_name(input), Ok(output.into()));
     }
 
     #[test_case("", ""; "empty")]
@@ -507,7 +501,7 @@ mod tests {
     #[cfg_attr(windows, test_case("..\\file.ext", "file"; "double dot parent"))]
     #[cfg_attr(windows, test_case("dir\\file.ext", "file"; "name parent"))]
     fn get_base_name(input: &str, output: &str) {
-        assert_eq!(super::get_base_name(input), Ok(String::from(output)));
+        assert_eq!(super::get_base_name(input), Ok(output.into()));
     }
 
     #[test_case("", ""; "empty")]
@@ -526,10 +520,7 @@ mod tests {
     #[cfg_attr(windows, test_case("..\\file.ext", "..\\file"; "double dot parent"))]
     #[cfg_attr(windows, test_case("dir\\file.ext", "dir\\file"; "name parent"))]
     fn remove_extension(input: &str, output: &str) {
-        assert_eq!(
-            super::remove_extension(String::from(input)),
-            Ok(String::from(output))
-        );
+        assert_eq!(super::remove_extension(input.into()), Ok(output.into()));
     }
 
     #[test_case("", ""; "empty")]
@@ -548,7 +539,7 @@ mod tests {
     #[cfg_attr(windows, test_case("..\\file.ext", "ext"; "double dot parent"))]
     #[cfg_attr(windows, test_case("dir\\file.ext", "ext"; "name parent"))]
     fn get_extension(input: &str, output: &str) {
-        assert_eq!(super::get_extension(input), Ok(String::from(output)));
+        assert_eq!(super::get_extension(input), Ok(output.into()));
     }
 
     #[test_case("", ""; "empty")]
@@ -567,10 +558,7 @@ mod tests {
     #[cfg_attr(windows, test_case("..\\file.ext", ".ext"; "double dot parent"))]
     #[cfg_attr(windows, test_case("dir\\file.ext", ".ext"; "name parent"))]
     fn get_extension_with_dot(input: &str, output: &str) {
-        assert_eq!(
-            super::get_extension_with_dot(input),
-            Ok(String::from(output))
-        );
+        assert_eq!(super::get_extension_with_dot(input), Ok(output.into()));
     }
 
     #[cfg_attr(unix, test_case("", "/"; "empty"))]
@@ -585,10 +573,7 @@ mod tests {
     #[cfg_attr(windows, test_case("dir\\", "dir\\"; "name separator"))]
     #[cfg_attr(windows, test_case("dir/", "dir\\"; "name unix separator"))]
     fn ensure_trailing_dir_separator(input: &str, output: &str) {
-        assert_eq!(
-            super::ensure_trailing_dir_separator(String::from(input)),
-            output
-        );
+        assert_eq!(super::ensure_trailing_dir_separator(input.into()), output);
     }
 
     #[cfg_attr(unix, test_case("", ""; "empty"))]
@@ -603,13 +588,10 @@ mod tests {
     #[cfg_attr(windows, test_case("dir\\", "dir"; "name separator"))]
     #[cfg_attr(windows, test_case("dir/", "dir"; "name unix separator"))]
     fn remove_trailing_dir_separator(input: &str, output: &str) {
-        assert_eq!(
-            super::remove_trailing_dir_separator(String::from(input)),
-            output
-        );
+        assert_eq!(super::remove_trailing_dir_separator(input.into()), output);
     }
 
-    #[test_case("abc", Ok(String::from("abc")); "utf-8")]
+    #[test_case("abc", Ok("abc".into()); "utf-8")]
     #[test_case(make_non_utf8_os_string(), Err(ErrorKind::InputNotUtf8); "non utf-8")]
     fn into_string<T: Into<PathBuf>>(input: T, result: BaseResult<String>) {
         assert_eq!(super::into_string(input.into()), result);

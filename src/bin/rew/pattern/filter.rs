@@ -386,10 +386,7 @@ mod tests {
 
         #[test_case("non-existent", Filter::CanonicalPath, ErrorKind::CanonicalizationFailed(AnyString::any()); "canonicalization failed")]
         fn err(input: &str, filter: Filter, kind: ErrorKind) {
-            assert_eq!(
-                filter.eval(String::from(input), &Context::fixture()),
-                Err(kind)
-            )
+            assert_eq!(filter.eval(input.into(), &Context::fixture()), Err(kind))
         }
 
         #[cfg_attr(unix, test_case("", Filter::WorkingDir, "/work"; "working dir"))]
@@ -461,19 +458,15 @@ mod tests {
                         real_working_dir.to_str().unwrap(),
                     );
                     context.working_dir = &real_working_dir;
-                    assert_eq!(filter.eval(String::from(input), &context), Ok(output))
+                    assert_eq!(filter.eval(input.into(), &context), Ok(output))
                 }
                 Filter::RandomUuid => {
-                    assert_uuid(
-                        &filter
-                            .eval(String::from(input), &Context::fixture())
-                            .unwrap(),
-                    );
+                    assert_uuid(&filter.eval(input.into(), &Context::fixture()).unwrap());
                 }
                 _ => {
                     assert_eq!(
-                        filter.eval(String::from(input), &Context::fixture()),
-                        Ok(String::from(output))
+                        filter.eval(input.into(), &Context::fixture()),
+                        Ok(output.into())
                     )
                 }
             }

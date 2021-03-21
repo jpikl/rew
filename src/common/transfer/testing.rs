@@ -25,9 +25,6 @@ mod tests {
     fn debug_fse_error_kind() {
         use super::*;
 
-        assert_eq!(
-            debug_fse_error_kind(ErrorKind::Other),
-            String::from("ErrorKind::Other")
-        );
+        assert_eq!(debug_fse_error_kind(ErrorKind::Other), "ErrorKind::Other");
     }
 }

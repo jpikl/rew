@@ -5,7 +5,7 @@ use crate::utils::AnyString;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::borrow::Cow;
-use std::convert::TryFrom;
+use std::convert::{TryFrom, TryInto};
 use std::fmt;
 use std::ops::Deref;
 
@@ -35,7 +35,7 @@ impl RegexHolder {
                 range: value_start..value_start,
             })
         } else {
-            Self::try_from(value.to_string()).map_err(|kind| Error {
+            value.to_string().try_into().map_err(|kind| Error {
                 kind,
                 range: value_start..reader.position(),
             })
@@ -111,7 +111,7 @@ mod tests {
         fn try_from_ok(input: &str, output: &str) {
             assert_eq!(
                 RegexHolder::try_from(String::from(input)),
-                Ok(RegexHolder::from(output))
+                Ok(output.into())
             );
         }
 
@@ -136,7 +136,7 @@ mod tests {
         fn parse_ok() {
             assert_eq!(
                 RegexHolder::parse(&mut Reader::from("[0-9]")),
-                Ok(RegexHolder::from("[0-9]"))
+                Ok("[0-9]".into())
             );
         }
 
@@ -156,10 +156,7 @@ mod tests {
 
         #[test]
         fn display() {
-            assert_eq!(
-                RegexHolder::from("[a-z]+").to_string(),
-                String::from("[a-z]+")
-            );
+            assert_eq!(RegexHolder::from("[a-z]+").to_string(), "[a-z]+");
         }
     }
 }

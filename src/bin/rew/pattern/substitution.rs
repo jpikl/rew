@@ -4,7 +4,7 @@ use crate::pattern::parse::{Error, ErrorKind, Result};
 use crate::pattern::reader::Reader;
 use crate::pattern::regex::{add_capture_group_brackets, RegexHolder};
 use crate::utils::Empty;
-use std::convert::TryFrom;
+use std::convert::{TryFrom, TryInto};
 use std::fmt;
 
 #[derive(Debug, PartialEq)]
@@ -47,7 +47,7 @@ impl<E: Into<ErrorKind>, T: TryFrom<String, Error = E>> Substitution<T> {
                 });
             }
 
-            match T::try_from(target.to_string()) {
+            match target.to_string().try_into() {
                 Ok(target) => Ok(Self {
                     target,
                     replacement: reader.read_to_end().to_string(),
@@ -134,7 +134,7 @@ mod tests {
                 EmptySubstitution::parse(&mut Reader::from(input)),
                 Ok(EmptySubstitution {
                     target: Empty,
-                    replacement: String::from(replacement)
+                    replacement: replacement.into()
                 })
             );
         }
@@ -147,9 +147,9 @@ mod tests {
             assert_eq!(
                 Substitution {
                     target: Empty,
-                    replacement: String::from(replacement)
+                    replacement: replacement.into()
                 }
-                .replace(String::from(input)),
+                .replace(input.into()),
                 output
             );
         }
@@ -159,7 +159,7 @@ mod tests {
             assert_eq!(
                 Substitution {
                     target: Empty,
-                    replacement: String::from("abc")
+                    replacement: "abc".into()
                 }
                 .to_string(),
                 "empty with 'abc'"
@@ -192,8 +192,8 @@ mod tests {
             assert_eq!(
                 StringSubstitution::parse(&mut Reader::from(input)),
                 Ok(Substitution {
-                    target: String::from(target),
-                    replacement: String::from(replacement),
+                    target: target.into(),
+                    replacement: replacement.into(),
                 })
             );
         }
@@ -206,9 +206,9 @@ mod tests {
         #[test_case("abcd_abcd", "ab", "x", "xcd_abcd"; "first with nonempty")]
         fn replace_first(input: &str, target: &str, replacement: &str, output: &str) {
             assert_eq!(
-                Substitution {
-                    target: String::from(target),
-                    replacement: String::from(replacement),
+                StringSubstitution {
+                    target: target.into(),
+                    replacement: replacement.into(),
                 }
                 .replace_first(input),
                 output
@@ -223,9 +223,9 @@ mod tests {
         #[test_case("abcd_abcd", "ab", "x", "xcd_xcd"; "all with nonempty")]
         fn replace_all(input: &str, target: &str, replacement: &str, output: &str) {
             assert_eq!(
-                Substitution {
-                    target: String::from(target),
-                    replacement: String::from(replacement),
+                StringSubstitution {
+                    target: target.into(),
+                    replacement: replacement.into(),
                 }
                 .replace_all(input),
                 output
@@ -235,9 +235,9 @@ mod tests {
         #[test]
         fn display() {
             assert_eq!(
-                Substitution {
-                    target: String::from("abc"),
-                    replacement: String::from("def")
+                StringSubstitution {
+                    target: "abc".into(),
+                    replacement: "def".into()
                 }
                 .to_string(),
                 "'abc' with 'def'"
@@ -270,8 +270,8 @@ mod tests {
             assert_eq!(
                 RegexSubstitution::parse(&mut Reader::from(input)),
                 Ok(Substitution {
-                    target: RegexHolder::from(target),
-                    replacement: String::from(replacement),
+                    target: target.into(),
+                    replacement: replacement.into(),
                 })
             );
         }
@@ -284,9 +284,9 @@ mod tests {
         #[test_case("abc123def456", "(\\d)(\\d+)", "_$2$1_", "abc_231_def456"; "first with nonempty")]
         fn replace_first(input: &str, target: &str, replacement: &str, output: &str) {
             assert_eq!(
-                Substitution {
-                    target: RegexHolder::from(target),
-                    replacement: String::from(replacement),
+                RegexSubstitution {
+                    target: target.into(),
+                    replacement: replacement.into(),
                 }
                 .replace_first(input),
                 output
@@ -301,9 +301,9 @@ mod tests {
         #[test_case("abc123def456", "(\\d)(\\d+)", "_$2$1_", "abc_231_def_564_"; "all with nonempty")]
         fn replace_all(input: &str, target: &str, replacement: &str, output: &str) {
             assert_eq!(
-                Substitution {
-                    target: RegexHolder::from(target),
-                    replacement: String::from(replacement),
+                RegexSubstitution {
+                    target: target.into(),
+                    replacement: replacement.into(),
                 }
                 .replace_all(input),
                 output
@@ -313,9 +313,9 @@ mod tests {
         #[test]
         fn display() {
             assert_eq!(
-                Substitution {
-                    target: RegexHolder::from("([a-z]+)"),
-                    replacement: String::from("_$1_")
+                RegexSubstitution {
+                    target: "([a-z]+)".into(),
+                    replacement: "_$1_".into()
                 }
                 .to_string(),
                 "'([a-z]+)' with '_$1_'"

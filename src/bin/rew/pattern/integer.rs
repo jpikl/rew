@@ -57,8 +57,8 @@ mod tests {
 
         #[test_case("", ErrorKind::ExpectedNumber, 0..0; "empty")]
         #[test_case("ab", ErrorKind::ExpectedNumber, 0..2; "alpha")]
-        #[test_case("256", ErrorKind::IntegerOverflow(String::from("255")), 0..3; "overflow")]
-        #[test_case("256a", ErrorKind::IntegerOverflow(String::from("255")), 0..3; "overflow then alpha")]
+        #[test_case("256", ErrorKind::IntegerOverflow("255".into()), 0..3; "overflow")]
+        #[test_case("256a", ErrorKind::IntegerOverflow("255".into()), 0..3; "overflow then alpha")]
         fn err(input: &str, kind: ErrorKind, range: ByteRange) {
             assert_eq!(
                 parse_integer::<u8>(&mut Reader::from(input)),
