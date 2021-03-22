@@ -216,7 +216,6 @@ fn to_str<S: AsRef<OsStr> + ?Sized>(value: &S) -> BaseResult<&str> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::testing::make_non_utf8_os_string;
     use std::ffi::OsString;
     use test_case::test_case;
 
@@ -601,6 +600,18 @@ mod tests {
     #[test_case(make_non_utf8_os_string(), Err(ErrorKind::InputNotUtf8); "non utf-8")]
     fn to_str<T: Into<OsString>>(input: T, result: BaseResult<&str>) {
         assert_eq!(super::to_str(&input.into()), result);
+    }
+
+    #[cfg(unix)]
+    pub fn make_non_utf8_os_string() -> OsString {
+        use std::os::unix::prelude::*;
+        OsString::from(OsStr::from_bytes(&[0x66, 0x6f, 0x80, 0x6f][..]))
+    }
+
+    #[cfg(windows)]
+    pub fn make_non_utf8_os_string() -> OsString {
+        use std::os::windows::prelude::*;
+        OsString::from_wide(&[0x0066, 0x006f, 0xD800, 0x006f][..])
     }
 
     fn fmt_working_dir(template: &str, working_dir: &Path) -> String {
