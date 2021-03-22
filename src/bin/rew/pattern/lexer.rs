@@ -159,8 +159,8 @@ mod tests {
     #[test_case(10, Token::Raw(vec![Char::Raw('h'), Char::Raw('i')]), 13..15; "token 10")]
     fn multiple_tokens(index: usize, value: Token, range: ByteRange) {
         let mut lexer = Lexer::new("a{|}bc{de|fg}hi", DEFAULT_ESCAPE);
-        for _ in 0..index {
-            lexer.read_token().unwrap();
+        for i in 0..index {
+            claim::assert_matches!(lexer.read_token(), Ok(Some(_)), "index {}", i);
         }
         assert_eq!(lexer.read_token(), Ok(Some(Parsed { value, range })))
     }
@@ -216,9 +216,8 @@ mod tests {
     #[test_case("a%{%|%}bc%{de%|fg%}hi%n%r%t%0%%", 1; "multiple escape sequences")]
     fn token_count(input: &str, count: usize) {
         let mut lexer = Lexer::new(input, DEFAULT_ESCAPE);
-        for _ in 0..count {
-            // Won't compile with rust nightly which defines its own assert_matches
-            claim::assert_matches!(lexer.read_token(), Ok(Some(_)));
+        for i in 0..count {
+            claim::assert_matches!(lexer.read_token(), Ok(Some(_)), "index {}", i);
         }
         assert_eq!(lexer.read_token(), Ok(None));
     }
