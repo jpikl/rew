@@ -257,16 +257,16 @@ mod tests {
             );
         }
 
-        #[test_case("", Vec::new; "empty ")]
-        #[test_case("a", constant; "constant ")]
-        #[test_case("{}", empty_expr; "empty expr ")]
-        #[test_case("{f}", expr_single_filter; "expr single filter ")]
-        #[test_case("{e|t|#1-3}", expr_multiple_filters; "expr multiple filters ")]
-        #[test_case("image_{c|<3:0}.{e|v|r_e}2", complex_pattern; "complex pattern ")]
-        fn ok<F: FnOnce() -> Vec<ParsedItem>>(input: &str, output: F) {
+        #[test_case("", Vec::new(); "empty ")]
+        #[test_case("a", constant(); "constant ")]
+        #[test_case("{}", empty_expr(); "empty expr ")]
+        #[test_case("{f}", expr_single_filter(); "expr single filter ")]
+        #[test_case("{e|t|#1-3}", expr_multiple_filters(); "expr multiple filters ")]
+        #[test_case("image_{c|<3:0}.{e|v|r_e}2", complex_pattern(); "complex pattern ")]
+        fn ok(input: &str, output: Vec<ParsedItem>) {
             assert_eq!(
                 Parser::new(input, &Config::fixture()).parse_items(),
-                Ok(output())
+                Ok(output)
             );
         }
 

@@ -115,10 +115,7 @@ mod tests {
     use super::filter::Filter;
     use super::parse::Parsed;
     use super::parser::Item;
-    use super::substitution::Substitution;
     use super::Pattern;
-    use crate::pattern::index::Index;
-    use crate::pattern::range::Range;
     use crate::utils::AnyString;
     use test_case::test_case;
 
@@ -188,92 +185,11 @@ mod tests {
     mod eval {
         use super::super::eval::{Context, Error, ErrorKind};
         use super::*;
+        use crate::pattern::parser::ParsedItem;
+        use test_case::test_case;
 
         #[test]
-        fn constant() {
-            let pattern = Pattern::from(vec![Parsed::from(Item::Constant("abc".into()))]);
-            assert_eq!(pattern.eval("", &Context::fixture()), Ok("abc".into()));
-        }
-
-        #[test]
-        fn empty_expression() {
-            let pattern = Pattern::from(vec![Parsed::from(Item::Expression(vec![]))]);
-            assert_eq!(
-                pattern.eval("dir/file.ext", &Context::fixture()),
-                Ok("dir/file.ext".into())
-            );
-        }
-
-        #[test]
-        fn single_filter_expression() {
-            let pattern = Pattern::from(vec![Parsed::from(Item::Expression(vec![Parsed::from(
-                Filter::FileName,
-            )]))]);
-            assert_eq!(
-                pattern.eval("dir/file.ext", &Context::fixture()),
-                Ok("file.ext".into())
-            );
-        }
-
-        #[test]
-        fn multi_filter_expression() {
-            let pattern = Pattern::from(vec![Parsed::from(Item::Expression(vec![
-                Parsed::from(Filter::FileName),
-                Parsed::from(Filter::ToUppercase),
-            ]))]);
-            assert_eq!(
-                pattern.eval("dir/file.ext", &Context::fixture()),
-                Ok("FILE.EXT".into())
-            );
-        }
-
-        #[test]
-        fn multi_constant_and_filter_expressions() {
-            let pattern = Pattern::from(vec![
-                Parsed::from(Item::Constant("prefix_".into())),
-                Parsed::from(Item::Expression(vec![
-                    Parsed::from(Filter::BaseName),
-                    Parsed::from(Filter::Substring(Range::<Index>(0, Some(3)))),
-                ])),
-                Parsed::from(Item::Constant("_".into())),
-                Parsed::from(Item::Expression(vec![Parsed::from(Filter::LocalCounter)])),
-                Parsed::from(Item::Constant("_".into())),
-                Parsed::from(Item::Expression(vec![Parsed::from(Filter::GlobalCounter)])),
-                Parsed::from(Item::Constant(".".into())),
-                Parsed::from(Item::Expression(vec![
-                    Parsed::from(Filter::Extension),
-                    Parsed::from(Filter::ToUppercase),
-                    Parsed::from(Filter::ReplaceAll(Substitution {
-                        target: "X".into(),
-                        replacement: String::new(),
-                    })),
-                ])),
-            ]);
-
-            assert_eq!(
-                pattern.eval("dir/file.ext", &Context::fixture()),
-                Ok("prefix_fil_1_2.ET".into())
-            );
-        }
-
-        #[test]
-        fn quotes() {
-            let mut context = Context::fixture();
-            context.expression_quotes = Some('\'');
-
-            let pattern = Pattern::from(vec![
-                Parsed::from(Item::Constant(" ".into())),
-                Parsed::from(Item::Expression(Vec::new())),
-                Parsed::from(Item::Constant(" ".into())),
-            ]);
-            assert_eq!(
-                pattern.eval("dir/file.ext", &context),
-                Ok(" 'dir/file.ext' ".into())
-            );
-        }
-
-        #[test]
-        fn failure() {
+        fn err() {
             let pattern = Pattern::from(vec![Parsed::from(Item::Expression(vec![Parsed {
                 value: Filter::CanonicalPath,
                 range: 1..2,
@@ -287,6 +203,55 @@ mod tests {
                     range: &(1..2usize),
                 })
             );
+        }
+
+        #[test_case("", constant(), None, "abc"; "constant ")]
+        #[test_case("dir/file.ext", empty_expression(), None, "dir/file.ext"; "empty expression ")]
+        #[test_case("dir/file.ext", single_filter(), None, "file.ext"; "single filter ")]
+        #[test_case("dir/file.ext", multi_filter(), None, "FILE.EXT"; "multi filter ")]
+        #[test_case("dir/file.ext", multi_constant_filter(), None, "before dir inside FILE.EXT after"; "multi constant filter ")]
+        #[test_case("dir/file.ext", multi_constant_filter(), Some('\''), "before 'dir' inside 'FILE.EXT' after"; "quoted multi constant filter ")]
+        fn ok(input: &str, items: Vec<ParsedItem>, quotes: Option<char>, output: &str) {
+            let pattern = Pattern::from(items);
+            let mut context = Context::fixture();
+            context.expression_quotes = quotes;
+            assert_eq!(pattern.eval(input, &context), Ok(output.into()));
+        }
+
+        fn constant() -> Vec<ParsedItem> {
+            vec![Parsed::from(Item::Constant("abc".into()))]
+        }
+
+        fn empty_expression() -> Vec<ParsedItem> {
+            vec![Parsed::from(Item::Expression(vec![]))]
+        }
+
+        fn single_filter() -> Vec<ParsedItem> {
+            vec![Parsed::from(Item::Expression(vec![Parsed::from(
+                Filter::FileName,
+            )]))]
+        }
+
+        fn multi_filter() -> Vec<ParsedItem> {
+            vec![Parsed::from(Item::Expression(vec![
+                Parsed::from(Filter::FileName),
+                Parsed::from(Filter::ToUppercase),
+            ]))]
+        }
+
+        fn multi_constant_filter() -> Vec<ParsedItem> {
+            vec![
+                Parsed::from(Item::Constant("before ".into())),
+                Parsed::from(Item::Expression(vec![Parsed::from(
+                    Filter::ParentDirectory,
+                )])),
+                Parsed::from(Item::Constant(" inside ".into())),
+                Parsed::from(Item::Expression(vec![
+                    Parsed::from(Filter::FileName),
+                    Parsed::from(Filter::ToUppercase),
+                ])),
+                Parsed::from(Item::Constant(" after".into())),
+            ]
         }
     }
 }
