@@ -62,7 +62,7 @@ mod tests {
     }
 
     #[test]
-    fn complex() {
+    fn nonempty() {
         let pattern = Pattern {
             source: "_{f|t}".into(),
             items: vec![

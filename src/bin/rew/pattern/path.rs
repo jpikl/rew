@@ -245,27 +245,32 @@ mod tests {
         );
     }
 
-    #[test_case("", "{working_dir}"; "empty")]
-    #[cfg_attr(unix, test_case("src/", "{working_dir}/src"; "existent"))]
-    #[cfg_attr(unix, test_case("/", "/"; "root" ))]
-    #[cfg_attr(windows, test_case("src\\", "{working_dir}\\src"; "existent"))]
-    #[cfg_attr(windows, test_case("C:\\", "C:\\"; "root"))]
-    #[cfg_attr(windows, test_case("C:", "C:\\"; "prefix"))]
-    fn canonicalize(input: &str, output: &str) {
-        let working_dir = std::env::current_dir().unwrap();
-        assert_eq!(
-            super::canonicalize(input.into(), &working_dir),
-            Ok(fmt_working_dir(output, &working_dir))
-        );
-    }
+    mod canonicalize {
+        use super::*;
+        use test_case::test_case;
 
-    #[test]
-    fn canonicalize_err() {
-        let working_dir = std::env::current_dir().unwrap();
-        assert_eq!(
-            super::canonicalize("non-existent".into(), &working_dir),
-            Err(ErrorKind::CanonicalizationFailed(AnyString::any()))
-        );
+        #[test]
+        fn err() {
+            let working_dir = std::env::current_dir().unwrap();
+            assert_eq!(
+                super::canonicalize("non-existent".into(), &working_dir),
+                Err(ErrorKind::CanonicalizationFailed(AnyString::any()))
+            );
+        }
+
+        #[test_case("", "{working_dir}"; "empty")]
+        #[cfg_attr(unix, test_case("src/", "{working_dir}/src"; "existent"))]
+        #[cfg_attr(unix, test_case("/", "/"; "root" ))]
+        #[cfg_attr(windows, test_case("src\\", "{working_dir}\\src"; "existent"))]
+        #[cfg_attr(windows, test_case("C:\\", "C:\\"; "root"))]
+        #[cfg_attr(windows, test_case("C:", "C:\\"; "prefix"))]
+        fn ok(input: &str, output: &str) {
+            let working_dir = std::env::current_dir().unwrap();
+            assert_eq!(
+                super::canonicalize(input.into(), &working_dir),
+                Ok(fmt_working_dir(output, &working_dir))
+            );
+        }
     }
 
     #[test_case("", "."; "empty")]

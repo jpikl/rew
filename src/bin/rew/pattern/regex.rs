@@ -105,21 +105,26 @@ mod tests {
         use super::*;
         use test_case::test_case;
 
-        #[test_case("", ""; "empty")]
-        #[test_case("[a-z]+", "[a-z]+"; "noempty")]
-        fn try_from_ok(input: &str, output: &str) {
-            assert_eq!(
-                RegexHolder::try_from(String::from(input)),
-                Ok(output.into())
-            );
-        }
+        mod try_from {
+            use super::*;
+            use test_case::test_case;
 
-        #[test]
-        fn try_from_err() {
-            assert_eq!(
-                RegexHolder::try_from(String::from("[0-9")),
-                Err(ErrorKind::RegexInvalid(AnyString::any()))
-            );
+            #[test]
+            fn err() {
+                assert_eq!(
+                    RegexHolder::try_from(String::from("[0-9")),
+                    Err(ErrorKind::RegexInvalid(AnyString::any()))
+                );
+            }
+
+            #[test_case("", ""; "empty")]
+            #[test_case("[a-z]+", "[a-z]+"; "noempty")]
+            fn ok(input: &str, output: &str) {
+                assert_eq!(
+                    RegexHolder::try_from(String::from(input)),
+                    Ok(output.into())
+                );
+            }
         }
 
         mod parse {

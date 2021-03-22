@@ -231,21 +231,10 @@ mod tests {
     use super::*;
     use test_case::test_case;
 
-    mod separator_display {
-        use crate::pattern::parse::Separator;
-
-        #[test]
-        fn string() {
-            assert_eq!(Separator::String(",".into()).to_string(), "','");
-        }
-
-        #[test]
-        fn regex() {
-            assert_eq!(
-                Separator::Regex("\\s+".into()).to_string(),
-                "regular expression '\\s+'"
-            );
-        }
+    #[test_case(Separator::String(",".into()), "','"; "string")]
+    #[test_case(Separator::Regex("\\s+".into()), "regular expression '\\s+'"; "regex")]
+    fn separator_display(separator: Separator, result: &str) {
+        assert_eq!(separator.to_string(), result);
     }
 
     mod error {

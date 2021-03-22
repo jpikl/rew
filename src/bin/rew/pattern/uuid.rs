@@ -17,7 +17,6 @@ pub fn assert_uuid(value: &str) {
 mod tests {
     #[test]
     fn random_uuid() {
-        use super::*;
-        assert_uuid(&random_uuid());
+        super::assert_uuid(&super::random_uuid());
     }
 }
