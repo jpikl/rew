@@ -98,35 +98,33 @@ impl TransferOptions for Cli {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use claim::*;
-    use ntest::*;
+    use test_case::test_case;
 
-    #[test]
-    fn default() {
-        assert_ok!(Cli::try_parse_from(&["mvb"]));
+    #[test_case(&[], None; "default")]
+    #[test_case(&["--color=always"], Some(ColorChoice::Always); "always")]
+    fn color(args: &[&str], result: Option<ColorChoice>) {
+        assert_eq!(run(args).color(), result);
     }
 
-    #[test]
-    fn color() {
-        let cli = Cli::try_parse_from(&["mvb", "--color=always"]).unwrap();
-        assert_eq!(Options::color(&cli), Some(ColorChoice::Always));
+    #[test_case(&[], false; "off")]
+    #[test_case(&["--read-nul"], true; "on")]
+    fn read_nul(args: &[&str], result: bool) {
+        assert_eq!(run(args).read_nul(), result);
     }
 
-    #[test]
-    fn read_nul() {
-        let cli = Cli::try_parse_from(&["mvb", "--read-nul"]).unwrap();
-        assert_true!(TransferOptions::read_nul(&cli));
+    #[test_case(&[], false; "off")]
+    #[test_case(&["--verbose"], true; "on")]
+    fn verbose(args: &[&str], result: bool) {
+        assert_eq!(run(args).verbose(), result);
     }
 
-    #[test]
-    fn verbose() {
-        let cli = Cli::try_parse_from(&["mvb", "--verbose"]).unwrap();
-        assert_true!(TransferOptions::verbose(&cli));
+    #[test_case(&[], false; "off")]
+    #[test_case(&["--fail-at-end"], true; "on")]
+    fn fail_at_end(args: &[&str], result: bool) {
+        assert_eq!(run(args).fail_at_end(), result);
     }
 
-    #[test]
-    fn fail_at_end() {
-        let cli = Cli::try_parse_from(&["mvb", "--fail-at-end"]).unwrap();
-        assert_true!(TransferOptions::fail_at_end(&cli));
+    fn run(args: &[&str]) -> Cli {
+        Cli::try_parse_from(&[&["mvb"], args].concat()).unwrap()
     }
 }

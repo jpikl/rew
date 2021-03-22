@@ -315,41 +315,31 @@ pub fn parse_single_byte_char(string: &str) -> Result<u8, &'static str> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use claim::*;
+    use test_case::test_case;
 
-    #[test]
-    fn default() {
-        assert_ok!(Cli::try_parse_from(&["rew"]));
+    #[test_case(&[], None; "default")]
+    #[test_case(&["--color=always"], Some(ColorChoice::Always); "always")]
+    fn color(args: &[&str], result: Option<ColorChoice>) {
+        assert_eq!(run(args).color(), result);
     }
 
-    #[test]
-    fn color() {
-        let cli = Cli::try_parse_from(&["rew", "--color=always"]).unwrap();
-        assert_eq!(Options::color(&cli), Some(ColorChoice::Always));
+    fn run(args: &[&str]) -> Cli {
+        Cli::try_parse_from(&[&["rew"], args].concat()).unwrap()
     }
 
     mod parse_single_byte_char {
         use super::*;
+        use test_case::test_case;
 
         #[test]
-        fn single_byte() {
+        fn ok() {
             assert_eq!(parse_single_byte_char("a"), Ok(b'a'));
         }
 
-        #[test]
-        fn multi_byte() {
-            assert_eq!(
-                parse_single_byte_char("á"),
-                Err("multi-byte characters are not supported",)
-            );
-        }
-
-        #[test]
-        fn multi_char() {
-            assert_eq!(
-                parse_single_byte_char("aa"),
-                Err("value must be a single character")
-            );
+        #[test_case("á", "multi-byte characters are not supported"; "multi byte")]
+        #[test_case("aa", "value must be a single character"; "multi char")]
+        fn err(value: &str, error: &str) {
+            assert_eq!(parse_single_byte_char(value), Err(error));
         }
     }
 }
