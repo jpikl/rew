@@ -32,51 +32,39 @@ mod tests {
     use super::*;
     use claim::*;
     use regex::Match;
+    use test_case::test_case;
 
-    mod path {
-        use super::*;
-
-        #[test]
-        fn empty() {
-            let regex = Regex::new("([a-z]+)_([A-Z]+)").unwrap();
-            assert_none!(Solver::Value(&regex).eval(""));
-        }
-
-        #[test]
-        fn nonempty() {
-            let regex = Regex::new("([a-z]+)_([A-Z]+)").unwrap();
-            let captures = Solver::Value(&regex).eval("dir_DIR/file_FILE.ext").unwrap();
-
-            assert_eq!(captures.len(), 3);
-            assert_eq!(captures.get(1).as_ref().map(Match::as_str), Some("dir"));
-            assert_eq!(captures.get(2).as_ref().map(Match::as_str), Some("DIR"));
-        }
+    #[test_case(Solver::Value(&regex()), ""; "value empty")]
+    #[test_case(Solver::Value(&regex()), "ab/cd"; "value nonempty")]
+    #[test_case(Solver::FileName(&regex()), ""; "file name empty")]
+    #[test_case(Solver::FileName(&regex()), "ab/cd"; "file name nonempty")]
+    #[test_case(Solver::None, ""; "none empty")]
+    #[test_case(Solver::None, "ab/cd"; "none nonempty")]
+    fn missed(solver: Solver, input: &str) {
+        assert_none!(solver.eval(input));
     }
 
-    mod file_name {
-        use super::*;
-
-        #[test]
-        fn empty() {
-            let regex = Regex::new("([a-z]+)_([A-Z]+)").unwrap();
-            assert_none!(Solver::FileName(&regex).eval("/"));
-        }
-
-        #[test]
-        fn nonempty() {
-            let regex = Regex::new("([a-z]+)_([A-Z]+)").unwrap();
-            let captures = Solver::FileName(&regex)
-                .eval("dir_DIR/file_FILE.ext")
-                .unwrap();
-
-            assert_eq!(captures.len(), 3);
-            assert_eq!(captures.get(1).as_ref().map(Match::as_str), Some("file"));
-            assert_eq!(captures.get(2).as_ref().map(Match::as_str), Some("FILE"));
-        }
+    #[test_case(Solver::Value(&regex()), "aB/cD", 0, Some("aB"); "value group 0")]
+    #[test_case(Solver::Value(&regex()), "aB/cD", 1, Some("a"); "value group 1")]
+    #[test_case(Solver::Value(&regex()), "aB/cD", 2, Some("B"); "value group 2")]
+    #[test_case(Solver::Value(&regex()), "aB/cD", 3, None; "value group 3")]
+    #[test_case(Solver::FileName(&regex()), "aB/cD", 0, Some("cD"); "file name group 0")]
+    #[test_case(Solver::FileName(&regex()), "aB/cD", 1, Some("c"); "file name group 1")]
+    #[test_case(Solver::FileName(&regex()), "aB/cD", 2, Some("D"); "file name group 2")]
+    #[test_case(Solver::FileName(&regex()), "aB/cD", 3, None; "file name group 3")]
+    fn captured(solver: Solver, input: &str, group: usize, result: Option<&str>) {
+        assert_eq!(
+            solver
+                .eval(input)
+                .unwrap()
+                .get(group)
+                .as_ref()
+                .map(Match::as_str),
+            result
+        );
     }
 
-    #[test]
-    fn none() {
-        assert_none!(Solver::None.eval("abc"));
+    fn regex() -> Regex {
+        Regex::new("([a-z])([A-Z])").unwrap()
     }
 }
