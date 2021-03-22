@@ -1,4 +1,5 @@
 use crate::counter;
+use crate::pattern::eval;
 use clap::{crate_name, crate_version, AppSettings, ArgSettings, Clap};
 use common::color::{parse_color, COLOR_VALUES};
 use common::help::highlight_static;
@@ -210,7 +211,7 @@ pub struct Cli {
         help_heading = PROCESSING_HEADING,
         verbatim_doc_comment,
     )]
-    pub local_counter: Option<counter::Config>,
+    pub local_counter: Option<counter::Config<eval::Counter>>,
 
     /// Global counter configuration
     ///
@@ -223,7 +224,7 @@ pub struct Cli {
         help_heading = PROCESSING_HEADING,
         verbatim_doc_comment,
     )]
-    pub global_counter: Option<counter::Config>,
+    pub global_counter: Option<counter::Config<eval::Counter>>,
 
     /// Directory against which to resolve relative/absolute paths
     #[clap(short = 'w', long, value_name = "path", help_heading = PROCESSING_HEADING)]

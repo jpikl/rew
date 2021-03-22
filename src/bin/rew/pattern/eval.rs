@@ -3,10 +3,12 @@ use crate::utils::{AnyString, ByteRange, GetByteRange};
 use std::path::Path;
 use std::{error, fmt, result};
 
+pub type Counter = u32;
+
 pub struct Context<'a> {
     pub working_dir: &'a Path,
-    pub global_counter: u32,
-    pub local_counter: u32,
+    pub global_counter: Counter,
+    pub local_counter: Counter,
     pub regex_captures: Option<regex::Captures<'a>>,
     pub expression_quotes: Option<char>,
 }

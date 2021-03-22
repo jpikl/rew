@@ -1,29 +1,31 @@
 use crate::pattern::path;
+use num_traits::PrimInt;
 use std::collections::HashMap;
 use std::str::FromStr;
-
-const INIT_DEFAULT: u32 = 1;
-const STEP_DEFAULT: u32 = 1;
 
 const INIT_ERROR: &str = "Invalid init value";
 const STEP_ERROR: &str = "Invalid step value";
 
+pub trait Value: PrimInt + FromStr {}
+
+impl<T: PrimInt + FromStr> Value for T {}
+
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub struct Config {
-    pub init: u32,
-    pub step: u32,
+pub struct Config<T: Value> {
+    pub init: T,
+    pub step: T,
 }
 
-impl Default for Config {
+impl<T: Value> Default for Config<T> {
     fn default() -> Self {
         Self {
-            init: INIT_DEFAULT,
-            step: STEP_DEFAULT,
+            init: T::one(),
+            step: T::one(),
         }
     }
 }
 
-impl FromStr for Config {
+impl<T: Value> FromStr for Config<T> {
     type Err = &'static str;
 
     fn from_str(string: &str) -> Result<Self, Self::Err> {
@@ -41,7 +43,7 @@ impl FromStr for Config {
             Ok(Self { init, step })
         } else {
             let init = string.parse().map_err(|_| INIT_ERROR)?;
-            let step = STEP_DEFAULT;
+            let step = Config::default().step;
 
             Ok(Self { init, step })
         }
@@ -49,44 +51,44 @@ impl FromStr for Config {
 }
 
 #[derive(PartialEq, Debug)]
-pub struct GlobalGenerator {
-    value: u32,
-    step: u32,
+pub struct GlobalGenerator<T> {
+    value: T,
+    step: T,
 }
 
-impl GlobalGenerator {
-    pub fn new(init: u32, step: u32) -> Self {
+impl<T: Value> GlobalGenerator<T> {
+    pub fn new(init: T, step: T) -> Self {
         Self { value: init, step }
     }
 
-    pub fn next(&mut self) -> u32 {
+    pub fn next(&mut self) -> T {
         let value = self.value;
-        self.value += self.step;
+        self.value = self.value.add(self.step);
         value
     }
 }
 
-impl From<&Config> for GlobalGenerator {
-    fn from(config: &Config) -> Self {
+impl<T: Value> From<&Config<T>> for GlobalGenerator<T> {
+    fn from(config: &Config<T>) -> Self {
         Self::new(config.init, config.step)
     }
 }
 
 #[derive(PartialEq, Debug)]
-pub struct LocalGenerator {
-    values: HashMap<String, u32>,
-    init: u32,
-    step: u32,
+pub struct LocalGenerator<T: Value> {
+    values: HashMap<String, T>,
+    init: T,
+    step: T,
 }
 
-impl From<&Config> for LocalGenerator {
-    fn from(config: &Config) -> Self {
+impl<T: Value> From<&Config<T>> for LocalGenerator<T> {
+    fn from(config: &Config<T>) -> Self {
         Self::new(config.init, config.step)
     }
 }
 
-impl LocalGenerator {
-    pub fn new(init: u32, step: u32) -> Self {
+impl<T: Value> LocalGenerator<T> {
+    pub fn new(init: T, step: T) -> Self {
         Self {
             values: HashMap::new(),
             init,
@@ -94,13 +96,13 @@ impl LocalGenerator {
         }
     }
 
-    pub fn next(&mut self, value: &str) -> u32 {
+    pub fn next(&mut self, value: &str) -> T {
         let key = match path::get_parent_directory(value.to_string()) {
             Ok(parent) => path::normalize(&parent).unwrap_or_default(),
             Err(_) => String::new(),
         };
         if let Some(value) = self.values.get_mut(&key) {
-            *value += self.step;
+            *value = value.add(self.step);
             *value
         } else {
             self.values.insert(key, self.init);
@@ -112,15 +114,16 @@ impl LocalGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
+    type Value = u32;
 
     mod config {
         use super::*;
 
         #[test]
         fn default() {
-            let config = Config::default();
-            assert_eq!(config.init, INIT_DEFAULT);
-            assert_eq!(config.step, STEP_DEFAULT);
+            let config = Config::<Value>::default();
+            assert_eq!(config.init, 1);
+            assert_eq!(config.step, 1);
         }
 
         mod from_str {
@@ -138,12 +141,12 @@ mod tests {
             #[test_case("ab:34", INIT_ERROR; "string separator number")]
             #[test_case("ab:cd", INIT_ERROR; "string separator string")]
             fn err(input: &str, error: &str) {
-                assert_eq!(Config::from_str(input), Err(error));
+                assert_eq!(Config::<Value>::from_str(input), Err(error));
             }
 
-            #[test_case("12", 12, STEP_DEFAULT; "init")]
+            #[test_case("12", 12, 1; "init")]
             #[test_case("12:34", 12, 34; "init and step")]
-            fn ok(input: &str, init: u32, step: u32) {
+            fn ok(input: &str, init: Value, step: Value) {
                 assert_eq!(Config::from_str(input), Ok(Config { init, step }));
             }
         }
@@ -167,7 +170,7 @@ mod tests {
         #[test_case(1, 10, 0, 1; "1:10 iteration 1")]
         #[test_case(1, 10, 1, 11; "1:10 iteration 2")]
         #[test_case(1, 10, 2, 21; "1:10 iteration 3")]
-        fn next(init: u32, step: u32, index: usize, result: u32) {
+        fn next(init: Value, step: Value, index: usize, result: Value) {
             let mut counter = GlobalGenerator::new(init, step);
             for _ in 0..index {
                 counter.next();
@@ -210,7 +213,7 @@ mod tests {
         #[test_case(0, 1, &["a/b/c"], "./a/b/c", 1; "normalize dirs 2")]
         #[test_case(0, 1, &["a/b/c", "./a/b/c"], "a", 0; "normalize dirs 3")]
         #[test_case(0, 1, &["a/b/c", "./a/b/c", "a"], "a/b/..", 1; "normalize dirs 4")]
-        fn next(init: u32, step: u32, prev_paths: &[&str], next_path: &str, result: u32) {
+        fn next(init: Value, step: Value, prev_paths: &[&str], next_path: &str, result: Value) {
             let mut counter = LocalGenerator::new(init, step);
             for prev_path in prev_paths {
                 counter.next(prev_path);
