@@ -123,36 +123,35 @@ mod tests {
             assert_eq!(config.step, STEP_DEFAULT);
         }
 
-        #[test]
-        fn from_valid_str() {
-            assert_eq!(
-                Config::from_str("12"),
-                Ok(Config {
-                    init: 12,
-                    step: STEP_DEFAULT
-                })
-            );
+        mod from_str {
+            use super::*;
+            use test_case::test_case;
 
-            assert_eq!(Config::from_str("12:34"), Ok(Config { init: 12, step: 34 }));
-        }
+            #[test_case("", INIT_ERROR; "empty")]
+            #[test_case(":", INIT_ERROR; "separator")]
+            #[test_case(":34", INIT_ERROR; "separator number")]
+            #[test_case(":cd", INIT_ERROR; "separator string")]
+            #[test_case("12:", STEP_ERROR; "number separator")]
+            #[test_case("12:cd", STEP_ERROR; "number separator string")]
+            #[test_case("ab", INIT_ERROR; "string")]
+            #[test_case("ab:", INIT_ERROR; "string separator")]
+            #[test_case("ab:34", INIT_ERROR; "string separator number")]
+            #[test_case("ab:cd", INIT_ERROR; "string separator string")]
+            fn err(input: &str, error: &str) {
+                assert_eq!(Config::from_str(input), Err(error));
+            }
 
-        #[test]
-        fn from_invalid_str() {
-            assert_eq!(Config::from_str(""), Err(INIT_ERROR));
-            assert_eq!(Config::from_str(":"), Err(INIT_ERROR));
-            assert_eq!(Config::from_str(":34"), Err(INIT_ERROR));
-            assert_eq!(Config::from_str(":cd"), Err(INIT_ERROR));
-            assert_eq!(Config::from_str("12:"), Err(STEP_ERROR));
-            assert_eq!(Config::from_str("12:cd"), Err(STEP_ERROR));
-            assert_eq!(Config::from_str("ab"), Err(INIT_ERROR));
-            assert_eq!(Config::from_str("ab:"), Err(INIT_ERROR));
-            assert_eq!(Config::from_str("ab:34"), Err(INIT_ERROR));
-            assert_eq!(Config::from_str("ab:cd"), Err(INIT_ERROR));
+            #[test_case("12", 12, STEP_DEFAULT; "init")]
+            #[test_case("12:34", 12, 34; "init and step")]
+            fn ok(input: &str, init: u32, step: u32) {
+                assert_eq!(Config::from_str(input), Ok(Config { init, step }));
+            }
         }
     }
 
     mod global_generator {
         use super::*;
+        use test_case::test_case;
 
         #[test]
         fn from_config() {
@@ -162,25 +161,19 @@ mod tests {
             );
         }
 
-        #[test]
-        fn start_zero_increment_one() {
-            let mut counter = GlobalGenerator::new(0, 1);
-            assert_eq!(counter.next(), 0);
-            assert_eq!(counter.next(), 1);
-            assert_eq!(counter.next(), 2);
-        }
-
-        #[test]
-        fn start_one_increment_ten() {
-            let mut counter = GlobalGenerator::new(1, 10);
-            assert_eq!(counter.next(), 1);
-            assert_eq!(counter.next(), 11);
-            assert_eq!(counter.next(), 21);
+        #[test_case(0, 1, &[0, 1, 2]; "start zero increment one")]
+        #[test_case(1, 10, &[1, 11, 21]; "start one increment ten")]
+        fn next(init: u32, step: u32, sequence: &[u32]) {
+            let mut counter = GlobalGenerator::new(init, step);
+            for (index, value) in sequence.iter().enumerate() {
+                assert_eq!(counter.next(), *value, "index {}", index);
+            }
         }
     }
 
     mod local_generator {
         use super::*;
+        use test_case::test_case;
 
         #[test]
         fn from_config() {
@@ -190,63 +183,48 @@ mod tests {
             );
         }
 
-        #[test]
-        fn start_zero_increment_one() {
-            let path_1 = "dir/subdir/file.ext";
-            let path_2 = "dir/subdir";
-            let path_3 = "dir";
-
-            let mut counter = LocalGenerator::new(0, 1);
-
-            assert_eq!(counter.next(path_1), 0);
-            assert_eq!(counter.next(path_1), 1);
-            assert_eq!(counter.next(path_1), 2);
-
-            assert_eq!(counter.next(path_2), 0);
-            assert_eq!(counter.next(path_3), 0);
-
-            assert_eq!(counter.next(path_2), 1);
-            assert_eq!(counter.next(path_3), 1);
-
-            assert_eq!(counter.next(path_2), 2);
-            assert_eq!(counter.next(path_3), 2);
-        }
-
-        #[test]
-        fn start_one_increment_ten() {
-            let path_1 = "dir/subdir/file.ext";
-            let path_2 = "dir/subdir";
-            let path_3 = "dir";
-
-            let mut counter = LocalGenerator::new(1, 10);
-
-            assert_eq!(counter.next(path_1), 1);
-            assert_eq!(counter.next(path_1), 11);
-            assert_eq!(counter.next(path_1), 21);
-
-            assert_eq!(counter.next(path_2), 1);
-            assert_eq!(counter.next(path_3), 1);
-
-            assert_eq!(counter.next(path_2), 11);
-            assert_eq!(counter.next(path_3), 11);
-
-            assert_eq!(counter.next(path_2), 21);
-            assert_eq!(counter.next(path_3), 21);
-        }
-
-        #[test]
-        fn normalize_parent_dirs() {
-            let path_1 = "./dir/subdir/file.ext";
-            let path_2 = "dir/subdir/file.ext";
-            let path_3 = "dir/subdir/..";
-            let path_4 = "dir";
-
-            let mut counter = LocalGenerator::new(0, 1);
-
-            assert_eq!(counter.next(path_1), 0);
-            assert_eq!(counter.next(path_2), 1);
-            assert_eq!(counter.next(path_3), 0);
-            assert_eq!(counter.next(path_4), 1);
+        #[test_case(
+            0, 1, &[
+                ("a/b/c", 0),
+                ("a/b/c", 1),
+                ("a/b/c", 2),
+                ("a/b", 0),
+                ("a", 0),
+                ("a/b", 1),
+                ("a/b", 2),
+                ("a", 1),
+                ("a", 2),
+            ];
+            "start zero increment one"
+        )]
+        #[test_case(
+            1, 10, &[
+                ("a/b/c", 1),
+                ("a/b/c", 11),
+                ("a/b/c", 21),
+                ("a/b", 1),
+                ("a", 1),
+                ("a/b", 11),
+                ("a/b", 21),
+                ("a", 11),
+                ("a", 21),
+            ];
+            "start one increment ten"
+        )]
+        #[test_case(
+            0, 1, &[
+                ("a/b/c", 0),
+                ("./a/b/c", 1),
+                ("a", 0),
+                ("a/b/..", 1),
+            ];
+            "normalize dirs"
+        )]
+        fn next(init: u32, step: u32, sequence: &[(&str, u32)]) {
+            let mut counter = LocalGenerator::new(init, step);
+            for (index, (path, value)) in sequence.iter().enumerate() {
+                assert_eq!(counter.next(path), *value, "index {}", index);
+            }
         }
     }
 }
