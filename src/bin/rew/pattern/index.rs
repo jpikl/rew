@@ -102,19 +102,24 @@ mod tests {
         use super::*;
         use test_case::test_case;
 
-        #[test_case("abc", ErrorKind::ExpectedNumber, 0..3; "invalid")]
-        #[test_case("0abc", ErrorKind::IndexZero, 0..1; "zero")]
-        fn parse_err(input: &str, kind: ErrorKind, range: ByteRange) {
-            assert_eq!(
-                Index::parse(&mut Reader::from(input)),
-                Err(Error { kind, range })
-            );
-        }
+        mod parse {
+            use super::*;
+            use test_case::test_case;
 
-        #[test_case("1", 0; "one")]
-        #[test_case("123abc", 122; "multiple digits and chars")]
-        fn parse_ok(input: &str, result: IndexValue) {
-            assert_eq!(Index::parse(&mut Reader::from(input)), Ok(result));
+            #[test_case("abc", ErrorKind::ExpectedNumber, 0..3; "invalid")]
+            #[test_case("0abc", ErrorKind::IndexZero, 0..1; "zero")]
+            fn err(input: &str, kind: ErrorKind, range: ByteRange) {
+                assert_eq!(
+                    Index::parse(&mut Reader::from(input)),
+                    Err(Error { kind, range })
+                );
+            }
+
+            #[test_case("1", 0; "one")]
+            #[test_case("123abc", 122; "multiple digits and chars")]
+            fn ok(input: &str, result: IndexValue) {
+                assert_eq!(Index::parse(&mut Reader::from(input)), Ok(result));
+            }
         }
 
         #[test_case(0, Err(ErrorKind::IndexZero); "zero")]
@@ -128,33 +133,38 @@ mod tests {
         use super::*;
         use test_case::test_case;
 
-        #[test_case("", ErrorKind::ExpectedRange, 0..0; "empty")]
-        #[test_case("-", ErrorKind::RangeInvalid("-".into()), 0..1; "invalid")]
-        #[test_case("0-", ErrorKind::IndexZero, 0..1; "zero start no end")]
-        #[test_case("1-0", ErrorKind::IndexZero, 2..3; "start above zero end")]
-        #[test_case("2-1", ErrorKind::RangeStartOverEnd("2".into(), "1".into()), 0..3; "start above end")]
-        #[test_case("1+", ErrorKind::ExpectedRangeLength, 2..2; "start no length")]
-        #[test_case("1+ab", ErrorKind::ExpectedRangeLength, 2..4; "start no length but chars")]
-        fn parse_err(input: &str, kind: ErrorKind, range: ByteRange) {
-            assert_eq!(
-                IndexRange::parse(&mut Reader::from(input)),
-                Err(Error { kind, range })
-            );
-        }
+        mod parse {
+            use super::*;
+            use test_case::test_case;
 
-        #[test_case("1", 0, Some(1); "no delimiter")]
-        #[test_case("2ab", 1, Some(2); "no delimiter but chars")]
-        #[test_case("1-", 0, None; "no end")]
-        #[test_case("1-2", 0, Some(2); "start below end")]
-        #[test_case("1-1", 0, Some(1); "start equals end")]
-        #[test_case("2+0", 1, Some(1); "start with zero length")]
-        #[test_case("2+3", 1, Some(4); "start with positive length")]
-        #[test_case(&format!("2+{}", IndexValue::MAX), 1, None; "start with overflow length")]
-        fn parse_ok(input: &str, start: IndexValue, end: Option<IndexValue>) {
-            assert_eq!(
-                IndexRange::parse(&mut Reader::from(input)),
-                Ok(Range::<Index>(start, end))
-            );
+            #[test_case("", ErrorKind::ExpectedRange, 0..0; "empty")]
+            #[test_case("-", ErrorKind::RangeInvalid("-".into()), 0..1; "invalid")]
+            #[test_case("0-", ErrorKind::IndexZero, 0..1; "zero start no end")]
+            #[test_case("1-0", ErrorKind::IndexZero, 2..3; "start above zero end")]
+            #[test_case("2-1", ErrorKind::RangeStartOverEnd("2".into(), "1".into()), 0..3; "start above end")]
+            #[test_case("1+", ErrorKind::ExpectedRangeLength, 2..2; "start no length")]
+            #[test_case("1+ab", ErrorKind::ExpectedRangeLength, 2..4; "start no length but chars")]
+            fn err(input: &str, kind: ErrorKind, range: ByteRange) {
+                assert_eq!(
+                    IndexRange::parse(&mut Reader::from(input)),
+                    Err(Error { kind, range })
+                );
+            }
+
+            #[test_case("1", 0, Some(1); "no delimiter")]
+            #[test_case("2ab", 1, Some(2); "no delimiter but chars")]
+            #[test_case("1-", 0, None; "no end")]
+            #[test_case("1-2", 0, Some(2); "start below end")]
+            #[test_case("1-1", 0, Some(1); "start equals end")]
+            #[test_case("2+0", 1, Some(1); "start with zero length")]
+            #[test_case("2+3", 1, Some(4); "start with positive length")]
+            #[test_case(&format!("2+{}", IndexValue::MAX), 1, None; "start with overflow length")]
+            fn ok(input: &str, start: IndexValue, end: Option<IndexValue>) {
+                assert_eq!(
+                    IndexRange::parse(&mut Reader::from(input)),
+                    Ok(Range::<Index>(start, end))
+                );
+            }
         }
 
         #[test_case("", 0, None, ""; "empty")]

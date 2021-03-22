@@ -111,46 +111,50 @@ impl fmt::Display for RegexSwitch {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils::{AnyString, ByteRange};
-    use test_case::test_case;
 
-    #[test_case("", ErrorKind::ExpectedSwitch, 0..0; "empty")]
-    #[test_case("::", ErrorKind::SwitchWithoutMatcher(Char::Raw(':'), 0), 0..1; "delimiter delimiter")]
-    #[test_case(":^[a-z+:", ErrorKind::RegexInvalid(AnyString::any()), 1..7; "invalid")]
-    #[test_case(":^[a-z]+$:::", ErrorKind::SwitchWithoutMatcher(Char::Raw(':'), 2), 10..11; "matcher delimiter delimiter")]
-    #[test_case(":^[a-z]+$:lower:^[A-Z+:", ErrorKind::RegexInvalid(AnyString::any()), 16..22; "matcher result invalid")]
-    fn parse_err(input: &str, kind: ErrorKind, range: ByteRange) {
-        assert_eq!(
-            RegexSwitch::parse(&mut Reader::from(input)),
-            Err(Error { kind, range })
-        );
-    }
+    mod parse {
+        use super::*;
+        use crate::utils::{AnyString, ByteRange};
+        use test_case::test_case;
 
-    #[test_case(":", &[], ""; "delimiter")]
-    #[test_case(":mixed", &[], "mixed"; "default")]
-    #[test_case(":^[a-z]+$:", &[("^[a-z]+$", "")], ""; "matcher")]
-    #[test_case(":^[a-z]+$::", &[("^[a-z]+$", "")], ""; "matcher delimiter")]
-    #[test_case(":^[a-z]+$:lower", &[("^[a-z]+$", "lower")], ""; "matcher result")]
-    #[test_case(":^[a-z]+$:lower:", &[("^[a-z]+$", "lower")], ""; "matcher result delimiter")]
-    #[test_case(":^[a-z]+$:lower:mixed", &[("^[a-z]+$", "lower")], "mixed"; "matcher result default")]
-    #[test_case(":^[a-z]+$:lower:^[A-Z]+$:", &[("^[a-z]+$", "lower"), ("^[A-Z]+$", "")], ""; "matcher result matcher")]
-    #[test_case(":^[a-z]+$:lower:^[A-Z]+$:upper", &[("^[a-z]+$", "lower"), ("^[A-Z]+$", "upper")], ""; "matcher result matcher result")]
-    #[test_case(":^[a-z]+$:lower:^[A-Z]+$:upper:", &[("^[a-z]+$", "lower"), ("^[A-Z]+$", "upper")], ""; "matcher result matcher result delimiter")]
-    #[test_case(":^[a-z]+$:lower:^[A-Z]+$:upper:mixed", &[("^[a-z]+$", "lower"), ("^[A-Z]+$", "upper")], "mixed"; "matcher result matcher result default")]
-    fn parse_ok(input: &str, cases: &[(&str, &str)], default: &str) {
-        assert_eq!(
-            RegexSwitch::parse(&mut Reader::from(input)),
-            Ok(RegexSwitch {
-                cases: cases
-                    .iter()
-                    .map(|(matcher, result)| Case {
-                        matcher: (*matcher).into(),
-                        result: (*result).into()
-                    })
-                    .collect(),
-                default: default.into(),
-            })
-        );
+        #[test_case("", ErrorKind::ExpectedSwitch, 0..0; "empty")]
+        #[test_case("::", ErrorKind::SwitchWithoutMatcher(Char::Raw(':'), 0), 0..1; "delimiter delimiter")]
+        #[test_case(":^[a-z+:", ErrorKind::RegexInvalid(AnyString::any()), 1..7; "invalid")]
+        #[test_case(":^[a-z]+$:::", ErrorKind::SwitchWithoutMatcher(Char::Raw(':'), 2), 10..11; "matcher delimiter delimiter")]
+        #[test_case(":^[a-z]+$:lower:^[A-Z+:", ErrorKind::RegexInvalid(AnyString::any()), 16..22; "matcher result invalid")]
+        fn err(input: &str, kind: ErrorKind, range: ByteRange) {
+            assert_eq!(
+                RegexSwitch::parse(&mut Reader::from(input)),
+                Err(Error { kind, range })
+            );
+        }
+
+        #[test_case(":", &[], ""; "delimiter")]
+        #[test_case(":mixed", &[], "mixed"; "default")]
+        #[test_case(":^[a-z]+$:", &[("^[a-z]+$", "")], ""; "matcher")]
+        #[test_case(":^[a-z]+$::", &[("^[a-z]+$", "")], ""; "matcher delimiter")]
+        #[test_case(":^[a-z]+$:lower", &[("^[a-z]+$", "lower")], ""; "matcher result")]
+        #[test_case(":^[a-z]+$:lower:", &[("^[a-z]+$", "lower")], ""; "matcher result delimiter")]
+        #[test_case(":^[a-z]+$:lower:mixed", &[("^[a-z]+$", "lower")], "mixed"; "matcher result default")]
+        #[test_case(":^[a-z]+$:lower:^[A-Z]+$:", &[("^[a-z]+$", "lower"), ("^[A-Z]+$", "")], ""; "matcher result matcher")]
+        #[test_case(":^[a-z]+$:lower:^[A-Z]+$:upper", &[("^[a-z]+$", "lower"), ("^[A-Z]+$", "upper")], ""; "matcher result matcher result")]
+        #[test_case(":^[a-z]+$:lower:^[A-Z]+$:upper:", &[("^[a-z]+$", "lower"), ("^[A-Z]+$", "upper")], ""; "matcher result matcher result delimiter")]
+        #[test_case(":^[a-z]+$:lower:^[A-Z]+$:upper:mixed", &[("^[a-z]+$", "lower"), ("^[A-Z]+$", "upper")], "mixed"; "matcher result matcher result default")]
+        fn ok(input: &str, cases: &[(&str, &str)], default: &str) {
+            assert_eq!(
+                RegexSwitch::parse(&mut Reader::from(input)),
+                Ok(RegexSwitch {
+                    cases: cases
+                        .iter()
+                        .map(|(matcher, result)| Case {
+                            matcher: (*matcher).into(),
+                            result: (*result).into()
+                        })
+                        .collect(),
+                    default: default.into(),
+                })
+            );
+        }
     }
 
     mod eval {

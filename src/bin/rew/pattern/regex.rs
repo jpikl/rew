@@ -103,7 +103,6 @@ mod tests {
 
     mod regex_holder {
         use super::*;
-        use crate::utils::ByteRange;
         use test_case::test_case;
 
         #[test_case("", ""; "empty")]
@@ -123,21 +122,27 @@ mod tests {
             );
         }
 
-        #[test_case("", ErrorKind::ExpectedRegex, 0..0; "empty")]
-        #[test_case("[0-9", ErrorKind::RegexInvalid(AnyString::any()), 0..4; "invalid")]
-        fn parse_err(input: &str, kind: ErrorKind, range: ByteRange) {
-            assert_eq!(
-                RegexHolder::parse(&mut Reader::from(input)),
-                Err(Error { kind, range })
-            );
-        }
+        mod parse {
+            use super::*;
+            use crate::utils::ByteRange;
+            use test_case::test_case;
 
-        #[test]
-        fn parse_ok() {
-            assert_eq!(
-                RegexHolder::parse(&mut Reader::from("[0-9]")),
-                Ok("[0-9]".into())
-            );
+            #[test_case("", ErrorKind::ExpectedRegex, 0..0; "empty")]
+            #[test_case("[0-9", ErrorKind::RegexInvalid(AnyString::any()), 0..4; "invalid")]
+            fn err(input: &str, kind: ErrorKind, range: ByteRange) {
+                assert_eq!(
+                    RegexHolder::parse(&mut Reader::from(input)),
+                    Err(Error { kind, range })
+                );
+            }
+
+            #[test]
+            fn ok() {
+                assert_eq!(
+                    RegexHolder::parse(&mut Reader::from("[0-9]")),
+                    Ok("[0-9]".into())
+                );
+            }
         }
 
         #[test_case("", "\\d+", ""; "empty")]

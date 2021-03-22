@@ -46,31 +46,36 @@ impl fmt::Display for Repetition {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::pattern::parse::{Error, ErrorKind};
-    use crate::pattern::reader::Reader;
-    use crate::utils::ByteRange;
     use test_case::test_case;
 
-    #[test_case("", ErrorKind::ExpectedRepetition, 0..0; "empty")]
-    #[test_case("ab", ErrorKind::ExpectedNumber, 0..2; "invalid count")]
-    #[test_case("12", ErrorKind::RepetitionWithoutDelimiter, 2..2; "missing delimiter")]
-    fn parse_err(input: &str, kind: ErrorKind, range: ByteRange) {
-        assert_eq!(
-            Repetition::parse(&mut Reader::from(input)),
-            Err(Error { kind, range })
-        );
-    }
+    mod parse {
+        use super::*;
+        use crate::pattern::parse::{Error, ErrorKind};
+        use crate::pattern::reader::Reader;
+        use crate::utils::ByteRange;
+        use test_case::test_case;
 
-    #[test_case("12:", 12, ""; "empty value")]
-    #[test_case("12:ab", 12, "ab"; "nonempty value")]
-    fn parse_ok(input: &str, count: usize, value: &str) {
-        assert_eq!(
-            Repetition::parse(&mut Reader::from(input)),
-            Ok(Repetition {
-                count,
-                value: value.into()
-            })
-        );
+        #[test_case("", ErrorKind::ExpectedRepetition, 0..0; "empty")]
+        #[test_case("ab", ErrorKind::ExpectedNumber, 0..2; "invalid count")]
+        #[test_case("12", ErrorKind::RepetitionWithoutDelimiter, 2..2; "missing delimiter")]
+        fn err(input: &str, kind: ErrorKind, range: ByteRange) {
+            assert_eq!(
+                Repetition::parse(&mut Reader::from(input)),
+                Err(Error { kind, range })
+            );
+        }
+
+        #[test_case("12:", 12, ""; "empty value")]
+        #[test_case("12:ab", 12, "ab"; "nonempty value")]
+        fn ok(input: &str, count: usize, value: &str) {
+            assert_eq!(
+                Repetition::parse(&mut Reader::from(input)),
+                Ok(Repetition {
+                    count,
+                    value: value.into()
+                })
+            );
+        }
     }
 
     #[test_case(0, "", ""; "empty zero times")]

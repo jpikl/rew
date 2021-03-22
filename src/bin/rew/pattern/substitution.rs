@@ -171,31 +171,36 @@ mod tests {
         use super::*;
         use test_case::test_case;
 
-        #[test_case("", ErrorKind::ExpectedSubstitution, 0..0; "empty")]
-        #[test_case("/", ErrorKind::SubstitutionWithoutTarget(Char::Raw('/')), 1..1; "no target")]
-        #[test_case("//", ErrorKind::SubstitutionWithoutTarget(Char::Raw('/')), 1..1; "empty target")]
-        fn parse_err(input: &str, kind: ErrorKind, range: ByteRange) {
-            assert_eq!(
-                StringSubstitution::parse(&mut Reader::from(input)),
-                Err(Error { kind, range })
-            );
-        }
+        mod parse {
+            use super::*;
+            use test_case::test_case;
 
-        #[test_case("/a", "a", ""; "short target no replacement")]
-        #[test_case("/abc", "abc", ""; "long target no replacement")]
-        #[test_case("/a/", "a", ""; "short target empty replacement")]
-        #[test_case("/abc/", "abc", ""; "long target empty replacement")]
-        #[test_case("/a/d", "a", "d"; "short target short replacement")]
-        #[test_case("/abc/def", "abc", "def"; "long target long replacement")]
-        #[test_case("/abc/d//e/", "abc", "d//e/"; "long target long replacement containing delimiter")]
-        fn parse_ok(input: &str, target: &str, replacement: &str) {
-            assert_eq!(
-                StringSubstitution::parse(&mut Reader::from(input)),
-                Ok(Substitution {
-                    target: target.into(),
-                    replacement: replacement.into(),
-                })
-            );
+            #[test_case("", ErrorKind::ExpectedSubstitution, 0..0; "empty")]
+            #[test_case("/", ErrorKind::SubstitutionWithoutTarget(Char::Raw('/')), 1..1; "no target")]
+            #[test_case("//", ErrorKind::SubstitutionWithoutTarget(Char::Raw('/')), 1..1; "empty target")]
+            fn err(input: &str, kind: ErrorKind, range: ByteRange) {
+                assert_eq!(
+                    StringSubstitution::parse(&mut Reader::from(input)),
+                    Err(Error { kind, range })
+                );
+            }
+
+            #[test_case("/a", "a", ""; "short target no replacement")]
+            #[test_case("/abc", "abc", ""; "long target no replacement")]
+            #[test_case("/a/", "a", ""; "short target empty replacement")]
+            #[test_case("/abc/", "abc", ""; "long target empty replacement")]
+            #[test_case("/a/d", "a", "d"; "short target short replacement")]
+            #[test_case("/abc/def", "abc", "def"; "long target long replacement")]
+            #[test_case("/abc/d//e/", "abc", "d//e/"; "long target long replacement containing delimiter")]
+            fn ok(input: &str, target: &str, replacement: &str) {
+                assert_eq!(
+                    StringSubstitution::parse(&mut Reader::from(input)),
+                    Ok(Substitution {
+                        target: target.into(),
+                        replacement: replacement.into(),
+                    })
+                );
+            }
         }
 
         #[test_case("", "ab", "", ""; "empty with empty")]
@@ -248,32 +253,37 @@ mod tests {
     mod regex {
         extern crate regex;
         use super::*;
-        use crate::utils::AnyString;
         use test_case::test_case;
 
-        #[test_case("", ErrorKind::ExpectedSubstitution, 0..0; "empty")]
-        #[test_case("/", ErrorKind::SubstitutionWithoutTarget(Char::Raw('/')), 1..1; "no target")]
-        #[test_case("//", ErrorKind::SubstitutionWithoutTarget(Char::Raw('/')), 1..1; "empty target")]
-        #[test_case("/[0-9+/def", ErrorKind::RegexInvalid(AnyString::any()), 1..6; "invalid regex")]
-        fn parse_err(input: &str, kind: ErrorKind, range: ByteRange) {
-            assert_eq!(
-                RegexSubstitution::parse(&mut Reader::from(input)),
-                Err(Error { kind, range })
-            );
-        }
+        mod parse {
+            use super::*;
+            use crate::utils::AnyString;
+            use test_case::test_case;
 
-        #[test_case("/(\\d+)", "(\\d+)", ""; "no replacement")]
-        #[test_case("/(\\d+)/", "(\\d+)", ""; "empty replacement")]
-        #[test_case("/(\\d+)/_$1_", "(\\d+)", "_$1_"; "nonempty replacement")]
-        #[test_case("/(\\d+)//$1/", "(\\d+)", "/$1/"; "replacement containing delimiter")]
-        fn parse_ok(input: &str, target: &str, replacement: &str) {
-            assert_eq!(
-                RegexSubstitution::parse(&mut Reader::from(input)),
-                Ok(Substitution {
-                    target: target.into(),
-                    replacement: replacement.into(),
-                })
-            );
+            #[test_case("", ErrorKind::ExpectedSubstitution, 0..0; "empty")]
+            #[test_case("/", ErrorKind::SubstitutionWithoutTarget(Char::Raw('/')), 1..1; "no target")]
+            #[test_case("//", ErrorKind::SubstitutionWithoutTarget(Char::Raw('/')), 1..1; "empty target")]
+            #[test_case("/[0-9+/def", ErrorKind::RegexInvalid(AnyString::any()), 1..6; "invalid regex")]
+            fn err(input: &str, kind: ErrorKind, range: ByteRange) {
+                assert_eq!(
+                    RegexSubstitution::parse(&mut Reader::from(input)),
+                    Err(Error { kind, range })
+                );
+            }
+
+            #[test_case("/(\\d+)", "(\\d+)", ""; "no replacement")]
+            #[test_case("/(\\d+)/", "(\\d+)", ""; "empty replacement")]
+            #[test_case("/(\\d+)/_$1_", "(\\d+)", "_$1_"; "nonempty replacement")]
+            #[test_case("/(\\d+)//$1/", "(\\d+)", "/$1/"; "replacement containing delimiter")]
+            fn ok(input: &str, target: &str, replacement: &str) {
+                assert_eq!(
+                    RegexSubstitution::parse(&mut Reader::from(input)),
+                    Ok(Substitution {
+                        target: target.into(),
+                        replacement: replacement.into(),
+                    })
+                );
+            }
         }
 
         #[test_case("", "\\d+", "", ""; "empty with empty")]
