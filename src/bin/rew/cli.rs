@@ -1,7 +1,7 @@
 use crate::counter;
 use crate::pattern::eval;
 use clap::{crate_name, crate_version, AppSettings, ArgSettings, Clap};
-use common::color::{parse_color, COLOR_VALUES};
+use common::color::{parse_color, COLOR_CHOICES};
 use common::help::highlight_static;
 use common::run::Options;
 use indoc::indoc;
@@ -174,7 +174,7 @@ pub struct Cli {
     #[clap(
         long,
         value_name = "when",
-        possible_values = COLOR_VALUES,
+        possible_values = COLOR_CHOICES,
         parse(try_from_str = parse_color),
         help_heading = OUTPUT_HEADING
     )]

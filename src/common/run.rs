@@ -1,4 +1,4 @@
-use crate::color::detect_color;
+use crate::color::choose_color;
 use crate::output::write_error;
 use clap::Clap;
 use std::io::{Stdin, StdinLock};
@@ -49,7 +49,7 @@ where
     R: FnOnce(&O, &Io) -> Result,
 {
     let options = O::parse();
-    let color = detect_color(options.color());
+    let color = choose_color(options.color());
     let io = Io::new(color);
 
     let exit_code = match run(&options, &io) {

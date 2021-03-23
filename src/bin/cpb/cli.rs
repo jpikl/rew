@@ -1,5 +1,5 @@
 use clap::{crate_version, AppSettings, Clap};
-use common::color::{parse_color, COLOR_VALUES};
+use common::color::{parse_color, COLOR_CHOICES};
 use common::help::highlight_static;
 use common::run::Options;
 use common::transfer::TransferOptions;
@@ -61,7 +61,7 @@ pub struct Cli {
     #[clap(
         long,
         value_name = "when",
-        possible_values = COLOR_VALUES,
+        possible_values = COLOR_CHOICES,
         parse(try_from_str = parse_color),
     )]
     pub color: Option<ColorChoice>,
