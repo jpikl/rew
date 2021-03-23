@@ -26,7 +26,7 @@ impl<O: Write + WriteColor> Values<O> {
         Self {
             output,
             mode,
-            terminator: terminator.to_string(),
+            terminator: terminator.into(),
             first_result: true,
             flush_needed: !terminator.ends_with('\n'),
         }
@@ -114,117 +114,39 @@ pub fn highlight_range<O: Write + WriteColor>(
 mod tests {
     use super::*;
     use common::testing::{ColoredOuput, OutputChunk};
+    use test_case::test_case;
 
-    mod standard_mode {
-        use super::*;
-
-        #[test]
-        fn no_terminator() {
-            let mut output = ColoredOuput::new();
-            let mut values = Values::new(&mut output, Mode::Standard, "");
-            write_values(&mut values);
-            assert_eq!(output.chunks(), &[OutputChunk::plain("bd")])
-        }
-
-        #[test]
-        fn newline_terminator() {
-            let mut output = ColoredOuput::new();
-            let mut values = Values::new(&mut output, Mode::Standard, "\n");
-            write_values(&mut values);
-            assert_eq!(output.chunks(), &[OutputChunk::plain("b\nd\n")])
-        }
-
-        #[test]
-        fn nul_terminator() {
-            let mut output = ColoredOuput::new();
-            let mut values = Values::new(&mut output, Mode::Standard, "\0");
-            write_values(&mut values);
-            assert_eq!(output.chunks(), &[OutputChunk::plain("b\0d\0")])
-        }
-    }
-
-    mod standard_mode_no_end {
-        use super::*;
-
-        #[test]
-        fn no_terminator() {
-            let mut output = ColoredOuput::new();
-            let mut values = Values::new(&mut output, Mode::StandardNoEnd, "");
-            write_values(&mut values);
-            assert_eq!(output.chunks(), &[OutputChunk::plain("bd")])
-        }
-
-        #[test]
-        fn newline_terminator() {
-            let mut output = ColoredOuput::new();
-            let mut values = Values::new(&mut output, Mode::StandardNoEnd, "\n");
-            write_values(&mut values);
-            assert_eq!(output.chunks(), &[OutputChunk::plain("b\nd")])
-        }
-
-        #[test]
-        fn nul_terminator() {
-            let mut output = ColoredOuput::new();
-            let mut values = Values::new(&mut output, Mode::StandardNoEnd, "\0");
-            write_values(&mut values);
-            assert_eq!(output.chunks(), &[OutputChunk::plain("b\0d")])
-        }
-    }
-
-    mod diff_mode {
-        use super::*;
-
-        #[test]
-        fn no_terminator() {
-            let mut output = ColoredOuput::new();
-            let mut values = Values::new(&mut output, Mode::Diff, "");
-            write_values(&mut values);
-            assert_eq!(output.chunks(), &[OutputChunk::plain("<a>b<c>d")])
-        }
-
-        #[test]
-        fn newline_terminator() {
-            let mut output = ColoredOuput::new();
-            let mut values = Values::new(&mut output, Mode::Diff, "\n");
-            write_values(&mut values);
-            assert_eq!(output.chunks(), &[OutputChunk::plain("<a\n>b\n<c\n>d\n")])
-        }
-
-        #[test]
-        fn nul_terminator() {
-            let mut output = ColoredOuput::new();
-            let mut values = Values::new(&mut output, Mode::Diff, "\0");
-            write_values(&mut values);
-            assert_eq!(output.chunks(), &[OutputChunk::plain("<a\0>b\0<c\0>d\0")])
-        }
-    }
-
-    #[test]
-    fn pretty_mode() {
+    #[test_case(Mode::Standard, "", OutputChunk::vec("bd"); "standard no terminator")]
+    #[test_case(Mode::Standard, "\n", OutputChunk::vec("b\nd\n"); "standard newline terminator")]
+    #[test_case(Mode::Standard, "\0", OutputChunk::vec("b\0d\0"); "standard null terminator")]
+    #[test_case(Mode::StandardNoEnd, "", OutputChunk::vec("bd"); "standard no end no terminator")]
+    #[test_case(Mode::StandardNoEnd, "\n", OutputChunk::vec("b\nd"); "standard no end newline terminator")]
+    #[test_case(Mode::StandardNoEnd, "\0", OutputChunk::vec("b\0d"); "standard no end null terminator")]
+    #[test_case(Mode::Diff, "", OutputChunk::vec("<a>b<c>d"); "diff no terminator")]
+    #[test_case(Mode::Diff, "\n", OutputChunk::vec("<a\n>b\n<c\n>d\n"); "diff newline terminator")]
+    #[test_case(Mode::Diff, "\0", OutputChunk::vec("<a\0>b\0<c\0>d\0"); "diff null terminator")]
+    #[test_case(Mode::Pretty, "ignored", pretty_output(); "pretty")]
+    fn values_write(mode: Mode, terminator: &str, chunks: Vec<OutputChunk>) {
         let mut output = ColoredOuput::new();
-        let mut values = Values::new(&mut output, Mode::Pretty, "ignored");
-        write_values(&mut values);
-
-        assert_eq!(
-            output.chunks(),
-            &[
-                OutputChunk::color(Color::Blue, "a"),
-                OutputChunk::plain(" -> "),
-                OutputChunk::color(Color::Green, "b\n"),
-                OutputChunk::color(Color::Blue, "c"),
-                OutputChunk::plain(" -> "),
-                OutputChunk::color(Color::Green, "d\n")
-            ]
-        )
-    }
-
-    fn write_values(values: &mut Values<&mut ColoredOuput>) {
+        let mut values = Values::new(&mut output, mode, terminator);
         values.write("a", "b").unwrap();
         values.write("c", "d").unwrap();
+        assert_eq!(output.chunks(), &chunks);
+    }
+
+    fn pretty_output() -> Vec<OutputChunk> {
+        vec![
+            OutputChunk::color(Color::Blue, "a"),
+            OutputChunk::plain(" -> "),
+            OutputChunk::color(Color::Green, "b\n"),
+            OutputChunk::color(Color::Blue, "c"),
+            OutputChunk::plain(" -> "),
+            OutputChunk::color(Color::Green, "d\n"),
+        ]
     }
 
     #[test]
-    fn write_pattern() {
+    fn write_pattern_error() {
         use super::*;
         use std::fmt;
 
@@ -245,7 +167,7 @@ mod tests {
         }
 
         let mut output = ColoredOuput::new();
-        write_pattern_error(&mut output, &CustomError {}, "abcd").unwrap();
+        super::write_pattern_error(&mut output, &CustomError {}, "abcd").unwrap();
 
         assert_eq!(
             output.chunks(),
@@ -262,10 +184,8 @@ mod tests {
 
     #[test]
     fn highlight_range() {
-        use super::*;
-
         let mut output = ColoredOuput::new();
-        highlight_range(&mut output, "abcde", &(1..4), Color::Green).unwrap();
+        super::highlight_range(&mut output, "abcde", &(1..4), Color::Green).unwrap();
 
         assert_eq!(
             output.chunks(),

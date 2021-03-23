@@ -2,13 +2,13 @@ use common::input::{Splitter, Terminator};
 use std::io::{BufRead, Result};
 use std::slice::Iter;
 
-pub enum Values<'a, I: BufRead> {
-    Args { iter: Iter<'a, String> },
+pub enum Values<'a, A: AsRef<str>, I: BufRead> {
+    Args { iter: Iter<'a, A> },
     Stdin { splitter: Splitter<I> },
 }
 
-impl<'a, I: BufRead> Values<'a, I> {
-    pub fn from_args(values: &'a [String]) -> Self {
+impl<'a, A: AsRef<str>, I: BufRead> Values<'a, A, I> {
+    pub fn from_args(values: &'a [A]) -> Self {
         Values::Args {
             iter: values.iter(),
         }
@@ -22,7 +22,7 @@ impl<'a, I: BufRead> Values<'a, I> {
 
     pub fn next(&mut self) -> Result<Option<&str>> {
         match self {
-            Self::Args { iter } => Ok(iter.next().map(String::as_str)),
+            Self::Args { iter } => Ok(iter.next().map(A::as_ref)),
             Self::Stdin { splitter: reader } => Ok(reader.read()?.map(|(value, _)| value)),
         }
     }
@@ -32,21 +32,26 @@ impl<'a, I: BufRead> Values<'a, I> {
 mod tests {
     use super::*;
     use common::testing::unpack_io_error;
+    use test_case::test_case;
 
-    #[test]
-    fn args() {
-        let args = vec!["a".into(), "b".into()];
-        let mut values: Values<&[u8]> = Values::from_args(&args);
-        assert_eq!(values.next().map_err(unpack_io_error), Ok(Some("a")));
-        assert_eq!(values.next().map_err(unpack_io_error), Ok(Some("b")));
-        assert_eq!(values.next().map_err(unpack_io_error), Ok(None));
+    #[test_case(args(), 0, Some("a"); "args 0")]
+    #[test_case(args(), 1, Some("b"); "args 1")]
+    #[test_case(args(), 2, None; "args 2")]
+    #[test_case(stdin(), 0, Some("a"); "stdin 0")]
+    #[test_case(stdin(), 1, Some("b"); "stdin 1")]
+    #[test_case(stdin(), 2, None; "stdin 2")]
+    fn next(mut values: Values<&str, &[u8]>, position: usize, result: Option<&str>) {
+        for _ in 0..position {
+            values.next().unwrap();
+        }
+        assert_eq!(values.next().map_err(unpack_io_error), Ok(result));
     }
 
-    #[test]
-    fn stdin() {
-        let mut values = Values::from_stdin(&b"a\nb"[..], Terminator::Newline { required: false });
-        assert_eq!(values.next().map_err(unpack_io_error), Ok(Some("a")));
-        assert_eq!(values.next().map_err(unpack_io_error), Ok(Some("b")));
-        assert_eq!(values.next().map_err(unpack_io_error), Ok(None));
+    fn args<'a>() -> Values<'a, &'a str, &'a [u8]> {
+        Values::from_args(&["a", "b"][..])
+    }
+
+    fn stdin<'a>() -> Values<'a, &'a str, &'a [u8]> {
+        Values::from_stdin(&b"a\nb"[..], Terminator::Newline { required: false })
     }
 }

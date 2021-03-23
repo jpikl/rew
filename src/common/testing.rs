@@ -69,6 +69,10 @@ pub struct OutputChunk {
 }
 
 impl OutputChunk {
+    pub fn vec(value: &str) -> Vec<Self> {
+        vec![Self::plain(value)]
+    }
+
     pub fn plain(value: &str) -> Self {
         Self {
             spec: ColorSpec::new(),
