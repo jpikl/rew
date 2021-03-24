@@ -91,6 +91,7 @@ fn highlight_code<O: Write + WriteColor>(output: &mut O, line: &str) -> Result<(
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crate::testing::{ColoredOuput, OutputChunk};
     use claim::*;
     use indoc::indoc;
@@ -113,16 +114,13 @@ mod tests {
 
     #[test]
     fn highlight_to_string() {
-        use super::*;
-        assert_gt!(highlight_to_string(SAMPLE_HELP).unwrap().len(), 0);
+        assert_gt!(super::highlight_to_string(SAMPLE_HELP).unwrap().len(), 0);
     }
 
     #[test]
     fn highlight() {
-        use super::*;
-
         let mut ouput = ColoredOuput::new();
-        highlight(&mut ouput, SAMPLE_HELP).unwrap();
+        super::highlight(&mut ouput, SAMPLE_HELP).unwrap();
         assert_eq!(
             ouput.chunks(),
             &[

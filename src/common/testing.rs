@@ -116,10 +116,8 @@ mod tests {
 
     #[test]
     fn unpack_io_error() {
-        use super::*;
-
         assert_eq!(
-            unpack_io_error(Error::new(ErrorKind::Other, "test")),
+            super::unpack_io_error(Error::new(ErrorKind::Other, "test")),
             (ErrorKind::Other, "test".into())
         );
     }
@@ -162,58 +160,45 @@ mod tests {
 
     mod output_chunk {
         use super::*;
+        use test_case::test_case;
 
-        mod init {
-            use super::*;
-
-            #[test]
-            fn plain() {
-                let chunk = OutputChunk::plain("ab");
-                assert_eq!(chunk.spec, ColorSpec::new());
-                assert_eq!(chunk.value, "ab");
-            }
-
-            #[test]
-            fn color() {
-                let chunk = OutputChunk::color(Color::Red, "cd");
-                assert_eq!(chunk.spec, spec_color(Color::Red));
-                assert_eq!(chunk.value, "cd");
-            }
-
-            #[test]
-            fn bold_color() {
-                let chunk = OutputChunk::bold_color(Color::Blue, "ef");
-                assert_eq!(chunk.spec, spec_bold_color(Color::Blue));
-                assert_eq!(chunk.value, "ef");
-            }
+        #[test_case(
+            OutputChunk::plain("ab"), 
+            ColorSpec::new(), "ab"; 
+            "plain"
+        )]
+        #[test_case(
+            OutputChunk::color(Color::Red, "cd"),
+            spec_color(Color::Red), "cd"; 
+            "color"
+        )]
+        #[test_case(
+            OutputChunk::bold_color(Color::Blue, "ef"),
+            spec_bold_color(Color::Blue), "ef"; 
+            "bold color"
+        )]
+        fn create(chunk: OutputChunk, spec: ColorSpec, value: &str) {
+            assert_eq!(chunk.spec, spec);
+            assert_eq!(chunk.value, value);
         }
 
-        mod display {
-            use super::*;
-
-            #[test]
-            fn plain() {
-                assert_eq!(
-                    format!("{:?}", OutputChunk::plain("a\nb")),
-                    r#"OutputChunk::plain("a\\nb")"#
-                );
-            }
-
-            #[test]
-            fn color() {
-                assert_eq!(
-                    format!("{:?}", OutputChunk::color(Color::Red, "c\nd")),
-                    r#"OutputChunk::color(Color::Red, "c\\nd")"#
-                );
-            }
-
-            #[test]
-            fn bold_color() {
-                assert_eq!(
-                    format!("{:?}", OutputChunk::bold_color(Color::Blue, "e\nf")),
-                    r#"OutputChunk::bold_color(Color::Blue, "e\\nf")"#
-                );
-            }
+        #[test_case(
+            OutputChunk::plain("a\nb"),
+            r#"OutputChunk::plain("a\\nb")"#;
+            "plaint"
+        )]
+        #[test_case(
+            OutputChunk::color(Color::Red, "c\nd"), 
+            r#"OutputChunk::color(Color::Red, "c\\nd")"#; 
+            "color"
+        )]
+        #[test_case(
+            OutputChunk::bold_color(Color::Blue, "e\nf"), 
+            r#"OutputChunk::bold_color(Color::Blue, "e\\nf")"#; 
+            "bold color"
+        )]
+        fn debug(chunk: OutputChunk, result: &str) {
+            assert_eq!(format!("{:?}", chunk), result);
         }
     }
 }

@@ -7,7 +7,7 @@ pub fn into_static_str(value: String) -> &'static str {
         // Well, this is ugly but the current usage should be actually safe:
         // 1) It's used only by cli.rs to generate static strings for clap attributes.
         // 2) Values are never modified after being pushed to vector.
-        // 3) Vectors is only modified / acessed by a single thread.
+        // 3) Vectors is only modified / accessed by a single thread.
         STATIC_STRINGS.push(value);
         STATIC_STRINGS
             .last()
@@ -33,12 +33,15 @@ pub fn str_from_utf8(data: &[u8]) -> Result<&str> {
 mod tests {
     use super::*;
 
-    #[test]
+    #[test] // Do not use test_case, this is expected to work only for a single thread.
     fn into_static_str() {
-        use super::*;
+        let str_1 = super::into_static_str("a".into());
+        let str_2 = super::into_static_str("ab".into());
+        let str_3 = super::into_static_str("abc".into());
 
-        assert_eq!(into_static_str("abc".into()), "abc");
-        assert_eq!(into_static_str("def".into()), "def");
+        assert_eq!(str_1, "a");
+        assert_eq!(str_2, "ab");
+        assert_eq!(str_3, "abc");
     }
 
     mod str_from_utf8 {
