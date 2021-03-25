@@ -34,24 +34,24 @@ mod tests {
     use regex::Match;
     use test_case::test_case;
 
-    #[test_case(Solver::Value(&regex()), ""; "value empty")]
-    #[test_case(Solver::Value(&regex()), "ab/cd"; "value nonempty")]
-    #[test_case(Solver::FileName(&regex()), ""; "file name empty")]
+    #[test_case(Solver::Value(&regex()),    "";      "value empty")]
+    #[test_case(Solver::Value(&regex()),    "ab/cd"; "value nonempty")]
+    #[test_case(Solver::FileName(&regex()), "";      "file name empty")]
     #[test_case(Solver::FileName(&regex()), "ab/cd"; "file name nonempty")]
-    #[test_case(Solver::None, ""; "none empty")]
-    #[test_case(Solver::None, "ab/cd"; "none nonempty")]
+    #[test_case(Solver::None,               "";      "none empty")]
+    #[test_case(Solver::None,               "ab/cd"; "none nonempty")]
     fn missed(solver: Solver, input: &str) {
         assert_none!(solver.eval(input));
     }
 
-    #[test_case(Solver::Value(&regex()), "aB/cD", 0, Some("aB"); "value group 0")]
-    #[test_case(Solver::Value(&regex()), "aB/cD", 1, Some("a"); "value group 1")]
-    #[test_case(Solver::Value(&regex()), "aB/cD", 2, Some("B"); "value group 2")]
-    #[test_case(Solver::Value(&regex()), "aB/cD", 3, None; "value group 3")]
+    #[test_case(Solver::Value(&regex()),    "aB/cD", 0, Some("aB"); "value group 0")]
+    #[test_case(Solver::Value(&regex()),    "aB/cD", 1, Some("a");  "value group 1")]
+    #[test_case(Solver::Value(&regex()),    "aB/cD", 2, Some("B");  "value group 2")]
+    #[test_case(Solver::Value(&regex()),    "aB/cD", 3, None;       "value group 3")]
     #[test_case(Solver::FileName(&regex()), "aB/cD", 0, Some("cD"); "file name group 0")]
-    #[test_case(Solver::FileName(&regex()), "aB/cD", 1, Some("c"); "file name group 1")]
-    #[test_case(Solver::FileName(&regex()), "aB/cD", 2, Some("D"); "file name group 2")]
-    #[test_case(Solver::FileName(&regex()), "aB/cD", 3, None; "file name group 3")]
+    #[test_case(Solver::FileName(&regex()), "aB/cD", 1, Some("c");  "file name group 1")]
+    #[test_case(Solver::FileName(&regex()), "aB/cD", 2, Some("D");  "file name group 2")]
+    #[test_case(Solver::FileName(&regex()), "aB/cD", 3, None;       "file name group 3")]
     fn captured(solver: Solver, input: &str, group: usize, result: Option<&str>) {
         assert_eq!(
             solver

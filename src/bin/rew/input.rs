@@ -34,12 +34,12 @@ mod tests {
     use common::testing::unpack_io_error;
     use test_case::test_case;
 
-    #[test_case(args(), 0, Some("a"); "args 0")]
-    #[test_case(args(), 1, Some("b"); "args 1")]
-    #[test_case(args(), 2, None; "args 2")]
+    #[test_case(args(),  0, Some("a"); "args 0")]
+    #[test_case(args(),  1, Some("b"); "args 1")]
+    #[test_case(args(),  2, None;      "args 2")]
     #[test_case(stdin(), 0, Some("a"); "stdin 0")]
     #[test_case(stdin(), 1, Some("b"); "stdin 1")]
-    #[test_case(stdin(), 2, None; "stdin 2")]
+    #[test_case(stdin(), 2, None;      "stdin 2")]
     fn next(mut values: Values<&str, &[u8]>, position: usize, result: Option<&str>) {
         for _ in 0..position {
             values.next().unwrap_or_default();

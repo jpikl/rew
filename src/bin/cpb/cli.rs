@@ -100,26 +100,26 @@ mod tests {
     use super::*;
     use test_case::test_case;
 
-    #[test_case(&[], None; "default")]
+    #[test_case(&[],                 None;                      "default")]
     #[test_case(&["--color=always"], Some(ColorChoice::Always); "always")]
     fn color(args: &[&str], result: Option<ColorChoice>) {
         assert_eq!(run(args).color(), result);
     }
 
-    #[test_case(&[], false; "off")]
-    #[test_case(&["--read-nul"], true; "on")]
+    #[test_case(&[],             false; "off")]
+    #[test_case(&["--read-nul"], true;  "on")]
     fn read_nul(args: &[&str], result: bool) {
         assert_eq!(run(args).read_nul(), result);
     }
 
-    #[test_case(&[], false; "off")]
-    #[test_case(&["--verbose"], true; "on")]
+    #[test_case(&[],            false; "off")]
+    #[test_case(&["--verbose"], true;  "on")]
     fn verbose(args: &[&str], result: bool) {
         assert_eq!(run(args).verbose(), result);
     }
 
-    #[test_case(&[], false; "off")]
-    #[test_case(&["--fail-at-end"], true; "on")]
+    #[test_case(&[],                false; "off")]
+    #[test_case(&["--fail-at-end"], true;  "on")]
     fn fail_at_end(args: &[&str], result: bool) {
         assert_eq!(run(args).fail_at_end(), result);
     }

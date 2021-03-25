@@ -49,21 +49,21 @@ mod tests {
     use super::*;
     use test_case::test_case;
 
-    #[test_case("", Err("invalid value"); "empty")]
-    #[test_case("x", Err("invalid value"); "invalid")]
-    #[test_case(ALWAYS, Ok(ColorChoice::Always); "always")]
-    #[test_case(ANSI, Ok(ColorChoice::AlwaysAnsi); "ansi")]
-    #[test_case(AUTO, Ok(ColorChoice::Auto); "auto")]
-    #[test_case(NEVER, Ok(ColorChoice::Never); "never")]
+    #[test_case("",     Err("invalid value");        "empty")]
+    #[test_case("x",    Err("invalid value");        "invalid")]
+    #[test_case(ALWAYS, Ok(ColorChoice::Always);     "always")]
+    #[test_case(ANSI,   Ok(ColorChoice::AlwaysAnsi); "ansi")]
+    #[test_case(AUTO,   Ok(ColorChoice::Auto);       "auto")]
+    #[test_case(NEVER,  Ok(ColorChoice::Never);      "never")]
     fn parse_color(input: &str, result: Result<ColorChoice, &'static str>) {
         assert_eq!(super::parse_color(input), result);
     }
 
-    #[test_case(None, detect_color())]
-    #[test_case(Some(ColorChoice::Auto), detect_color())]
-    #[test_case(Some(ColorChoice::Always), ColorChoice::Always)]
-    #[test_case(Some(ColorChoice::AlwaysAnsi), ColorChoice::AlwaysAnsi)]
-    #[test_case(Some(ColorChoice::Never), ColorChoice::Never)]
+    #[test_case(None,                          detect_color();          "none")]
+    #[test_case(Some(ColorChoice::Auto),       detect_color();          "auto")]
+    #[test_case(Some(ColorChoice::Always),     ColorChoice::Always;     "always")]
+    #[test_case(Some(ColorChoice::AlwaysAnsi), ColorChoice::AlwaysAnsi; "ansi")]
+    #[test_case(Some(ColorChoice::Never),      ColorChoice::Never;      "never")]
     fn choose_color(value: Option<ColorChoice>, result: ColorChoice) {
         assert_eq!(super::choose_color(value), result)
     }
