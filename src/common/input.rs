@@ -70,310 +70,85 @@ impl<I: BufRead> Splitter<I> {
 mod tests {
     use super::*;
     use crate::testing::unpack_io_error;
+    use test_case::test_case;
 
-    mod newline_terminator {
-        use super::*;
+    const NONE: Terminator = Terminator::None;
+    const NL_REQ: Terminator = Terminator::Newline { required: true };
+    const NL_OPT: Terminator = Terminator::Newline { required: false };
+    const B0_REQ: Terminator = Terminator::Byte {
+        value: 0,
+        required: true,
+    };
+    const B0_OPT: Terminator = Terminator::Byte {
+        value: 0,
+        required: false,
+    };
 
-        mod required {
-            use super::*;
-
-            const TERMINATOR: Terminator = Terminator::Newline { required: true };
-
-            #[test]
-            fn empty() {
-                let mut splitter = Splitter::new(&[][..], TERMINATOR);
-                assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
-            }
-
-            mod lf_only {
-                use super::*;
-
-                #[test]
-                fn between() {
-                    let mut splitter = Splitter::new(&b"abc\0\n\0def"[..], TERMINATOR);
-                    assert_eq!(
-                        splitter.read().map_err(unpack_io_error),
-                        Ok(Some(("abc\0", 5)))
-                    );
-                    assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
-                }
-
-                #[test]
-                fn between_and_end() {
-                    let mut splitter = Splitter::new(&b"abc\0\n\0def\n"[..], TERMINATOR);
-                    assert_eq!(
-                        splitter.read().map_err(unpack_io_error),
-                        Ok(Some(("abc\0", 5)))
-                    );
-                    assert_eq!(
-                        splitter.read().map_err(unpack_io_error),
-                        Ok(Some(("\0def", 5)))
-                    );
-                    assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
-                }
-
-                #[test]
-                fn consecutive() {
-                    let mut splitter = Splitter::new(&b"\n\n"[..], TERMINATOR);
-                    assert_eq!(splitter.read().map_err(unpack_io_error), Ok(Some(("", 1))));
-                    assert_eq!(splitter.read().map_err(unpack_io_error), Ok(Some(("", 1))));
-                    assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
-                }
-            }
-
-            mod cr_and_lf {
-                use super::*;
-
-                #[test]
-                fn between() {
-                    let mut splitter = Splitter::new(&b"abc\0\r\n\0def"[..], TERMINATOR);
-                    assert_eq!(
-                        splitter.read().map_err(unpack_io_error),
-                        Ok(Some(("abc\0", 6)))
-                    );
-                    assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
-                }
-
-                #[test]
-                fn between_and_end() {
-                    let mut splitter = Splitter::new(&b"abc\0\r\n\0def\r\n"[..], TERMINATOR);
-                    assert_eq!(
-                        splitter.read().map_err(unpack_io_error),
-                        Ok(Some(("abc\0", 6)))
-                    );
-                    assert_eq!(
-                        splitter.read().map_err(unpack_io_error),
-                        Ok(Some(("\0def", 6)))
-                    );
-                    assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
-                }
-
-                #[test]
-                fn consecutive() {
-                    let mut splitter = Splitter::new(&b"\r\n\n\r\n"[..], TERMINATOR);
-                    assert_eq!(splitter.read().map_err(unpack_io_error), Ok(Some(("", 2))));
-                    assert_eq!(splitter.read().map_err(unpack_io_error), Ok(Some(("", 1))));
-                    assert_eq!(splitter.read().map_err(unpack_io_error), Ok(Some(("", 2))));
-                    assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
-                }
-            }
+    #[test_case(NL_REQ, "",                   0, None;                    "newline required lf empty")]
+    #[test_case(NL_REQ, "abc\0\n\0def",       0, Some(("abc\0", 5));      "newline required lf between 0")]
+    #[test_case(NL_REQ, "abc\0\n\0def",       1, None;                    "newline required lf between 1")]
+    #[test_case(NL_REQ, "abc\0\n\0def\n",     0, Some(("abc\0", 5));      "newline required lf between end 0")]
+    #[test_case(NL_REQ, "abc\0\n\0def\n",     1, Some(("\0def", 5));      "newline required lf between end 1")]
+    #[test_case(NL_REQ, "abc\0\n\0def\n",     2, None;                    "newline required lf between end 2")]
+    #[test_case(NL_REQ, "\n\n",               0, Some(("", 1));           "newline required lf consecutive 0")]
+    #[test_case(NL_REQ, "\n\n",               1, Some(("", 1));           "newline required lf consecutive 1")]
+    #[test_case(NL_REQ, "\n\n",               2, None;                    "newline required lf consecutive 2")]
+    #[test_case(NL_REQ, "abc\0\r\n\0def",     0, Some(("abc\0", 6));      "newline required cr lf between 0")]
+    #[test_case(NL_REQ, "abc\0\r\n\0def",     1, None;                    "newline required cr lf between 1")]
+    #[test_case(NL_REQ, "abc\0\r\n\0def\r\n", 0, Some(("abc\0", 6));      "newline required cr lf between end 0")]
+    #[test_case(NL_REQ, "abc\0\r\n\0def\r\n", 1, Some(("\0def", 6));      "newline required cr lf between end 1")]
+    #[test_case(NL_REQ, "abc\0\r\n\0def\r\n", 2, None;                    "newline required cr lf between end 2")]
+    #[test_case(NL_REQ, "\r\n\n\r\n",         0, Some(("", 2));           "newline required cr lf consecutive 0")]
+    #[test_case(NL_REQ, "\r\n\n\r\n",         1, Some(("", 1));           "newline required cr lf consecutive 1")]
+    #[test_case(NL_REQ, "\r\n\n\r\n",         2, Some(("", 2));           "newline required cr lf consecutive 2")]
+    #[test_case(NL_REQ, "\r\n\n\r\n",         3, None;                    "newline required cr lf consecutive 3")]
+    #[test_case(NL_OPT, "",                   0, None;                    "newline optional lf empty")]
+    #[test_case(NL_OPT, "abc\0\n\0def",       0, Some(("abc\0", 5));      "newline optional lf between 0")]
+    #[test_case(NL_OPT, "abc\0\n\0def",       1, Some(("\0def", 4));      "newline optional lf between 1")]
+    #[test_case(NL_OPT, "abc\0\n\0def",       2, None;                    "newline optional lf between 2")]
+    #[test_case(NL_OPT, "abc\0\n\0def\n",     0, Some(("abc\0", 5));      "newline optional lf between end 0")]
+    #[test_case(NL_OPT, "abc\0\n\0def\n",     1, Some(("\0def", 5));      "newline optional lf between end 1")]
+    #[test_case(NL_OPT, "abc\0\n\0def\n",     2, None;                    "newline optional lf between end 2")]
+    #[test_case(NL_OPT, "\n\n",               0, Some(("", 1));           "newline optional lf consecutive 0")]
+    #[test_case(NL_OPT, "\n\n",               1, Some(("", 1));           "newline optional lf consecutive 1")]
+    #[test_case(NL_OPT, "\n\n",               2, None;                    "newline optional lf consecutive 2")]
+    #[test_case(NL_OPT, "abc\0\r\n\0def",     0, Some(("abc\0", 6));      "newline optional cr lf between 0")]
+    #[test_case(NL_OPT, "abc\0\r\n\0def",     1, Some(("\0def", 4));      "newline optional cr lf between 1")]
+    #[test_case(NL_OPT, "abc\0\r\n\0def",     2, None;                    "newline optional cr lf between 2")]
+    #[test_case(NL_OPT, "abc\0\r\n\0def\r\n", 0, Some(("abc\0", 6));      "newline optional cr lf between end 0")]
+    #[test_case(NL_OPT, "abc\0\r\n\0def\r\n", 1, Some(("\0def", 6));      "newline optional cr lf between end 1")]
+    #[test_case(NL_OPT, "abc\0\r\n\0def\r\n", 2, None;                    "newline optional cr lf between end 2")]
+    #[test_case(NL_OPT, "\r\n\n\r\n",         0, Some(("", 2));           "newline optional cr lf consecutive 0")]
+    #[test_case(NL_OPT, "\r\n\n\r\n",         1, Some(("", 1));           "newline optional cr lf consecutive 1")]
+    #[test_case(NL_OPT, "\r\n\n\r\n",         2, Some(("", 2));           "newline optional cr lf consecutive 2")]
+    #[test_case(NL_OPT, "\r\n\n\r\n",         3, None;                    "newline optional cr lf consecutive 3")]
+    #[test_case(B0_REQ, "",                   0, None;                    "byte required empty")]
+    #[test_case(B0_REQ, "abc\n\0\ndef",       0, Some(("abc\n", 5));      "byte required between 0")]
+    #[test_case(B0_REQ, "abc\n\0\ndef",       1, None;                    "byte required between 1")]
+    #[test_case(B0_REQ, "abc\n\0\ndef\0",     0, Some(("abc\n", 5));      "byte required between end 0")]
+    #[test_case(B0_REQ, "abc\n\0\ndef\0",     1, Some(("\ndef", 5));      "byte required between end 1")]
+    #[test_case(B0_REQ, "abc\n\0\ndef\0",     2, None;                    "byte required between end 2")]
+    #[test_case(B0_REQ, "\0\0",               0, Some(("", 1));           "byte required consecutive 0")]
+    #[test_case(B0_REQ, "\0\0",               1, Some(("", 1));           "byte required consecutive 1")]
+    #[test_case(B0_REQ, "\0\0",               2, None;                    "byte required consecutive 2")]
+    #[test_case(B0_OPT, "",                   0, None;                    "byte optional empty")]
+    #[test_case(B0_OPT, "abc\n\0\ndef",       0, Some(("abc\n", 5));      "byte optional between 0")]
+    #[test_case(B0_OPT, "abc\n\0\ndef",       1, Some(("\ndef", 4));      "byte optional between 1")]
+    #[test_case(B0_OPT, "abc\n\0\ndef",       2, None;                    "byte optional between 2")]
+    #[test_case(B0_OPT, "abc\n\0\ndef\0",     0, Some(("abc\n", 5));      "byte optional between end 0")]
+    #[test_case(B0_OPT, "abc\n\0\ndef\0",     1, Some(("\ndef", 5));      "byte optional between end 1")]
+    #[test_case(B0_OPT, "abc\n\0\ndef\0",     2, None;                    "byte optional between end 2")]
+    #[test_case(B0_OPT, "\0\0",               0, Some(("", 1));           "byte optional consecutive 0")]
+    #[test_case(B0_OPT, "\0\0",               1, Some(("", 1));           "byte optional consecutive 1")]
+    #[test_case(B0_OPT, "\0\0",               2, None;                    "byte optional consecutive 2")]
+    #[test_case(NONE,   "",                   0, None;                    "none empty")]
+    #[test_case(NONE,   "abc\n\0def",         0, Some(("abc\n\0def", 8)); "none nonempty 0")]
+    #[test_case(NONE,   "abc\n\0def",         1, None;                    "none nonempty 1")]
+    fn read(terminator: Terminator, input: &str, position: usize, result: Option<(&str, usize)>) {
+        let mut splitter = Splitter::new(input.as_bytes(), terminator);
+        for _ in 0..position {
+            splitter.read().unwrap_or_default();
         }
-
-        mod optional {
-            use super::*;
-
-            const TERMINATOR: Terminator = Terminator::Newline { required: false };
-
-            #[test]
-            fn empty() {
-                let mut splitter = Splitter::new(&[][..], TERMINATOR);
-                assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
-            }
-
-            mod lf_only {
-                use super::*;
-
-                #[test]
-                fn between() {
-                    let mut splitter = Splitter::new(&b"abc\0\n\0def"[..], TERMINATOR);
-                    assert_eq!(
-                        splitter.read().map_err(unpack_io_error),
-                        Ok(Some(("abc\0", 5)))
-                    );
-                    assert_eq!(
-                        splitter.read().map_err(unpack_io_error),
-                        Ok(Some(("\0def", 4)))
-                    );
-                    assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
-                }
-
-                #[test]
-                fn between_and_end() {
-                    let mut splitter = Splitter::new(&b"abc\0\n\0def\n"[..], TERMINATOR);
-                    assert_eq!(
-                        splitter.read().map_err(unpack_io_error),
-                        Ok(Some(("abc\0", 5)))
-                    );
-                    assert_eq!(
-                        splitter.read().map_err(unpack_io_error),
-                        Ok(Some(("\0def", 5)))
-                    );
-                    assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
-                }
-
-                #[test]
-                fn consecutive() {
-                    let mut splitter = Splitter::new(&b"\n\n"[..], TERMINATOR);
-                    assert_eq!(splitter.read().map_err(unpack_io_error), Ok(Some(("", 1))));
-                    assert_eq!(splitter.read().map_err(unpack_io_error), Ok(Some(("", 1))));
-                    assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
-                }
-            }
-
-            mod cr_and_lf {
-                use super::*;
-
-                #[test]
-                fn between() {
-                    let mut splitter = Splitter::new(&b"abc\0\r\n\0def"[..], TERMINATOR);
-                    assert_eq!(
-                        splitter.read().map_err(unpack_io_error),
-                        Ok(Some(("abc\0", 6)))
-                    );
-                    assert_eq!(
-                        splitter.read().map_err(unpack_io_error),
-                        Ok(Some(("\0def", 4)))
-                    );
-                    assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
-                }
-
-                #[test]
-                fn between_and_end() {
-                    let mut splitter = Splitter::new(&b"abc\0\r\n\0def\r\n"[..], TERMINATOR);
-                    assert_eq!(
-                        splitter.read().map_err(unpack_io_error),
-                        Ok(Some(("abc\0", 6)))
-                    );
-                    assert_eq!(
-                        splitter.read().map_err(unpack_io_error),
-                        Ok(Some(("\0def", 6)))
-                    );
-                    assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
-                }
-
-                #[test]
-                fn consecutive() {
-                    let mut splitter = Splitter::new(&b"\r\n\n\r\n"[..], TERMINATOR);
-                    assert_eq!(splitter.read().map_err(unpack_io_error), Ok(Some(("", 2))));
-                    assert_eq!(splitter.read().map_err(unpack_io_error), Ok(Some(("", 1))));
-                    assert_eq!(splitter.read().map_err(unpack_io_error), Ok(Some(("", 2))));
-                    assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
-                }
-            }
-        }
-    }
-
-    mod byte_terminator {
-        use super::*;
-
-        mod required {
-            use super::*;
-
-            const TERMINATOR: Terminator = Terminator::Byte {
-                value: 0,
-                required: true,
-            };
-
-            #[test]
-            fn empty() {
-                let mut splitter = Splitter::new(&[][..], TERMINATOR);
-                assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
-            }
-
-            #[test]
-            fn between() {
-                let mut splitter = Splitter::new(&b"abc\n\0\ndef"[..], TERMINATOR);
-                assert_eq!(
-                    splitter.read().map_err(unpack_io_error),
-                    Ok(Some(("abc\n", 5)))
-                );
-                assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
-            }
-
-            #[test]
-            fn between_and_end() {
-                let mut splitter = Splitter::new(&b"abc\n\0\ndef\0"[..], TERMINATOR);
-                assert_eq!(
-                    splitter.read().map_err(unpack_io_error),
-                    Ok(Some(("abc\n", 5)))
-                );
-                assert_eq!(
-                    splitter.read().map_err(unpack_io_error),
-                    Ok(Some(("\ndef", 5)))
-                );
-                assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
-            }
-
-            #[test]
-            fn consecutive() {
-                let mut splitter = Splitter::new(&b"\0\0"[..], TERMINATOR);
-                assert_eq!(splitter.read().map_err(unpack_io_error), Ok(Some(("", 1))));
-                assert_eq!(splitter.read().map_err(unpack_io_error), Ok(Some(("", 1))));
-                assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
-            }
-        }
-
-        mod optional {
-            use super::*;
-
-            const TERMINATOR: Terminator = Terminator::Byte {
-                value: 0,
-                required: false,
-            };
-
-            #[test]
-            fn empty() {
-                let mut splitter = Splitter::new(&[][..], TERMINATOR);
-                assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
-            }
-
-            #[test]
-            fn between() {
-                let mut splitter = Splitter::new(&b"abc\n\0\ndef"[..], TERMINATOR);
-                assert_eq!(
-                    splitter.read().map_err(unpack_io_error),
-                    Ok(Some(("abc\n", 5)))
-                );
-                assert_eq!(
-                    splitter.read().map_err(unpack_io_error),
-                    Ok(Some(("\ndef", 4)))
-                );
-                assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
-            }
-
-            #[test]
-            fn between_and_end() {
-                let mut splitter = Splitter::new(&b"abc\n\0\ndef\0"[..], TERMINATOR);
-                assert_eq!(
-                    splitter.read().map_err(unpack_io_error),
-                    Ok(Some(("abc\n", 5)))
-                );
-                assert_eq!(
-                    splitter.read().map_err(unpack_io_error),
-                    Ok(Some(("\ndef", 5)))
-                );
-                assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
-            }
-
-            #[test]
-            fn consecutive() {
-                let mut splitter = Splitter::new(&b"\0\0"[..], TERMINATOR);
-                assert_eq!(splitter.read().map_err(unpack_io_error), Ok(Some(("", 1))));
-                assert_eq!(splitter.read().map_err(unpack_io_error), Ok(Some(("", 1))));
-                assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
-            }
-        }
-    }
-
-    mod no_terminator {
-        use super::*;
-
-        const TERMINATOR: Terminator = Terminator::None;
-
-        #[test]
-        fn empty() {
-            let mut splitter = Splitter::new(&[][..], TERMINATOR);
-            assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
-        }
-
-        #[test]
-        fn nonempty() {
-            let mut splitter = Splitter::new(&b"abc\n\0def"[..], TERMINATOR);
-            assert_eq!(
-                splitter.read().map_err(unpack_io_error),
-                Ok(Some(("abc\n\0def", 8)))
-            );
-            assert_eq!(splitter.read().map_err(unpack_io_error), Ok(None));
-        }
+        assert_eq!(splitter.read().map_err(unpack_io_error), Ok(result));
     }
 }

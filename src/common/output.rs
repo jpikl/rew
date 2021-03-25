@@ -12,16 +12,15 @@ pub fn write_error<O: Write + WriteColor, E: Error>(output: &mut O, error: &E) -
 
 #[cfg(test)]
 pub mod tests {
+    use super::*;
     use crate::testing::{ColoredOuput, OutputChunk};
     use std::io::{self, ErrorKind};
 
     #[test]
     fn write_error() {
-        use super::*;
-
         let mut output = ColoredOuput::new();
         let error = io::Error::new(ErrorKind::InvalidData, "message");
-        write_error(&mut output, &error).unwrap();
+        super::write_error(&mut output, &error).unwrap();
 
         assert_eq!(
             output.chunks(),

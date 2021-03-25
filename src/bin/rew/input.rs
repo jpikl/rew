@@ -42,7 +42,7 @@ mod tests {
     #[test_case(stdin(), 2, None; "stdin 2")]
     fn next(mut values: Values<&str, &[u8]>, position: usize, result: Option<&str>) {
         for _ in 0..position {
-            values.next().unwrap();
+            values.next().unwrap_or_default();
         }
         assert_eq!(values.next().map_err(unpack_io_error), Ok(result));
     }

@@ -116,16 +116,16 @@ mod tests {
     use common::testing::{ColoredOuput, OutputChunk};
     use test_case::test_case;
 
-    #[test_case(Mode::Standard, "", OutputChunk::vec("bd"); "standard no terminator")]
-    #[test_case(Mode::Standard, "\n", OutputChunk::vec("b\nd\n"); "standard newline terminator")]
-    #[test_case(Mode::Standard, "\0", OutputChunk::vec("b\0d\0"); "standard null terminator")]
-    #[test_case(Mode::StandardNoEnd, "", OutputChunk::vec("bd"); "standard no end no terminator")]
-    #[test_case(Mode::StandardNoEnd, "\n", OutputChunk::vec("b\nd"); "standard no end newline terminator")]
-    #[test_case(Mode::StandardNoEnd, "\0", OutputChunk::vec("b\0d"); "standard no end null terminator")]
-    #[test_case(Mode::Diff, "", OutputChunk::vec("<a>b<c>d"); "diff no terminator")]
-    #[test_case(Mode::Diff, "\n", OutputChunk::vec("<a\n>b\n<c\n>d\n"); "diff newline terminator")]
-    #[test_case(Mode::Diff, "\0", OutputChunk::vec("<a\0>b\0<c\0>d\0"); "diff null terminator")]
-    #[test_case(Mode::Pretty, "ignored", pretty_output(); "pretty")]
+    #[test_case(Mode::Standard, "", plain("bd"); "standard no terminator")]
+    #[test_case(Mode::Standard, "\n", plain("b\nd\n"); "standard newline terminator")]
+    #[test_case(Mode::Standard, "\0", plain("b\0d\0"); "standard null terminator")]
+    #[test_case(Mode::StandardNoEnd, "", plain("bd"); "standard no end no terminator")]
+    #[test_case(Mode::StandardNoEnd, "\n", plain("b\nd"); "standard no end newline terminator")]
+    #[test_case(Mode::StandardNoEnd, "\0", plain("b\0d"); "standard no end null terminator")]
+    #[test_case(Mode::Diff, "", plain("<a>b<c>d"); "diff no terminator")]
+    #[test_case(Mode::Diff, "\n", plain("<a\n>b\n<c\n>d\n"); "diff newline terminator")]
+    #[test_case(Mode::Diff, "\0", plain("<a\0>b\0<c\0>d\0"); "diff null terminator")]
+    #[test_case(Mode::Pretty, "ignored", pretty(); "pretty ")]
     fn values_write(mode: Mode, terminator: &str, chunks: Vec<OutputChunk>) {
         let mut output = ColoredOuput::new();
         let mut values = Values::new(&mut output, mode, terminator);
@@ -134,7 +134,11 @@ mod tests {
         assert_eq!(output.chunks(), &chunks);
     }
 
-    fn pretty_output() -> Vec<OutputChunk> {
+    pub fn plain(value: &str) -> Vec<OutputChunk> {
+        vec![OutputChunk::plain(value)]
+    }
+
+    fn pretty() -> Vec<OutputChunk> {
         vec![
             OutputChunk::color(Color::Blue, "a"),
             OutputChunk::plain(" -> "),
