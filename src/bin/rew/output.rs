@@ -116,16 +116,18 @@ mod tests {
     use common::testing::{ColoredOuput, OutputChunk};
     use test_case::test_case;
 
-    #[test_case(Mode::Standard,      "",   plain("bd");               "standard no terminator")]
-    #[test_case(Mode::Standard,      "\n", plain("b\nd\n");           "standard newline terminator")]
-    #[test_case(Mode::Standard,      "\0", plain("b\0d\0");           "standard null terminator")]
-    #[test_case(Mode::StandardNoEnd, "",   plain("bd");               "standard no end no terminator")]
-    #[test_case(Mode::StandardNoEnd, "\n", plain("b\nd");             "standard no end newline terminator")]
-    #[test_case(Mode::StandardNoEnd, "\0", plain("b\0d");             "standard no end null terminator")]
-    #[test_case(Mode::Diff,          "",   plain("<a>b<c>d");         "diff no terminator")]
-    #[test_case(Mode::Diff,          "\n", plain("<a\n>b\n<c\n>d\n"); "diff newline terminator")]
-    #[test_case(Mode::Diff,          "\0", plain("<a\0>b\0<c\0>d\0"); "diff null terminator")]
-    #[test_case(Mode::Pretty,        "x",  pretty();                  "pretty ")]
+    type M = Mode;
+
+    #[test_case(M::Standard,      "",   plain("bd");               "standard no terminator")]
+    #[test_case(M::Standard,      "\n", plain("b\nd\n");           "standard newline terminator")]
+    #[test_case(M::Standard,      "\0", plain("b\0d\0");           "standard null terminator")]
+    #[test_case(M::StandardNoEnd, "",   plain("bd");               "standard no end no terminator")]
+    #[test_case(M::StandardNoEnd, "\n", plain("b\nd");             "standard no end newline terminator")]
+    #[test_case(M::StandardNoEnd, "\0", plain("b\0d");             "standard no end null terminator")]
+    #[test_case(M::Diff,          "",   plain("<a>b<c>d");         "diff no terminator")]
+    #[test_case(M::Diff,          "\n", plain("<a\n>b\n<c\n>d\n"); "diff newline terminator")]
+    #[test_case(M::Diff,          "\0", plain("<a\0>b\0<c\0>d\0"); "diff null terminator")]
+    #[test_case(M::Pretty,        "x",  pretty();                  "pretty ")]
     fn values_write(mode: Mode, terminator: &str, chunks: Vec<OutputChunk>) {
         let mut output = ColoredOuput::new();
         let mut values = Values::new(&mut output, mode, terminator);

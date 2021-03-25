@@ -318,8 +318,10 @@ mod tests {
     use super::*;
     use test_case::test_case;
 
-    #[test_case(&[],                 None;                      "default")]
-    #[test_case(&["--color=always"], Some(ColorChoice::Always); "always")]
+    type CC = ColorChoice;
+
+    #[test_case(&[],                 None;             "default")]
+    #[test_case(&["--color=always"], Some(CC::Always); "always")]
     fn color(args: &[&str], result: Option<ColorChoice>) {
         assert_eq!(run(args).color(), result);
     }
