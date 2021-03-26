@@ -119,8 +119,8 @@ mod tests {
             assert_eq!(Char::Raw(value).len_utf8(), len);
         }
 
-        #[test_case('a', "'a'"; "ascii")]
-        #[test_case('á', "'á'"; "non-ascii")]
+        #[test_case('a',  "'a'";   "ascii")]
+        #[test_case('á',  "'á'";   "non-ascii")]
         #[test_case('\0', "'\\0'"; "null")]
         #[test_case('\n', "'\\n'"; "line feed")]
         #[test_case('\r', "'\\r'"; "carriage return")]
@@ -145,8 +145,8 @@ mod tests {
             assert_eq!(Char::Escaped(value, sequence).len_utf8(), len);
         }
 
-        #[test_case('a', ['b', 'c'], "'a' (escape sequence 'bc')"; "ascii")]
-        #[test_case('á', ['b', 'č'], "'á' (escape sequence 'bč')"; "non-ascii")]
+        #[test_case('a',  ['b', 'c'], "'a' (escape sequence 'bc')";   "ascii")]
+        #[test_case('á',  ['b', 'č'], "'á' (escape sequence 'bč')";   "non-ascii")]
         #[test_case('\0', ['%', '0'], "'\\0' (escape sequence '%0')"; "null")]
         #[test_case('\n', ['%', 'n'], "'\\n' (escape sequence '%n')"; "line feed")]
         #[test_case('\r', ['%', 'r'], "'\\r' (escape sequence '%r')"; "carriage return")]

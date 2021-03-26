@@ -60,7 +60,7 @@ impl IndexRange {
         value
     }
 
-    pub fn substr_back(&self, mut value: String) -> String {
+    pub fn substr_rev(&self, mut value: String) -> String {
         let start = self.start();
         if start > 0 {
             if let Some((start, _)) = value.char_indices().nth_back(start - 1) {
@@ -98,6 +98,8 @@ mod tests {
     use super::*;
     use crate::utils::ByteRange;
 
+    type EK = ErrorKind;
+
     mod index {
         use super::*;
         use test_case::test_case;
@@ -106,8 +108,8 @@ mod tests {
             use super::*;
             use test_case::test_case;
 
-            #[test_case("abc", ErrorKind::ExpectedNumber, 0..3; "invalid")]
-            #[test_case("0abc", ErrorKind::IndexZero, 0..1; "zero")]
+            #[test_case("abc",  EK::ExpectedNumber, 0..3; "invalid")]
+            #[test_case("0abc", EK::IndexZero,      0..1; "zero")]
             fn err(input: &str, kind: ErrorKind, range: ByteRange) {
                 assert_eq!(
                     Index::parse(&mut Reader::from(input)),
@@ -115,15 +117,15 @@ mod tests {
                 );
             }
 
-            #[test_case("1", 0; "one")]
+            #[test_case("1",      0;   "one")]
             #[test_case("123abc", 122; "multiple digits and chars")]
             fn ok(input: &str, result: IndexValue) {
                 assert_eq!(Index::parse(&mut Reader::from(input)), Ok(result));
             }
         }
 
-        #[test_case(0, Err(ErrorKind::IndexZero); "zero")]
-        #[test_case(1, Ok(0); "positive")]
+        #[test_case(0, Err(EK::IndexZero); "zero")]
+        #[test_case(1, Ok(0);              "positive")]
         fn shift(index: IndexValue, result: BaseResult<IndexValue>) {
             assert_eq!(Index::shift(index), result)
         }
@@ -137,13 +139,13 @@ mod tests {
             use super::*;
             use test_case::test_case;
 
-            #[test_case("", ErrorKind::ExpectedRange, 0..0; "empty")]
-            #[test_case("-", ErrorKind::RangeInvalid("-".into()), 0..1; "invalid")]
-            #[test_case("0-", ErrorKind::IndexZero, 0..1; "zero start no end")]
-            #[test_case("1-0", ErrorKind::IndexZero, 2..3; "start above zero end")]
-            #[test_case("2-1", ErrorKind::RangeStartOverEnd("2".into(), "1".into()), 0..3; "start above end")]
-            #[test_case("1+", ErrorKind::ExpectedRangeLength, 2..2; "start no length")]
-            #[test_case("1+ab", ErrorKind::ExpectedRangeLength, 2..4; "start no length but chars")]
+            #[test_case("",     EK::ExpectedRange,                             0..0; "empty")]
+            #[test_case("-",    EK::RangeInvalid("-".into()),                  0..1; "invalid")]
+            #[test_case("0-",   EK::IndexZero,                                 0..1; "zero start no end")]
+            #[test_case("1-0",  EK::IndexZero,                                 2..3; "start above zero end")]
+            #[test_case("2-1",  EK::RangeStartOverEnd("2".into(), "1".into()), 0..3; "start above end")]
+            #[test_case("1+",   EK::ExpectedRangeLength,                       2..2; "start no length")]
+            #[test_case("1+ab", ErrorKind::ExpectedRangeLength,                2..4; "start no length but chars")]
             fn err(input: &str, kind: ErrorKind, range: ByteRange) {
                 assert_eq!(
                     IndexRange::parse(&mut Reader::from(input)),
@@ -151,9 +153,9 @@ mod tests {
                 );
             }
 
-            #[test_case("1", 0, Some(1); "no delimiter")]
+            #[test_case("1",   0, Some(1); "no delimiter")]
             #[test_case("2ab", 1, Some(2); "no delimiter but chars")]
-            #[test_case("1-", 0, None; "no end")]
+            #[test_case("1-",  0, None;    "no end")]
             #[test_case("1-2", 0, Some(2); "start below end")]
             #[test_case("1-1", 0, Some(1); "start equals end")]
             #[test_case("2+0", 1, Some(1); "start with zero length")]
@@ -167,47 +169,47 @@ mod tests {
             }
         }
 
-        #[test_case("", 0, None, ""; "empty")]
-        #[test_case("ábčd", 0, None, "ábčd"; "before first")]
-        #[test_case("ábčd", 3, None, "d"; "before last")]
-        #[test_case("ábčd", 4, None, ""; "after last")]
-        #[test_case("ábčd", 5, None, ""; "over last")]
-        #[test_case("ábčd", 0, Some(0), ""; "before first before first")]
-        #[test_case("ábčd", 0, Some(1), "á"; "before first after first")]
-        #[test_case("ábčd", 0, Some(3), "ábč"; "before first before last")]
+        #[test_case("",     0, None,    "";     "empty")]
+        #[test_case("ábčd", 0, None,    "ábčd"; "before first")]
+        #[test_case("ábčd", 3, None,    "d";    "before last")]
+        #[test_case("ábčd", 4, None,    "";     "after last")]
+        #[test_case("ábčd", 5, None,    "";     "over last")]
+        #[test_case("ábčd", 0, Some(0), "";     "before first before first")]
+        #[test_case("ábčd", 0, Some(1), "á";    "before first after first")]
+        #[test_case("ábčd", 0, Some(3), "ábč";  "before first before last")]
         #[test_case("ábčd", 0, Some(4), "ábčd"; "before first after last")]
         #[test_case("ábčd", 0, Some(5), "ábčd"; "before first over last")]
-        #[test_case("ábčd", 3, Some(3), ""; "before last before last")]
-        #[test_case("ábčd", 3, Some(4), "d"; "before last after last")]
-        #[test_case("ábčd", 3, Some(5), "d"; "before last over last")]
-        #[test_case("ábčd", 4, Some(4), ""; "after last after last")]
-        #[test_case("ábčd", 4, Some(5), ""; "after last over last")]
-        #[test_case("ábčd", 5, Some(5), ""; "over last over last")]
+        #[test_case("ábčd", 3, Some(3), "";     "before last before last")]
+        #[test_case("ábčd", 3, Some(4), "d";    "before last after last")]
+        #[test_case("ábčd", 3, Some(5), "d";    "before last over last")]
+        #[test_case("ábčd", 4, Some(4), "";     "after last after last")]
+        #[test_case("ábčd", 4, Some(5), "";     "after last over last")]
+        #[test_case("ábčd", 5, Some(5), "";     "over last over last")]
         fn substr(input: &str, start: IndexValue, end: Option<IndexValue>, output: &str) {
             assert_eq!(Range::<Index>(start, end).substr(input.into()), output);
         }
 
-        #[test_case("", 0, None, ""; "empty")]
-        #[test_case("ábčd", 0, None, "ábčd"; "before first")]
-        #[test_case("ábčd", 3, None, "á"; "before last")]
-        #[test_case("ábčd", 4, None, ""; "after last")]
-        #[test_case("ábčd", 5, None, ""; "over last")]
-        #[test_case("ábčd", 0, Some(0), ""; "before first before first")]
-        #[test_case("ábčd", 0, Some(1), "d"; "before first after first")]
-        #[test_case("ábčd", 0, Some(3), "bčd"; "before first before last")]
+        #[test_case("",     0, None,    "";     "empty")]
+        #[test_case("ábčd", 0, None,    "ábčd"; "before first")]
+        #[test_case("ábčd", 3, None,    "á";    "before last")]
+        #[test_case("ábčd", 4, None,    "";     "after last")]
+        #[test_case("ábčd", 5, None,    "";     "over last")]
+        #[test_case("ábčd", 0, Some(0), "";     "before first before first")]
+        #[test_case("ábčd", 0, Some(1), "d";    "before first after first")]
+        #[test_case("ábčd", 0, Some(3), "bčd";  "before first before last")]
         #[test_case("ábčd", 0, Some(4), "ábčd"; "before first after last")]
         #[test_case("ábčd", 0, Some(5), "ábčd"; "before first over last")]
-        #[test_case("ábčd", 3, Some(3), ""; "before last before last")]
-        #[test_case("ábčd", 3, Some(4), "á"; "before last after last")]
-        #[test_case("ábčd", 3, Some(5), "á"; "before last over last")]
-        #[test_case("ábčd", 4, Some(4), ""; "after last after last")]
-        #[test_case("ábčd", 4, Some(5), ""; "after last over last")]
-        #[test_case("ábčd", 5, Some(5), ""; "over last over last")]
-        fn substr_back(input: &str, start: IndexValue, end: Option<IndexValue>, output: &str) {
-            assert_eq!(Range::<Index>(start, end).substr_back(input.into()), output);
+        #[test_case("ábčd", 3, Some(3), "";     "before last before last")]
+        #[test_case("ábčd", 3, Some(4), "á";    "before last after last")]
+        #[test_case("ábčd", 3, Some(5), "á";    "before last over last")]
+        #[test_case("ábčd", 4, Some(4), "";     "after last after last")]
+        #[test_case("ábčd", 4, Some(5), "";     "after last over last")]
+        #[test_case("ábčd", 5, Some(5), "";     "over last over last")]
+        fn substr_rev(input: &str, start: IndexValue, end: Option<IndexValue>, output: &str) {
+            assert_eq!(Range::<Index>(start, end).substr_rev(input.into()), output);
         }
 
-        #[test_case(1, None, "2.."; "open")]
+        #[test_case(1, None,    "2..";  "open")]
         #[test_case(1, Some(3), "2..3"; "closed")]
         fn display(start: IndexValue, end: Option<IndexValue>, result: &str) {
             assert_eq!(Range::<Index>(start, end).to_string(), result);

@@ -58,11 +58,14 @@ mod tests {
         use crate::utils::ByteRange;
         use test_case::test_case;
 
-        #[test_case("-", ErrorKind::RangeInvalid("-".into()), 0..1; "invalid")]
-        #[test_case("2-1", ErrorKind::RangeStartOverEnd("2".into(), "1".into()), 0..3; "start above end")]
-        #[test_case("0+1", ErrorKind::ExpectedRangeDelimiter(Some(Char::Raw('+'))), 1..2; "start with length")]
-        #[test_case("1", ErrorKind::ExpectedRangeDelimiter(None), 1..1; "no delimiter")]
-        #[test_case("1ab", ErrorKind::ExpectedRangeDelimiter(Some(Char::Raw('a'))), 1..2; "wrong delimiter")]
+        type EK = ErrorKind;
+        type C = Char;
+
+        #[test_case("-",   EK::RangeInvalid("-".into()),                  0..1; "invalid")]
+        #[test_case("2-1", EK::RangeStartOverEnd("2".into(), "1".into()), 0..3; "start above end")]
+        #[test_case("0+1", EK::ExpectedRangeDelimiter(Some(C::Raw('+'))), 1..2; "start with length")]
+        #[test_case("1",   EK::ExpectedRangeDelimiter(None),              1..1; "no delimiter")]
+        #[test_case("1ab", EK::ExpectedRangeDelimiter(Some(C::Raw('a'))), 1..2; "wrong delimiter")]
         fn err(input: &str, kind: ErrorKind, range: ByteRange) {
             assert_eq!(
                 NumberRange::parse(&mut Reader::from(input)),
@@ -70,8 +73,8 @@ mod tests {
             );
         }
 
-        #[test_case("", 0, None; "empty")]
-        #[test_case("0-", 0, None; "start no end")]
+        #[test_case("",    0, None;    "empty")]
+        #[test_case("0-",  0, None;    "start no end")]
         #[test_case("0-1", 0, Some(2); "start below end")]
         #[test_case("1-1", 1, Some(2); "start equals end")]
         fn ok(input: &str, start: NumberValue, end: Option<NumberValue>) {
@@ -86,22 +89,24 @@ mod tests {
         use super::*;
         use test_case::test_case;
 
-        #[test_case(0, Some(0), 0; "lowest")]
-        #[test_case(NumberValue::MAX, None, NumberValue::MAX; "highest")]
+        type NV = NumberValue;
+
+        #[test_case(0,       Some(0), 0;       "lowest")]
+        #[test_case(NV::MAX, None,    NV::MAX; "highest")]
         fn certain(start: NumberValue, end: Option<NumberValue>, result: NumberValue) {
             assert_eq!(Range::<Number>(start, end).random(), result);
         }
 
-        #[test_case(0, Some(NumberValue::MAX); "from 0 to max")] // Should not overflow
-        #[test_case(1, Some(NumberValue::MAX); "from 1 to max")]
-        #[test_case(0, Some(NumberValue::MAX - 1); "from 0 to max-1")]
+        #[test_case(0, Some(NV::MAX);     "from 0 to max")] // Should not overflow
+        #[test_case(1, Some(NV::MAX);     "from 1 to max")]
+        #[test_case(0, Some(NV::MAX - 1); "from 0 to max-1")]
         fn uncertain(start: NumberValue, end: Option<NumberValue>) {
             Range::<Number>(start, end).random();
         }
     }
 
-    #[test_case(1, None, "[1, 2^64)"; "open")]
-    #[test_case(1, Some(3), "[1, 2]"; "closed")]
+    #[test_case(1, None,    "[1, 2^64)"; "open")]
+    #[test_case(1, Some(3), "[1, 2]";    "closed")]
     fn display(start: NumberValue, end: Option<NumberValue>, result: &str) {
         assert_eq!(Range::<Number>(start, end).to_string(), result);
     }

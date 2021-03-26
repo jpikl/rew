@@ -204,26 +204,15 @@ mod tests {
     use super::*;
     use test_case::test_case;
 
-    #[test_case(
-        Item::Constant("abc".into()),
-        "Constant 'abc'";
-        "constant"
-    )]
-    #[test_case(
-        Item::Expression(Vec::new()),
-        "Empty expression";
-        "empty expr"
-    )]
-    #[test_case(
-        Item::Expression(vec![Parsed::from(Filter::Trim)]),
-        "Expression with a filter";
-        "expr single filter"
-    )]
-    #[test_case(
-        Item::Expression(vec![Parsed::from(Filter::Trim), Parsed::from(Filter::Trim)]),
-        "Expression with 2 filters";
-        "expr multiple filters"
-    )]
+    type I = Item;
+    type F = Filter;
+    type P<T> = Parsed<T>;
+    type EK = ErrorKind;
+
+    #[test_case(I::Constant("abc".into()),                               "Constant 'abc'";            "constant")]
+    #[test_case(I::Expression(Vec::new()),                               "Empty expression";          "empty expr")]
+    #[test_case(I::Expression(vec![P::from(F::Trim)]),                   "Expression with a filter";  "expr single filter")]
+    #[test_case(I::Expression(vec![P::from(F::Trim), P::from(F::Trim)]), "Expression with 2 filters"; "expr multiple filters")]
     fn item_display(item: Item, result: &str) {
         assert_eq!(item.to_string(), result);
     }
@@ -237,19 +226,19 @@ mod tests {
         use crate::pattern::substitution::Substitution;
         use test_case::test_case;
 
-        #[test_case("|", ErrorKind::PipeOutsideExpr, 0..1; "pipe outside expr")]
-        #[test_case("}", ErrorKind::UnmatchedExprEnd, 0..1; "unmatched expr end")]
-        #[test_case("{", ErrorKind::UnmatchedExprStart, 0..1; "unmatched expr start")]
-        #[test_case("{|", ErrorKind::ExpectedFilterOrExprEnd, 1..2; "filter after expr start")]
-        #[test_case("{f", ErrorKind::UnmatchedExprStart, 0..1; "missing pipe or expr end")]
-        #[test_case("{f{", ErrorKind::ExprStartInsideExpr, 2..3; "expr start after filter")]
-        #[test_case("{ff", ErrorKind::ExpectedPipeOrExprEnd, 2..3; "filter after filter")]
-        #[test_case("{f|", ErrorKind::ExpectedFilter, 3..3; "missing filter after pipe")]
-        #[test_case("{f||", ErrorKind::ExpectedFilter, 3..4; "pipe after pipe")]
-        #[test_case("{f|}", ErrorKind::ExpectedFilter, 3..4; "expr end after pipe")]
-        #[test_case("{f|f", ErrorKind::UnmatchedExprStart, 0..1; "missing pipe or expr end 2")]
-        #[test_case("{f|ff", ErrorKind::ExpectedPipeOrExprEnd, 4..5; "filter after filter 2")]
-        #[test_case("{#2-1}", ErrorKind::RangeStartOverEnd("2".into(), "1".into()), 2..5; "invalid filter")]
+        #[test_case("|",      EK::PipeOutsideExpr,                           0..1; "pipe outside expr")]
+        #[test_case("}",      EK::UnmatchedExprEnd,                          0..1; "unmatched expr end")]
+        #[test_case("{",      EK::UnmatchedExprStart,                        0..1; "unmatched expr start")]
+        #[test_case("{|",     EK::ExpectedFilterOrExprEnd,                   1..2; "filter after expr start")]
+        #[test_case("{f",     EK::UnmatchedExprStart,                        0..1; "missing pipe or expr end")]
+        #[test_case("{f{",    EK::ExprStartInsideExpr,                       2..3; "expr start after filter")]
+        #[test_case("{ff",    EK::ExpectedPipeOrExprEnd,                     2..3; "filter after filter")]
+        #[test_case("{f|",    EK::ExpectedFilter,                            3..3; "missing filter after pipe")]
+        #[test_case("{f||",   EK::ExpectedFilter,                            3..4; "pipe after pipe")]
+        #[test_case("{f|}",   EK::ExpectedFilter,                            3..4; "expr end after pipe")]
+        #[test_case("{f|f",   EK::UnmatchedExprStart,                        0..1; "missing pipe or expr end 2")]
+        #[test_case("{f|ff",  EK::ExpectedPipeOrExprEnd,                     4..5; "filter after filter 2")]
+        #[test_case("{#2-1}", EK::RangeStartOverEnd("2".into(), "1".into()), 2..5; "invalid filter")]
         fn err(input: &str, kind: ErrorKind, range: ByteRange) {
             assert_eq!(
                 Parser::new(input, &Config::fixture()).parse_items(),
@@ -257,12 +246,12 @@ mod tests {
             );
         }
 
-        #[test_case("", Vec::new(); "empty ")]
-        #[test_case("a", constant(); "constant ")]
-        #[test_case("{}", empty_expr(); "empty expr ")]
-        #[test_case("{f}", expr_single_filter(); "expr single filter ")]
-        #[test_case("{e|t|#1-3}", expr_multiple_filters(); "expr multiple filters ")]
-        #[test_case("image_{c|<3:0}.{e|v|r_e}2", complex_pattern(); "complex pattern ")]
+        #[test_case("",                          Vec::new();              "empty ")]
+        #[test_case("a",                         constant();              "constant ")]
+        #[test_case("{}",                        empty_expr();            "empty expr ")]
+        #[test_case("{f}",                       expr_single_filter();    "expr single filter ")]
+        #[test_case("{e|t|#1-3}",                expr_multiple_filters(); "expr multiple filters ")]
+        #[test_case("image_{c|<3:0}.{e|v|r_e}2", complex_pattern();       "complex pattern ")]
         fn ok(input: &str, output: Vec<ParsedItem>) {
             assert_eq!(
                 Parser::new(input, &Config::fixture()).parse_items(),

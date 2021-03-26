@@ -231,8 +231,12 @@ mod tests {
     use super::*;
     use test_case::test_case;
 
-    #[test_case(Separator::String(",".into()), "','"; "string")]
-    #[test_case(Separator::Regex("\\s+".into()), "regular expression '\\s+'"; "regex")]
+    type EK = ErrorKind;
+    type S = Separator;
+    type C = Char;
+
+    #[test_case(S::String(",".into()),   "','";                       "string")]
+    #[test_case(S::Regex("\\s+".into()), "regular expression '\\s+'"; "regex")]
     fn separator_display(separator: Separator, result: &str) {
         assert_eq!(separator.to_string(), result);
     }
@@ -265,156 +269,36 @@ mod tests {
         }
     }
 
-    #[test_case(
-        ErrorKind::ExpectedColumnSeparator,
-        "Expected column separator";
-        "expected column separator"
-    )]
-    #[test_case(
-        ErrorKind::ExpectedFilter,
-        "Expected filter after '|'";
-        "expected filter"
-    )]
-    #[test_case(
-        ErrorKind::ExpectedNumber,
-        "Expected number";
-        "expected number"
-    )]
-    #[test_case(
-        ErrorKind::ExpectedFilterOrExprEnd,
-        "Expected filter or closing '}'";
-        "expected filter or expr end"
-    )]
-    #[test_case(
-        ErrorKind::ExpectedPipeOrExprEnd,
-        "Expected '|' or closing '}'";
-        "expected pipe or expr end"
-    )]
-    #[test_case(
-        ErrorKind::ExpectedRange,
-        "Filter requires range 'A-B' or 'A+B' as a parameter";
-        "expected range"
-    )]
-    #[test_case(
-        ErrorKind::ExpectedRangeDelimiter(None),
-        "Expected range delimiter '-'";
-        "expected delimiter got none"
-    )]
-    #[test_case(
-        ErrorKind::ExpectedRangeDelimiter(Some(Char::Raw('x'))),
-        "Expected range delimiter '-' but got 'x'";
-        "expected delimiter got invalid"
-    )]
-    #[test_case(
-        ErrorKind::ExpectedRangeLength,
-        "Expected range length after '+'";
-        "expected range length"
-    )]
-    #[test_case(
-        ErrorKind::ExpectedRegex,
-        "Filter requires regular expression as a parameter";
-        "expected regex"
-    )]
-    #[test_case(
-        ErrorKind::ExpectedRepetition,
-        "Filter requires repetition 'N:V' as a parameter";
-        "expected repetition"
-    )]
-    #[test_case(
-        ErrorKind::ExpectedSubstitution,
-        "Filter requires substitution ':A:B' as a parameter";
-        "expected substitution"
-    )]
-    #[test_case(
-        ErrorKind::ExpectedSwitch,
-        "Filter requires switch ':X1:Y1:...:Xn:Yn:D' as a parameter";
-        "expected switch"
-    )]
-    #[test_case(
-        ErrorKind::ExprStartInsideExpr,
-        "Unescaped '{' inside expression";
-        "expr start inside expr"
-    )]
-    #[test_case(
-        ErrorKind::IndexZero,
-        "Indices start from 1, not 0";
-        "index zero"
-    )]
-    #[test_case(
-        ErrorKind::IntegerOverflow("255".into()),
-        "Cannot parse value greater than 255";
-        "integer overflow"
-    )]
-    #[test_case(
-        ErrorKind::PaddingPrefixInvalid('<', None),
-        "Expected '<' prefix or number";
-        "padding prefix missing"
-    )]
-    #[test_case(
-        ErrorKind::PaddingPrefixInvalid('<', Some(Char::Raw('x'))),
-        "Expected '<' prefix or number but got 'x'";
-        "padding prefix invalid"
-    )]
-    #[test_case(
-        ErrorKind::PipeOutsideExpr,
-        "Unescaped '|' outside expression";
-        "pipe outside expr"
-    )]
-    #[test_case(
-        ErrorKind::RangeInvalid("abc".into()),
-        "Invalid range 'abc'";
-        "range invalid"
-    )]
-    #[test_case(
-        ErrorKind::RangeStartOverEnd("2".into(), "1".into()),
-        "Range start 2 is greater than end 1";
-        "range start over end"
-    )]
-    #[test_case(
-        ErrorKind::RegexInvalid("abc".into()),
-        "Invalid regular expression: abc";
-        "regex invalid"
-    )]
-    #[test_case(
-        ErrorKind::RepetitionWithoutDelimiter,
-        "Repetition is missing delimiter after number";
-        "repetition without delimiter"
-    )]
-    #[test_case(
-        ErrorKind::SubstitutionWithoutTarget(Char::Raw('_')),
-        "Substitution is missing value after delimiter '_'";
-        "substitution without target"
-    )]
-    #[test_case(
-        ErrorKind::SwitchWithoutMatcher(Char::Raw('_'), 0),
-        "Switch is missing value after #1 delimiter '_'";
-        "switch without matcher"
-    )]
-    #[test_case(
-        ErrorKind::UnknownEscapeSequence(['%', 'x']),
-        "Unknown escape sequence '%x'";
-        "unknown escape sequence"
-    )]
-    #[test_case(
-        ErrorKind::UnknownFilter(Char::Raw('x')),
-        "Unknown filter 'x'";
-        "unknown filter"
-    )]
-    #[test_case(
-        ErrorKind::UnmatchedExprEnd,
-        "No matching '{' before expression end";
-        "unmatched expr end"
-    )]
-    #[test_case(
-        ErrorKind::UnmatchedExprStart,
-        "No matching '}' after expression start";
-        "unmatched expr start"
-    )]
-    #[test_case(
-        ErrorKind::UnterminatedEscapeSequence('%'),
-        "Unterminated escape sequence '%'";
-        "unterminated escape sequence"
-    )]
+    #[test_case(EK::ExpectedColumnSeparator,                      "Expected column separator";                                  "expected column separator")]
+    #[test_case(EK::ExpectedFilter,                               "Expected filter after '|'";                                  "expected filter")]
+    #[test_case(EK::ExpectedNumber,                               "Expected number";                                            "expected number")]
+    #[test_case(EK::ExpectedFilterOrExprEnd,                      "Expected filter or closing '}'";                             "expected filter or expr end")]
+    #[test_case(EK::ExpectedPipeOrExprEnd,                        "Expected '|' or closing '}'";                                "expected pipe or expr end")]
+    #[test_case(EK::ExpectedRange,                                "Filter requires range 'A-B' or 'A+B' as a parameter";        "expected range")]
+    #[test_case(EK::ExpectedRangeDelimiter(None),                 "Expected range delimiter '-'";                               "expected delimiter got none")]
+    #[test_case(EK::ExpectedRangeDelimiter(Some(C::Raw('x'))),    "Expected range delimiter '-' but got 'x'";                   "expected delimiter got invalid")]
+    #[test_case(EK::ExpectedRangeLength,                          "Expected range length after '+'";                            "expected range length")]
+    #[test_case(EK::ExpectedRegex,                                "Filter requires regular expression as a parameter";          "expected regex")]
+    #[test_case(EK::ExpectedRepetition,                           "Filter requires repetition 'N:V' as a parameter";            "expected repetition")]
+    #[test_case(EK::ExpectedSubstitution,                         "Filter requires substitution ':A:B' as a parameter";         "expected substitution")]
+    #[test_case(EK::ExpectedSwitch,                               "Filter requires switch ':X1:Y1:...:Xn:Yn:D' as a parameter"; "expected switch")]
+    #[test_case(EK::ExprStartInsideExpr,                          "Unescaped '{' inside expression";                            "expr start inside expr")]
+    #[test_case(EK::IndexZero,                                    "Indices start from 1, not 0";                                "index zero")]
+    #[test_case(EK::IntegerOverflow("255".into()),                "Cannot parse value greater than 255";                        "integer overflow")]
+    #[test_case(EK::PaddingPrefixInvalid('<', None),              "Expected '<' prefix or number";                              "padding prefix missing")]
+    #[test_case(EK::PaddingPrefixInvalid('<', Some(C::Raw('x'))), "Expected '<' prefix or number but got 'x'";                  "padding prefix invalid")]
+    #[test_case(EK::PipeOutsideExpr,                              "Unescaped '|' outside expression";                           "pipe outside expr")]
+    #[test_case(EK::RangeInvalid("abc".into()),                   "Invalid range 'abc'";                                        "range invalid")]
+    #[test_case(EK::RangeStartOverEnd("2".into(), "1".into()),    "Range start 2 is greater than end 1";                        "range start over end")]
+    #[test_case(EK::RegexInvalid("abc".into()),                   "Invalid regular expression: abc";                            "regex invalid")]
+    #[test_case(EK::RepetitionWithoutDelimiter,                   "Repetition is missing delimiter after number";               "repetition without delimiter")]
+    #[test_case(EK::SubstitutionWithoutTarget(C::Raw('_')),       "Substitution is missing value after delimiter '_'";          "substitution without target")]
+    #[test_case(EK::SwitchWithoutMatcher(C::Raw('_'), 0),         "Switch is missing value after #1 delimiter '_'";             "switch without matcher")]
+    #[test_case(EK::UnknownEscapeSequence(['%', 'x']),            "Unknown escape sequence '%x'";                               "unknown escape sequence" )]
+    #[test_case(EK::UnknownFilter(C::Raw('x')),                   "Unknown filter 'x'";                                         "unknown filter")]
+    #[test_case(EK::UnmatchedExprEnd,                             "No matching '{' before expression end";                      "unmatched expr end")]
+    #[test_case(EK::UnmatchedExprStart,                           "No matching '}' after expression start";                     "unmatched expr start")]
+    #[test_case(EK::UnterminatedEscapeSequence('%'),              "Unterminated escape sequence '%'";                           "unterminated escape sequence")]
     fn error_kind_display(kind: ErrorKind, result: &str) {
         assert_eq!(kind.to_string(), result);
     }

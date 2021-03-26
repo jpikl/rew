@@ -168,10 +168,10 @@ mod tests {
         }
     }
 
-    #[test_case(Filter::FileName, false, false, false; "none")]
-    #[test_case(Filter::LocalCounter, true, false, false; "local counter")]
-    #[test_case(Filter::GlobalCounter, false, true, false; "global counter")]
-    #[test_case(Filter::RegexCapture(1), false, false, true; "regex capture")]
+    #[test_case(Filter::FileName,        false, false, false; "none")]
+    #[test_case(Filter::LocalCounter,    true,  false, false; "local counter")]
+    #[test_case(Filter::GlobalCounter,   false, true,  false; "global counter")]
+    #[test_case(Filter::RegexCapture(1), false, false, true;  "regex capture")]
     fn uses(filter: Filter, local_counter: bool, global_counter: bool, regex_capture: bool) {
         let pattern = Pattern::from(vec![
             Parsed::from(Item::Constant("a".into())),
@@ -205,12 +205,12 @@ mod tests {
             );
         }
 
-        #[test_case("", constant(), None, "abc"; "constant ")]
-        #[test_case("dir/file.ext", empty_expression(), None, "dir/file.ext"; "empty expression ")]
-        #[test_case("dir/file.ext", single_filter(), None, "file.ext"; "single filter ")]
-        #[test_case("dir/file.ext", multi_filter(), None, "FILE.EXT"; "multi filter ")]
-        #[test_case("dir/file.ext", multi_constant_filter(), None, "before dir inside FILE.EXT after"; "multi constant filter ")]
-        #[test_case("dir/file.ext", multi_constant_filter(), Some('\''), "before 'dir' inside 'FILE.EXT' after"; "quoted multi constant filter ")]
+        #[test_case("",    constant(),      None, "abc";                 "constant ")]
+        #[test_case("a/b", empty_expr(),    None, "a/b";                 "empty expression")]
+        #[test_case("a/b", single_filter(), None, "b";                   "single filter ")]
+        #[test_case("a/b", multi_filter(),  None, "B";                   "multi filter ")]
+        #[test_case("a/b", complex_expr(),  None, "1 a 2 B 3";           "complex expression")]
+        #[test_case("a/b", complex_expr(),  Some('\''), "1 'a' 2 'B' 3"; "quoted complex expression")]
         fn ok(input: &str, items: Vec<ParsedItem>, quotes: Option<char>, output: &str) {
             let pattern = Pattern::from(items);
             let mut context = Context::fixture();
@@ -222,7 +222,7 @@ mod tests {
             vec![Parsed::from(Item::Constant("abc".into()))]
         }
 
-        fn empty_expression() -> Vec<ParsedItem> {
+        fn empty_expr() -> Vec<ParsedItem> {
             vec![Parsed::from(Item::Expression(vec![]))]
         }
 
@@ -239,18 +239,18 @@ mod tests {
             ]))]
         }
 
-        fn multi_constant_filter() -> Vec<ParsedItem> {
+        fn complex_expr() -> Vec<ParsedItem> {
             vec![
-                Parsed::from(Item::Constant("before ".into())),
+                Parsed::from(Item::Constant("1 ".into())),
                 Parsed::from(Item::Expression(vec![Parsed::from(
                     Filter::ParentDirectory,
                 )])),
-                Parsed::from(Item::Constant(" inside ".into())),
+                Parsed::from(Item::Constant(" 2 ".into())),
                 Parsed::from(Item::Expression(vec![
                     Parsed::from(Filter::FileName),
                     Parsed::from(Filter::ToUppercase),
                 ])),
-                Parsed::from(Item::Constant(" after".into())),
+                Parsed::from(Item::Constant(" 3".into())),
             ]
         }
     }
