@@ -55,9 +55,11 @@ mod tests {
         use crate::utils::ByteRange;
         use test_case::test_case;
 
-        #[test_case("", ErrorKind::ExpectedRepetition, 0..0; "empty")]
-        #[test_case("ab", ErrorKind::ExpectedNumber, 0..2; "invalid count")]
-        #[test_case("12", ErrorKind::RepetitionWithoutDelimiter, 2..2; "missing delimiter")]
+        type EK = ErrorKind;
+
+        #[test_case("",   EK::ExpectedRepetition,         0..0; "empty")]
+        #[test_case("ab", EK::ExpectedNumber,             0..2; "invalid count")]
+        #[test_case("12", EK::RepetitionWithoutDelimiter, 2..2; "missing delimiter")]
         fn err(input: &str, kind: ErrorKind, range: ByteRange) {
             assert_eq!(
                 Repetition::parse(&mut Reader::from(input)),
@@ -65,7 +67,7 @@ mod tests {
             );
         }
 
-        #[test_case("12:", 12, ""; "empty value")]
+        #[test_case("12:",   12, "";   "empty value")]
         #[test_case("12:ab", 12, "ab"; "nonempty value")]
         fn ok(input: &str, count: usize, value: &str) {
             assert_eq!(
@@ -78,11 +80,11 @@ mod tests {
         }
     }
 
-    #[test_case(0, "", ""; "empty zero times")]
-    #[test_case(1, "", ""; "empty one time")]
-    #[test_case(2, "", ""; "empty multiple times")]
-    #[test_case(0, "ab", ""; "nonempty zero times")]
-    #[test_case(1, "ab", "ab"; "nonempty one time")]
+    #[test_case(0, "",   "";     "empty zero times")]
+    #[test_case(1, "",   "";     "empty one time")]
+    #[test_case(2, "",   "";     "empty multiple times")]
+    #[test_case(0, "ab", "";     "nonempty zero times")]
+    #[test_case(1, "ab", "ab";   "nonempty one time")]
     #[test_case(2, "ab", "abab"; "nonempty multiple times")]
     fn expand(count: usize, value: &str, output: &str) {
         assert_eq!(

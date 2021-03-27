@@ -93,9 +93,9 @@ mod tests {
     use super::*;
     use test_case::test_case;
 
-    #[test_case("", ""; "empty")]
-    #[test_case("ab", "ab"; "zero")]
-    #[test_case("a$1b", "a${1}b"; "one")]
+    #[test_case("",            "";                  "empty")]
+    #[test_case("ab",          "ab";                "zero")]
+    #[test_case("a$1b",        "a${1}b";            "one")]
     #[test_case("$1a$12b$123", "${1}a${12}b${123}"; "multiple")]
     fn add_capture_group_brackets(input: &str, output: &str) {
         assert_eq!(super::add_capture_group_brackets(input), output)
@@ -117,7 +117,7 @@ mod tests {
                 );
             }
 
-            #[test_case("", ""; "empty")]
+            #[test_case("",       "";       "empty")]
             #[test_case("[a-z]+", "[a-z]+"; "noempty")]
             fn ok(input: &str, output: &str) {
                 assert_eq!(
@@ -132,8 +132,11 @@ mod tests {
             use crate::utils::ByteRange;
             use test_case::test_case;
 
-            #[test_case("", ErrorKind::ExpectedRegex, 0..0; "empty")]
-            #[test_case("[0-9", ErrorKind::RegexInvalid(AnyString::any()), 0..4; "invalid")]
+            type EK = ErrorKind;
+            type AS = AnyString;
+
+            #[test_case("",     EK::ExpectedRegex,           0..0; "empty")]
+            #[test_case("[0-9", EK::RegexInvalid(AS::any()), 0..4; "invalid")]
             fn err(input: &str, kind: ErrorKind, range: ByteRange) {
                 assert_eq!(
                     RegexHolder::parse(&mut Reader::from(input)),
@@ -150,15 +153,15 @@ mod tests {
             }
         }
 
-        #[test_case("", "\\d+", ""; "empty")]
-        #[test_case("abc", "\\d+", ""; "none")]
+        #[test_case("",             "\\d+", "";    "empty")]
+        #[test_case("abc",          "\\d+", "";    "none")]
         #[test_case("abc123def456", "\\d+", "123"; "first")]
         fn first_match(input: &str, regex: &str, output: &str) {
             assert_eq!(RegexHolder::from(regex).first_match(input), output);
         }
 
-        #[test_case("", "", true; "empty")]
-        #[test_case("[a-z]+", "[a-z]+", true; "same")]
+        #[test_case("",       "",       true;  "empty")]
+        #[test_case("[a-z]+", "[a-z]+", true;  "same")]
         #[test_case("[a-z]+", "[a-z]*", false; "different")]
         fn partial_eq(left: &str, right: &str, result: bool) {
             assert_eq!(RegexHolder::from(left) == RegexHolder::from(right), result);
