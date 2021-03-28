@@ -158,20 +158,17 @@ mod tests {
         use super::*;
         use test_case::test_case;
 
-        type C = Color;
-        type OC = OutputChunk;
-
-        #[test_case(OC::plain("ab"),               ColorSpec::new(),         "ab"; "plain")]
-        #[test_case(OC::color(C::Red, "cd"),       spec_color(C::Red),       "cd"; "color")]
-        #[test_case(OC::bold_color(C::Blue, "ef"), spec_bold_color(C::Blue), "ef"; "bold color")]
+        #[test_case(OutputChunk::plain("ab"),                   ColorSpec::new(),             "ab" ; "plain")]
+        #[test_case(OutputChunk::color(Color::Red, "cd"),       spec_color(Color::Red),       "cd" ; "color")]
+        #[test_case(OutputChunk::bold_color(Color::Blue, "ef"), spec_bold_color(Color::Blue), "ef" ; "bold color")]
         fn create(chunk: OutputChunk, spec: ColorSpec, value: &str) {
             assert_eq!(chunk.spec, spec);
             assert_eq!(chunk.value, value);
         }
 
-        #[test_case(OC::plain("a\nb"),               r#"OutputChunk::plain("a\\nb")"#;                   "plain")]
-        #[test_case(OC::color(C::Red, "c\nd"),       r#"OutputChunk::color(Color::Red, "c\\nd")"#;       "color")]
-        #[test_case(OC::bold_color(C::Blue, "e\nf"), r#"OutputChunk::bold_color(Color::Blue, "e\\nf")"#; "bold color")]
+        #[test_case(OutputChunk::plain("a\nb"),                   r#"OutputChunk::plain("a\\nb")"#                   ; "plain")]
+        #[test_case(OutputChunk::color(Color::Red, "c\nd"),       r#"OutputChunk::color(Color::Red, "c\\nd")"#       ; "color")]
+        #[test_case(OutputChunk::bold_color(Color::Blue, "e\nf"), r#"OutputChunk::bold_color(Color::Blue, "e\\nf")"# ; "bold color")]
         fn debug(chunk: OutputChunk, result: &str) {
             assert_eq!(format!("{:?}", chunk), result);
         }

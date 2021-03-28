@@ -13,7 +13,13 @@ pub enum Char {
 
 impl From<char> for Char {
     fn from(value: char) -> Self {
-        Char::Raw(value)
+        Self::Raw(value)
+    }
+}
+
+impl From<EscapeSequence> for Char {
+    fn from(sequence: [char; 2]) -> Self {
+        Self::Escaped(sequence[1], sequence)
     }
 }
 
@@ -113,18 +119,18 @@ mod tests {
             assert_eq!(Char::Raw('a').as_char(), 'a');
         }
 
-        #[test_case('a', 1; "ascii")]
-        #[test_case('á', 2; "non-ascii")]
+        #[test_case('a', 1 ; "ascii")]
+        #[test_case('á', 2 ; "non-ascii")]
         fn len_utf8(value: char, len: usize) {
             assert_eq!(Char::Raw(value).len_utf8(), len);
         }
 
-        #[test_case('a',  "'a'";   "ascii")]
-        #[test_case('á',  "'á'";   "non-ascii")]
-        #[test_case('\0', "'\\0'"; "null")]
-        #[test_case('\n', "'\\n'"; "line feed")]
-        #[test_case('\r', "'\\r'"; "carriage return")]
-        #[test_case('\t', "'\\t'"; "horizontal tab")]
+        #[test_case('a',  "'a'"   ; "ascii")]
+        #[test_case('á',  "'á'"   ; "non-ascii")]
+        #[test_case('\0', "'\\0'" ; "null")]
+        #[test_case('\n', "'\\n'" ; "line feed")]
+        #[test_case('\r', "'\\r'" ; "carriage return")]
+        #[test_case('\t', "'\\t'" ; "horizontal tab")]
         fn display(value: char, result: &str) {
             assert_eq!(Char::Raw(value).to_string(), result);
         }
@@ -139,18 +145,18 @@ mod tests {
             assert_eq!(Char::Escaped('a', ['b', 'c']).as_char(), 'a');
         }
 
-        #[test_case('a', ['b', 'c'], 2; "ascii")]
-        #[test_case('á', ['b', 'č'], 3; "non-ascii")]
+        #[test_case('a', ['b', 'c'], 2 ; "ascii")]
+        #[test_case('á', ['b', 'č'], 3 ; "non-ascii")]
         fn len_utf8(value: char, sequence: EscapeSequence, len: usize) {
             assert_eq!(Char::Escaped(value, sequence).len_utf8(), len);
         }
 
-        #[test_case('a',  ['b', 'c'], "'a' (escape sequence 'bc')";   "ascii")]
-        #[test_case('á',  ['b', 'č'], "'á' (escape sequence 'bč')";   "non-ascii")]
-        #[test_case('\0', ['%', '0'], "'\\0' (escape sequence '%0')"; "null")]
-        #[test_case('\n', ['%', 'n'], "'\\n' (escape sequence '%n')"; "line feed")]
-        #[test_case('\r', ['%', 'r'], "'\\r' (escape sequence '%r')"; "carriage return")]
-        #[test_case('\t', ['%', 't'], "'\\t' (escape sequence '%t')"; "horizontal tab")]
+        #[test_case('a',  ['b', 'c'], "'a' (escape sequence 'bc')"   ; "ascii")]
+        #[test_case('á',  ['b', 'č'], "'á' (escape sequence 'bč')"   ; "non-ascii")]
+        #[test_case('\0', ['%', '0'], "'\\0' (escape sequence '%0')" ; "null")]
+        #[test_case('\n', ['%', 'n'], "'\\n' (escape sequence '%n')" ; "line feed")]
+        #[test_case('\r', ['%', 'r'], "'\\r' (escape sequence '%r')" ; "carriage return")]
+        #[test_case('\t', ['%', 't'], "'\\t' (escape sequence '%t')" ; "horizontal tab")]
         fn display(value: char, sequence: EscapeSequence, result: &str) {
             assert_eq!(Char::Escaped(value, sequence).to_string(), result);
         }

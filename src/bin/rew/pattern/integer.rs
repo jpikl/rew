@@ -41,11 +41,11 @@ mod tests {
     use super::*;
     use test_case::test_case;
 
-    #[test_case(0u8,   8;   "8-bit")]
-    #[test_case(0u16,  16;  "16-bit")]
-    #[test_case(0u32,  32;  "32-bit")]
-    #[test_case(0u64,  64;  "64-bit")]
-    #[test_case(0u128, 128; "128-bit")]
+    #[test_case(0u8,   8   ; "8-bit")]
+    #[test_case(0u16,  16  ; "16-bit")]
+    #[test_case(0u32,  32  ; "32-bit")]
+    #[test_case(0u64,  64  ; "64-bit")]
+    #[test_case(0u128, 128 ; "128-bit")]
     fn gets_bits<T>(_: T, bits: usize) {
         assert_eq!(super::get_bits::<T>(), bits);
     }
@@ -55,27 +55,25 @@ mod tests {
         use crate::utils::ByteRange;
         use test_case::test_case;
 
-        type EK = ErrorKind;
-
-        #[test_case("",     EK::ExpectedNumber,                0..0; "empty")]
-        #[test_case("ab",   EK::ExpectedNumber,                0..2; "alpha")]
-        #[test_case("256",  EK::IntegerOverflow("255".into()), 0..3; "overflow")]
-        #[test_case("256a", EK::IntegerOverflow("255".into()), 0..3; "overflow then alpha")]
-        fn err(input: &str, kind: ErrorKind, range: ByteRange) {
+        #[test_case("",     0..0, ErrorKind::ExpectedNumber                ; "empty")]
+        #[test_case("ab",   0..2, ErrorKind::ExpectedNumber                ; "alpha")]
+        #[test_case("256",  0..3, ErrorKind::IntegerOverflow("255".into()) ; "overflow")]
+        #[test_case("256a", 0..3, ErrorKind::IntegerOverflow("255".into()) ; "overflow then alpha")]
+        fn err(input: &str, range: ByteRange, kind: ErrorKind) {
             assert_eq!(
                 parse_integer::<u8>(&mut Reader::from(input)),
                 Err(Error { kind, range })
             );
         }
 
-        #[test_case("0",    0,   1; "zero")]
-        #[test_case("00",   0,   2; "zero then zero")]
-        #[test_case("01",   1,   2; "zero then nonzero")]
-        #[test_case("0a",   0,   1; "zero then alpha")]
-        #[test_case("1",    1,   1; "single digit")]
-        #[test_case("1a",   1,   1; "single digit then alpha")]
-        #[test_case("123",  123, 3; "multiple digits")]
-        #[test_case("123a", 123, 3; "multiple digits then alpha")]
+        #[test_case("0",    0,   1 ; "zero")]
+        #[test_case("00",   0,   2 ; "zero then zero")]
+        #[test_case("01",   1,   2 ; "zero then nonzero")]
+        #[test_case("0a",   0,   1 ; "zero then alpha")]
+        #[test_case("1",    1,   1 ; "single digit")]
+        #[test_case("1a",   1,   1 ; "single digit then alpha")]
+        #[test_case("123",  123, 3 ; "multiple digits")]
+        #[test_case("123a", 123, 3 ; "multiple digits then alpha")]
         fn ok(input: &str, output: usize, position: usize) {
             let mut reader = Reader::from(input);
             assert_eq!(parse_integer(&mut reader), Ok(output));

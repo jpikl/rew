@@ -49,8 +49,8 @@ mod tests {
         use super::*;
         use test_case::test_case;
 
-        #[test_case("a", "a"; "same")]
-        #[test_case("a", "b"; "different")]
+        #[test_case("a", "a" ; "same")]
+        #[test_case("a", "b" ; "different")]
         fn partial_eq(left: &str, right: &str) {
             assert_eq!(AnyString::from(left), AnyString::from(right));
         }

@@ -130,22 +130,22 @@ mod tests {
             use super::*;
             use test_case::test_case;
 
-            #[test_case("",      INIT_ERROR; "empty")]
-            #[test_case(":",     INIT_ERROR; "separator")]
-            #[test_case(":34",   INIT_ERROR; "separator number")]
-            #[test_case(":cd",   INIT_ERROR; "separator string")]
-            #[test_case("12:",   STEP_ERROR; "number separator")]
-            #[test_case("12:cd", STEP_ERROR; "number separator string")]
-            #[test_case("ab",    INIT_ERROR; "string")]
-            #[test_case("ab:",   INIT_ERROR; "string separator")]
-            #[test_case("ab:34", INIT_ERROR; "string separator number")]
-            #[test_case("ab:cd", INIT_ERROR; "string separator string")]
+            #[test_case("",      INIT_ERROR ; "empty")]
+            #[test_case(":",     INIT_ERROR ; "separator")]
+            #[test_case(":34",   INIT_ERROR ; "separator number")]
+            #[test_case(":cd",   INIT_ERROR ; "separator string")]
+            #[test_case("12:",   STEP_ERROR ; "number separator")]
+            #[test_case("12:cd", STEP_ERROR ; "number separator string")]
+            #[test_case("ab",    INIT_ERROR ; "string")]
+            #[test_case("ab:",   INIT_ERROR ; "string separator")]
+            #[test_case("ab:34", INIT_ERROR ; "string separator number")]
+            #[test_case("ab:cd", INIT_ERROR ; "string separator string")]
             fn err(input: &str, error: &str) {
                 assert_eq!(Config::<Value>::from_str(input), Err(error));
             }
 
-            #[test_case("12",    12, 1;  "init")]
-            #[test_case("12:34", 12, 34; "init and step")]
+            #[test_case("12",    12, 1  ; "init")]
+            #[test_case("12:34", 12, 34 ; "init and step")]
             fn ok(input: &str, init: Value, step: Value) {
                 assert_eq!(Config::from_str(input), Ok(Config { init, step }));
             }
@@ -164,12 +164,12 @@ mod tests {
             );
         }
 
-        #[test_case(0, 1,  0, 0;  "0:1 iteration 1")]
-        #[test_case(0, 1,  1, 1;  "0:1 iteration 2")]
-        #[test_case(0, 1,  2, 2;  "0:1 iteration 3")]
-        #[test_case(1, 10, 0, 1;  "1:10 iteration 1")]
-        #[test_case(1, 10, 1, 11; "1:10 iteration 2")]
-        #[test_case(1, 10, 2, 21; "1:10 iteration 3")]
+        #[test_case(0, 1,  0, 0  ; "0:1 iteration 1")]
+        #[test_case(0, 1,  1, 1  ; "0:1 iteration 2")]
+        #[test_case(0, 1,  2, 2  ; "0:1 iteration 3")]
+        #[test_case(1, 10, 0, 1  ; "1:10 iteration 1")]
+        #[test_case(1, 10, 1, 11 ; "1:10 iteration 2")]
+        #[test_case(1, 10, 2, 21 ; "1:10 iteration 3")]
         fn next(init: Value, step: Value, index: usize, result: Value) {
             let mut counter = GlobalGenerator::new(init, step);
             for _ in 0..index {
@@ -197,28 +197,28 @@ mod tests {
             );
         }
 
-        #[test_case(0, 1,  &[],                       C,  0;  "0:1 iteration 1")]
-        #[test_case(0, 1,  &[C],                      C,  1;  "0:1 iteration 2")]
-        #[test_case(0, 1,  &[C, C],                   C,  2;  "0:1 iteration 3")]
-        #[test_case(0, 1,  &[C, C, C],                B,  0;  "0:1 iteration 4")]
-        #[test_case(0, 1,  &[C, C, C, B],             A,  0;  "0:1 iteration 5")]
-        #[test_case(0, 1,  &[C, C, C, B, A],          B,  1;  "0:1 iteration 6")]
-        #[test_case(0, 1,  &[C, C, C, B, A, B],       B,  2;  "0:1 iteration 7")]
-        #[test_case(0, 1,  &[C, C, C, B, A, B, B],    A,  1;  "0:1 iteration 8")]
-        #[test_case(0, 1,  &[C, C, C, B, A, B, B, A], A,  2;  "0:1 iteration 9")]
-        #[test_case(1, 10, &[],                       C,  1;  "1:10 iteration 1")]
-        #[test_case(1, 10, &[C],                      C,  11; "1:10 iteration 2")]
-        #[test_case(1, 10, &[C, C],                   C,  21; "1:10 iteration 3")]
-        #[test_case(1, 10, &[C, C, C],                B,  1;  "1:10 iteration 4")]
-        #[test_case(1, 10, &[C, C, C, B],             A,  1;  "1:10 iteration 5")]
-        #[test_case(1, 10, &[C, C, C, B, A],          B,  11; "1:10 iteration 6")]
-        #[test_case(1, 10, &[C, C, C, B, A, B],       B,  21; "1:10 iteration 7")]
-        #[test_case(1, 10, &[C, C, C, B, A, B, B],    A,  11; "1:10 iteration 8")]
-        #[test_case(1, 10, &[C, C, C, B, A, B, B, A], A,  21; "1:10 iteration 9")]
-        #[test_case(0, 1, &[],                        C,  0;  "normalize dirs 1")]
-        #[test_case(0, 1, &[C],                       CX, 1;  "normalize dirs 2")]
-        #[test_case(0, 1, &[C, CX],                   A,  0;  "normalize dirs 3")]
-        #[test_case(0, 1, &[C, CX, A],                AX, 1;  "normalize dirs 4")]
+        #[test_case(0, 1,  &[],                       C,  0  ; "0:1 iteration 1")]
+        #[test_case(0, 1,  &[C],                      C,  1  ; "0:1 iteration 2")]
+        #[test_case(0, 1,  &[C, C],                   C,  2  ; "0:1 iteration 3")]
+        #[test_case(0, 1,  &[C, C, C],                B,  0  ; "0:1 iteration 4")]
+        #[test_case(0, 1,  &[C, C, C, B],             A,  0  ; "0:1 iteration 5")]
+        #[test_case(0, 1,  &[C, C, C, B, A],          B,  1  ; "0:1 iteration 6")]
+        #[test_case(0, 1,  &[C, C, C, B, A, B],       B,  2  ; "0:1 iteration 7")]
+        #[test_case(0, 1,  &[C, C, C, B, A, B, B],    A,  1  ; "0:1 iteration 8")]
+        #[test_case(0, 1,  &[C, C, C, B, A, B, B, A], A,  2  ; "0:1 iteration 9")]
+        #[test_case(1, 10, &[],                       C,  1  ; "1:10 iteration 1")]
+        #[test_case(1, 10, &[C],                      C,  11 ; "1:10 iteration 2")]
+        #[test_case(1, 10, &[C, C],                   C,  21 ; "1:10 iteration 3")]
+        #[test_case(1, 10, &[C, C, C],                B,  1  ; "1:10 iteration 4")]
+        #[test_case(1, 10, &[C, C, C, B],             A,  1  ; "1:10 iteration 5")]
+        #[test_case(1, 10, &[C, C, C, B, A],          B,  11 ; "1:10 iteration 6")]
+        #[test_case(1, 10, &[C, C, C, B, A, B],       B,  21 ; "1:10 iteration 7")]
+        #[test_case(1, 10, &[C, C, C, B, A, B, B],    A,  11 ; "1:10 iteration 8")]
+        #[test_case(1, 10, &[C, C, C, B, A, B, B, A], A,  21 ; "1:10 iteration 9")]
+        #[test_case(0, 1, &[],                        C,  0  ; "normalize dirs 1")]
+        #[test_case(0, 1, &[C],                       CX, 1  ; "normalize dirs 2")]
+        #[test_case(0, 1, &[C, CX],                   A,  0  ; "normalize dirs 3")]
+        #[test_case(0, 1, &[C, CX, A],                AX, 1  ; "normalize dirs 4")]
         fn next(init: Value, step: Value, prev_paths: &[&str], next_path: &str, result: Value) {
             let mut counter = LocalGenerator::new(init, step);
             for prev_path in prev_paths {

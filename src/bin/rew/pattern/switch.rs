@@ -117,33 +117,29 @@ mod tests {
         use crate::utils::{AnyString, ByteRange};
         use test_case::test_case;
 
-        type EK = ErrorKind;
-        type AS = AnyString;
-        type C = Char;
-
-        #[test_case("",                EK::ExpectedSwitch,                       0..0;   "empty")]
-        #[test_case("::",              EK::SwitchWithoutMatcher(C::Raw(':'), 0), 0..1;   "delimiter delimiter")]
-        #[test_case(":[a-z:",          EK::RegexInvalid(AS::any()),              1..5;   "invalid")]
-        #[test_case(":[a-z]:::",       EK::SwitchWithoutMatcher(C::Raw(':'), 2), 7..8;   "matcher delimiter delimiter")]
-        #[test_case(":[a-z]:Lo:[A-Z:", EK::RegexInvalid(AS::any()),              10..14; "matcher result invalid")]
-        fn err(input: &str, kind: ErrorKind, range: ByteRange) {
+        #[test_case("",                0..0,   ErrorKind::ExpectedSwitch                      ; "empty")]
+        #[test_case("::",              0..1,   ErrorKind::SwitchWithoutMatcher(':'.into(), 0) ; "delimiter delimiter")]
+        #[test_case(":[a-z:",          1..5,   ErrorKind::RegexInvalid(AnyString::any())      ; "invalid")]
+        #[test_case(":[a-z]:::",       7..8,   ErrorKind::SwitchWithoutMatcher(':'.into(), 2) ; "matcher delimiter delimiter")]
+        #[test_case(":[a-z]:Lo:[A-Z:", 10..14, ErrorKind::RegexInvalid(AnyString::any())      ; "matcher result invalid")]
+        fn err(input: &str, range: ByteRange, kind: ErrorKind) {
             assert_eq!(
                 RegexSwitch::parse(&mut Reader::from(input)),
                 Err(Error { kind, range })
             );
         }
 
-        #[test_case(":",                     &[],                                 "";   "delimiter")]
-        #[test_case(":Mx",                   &[],                                 "Mx"; "default")]
-        #[test_case(":[a-z]:",               &[("[a-z]", "")],                    "";   "matcher")]
-        #[test_case(":[a-z]::",              &[("[a-z]", "")],                    "";   "matcher delimiter")]
-        #[test_case(":[a-z]:Lo",             &[("[a-z]", "Lo")],                  "";   "matcher result")]
-        #[test_case(":[a-z]:Lo:",            &[("[a-z]", "Lo")],                  "";   "matcher result delimiter")]
-        #[test_case(":[a-z]:Lo:Mx",          &[("[a-z]", "Lo")],                  "Mx"; "matcher result default")]
-        #[test_case(":[a-z]:Lo:[A-Z]:",      &[("[a-z]", "Lo"), ("[A-Z]", "")],   "";   "matcher result matcher")]
-        #[test_case(":[a-z]:Lo:[A-Z]:Up",    &[("[a-z]", "Lo"), ("[A-Z]", "Up")], "";   "matcher result matcher result")]
-        #[test_case(":[a-z]:Lo:[A-Z]:Up:",   &[("[a-z]", "Lo"), ("[A-Z]", "Up")], "";   "matcher result matcher result delimiter")]
-        #[test_case(":[a-z]:Lo:[A-Z]:Up:Mx", &[("[a-z]", "Lo"), ("[A-Z]", "Up")], "Mx"; "matcher result matcher result default")]
+        #[test_case(":",                     &[],                                 ""   ; "delimiter")]
+        #[test_case(":Mx",                   &[],                                 "Mx" ; "default")]
+        #[test_case(":[a-z]:",               &[("[a-z]", "")],                    ""   ; "matcher")]
+        #[test_case(":[a-z]::",              &[("[a-z]", "")],                    ""   ; "matcher delimiter")]
+        #[test_case(":[a-z]:Lo",             &[("[a-z]", "Lo")],                  ""   ; "matcher result")]
+        #[test_case(":[a-z]:Lo:",            &[("[a-z]", "Lo")],                  ""   ; "matcher result delimiter")]
+        #[test_case(":[a-z]:Lo:Mx",          &[("[a-z]", "Lo")],                  "Mx" ; "matcher result default")]
+        #[test_case(":[a-z]:Lo:[A-Z]:",      &[("[a-z]", "Lo"), ("[A-Z]", "")],   ""   ; "matcher result matcher")]
+        #[test_case(":[a-z]:Lo:[A-Z]:Up",    &[("[a-z]", "Lo"), ("[A-Z]", "Up")], ""   ; "matcher result matcher result")]
+        #[test_case(":[a-z]:Lo:[A-Z]:Up:",   &[("[a-z]", "Lo"), ("[A-Z]", "Up")], ""   ; "matcher result matcher result delimiter")]
+        #[test_case(":[a-z]:Lo:[A-Z]:Up:Mx", &[("[a-z]", "Lo"), ("[A-Z]", "Up")], "Mx" ; "matcher result matcher result default")]
         fn ok(input: &str, cases: &[(&str, &str)], default: &str) {
             assert_eq!(
                 RegexSwitch::parse(&mut Reader::from(input)),
@@ -165,8 +161,8 @@ mod tests {
         use super::*;
         use test_case::test_case;
 
-        #[test_case("",    ""; "empty")]
-        #[test_case("abc", ""; "nonempty")]
+        #[test_case("",    "" ; "empty")]
+        #[test_case("abc", "" ; "nonempty")]
         fn empty_default(input: &str, output: &str) {
             assert_eq!(
                 RegexSwitch {
@@ -178,8 +174,8 @@ mod tests {
             );
         }
 
-        #[test_case("",    "default"; "empty")]
-        #[test_case("abc", "default"; "nonempty")]
+        #[test_case("",    "default" ; "empty")]
+        #[test_case("abc", "default" ; "nonempty")]
         fn nonempty_default(input: &str, output: &str) {
             assert_eq!(
                 RegexSwitch {
@@ -191,11 +187,11 @@ mod tests {
             );
         }
 
-        #[test_case("",     "other";                       "default empty")]
-        #[test_case("Ab",   "other";                       "default nonempty")]
-        #[test_case("a12b", "contains consecutive digits"; "first matcher")]
-        #[test_case("a1b",  "contains digit";              "second matcher")]
-        #[test_case("ab",   "all lowercase";               "third matcher")]
+        #[test_case("",     "other"                       ; "default empty")]
+        #[test_case("Ab",   "other"                       ; "default nonempty")]
+        #[test_case("a12b", "contains consecutive digits" ; "first matcher")]
+        #[test_case("a1b",  "contains digit"              ; "second matcher")]
+        #[test_case("ab",   "all lowercase"               ; "third matcher")]
         fn cases_nonempty_default(input: &str, output: &str) {
             assert_eq!(
                 RegexSwitch {
@@ -220,11 +216,11 @@ mod tests {
             );
         }
 
-        #[test_case("",      "$0, $1 are not capture groups";          "default empty")]
-        #[test_case("world", "$0, $1 are not capture groups";          "default nonempty")]
-        #[test_case("a34b",  "contains consecutive digits 3 and 4";    "first matcher")]
-        #[test_case("a3b",   "contains digit 3";                       "second matcher")]
-        #[test_case("aBc",   "first uppercase letter of 'aBc' is 'B'"; "third matcher")]
+        #[test_case("",      "$0, $1 are not capture groups"          ; "default empty")]
+        #[test_case("world", "$0, $1 are not capture groups"          ; "default nonempty")]
+        #[test_case("a34b",  "contains consecutive digits 3 and 4"    ; "first matcher")]
+        #[test_case("a3b",   "contains digit 3"                       ; "second matcher")]
+        #[test_case("aBc",   "first uppercase letter of 'aBc' is 'B'" ; "third matcher")]
         fn cases_nonempty_default_captures(input: &str, output: &str) {
             assert_eq!(
                 RegexSwitch {
@@ -255,8 +251,8 @@ mod tests {
         use indoc::indoc;
         use test_case::test_case;
 
-        #[test_case("",    "constant output ''";    "empty")]
-        #[test_case("abc", "constant output 'abc'"; "nonempty")]
+        #[test_case("",    "constant output ''"    ; "empty")]
+        #[test_case("abc", "constant output 'abc'" ; "nonempty")]
         fn empty_default(default: &str, result: &str) {
             assert_eq!(
                 RegexSwitch {

@@ -145,29 +145,29 @@ pub mod tests {
         }
     }
 
-    #[test_case(0, None,    0; "from 0 to none")]
-    #[test_case(1, None,    1; "from 1 to none")]
-    #[test_case(0, Some(0), 0; "from 0 to 0")]
-    #[test_case(0, Some(1), 0; "from 0 to 1")]
-    #[test_case(1, Some(1), 1; "from 1 to 1")]
+    #[test_case(0, None,    0 ; "from 0 to none")]
+    #[test_case(1, None,    1 ; "from 1 to none")]
+    #[test_case(0, Some(0), 0 ; "from 0 to 0")]
+    #[test_case(0, Some(1), 0 ; "from 0 to 1")]
+    #[test_case(1, Some(1), 1 ; "from 1 to 1")]
     fn start(start: TestValue, end: Option<TestValue>, result: TestValue) {
         assert_eq!(Range::<TestType>(start, end).start(), result);
     }
 
-    #[test_case(0, None,    None;    "from 0 to none")]
-    #[test_case(1, None,    None;    "from 1 to none")]
-    #[test_case(0, Some(0), Some(0); "from 0 to 0")]
-    #[test_case(0, Some(1), Some(1); "from 0 to 1")]
-    #[test_case(1, Some(1), Some(1); "from 1 to 1")]
+    #[test_case(0, None,    None    ; "from 0 to none")]
+    #[test_case(1, None,    None    ; "from 1 to none")]
+    #[test_case(0, Some(0), Some(0) ; "from 0 to 0")]
+    #[test_case(0, Some(1), Some(1) ; "from 0 to 1")]
+    #[test_case(1, Some(1), Some(1) ; "from 1 to 1")]
     fn end(start: TestValue, end: Option<TestValue>, result: Option<TestValue>) {
         assert_eq!(Range::<TestType>(start, end).end(), result);
     }
 
-    #[test_case(0, None,    None;    "from 0 to none")]
-    #[test_case(1, None,    None;    "from 1 to none")]
-    #[test_case(0, Some(0), Some(0); "from 0 to 0")]
-    #[test_case(0, Some(1), Some(1); "from 0 to 1")]
-    #[test_case(1, Some(1), Some(0); "from 1 to 1")]
+    #[test_case(0, None,    None    ; "from 0 to none")]
+    #[test_case(1, None,    None    ; "from 1 to none")]
+    #[test_case(0, Some(0), Some(0) ; "from 0 to 0")]
+    #[test_case(0, Some(1), Some(1) ; "from 0 to 1")]
+    #[test_case(1, Some(1), Some(0) ; "from 1 to 1")]
     fn length(start: TestValue, end: Option<TestValue>, result: Option<TestValue>) {
         assert_eq!(Range::<TestType>(start, end).length(), result);
     }

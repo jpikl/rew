@@ -88,24 +88,22 @@ mod tests {
     use super::*;
     use test_case::test_case;
 
-    type EK = ErrorKind;
-
     mod eval_context_regex_capture {
         use super::*;
         use test_case::test_case;
 
-        #[test_case(0; "position 0")]
-        #[test_case(1; "position 1")]
+        #[test_case(0 ; "position 0")]
+        #[test_case(1 ; "position 1")]
         fn none(position: usize) {
             let mut context = Context::fixture();
             context.regex_captures = None;
             assert_eq!(context.regex_capture(position), "");
         }
 
-        #[test_case(0, "abc"; "position 0")]
-        #[test_case(1, "a";   "position 1")]
-        #[test_case(2, "c";   "position 2")]
-        #[test_case(3, "";    "position 3")]
+        #[test_case(0, "abc" ; "position 0")]
+        #[test_case(1, "a"   ; "position 1")]
+        #[test_case(2, "c"   ; "position 2")]
+        #[test_case(3, ""    ; "position 3")]
         fn some(number: usize, result: &str) {
             assert_eq!(Context::fixture().regex_capture(number), result);
         }
@@ -143,8 +141,8 @@ mod tests {
         }
     }
 
-    #[test_case(EK::InputNotUtf8,                         "Input does not have UTF-8 encoding"; "input not utf-8")]
-    #[test_case(EK::CanonicalizationFailed("abc".into()), "Path canonicalization failed: abc";  "canonicalization failed")]
+    #[test_case(ErrorKind::InputNotUtf8,                         "Input does not have UTF-8 encoding" ; "input not utf-8")]
+    #[test_case(ErrorKind::CanonicalizationFailed("abc".into()), "Path canonicalization failed: abc"  ; "canonicalization failed")]
     fn error_kind_display(kind: ErrorKind, result: &str) {
         assert_eq!(kind.to_string(), result);
     }

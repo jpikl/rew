@@ -318,10 +318,8 @@ mod tests {
     use super::*;
     use test_case::test_case;
 
-    type CC = ColorChoice;
-
-    #[test_case(&[],                 None;             "default")]
-    #[test_case(&["--color=always"], Some(CC::Always); "always")]
+    #[test_case(&[],                 None                      ; "default")]
+    #[test_case(&["--color=always"], Some(ColorChoice::Always) ; "always")]
     fn color(args: &[&str], result: Option<ColorChoice>) {
         assert_eq!(run(args).color(), result);
     }
@@ -339,8 +337,8 @@ mod tests {
             assert_eq!(parse_single_byte_char("a"), Ok(b'a'));
         }
 
-        #[test_case("á",  "multi-byte characters are not supported"; "multi byte")]
-        #[test_case("aa", "value must be a single character";        "multi char")]
+        #[test_case("á",  "multi-byte characters are not supported" ; "multi byte")]
+        #[test_case("aa", "value must be a single character"        ; "multi char")]
         fn err(value: &str, error: &str) {
             assert_eq!(parse_single_byte_char(value), Err(error));
         }

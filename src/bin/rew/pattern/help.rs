@@ -101,8 +101,8 @@ mod tests {
     use ntest::*;
     use test_case::test_case;
 
-    #[test_case(PATTERN; "pattern")]
-    #[test_case(FILTERS; "filters")]
+    #[test_case(PATTERN ; "pattern")]
+    #[test_case(FILTERS ; "filters")]
     fn can_highlight(text: &str) {
         let mut output = ColoredOuput::new();
         highlight(&mut output, text).unwrap();
