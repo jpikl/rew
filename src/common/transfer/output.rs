@@ -55,35 +55,21 @@ impl<O: Write + WriteColor> TransferLog<O> {
 pub mod tests {
     use super::*;
     use crate::testing::{ColoredOuput, OutputChunk};
+    use test_case::test_case;
 
-    #[test]
-    fn begin_transfer_move() {
+    #[test_case(TransferMode::Move, "Moving"  ; "move ")]
+    #[test_case(TransferMode::Copy, "Copying" ; "copy")]
+    fn begin_transfer(mode: TransferMode, output_action: &str) {
         let mut output = ColoredOuput::new();
+
         TransferLog::new(&mut output)
-            .begin_transfer(TransferMode::Move, &Path::new("a/b.c"), &Path::new("d/e.f"))
+            .begin_transfer(mode, &Path::new("a/b.c"), &Path::new("d/e.f"))
             .unwrap();
+
         assert_eq!(
             output.chunks(),
             &[
-                OutputChunk::plain("Moving '"),
-                OutputChunk::color(Color::Blue, "a/b.c"),
-                OutputChunk::plain("' to '"),
-                OutputChunk::color(Color::Blue, "d/e.f"),
-                OutputChunk::plain("' ... ")
-            ]
-        );
-    }
-
-    #[test]
-    fn begin_transfer_copy() {
-        let mut output = ColoredOuput::new();
-        TransferLog::new(&mut output)
-            .begin_transfer(TransferMode::Copy, &Path::new("a/b.c"), &Path::new("d/e.f"))
-            .unwrap();
-        assert_eq!(
-            output.chunks(),
-            &[
-                OutputChunk::plain("Copying '"),
+                OutputChunk::plain(&format!("{} '", output_action)),
                 OutputChunk::color(Color::Blue, "a/b.c"),
                 OutputChunk::plain("' to '"),
                 OutputChunk::color(Color::Blue, "d/e.f"),
@@ -96,6 +82,7 @@ pub mod tests {
     fn end_with_success() {
         let mut output = ColoredOuput::new();
         TransferLog::new(&mut output).end_with_success().unwrap();
+
         assert_eq!(
             output.chunks(),
             &[
@@ -109,6 +96,7 @@ pub mod tests {
     fn end_with_failure() {
         let mut output = ColoredOuput::new();
         TransferLog::new(&mut output).end_with_failure().unwrap();
+
         assert_eq!(
             output.chunks(),
             &[

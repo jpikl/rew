@@ -426,7 +426,7 @@ mod tests {
         }
 
         #[test]
-        #[timeout(5000)] // // fs_extra::dir::copy freezes for same src/dst path
+        #[timeout(5000)] // fs_extra::dir::copy freezes for same src/dst path
         fn copy_dir_to_itself() {
             let src_dir = TempDir::new().unwrap();
             let src_file = src_dir.child("a");

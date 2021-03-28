@@ -106,114 +106,40 @@ mod tests {
     mod path_diff {
         use super::*;
         use crate::testing::unpack_io_error;
-        use indoc::indoc;
+        use test_case::test_case;
 
-        #[test]
-        fn empty() {
-            assert_eq!(
-                PathDiff::new(&[][..], Terminator::Newline { required: false })
-                    .read()
-                    .map_err(unpack_io_error),
-                Ok(None)
-            );
-        }
-
-        #[test]
-        fn valid() {
-            let input = indoc! {"
-                <abc
-                >def
-                < g h i 
-                > j k l 
-            "};
+        #[test_case("",                       0, None                 ; "empty")]
+        #[test_case("<abc\n>def\n< g \n> h ", 0, Some(("abc", "def")) ; "nonempty 0")]
+        #[test_case("<abc\n>def\n< g \n> h ", 1, Some((" g ", " h ")) ; "nonempty 1")]
+        #[test_case("<abc\n>def\n< g \n> h ", 2, None                 ; "nonempty 2")]
+        fn ok(input: &str, position: usize, result: Option<(&str, &str)>) {
             let mut path_diff =
                 PathDiff::new(input.as_bytes(), Terminator::Newline { required: false });
+
+            for _ in 0..position {
+                path_diff.read().unwrap_or_default();
+            }
+
             assert_eq!(
                 path_diff.read().map_err(unpack_io_error),
-                Ok(Some(("abc".into(), "def".into())))
+                Ok(result.map(|(first, second)| (first.into(), second.into())))
             );
-            assert_eq!(
-                path_diff.read().map_err(unpack_io_error),
-                Ok(Some((" g h i ".into(), " j k l ".into())))
-            );
-            assert_eq!(path_diff.read().map_err(unpack_io_error), Ok(None));
         }
 
-        #[test]
-        fn invalid_in_prefix() {
-            assert_eq!(
-                PathDiff::new(&b"abc"[..], Terminator::Newline { required: false })
-                    .read()
-                    .map_err(unpack_io_error),
-                Err((
-                    ErrorKind::InvalidData,
-                    "Expected '<' but got 'a' (item #1 at offset 0)".into()
-                ))
-            )
-        }
+        type E = ErrorKind;
 
-        #[test]
-        fn invalid_out_prefix() {
+        #[test_case("a",     E::InvalidData,   "Expected '<' but got 'a' (item #1 at offset 0)"  ; "in prefix invalid")]
+        #[test_case("<",     E::UnexpectedEof, "Expected a path after '<' (item #1 at offset 0)" ; "in path missing")]
+        #[test_case("<a",    E::UnexpectedEof, "Expected '>' (item #2 at offset 2)"              ; "in terminator missing")]
+        #[test_case("<a\n",  E::UnexpectedEof, "Expected '>' (item #2 at offset 3)"              ; "out prefix missing")]
+        #[test_case("<a\nb", E::InvalidData,   "Expected '>' but got 'b' (item #2 at offset 3)"  ; "out prefix invalid")]
+        #[test_case("<a\n>", E::UnexpectedEof, "Expected a path after '>' (item #2 at offset 3)" ; "out path missing")]
+        fn err(input: &str, kind: ErrorKind, message: &str) {
             assert_eq!(
-                PathDiff::new(&b"<abc\ndef"[..], Terminator::Newline { required: false })
+                PathDiff::new(input.as_bytes(), Terminator::Newline { required: false })
                     .read()
                     .map_err(unpack_io_error),
-                Err((
-                    ErrorKind::InvalidData,
-                    "Expected '>' but got 'd' (item #2 at offset 5)".into()
-                ))
-            )
-        }
-
-        #[test]
-        fn no_in_path() {
-            assert_eq!(
-                PathDiff::new(&b"<"[..], Terminator::Newline { required: false })
-                    .read()
-                    .map_err(unpack_io_error),
-                Err((
-                    ErrorKind::UnexpectedEof,
-                    "Expected a path after '<' (item #1 at offset 0)".into()
-                ))
-            )
-        }
-
-        #[test]
-        fn no_out_path() {
-            assert_eq!(
-                PathDiff::new(&b"<abc\n>"[..], Terminator::Newline { required: false })
-                    .read()
-                    .map_err(unpack_io_error),
-                Err((
-                    ErrorKind::UnexpectedEof,
-                    "Expected a path after '>' (item #2 at offset 5)".into()
-                ))
-            )
-        }
-
-        #[test]
-        fn no_out() {
-            assert_eq!(
-                PathDiff::new(&b"<abc"[..], Terminator::Newline { required: false })
-                    .read()
-                    .map_err(unpack_io_error),
-                Err((
-                    ErrorKind::UnexpectedEof,
-                    "Expected '>' (item #2 at offset 4)".into()
-                ))
-            )
-        }
-
-        #[test]
-        fn empty_out() {
-            assert_eq!(
-                PathDiff::new(&b"<abc\n\n"[..], Terminator::Newline { required: false })
-                    .read()
-                    .map_err(unpack_io_error),
-                Err((
-                    ErrorKind::UnexpectedEof,
-                    "Expected '>' (item #2 at offset 5)".into()
-                ))
+                Err((kind, message.into()))
             )
         }
     }
