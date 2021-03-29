@@ -2,9 +2,8 @@
 mod utils;
 
 use assert_fs::prelude::*;
-use assert_fs::TempDir;
 use predicates::prelude::*;
-use utils::cpb;
+use utils::{cpb, temp_dir, write};
 
 #[test]
 fn no_input() {
@@ -16,9 +15,9 @@ mod input_terminator {
 
     #[test]
     fn line() {
-        let dir = TempDir::new().unwrap();
-        let src_file = dir.child("a");
-        src_file.write_str("1").unwrap();
+        let dir = temp_dir();
+
+        let src_file = write(dir.child("a"), "1");
         let dst_file = dir.child("b");
 
         cpb()
@@ -35,9 +34,9 @@ mod input_terminator {
 
     #[test]
     fn null() {
-        let dir = TempDir::new().unwrap();
-        let src_file = dir.child("a");
-        src_file.write_str("1").unwrap();
+        let dir = temp_dir();
+
+        let src_file = write(dir.child("a"), "1");
         let dst_file = dir.child("b");
 
         cpb()
@@ -59,10 +58,11 @@ mod failure {
 
     #[test]
     fn immediate() {
-        let dir = TempDir::new().unwrap();
+        let dir = temp_dir();
+
         let src_file_1 = dir.child("a1");
-        let src_file_2 = dir.child("a2");
-        src_file_2.write_str("2").unwrap();
+        let src_file_2 = write(dir.child("a2"), "2");
+
         let dst_file_1 = dir.child("b1");
         let dst_file_2 = dir.child("b2");
 
@@ -77,16 +77,18 @@ mod failure {
 
         src_file_1.assert(predicates::path::missing());
         src_file_2.assert("2");
+
         dst_file_1.assert(predicates::path::missing());
         dst_file_2.assert(predicates::path::missing());
     }
 
     #[test]
     fn at_end() {
-        let dir = TempDir::new().unwrap();
+        let dir = temp_dir();
+
         let src_file_1 = dir.child("a1");
-        let src_file_2 = dir.child("a2");
-        src_file_2.write_str("2").unwrap();
+        let src_file_2 = write(dir.child("a2"), "2");
+
         let dst_file_1 = dir.child("b1");
         let dst_file_2 = dir.child("b2");
 
@@ -102,6 +104,7 @@ mod failure {
 
         src_file_1.assert(predicates::path::missing());
         src_file_2.assert("2");
+
         dst_file_1.assert(predicates::path::missing());
         dst_file_2.assert("2");
     }
@@ -112,9 +115,9 @@ mod verbose {
 
     #[test]
     fn success() {
-        let dir = TempDir::new().unwrap();
-        let src_file = dir.child("a");
-        src_file.write_str("1").unwrap();
+        let dir = temp_dir();
+
+        let src_file = write(dir.child("a"), "1");
         let dst_file = dir.child("b");
 
         cpb()
@@ -128,6 +131,7 @@ mod verbose {
 
         src_file.assert(predicates::path::is_file());
         src_file.assert("1");
+
         dst_file.assert(predicates::path::is_file());
         dst_file.assert("1");
     }
@@ -137,10 +141,11 @@ mod verbose {
 
         #[test]
         fn immediate() {
-            let dir = TempDir::new().unwrap();
+            let dir = temp_dir();
+
             let src_file_1 = dir.child("a1");
-            let src_file_2 = dir.child("a2");
-            src_file_2.write_str("2").unwrap();
+            let src_file_2 = write(dir.child("a2"), "2");
+
             let dst_file_1 = dir.child("b1");
             let dst_file_2 = dir.child("b2");
 
@@ -156,16 +161,18 @@ mod verbose {
 
             src_file_1.assert(predicates::path::missing());
             src_file_2.assert("2");
+
             dst_file_1.assert(predicates::path::missing());
             dst_file_2.assert(predicates::path::missing());
         }
 
         #[test]
         fn at_end() {
-            let dir = TempDir::new().unwrap();
+            let dir = temp_dir();
+
             let src_file_1 = dir.child("a1");
-            let src_file_2 = dir.child("a2");
-            src_file_2.write_str("2").unwrap();
+            let src_file_2 = write(dir.child("a2"), "2");
+
             let dst_file_1 = dir.child("b1");
             let dst_file_2 = dir.child("b2");
 
@@ -182,6 +189,7 @@ mod verbose {
 
             src_file_1.assert(predicates::path::missing());
             src_file_2.assert("2");
+
             dst_file_1.assert(predicates::path::missing());
             dst_file_2.assert("2");
         }

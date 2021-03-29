@@ -2,14 +2,12 @@
 mod utils;
 
 use assert_fs::prelude::*;
-use assert_fs::TempDir;
-use utils::{cpb, rew};
+use utils::{cpb, rew, temp_dir, write};
 
 #[test]
 fn test() {
-    let dir = TempDir::new().unwrap();
-    let src_file = dir.child("a");
-    src_file.write_str("1").unwrap();
+    let dir = temp_dir();
+    let src_file = write(dir.child("a"), "1");
     let dst_file = dir.child("b");
 
     let rew = rew()
