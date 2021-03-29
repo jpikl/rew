@@ -558,3 +558,46 @@ fn explain() {
         "})
         .stderr("");
 }
+
+mod blns {
+    use super::*;
+    use naughty_strings::BLNS;
+
+    #[test]
+    fn pattern() {
+        for string in BLNS {
+            rew()
+                .arg("--")
+                .arg(string)
+                .assert()
+                .code(predicate::in_iter(vec![0, 3]));
+        }
+    }
+
+    #[test]
+    fn args() {
+        for string in BLNS {
+            rew()
+                .arg("--print-raw")
+                .arg("--")
+                .arg("{}")
+                .arg(string)
+                .assert()
+                .code(predicate::in_iter(vec![0, 4]))
+                .stdout(*string);
+        }
+    }
+
+    #[test]
+    fn stdin() {
+        for string in BLNS {
+            rew()
+                .arg("--print-raw")
+                .arg("{}")
+                .write_stdin(string.as_bytes())
+                .assert()
+                .code(predicate::in_iter(vec![0, 4]))
+                .stdout(*string);
+        }
+    }
+}

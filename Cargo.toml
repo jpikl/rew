@@ -30,6 +30,7 @@ uuid = { version = "0.8", features = ["v4"] }
 assert_cmd = "1.0.1"
 assert_fs = "1.0.0"
 claim = "0.5.0"
+naughty-strings = "0.2.3"
 ntest = "0.7.2"
 predicates = "1.0.5"
 test-case = "1.1.0"
