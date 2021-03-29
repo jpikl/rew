@@ -36,6 +36,7 @@ find -iname '*.jpeg' | rew 'img_{C}.{e|l|r:e}' -d | mvb
 - [✏️ Pattern](https://jpikl.github.io/rew/pattern.html)
   - [🛤 Path filters](https://jpikl.github.io/rew/filters/path.html)
   - [🆎 Substring filters](https://jpikl.github.io/rew/filters/substr.html)
+  - [📊 Column filters](https://jpikl.github.io/rew/filters/column.html)
   - [🔍 Replace filters](https://jpikl.github.io/rew/filters/replace.html)
   - [⭐️ Regex filters](https://jpikl.github.io/rew/filters/regex.html)
   - [🎨 Format filters](https://jpikl.github.io/rew/filters/format.html)
