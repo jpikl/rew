@@ -45,6 +45,7 @@ find -iname '*.jpeg' | rew 'img_{C}.{e|l|r:e}' -d | mvb
 - [💬 Output](https://jpikl.github.io/rew/output.html)
 - [🔬 Comparison with similar tools](https://jpikl.github.io/rew/comparison.html)
 - [🗃 Examples](https://jpikl.github.io/rew/examples.html)
+- [📈 Changelog](CHANGELOG.md)
 
 ## License
 
