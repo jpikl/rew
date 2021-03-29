@@ -125,7 +125,7 @@ pub struct Cli {
 
     /// Enable diff output mode
     #[clap(
-        short = 'b',
+        short = 'd',
         long,
         conflicts_with = "pretty",
         help_heading = OUTPUT_HEADING,

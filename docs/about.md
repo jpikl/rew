@@ -19,5 +19,5 @@ find -iname '*.jpeg' | rew 'img_{C}.{e|l|r:e}'
 Rew is also distributed with two accompanying utilities (`mvb` and `cpb`) which move/copy files and directories, based on `rew` output.
 
 ```bash
-find -iname '*.jpeg' | rew 'img_{C}.{e|l|r:e}' -b | mvb
+find -iname '*.jpeg' | rew 'img_{C}.{e|l|r:e}' -d | mvb
 ```

@@ -9,7 +9,7 @@
 
 ```bash
 find -name '*.jpeg' | xargs rename .jpeg .jpg     # Rename *.jpeg files to *.jpg
-find -name '*.jpeg' | rew -b '{B}.jpg' | mvb      # Same thing using rew + mvb
+find -name '*.jpeg' | rew -d '{B}.jpg' | mvb      # Same thing using rew + mvb
 find -name '*.jpeg' | rew -q 'mv {} {B}.jpg' | sh # Same thing using rew + mv + sh
 ```
 

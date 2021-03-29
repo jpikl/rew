@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Output of `--help-filters` flag has more readable layout.
 - `-T, --no-trailing-delimiter` flag was renamed to `-L, --no-print-end`.
 - `-s, --fail-at-end` flag was renamed to `-F, --fail-at-end`.
+- `-b, -diff` flag was renamed to `-d, --diff` flag.
 
 ### Fixed
 

@@ -12,7 +12,7 @@ ls | rew '{a}' # Paths are read from standard input
 Rename all `*.jpeg` files to `*.jpg`.
 
 ```bash
-find -name '*.jpeg' | rew -b '{B}.jpg' | mvb -v
+find -name '*.jpeg' | rew -d '{B}.jpg' | mvb -v
 ```
 
 Same thing but we use `rew` to generate executable shell code.
@@ -24,37 +24,37 @@ find -name '*.jpeg' | rew -q 'mv -v {} {B}.jpg' | sh
 Make backup copy of each `*.txt` file with `.txt.bak` extension in the same directory.
 
 ```bash
-find -name '*.txt'  | rew -b '{}.bak'  | cpb -v
+find -name '*.txt'  | rew -d '{}.bak'  | cpb -v
 ```
 
 Copy `*.txt` files (keep directory structure) to the `~/Backup` directory.
 
 ```bash
-find -name '*.txt'  | rew -b "$HOME/Backup/{p}"  | cpb -v
+find -name '*.txt'  | rew -d "$HOME/Backup/{p}"  | cpb -v
 ```
 
 Copy `*.txt` files (flatten directory structure) to the `~/Backup` directory.
 
 ```bash
-find -name '*.txt'  | rew -b "$HOME/Backup/{f}"  | cpb -v
+find -name '*.txt'  | rew -d "$HOME/Backup/{f}"  | cpb -v
 ```
 
 Same thing but we append randomly generated suffix after base name to avoid name collisions.
 
 ```bash
-find -name '*.txt'  | rew -b "$HOME/Backup/{b}_{U}.{e}"  | cpb -v
+find -name '*.txt'  | rew -d "$HOME/Backup/{b}_{U}.{e}"  | cpb -v
 ```
 
 Flatten directory structure `./dir/subdir/` to `./dir_subdir/`.
 
 ```bash
-find -mindepth 2 -maxdepth 2 -type d | rew -b '{D}_{F}' | mvb -v
+find -mindepth 2 -maxdepth 2 -type d | rew -d '{D}_{F}' | mvb -v
 ```
 
 Normalize base names of files to `file_001`, `file_002`, ...
 
 ```bash
-find -type f | rew -b '{d}/file_{C|<3:0}{E}' | mvb -v
+find -type f | rew -d '{d}/file_{C|<3:0}{E}' | mvb -v
 ```
 
 Print the first word of each line with removed diacritics (accents).

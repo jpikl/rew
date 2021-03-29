@@ -23,9 +23,9 @@ use termcolor::ColorChoice;
             <src_path_N
             >dst_path_N
        
-        Such input can be generated using accompanying `rew` utility and its `-b, --diff` flag:
+        Such input can be generated using accompanying `rew` utility and its `-d, --diff` flag:
        
-            $> find -name '*.jpeg' | rew -b '{B}.jpg' | mvb # Rename all *.jpeg files to *.jpg
+            $> find -name '*.jpeg' | rew -d '{B}.jpg' | mvb # Rename all *.jpeg files to *.jpg
        
         Each pair of source and destination path must be either both files or both directories. Mixing these types will result in error.
        

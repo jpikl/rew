@@ -42,8 +42,8 @@ Apart from this (standard) mode, there are also two other output modes.
 Such output can be processed by accompanying `mvb` and `cpb` utilities to perform bulk move/copy.
 
 ```bash
-find -name '*.jpeg' | rew -b '{B}.jpg' | mvb # Rename all *.jpeg files to *.jpg
-find -name '*.txt'  | rew -b '{}.bak'  | cpb # Make backup copy of each *.txt file
+find -name '*.jpeg' | rew -d '{B}.jpg' | mvb # Rename all *.jpeg files to *.jpg
+find -name '*.txt'  | rew -d '{}.bak'  | cpb # Make backup copy of each *.txt file
 ```
 
 ## 🌹 Pretty mode
