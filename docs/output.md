@@ -24,7 +24,7 @@ Apart from this (standard) mode, there are also two other output modes.
 
 ## 🤖 Diff mode
 
-- Enabled using `-b, --diff` flag.
+- Enabled using `-d, --diff` flag.
 - Respects `--print*` flags/options.
 - Ignores `--no-print-end` flag.
 - Prints machine-readable transformations as results:
