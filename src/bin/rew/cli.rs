@@ -238,6 +238,10 @@ pub struct Cli {
     #[clap(long, requires = "pattern", help_heading = PATTERN_HEADING)]
     pub explain: bool,
 
+    /// Print explanation of a given pattern (only filters)
+    #[clap(long, requires = "pattern", help_heading = PATTERN_HEADING)]
+    pub explain_filters: bool,
+
     /// Wrap output of every pattern expression in quotes
     ///
     /// Use the flag once for single quotes.

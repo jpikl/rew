@@ -97,8 +97,8 @@ fn run(cli: &Cli, io: &Io) -> Result {
             }
         };
 
-        if cli.explain {
-            pattern.explain(&mut io.stdout())?;
+        if cli.explain || cli.explain_filters {
+            pattern.explain(&mut io.stdout(), cli.explain)?;
             return Ok(EXIT_CODE_OK);
         }
 

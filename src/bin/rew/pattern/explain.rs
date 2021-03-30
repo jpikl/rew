@@ -8,21 +8,23 @@ use std::io::{Result, Write};
 use termcolor::{Color, WriteColor};
 
 impl Pattern {
-    pub fn explain<O>(&self, output: &mut O) -> Result<()>
-    where
-        O: Write + WriteColor,
-    {
+    pub fn explain<O: Write + WriteColor>(&self, output: &mut O, all: bool) -> Result<()> {
         for item in &self.items {
             match &item.value {
-                Item::Constant(_) => self.explain_part(output, &item, Color::Green),
+                Item::Constant(_) => {
+                    if all {
+                        self.explain_part(output, &item, Color::Green)?;
+                    }
+                }
                 Item::Expression(filters) => {
-                    self.explain_part(output, &item, Color::Yellow)?;
+                    if all {
+                        self.explain_part(output, &item, Color::Yellow)?;
+                    }
                     for filter in filters {
                         self.explain_part(output, &filter, Color::Blue)?;
                     }
-                    Ok(())
                 }
-            }?;
+            }
         }
         Ok(())
     }
@@ -47,23 +49,27 @@ mod tests {
     use crate::pattern::filter::Filter;
     use crate::pattern::parse::Parsed;
     use common::testing::{ColoredOuput, OutputChunk};
+    use test_case::test_case;
 
-    #[test]
-    fn empty() {
-        let pattern = Pattern {
-            source: String::new(),
-            items: Vec::new(),
-        };
-
+    #[test_case(empty_pattern(),    false, Vec::new()      ; "empty filters")]
+    #[test_case(empty_pattern(),    true,  Vec::new()      ; "empty all")]
+    #[test_case(nonempty_pattern(), false, filter_chunks() ; "nonempty filters")]
+    #[test_case(nonempty_pattern(), true,  all_chunks()    ; "nonempty all")]
+    fn explain(pattern: Pattern, all: bool, chunks: Vec<OutputChunk>) {
         let mut output = ColoredOuput::new();
-        pattern.explain(&mut output).unwrap();
-
-        assert_eq!(output.chunks(), &[]);
+        pattern.explain(&mut output, all).unwrap();
+        assert_eq!(output.chunks(), &chunks);
     }
 
-    #[test]
-    fn nonempty() {
-        let pattern = Pattern {
+    fn empty_pattern() -> Pattern {
+        Pattern {
+            source: String::new(),
+            items: Vec::new(),
+        }
+    }
+
+    fn nonempty_pattern() -> Pattern {
+        Pattern {
             source: "_{f|t}".into(),
             items: vec![
                 Parsed {
@@ -84,39 +90,53 @@ mod tests {
                     range: 1..6,
                 },
             ],
-        };
+        }
+    }
 
-        let mut output = ColoredOuput::new();
-        pattern.explain(&mut output).unwrap();
+    fn all_chunks() -> Vec<OutputChunk> {
+        vec![
+            OutputChunk::bold_color(Color::Green, "_"),
+            OutputChunk::plain("{f|t}\n"),
+            OutputChunk::bold_color(Color::Green, "^"),
+            OutputChunk::plain("\n\n"),
+            OutputChunk::color(Color::Green, "Constant '_'"),
+            OutputChunk::plain("\n\n_"),
+            OutputChunk::bold_color(Color::Yellow, "{f|t}"),
+            OutputChunk::plain("\n "),
+            OutputChunk::bold_color(Color::Yellow, "^^^^^"),
+            OutputChunk::plain("\n\n"),
+            OutputChunk::color(Color::Yellow, "Expression with 2 filters"),
+            OutputChunk::plain("\n\n_{"),
+            OutputChunk::bold_color(Color::Blue, "f"),
+            OutputChunk::plain("|t}\n  "),
+            OutputChunk::bold_color(Color::Blue, "^"),
+            OutputChunk::plain("\n\n"),
+            OutputChunk::color(Color::Blue, "File name"),
+            OutputChunk::plain("\n\n_{f|"),
+            OutputChunk::bold_color(Color::Blue, "t"),
+            OutputChunk::plain("}\n    "),
+            OutputChunk::bold_color(Color::Blue, "^"),
+            OutputChunk::plain("\n\n"),
+            OutputChunk::color(Color::Blue, "Trim"),
+            OutputChunk::plain("\n\n"),
+        ]
+    }
 
-        assert_eq!(
-            output.chunks(),
-            &[
-                OutputChunk::bold_color(Color::Green, "_"),
-                OutputChunk::plain("{f|t}\n"),
-                OutputChunk::bold_color(Color::Green, "^"),
-                OutputChunk::plain("\n\n"),
-                OutputChunk::color(Color::Green, "Constant '_'"),
-                OutputChunk::plain("\n\n_"),
-                OutputChunk::bold_color(Color::Yellow, "{f|t}"),
-                OutputChunk::plain("\n "),
-                OutputChunk::bold_color(Color::Yellow, "^^^^^"),
-                OutputChunk::plain("\n\n"),
-                OutputChunk::color(Color::Yellow, "Expression with 2 filters"),
-                OutputChunk::plain("\n\n_{"),
-                OutputChunk::bold_color(Color::Blue, "f"),
-                OutputChunk::plain("|t}\n  "),
-                OutputChunk::bold_color(Color::Blue, "^"),
-                OutputChunk::plain("\n\n"),
-                OutputChunk::color(Color::Blue, "File name"),
-                OutputChunk::plain("\n\n_{f|"),
-                OutputChunk::bold_color(Color::Blue, "t"),
-                OutputChunk::plain("}\n    "),
-                OutputChunk::bold_color(Color::Blue, "^"),
-                OutputChunk::plain("\n\n"),
-                OutputChunk::color(Color::Blue, "Trim"),
-                OutputChunk::plain("\n\n")
-            ]
-        );
+    fn filter_chunks() -> Vec<OutputChunk> {
+        vec![
+            OutputChunk::plain("_{"),
+            OutputChunk::bold_color(Color::Blue, "f"),
+            OutputChunk::plain("|t}\n  "),
+            OutputChunk::bold_color(Color::Blue, "^"),
+            OutputChunk::plain("\n\n"),
+            OutputChunk::color(Color::Blue, "File name"),
+            OutputChunk::plain("\n\n_{f|"),
+            OutputChunk::bold_color(Color::Blue, "t"),
+            OutputChunk::plain("}\n    "),
+            OutputChunk::bold_color(Color::Blue, "^"),
+            OutputChunk::plain("\n\n"),
+            OutputChunk::color(Color::Blue, "Trim"),
+            OutputChunk::plain("\n\n"),
+        ]
     }
 }

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `--explain-filter` flag to print an explanation like `--explain` but only for filters.
+
 ## [0.3.0] - 2021-03-29
 
 ### Added
