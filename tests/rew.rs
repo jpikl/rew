@@ -475,11 +475,11 @@ mod separator {
     #[test]
     fn default() {
         rew()
-            .arg("{&1}_{&2}")
+            .arg("{&1};{&2};{&3}")
             .write_stdin("a\tb c123d")
             .assert()
             .success()
-            .stdout("a_b c123d\n")
+            .stdout("a;b;c123d\n")
             .stderr("");
     }
 
@@ -487,11 +487,11 @@ mod separator {
     fn string() {
         rew()
             .arg("--separator= ")
-            .arg("{&1}_{&2}")
+            .arg("{&1};{&2};{&3}")
             .write_stdin("a\tb c123d")
             .assert()
             .success()
-            .stdout("a\tb_c123d\n")
+            .stdout("a\tb;c123d;\n")
             .stderr("");
     }
 
@@ -499,11 +499,11 @@ mod separator {
     fn regex() {
         rew()
             .arg("--separator-regex=[0-9]+")
-            .arg("{&1}_{&2}")
+            .arg("{&1};{&2};{&3}")
             .write_stdin("a\tb c123d")
             .assert()
             .success()
-            .stdout("a\tb c_d\n")
+            .stdout("a\tb c;d;\n")
             .stderr("");
     }
 }

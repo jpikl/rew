@@ -2,8 +2,8 @@ use crate::cli::Cli;
 use crate::output::write_pattern_error;
 use crate::pattern::parse::Separator;
 use crate::pattern::regex::RegexHolder;
-use crate::pattern::symbols::{DEFAULT_ESCAPE, DEFAULT_SEPARATOR};
 use crate::pattern::{eval, help, parse, Pattern};
+use ::regex::Regex;
 use common::help::highlight;
 use common::input::Terminator;
 use common::run::{exec_run, Io, Result, EXIT_CODE_OK};
@@ -81,11 +81,13 @@ fn run(cli: &Cli, io: &Io) -> Result {
         } else if let Some(separator) = &cli.separator_regex {
             Separator::Regex(RegexHolder(separator.clone()))
         } else {
-            Separator::String(DEFAULT_SEPARATOR.into())
+            Separator::Regex(RegexHolder(
+                Regex::new("\\s+").expect("Failed to create default separator from regex"),
+            ))
         };
 
         let parse_config = parse::Config {
-            escape: cli.escape.unwrap_or(DEFAULT_ESCAPE),
+            escape: cli.escape.unwrap_or('%'),
             separator,
         };
 

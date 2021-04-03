@@ -86,7 +86,6 @@ impl fmt::Display for Field {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::pattern::symbols::DEFAULT_SEPARATOR;
     use crate::utils::{AnyString, ByteRange};
     use test_case::test_case;
 
@@ -98,10 +97,7 @@ mod tests {
     #[test_case("1/[0", 2..4, ErrorKind::RegexInvalid(AnyString::any()) ; "invalid regex separator")]
     fn parse_err(input: &str, range: ByteRange, kind: ErrorKind) {
         assert_eq!(
-            Field::parse(
-                &mut Reader::from(input),
-                &Separator::String(DEFAULT_SEPARATOR.into())
-            ),
+            Field::parse(&mut Reader::from(input), &Separator::String(' '.into())),
             Err(Error { kind, range })
         );
     }
@@ -110,13 +106,13 @@ mod tests {
         use super::*;
         use test_case::test_case;
 
-        #[test_case("1",      0, &String::from(DEFAULT_SEPARATOR) ; "index")]
-        #[test_case("10:abc", 9, "abc"                            ; "index and separator")]
+        #[test_case("1",         0, "default" ; "index")]
+        #[test_case("10:custom", 9, "custom"  ; "index and separator")]
         fn parse(input: &str, index: IndexValue, separator: &str) {
             assert_eq!(
                 Field::parse(
                     &mut Reader::from(input),
-                    &Separator::String(DEFAULT_SEPARATOR.into())
+                    &Separator::String("default".into())
                 ),
                 Ok(Field {
                     index,

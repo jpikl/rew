@@ -14,10 +14,9 @@ pub struct Config {
 #[cfg(test)]
 impl Config {
     pub fn fixture() -> Self {
-        use crate::pattern::symbols::{DEFAULT_ESCAPE, DEFAULT_SEPARATOR};
         Self {
-            escape: DEFAULT_ESCAPE,
-            separator: Separator::String(DEFAULT_SEPARATOR.into()),
+            escape: '%',
+            separator: Separator::Regex("\\s+".into()),
         }
     }
 }

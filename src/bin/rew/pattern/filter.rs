@@ -263,7 +263,6 @@ mod tests {
         EmptySubstitution, RegexSubstitution, StringSubstitution, Substitution,
     };
     use crate::pattern::switch::{Case, RegexSwitch};
-    use crate::pattern::symbols::DEFAULT_SEPARATOR;
     use crate::utils::Empty;
     use crate::utils::{AnyString, ByteRange};
     use test_case::test_case;
@@ -560,7 +559,7 @@ mod tests {
     fn field_default() -> Field {
         Field {
             index: 1,
-            separator: Separator::String(DEFAULT_SEPARATOR.into()),
+            separator: Separator::Regex("\\s+".into()),
         }
     }
 

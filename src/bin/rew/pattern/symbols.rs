@@ -1,6 +1,3 @@
-pub const DEFAULT_ESCAPE: char = '%';
-pub const DEFAULT_SEPARATOR: char = '\t';
-
 pub const EXPR_START: char = '{';
 pub const EXPR_END: char = '}';
 pub const PIPE: char = '|';
