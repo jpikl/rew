@@ -322,9 +322,9 @@ checksum = "61807f77802ff30975e01f4f071c8ba10c022052f98b3294119f3e615d13e5be"
 
 [[package]]
 name = "normpath"
-version = "0.2.0"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2a9da8c9922c35a1033d76f7272dfc2e7ee20392083d75aeea6ced23c6266578"
+checksum = "27e6e8f70e9fbbe3752d330d769e3424f24b9458ce266df93a3b456902fd696a"
 dependencies = [
  "winapi",
 ]
