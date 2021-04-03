@@ -3,10 +3,10 @@ use crate::pattern::parser::Parser;
 use crate::pattern::parser::{Item, ParsedItem};
 
 mod char;
-mod column;
 mod escape;
 pub mod eval;
 mod explain;
+mod field;
 pub mod filter;
 pub mod help;
 mod index;

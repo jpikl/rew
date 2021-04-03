@@ -75,7 +75,7 @@ impl fmt::Display for Error {
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum ErrorKind {
-    ExpectedColumnSeparator,
+    ExpectedFieldSeparator,
     ExpectedFilter,
     ExpectedNumber,
     ExpectedFilterOrExprEnd,
@@ -114,7 +114,7 @@ impl From<Infallible> for ErrorKind {
 impl fmt::Display for ErrorKind {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::ExpectedColumnSeparator => write!(formatter, "Expected column separator"),
+            Self::ExpectedFieldSeparator => write!(formatter, "Expected field separator"),
             Self::ExpectedFilter => write!(formatter, "Expected filter after '{}'", PIPE),
             Self::ExpectedNumber => write!(formatter, "Expected number"),
             Self::ExpectedFilterOrExprEnd => {
@@ -267,7 +267,7 @@ mod tests {
 
     type E = ErrorKind;
 
-    #[test_case(E::ExpectedColumnSeparator,                     "Expected column separator"                                  ; "expected column separator")]
+    #[test_case(E::ExpectedFieldSeparator,                      "Expected field separator"                                   ; "expected field separator")]
     #[test_case(E::ExpectedFilter,                              "Expected filter after '|'"                                  ; "expected filter")]
     #[test_case(E::ExpectedNumber,                              "Expected number"                                            ; "expected number")]
     #[test_case(E::ExpectedFilterOrExprEnd,                     "Expected filter or closing '}'"                             ; "expected filter or expr end")]

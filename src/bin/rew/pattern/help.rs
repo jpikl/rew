@@ -52,11 +52,11 @@ pub const FILTERS: &str = indoc! {r#"
   `#A-`   From `A` to end         
   `#A`    Character at `A`
 
-# COLUMN
+# FIELD
 
-  `&N:S`  Column `N`, string separator `S`   (`:` = any delimiter char except `/`)
-  `&N/S`  Column `N`, regex separator `S`    (`N` = 1-based index)
-  `&N`    Column `N`, global separator    (`-N` = backward indexing)
+  `&N:S`  Field `N`, string separator `S`   (`:` = any delimiter char except `/`)
+  `&N/S`  Field `N`, regex separator `S`    (`N` = 1-based index)
+  `&N`    Field `N`, default separator   (`-N` = backward indexing)
 
 # REPLACEMENT
 

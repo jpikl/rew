@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `--explain-filter` flag to print an explanation like `--explain` but only for filters.
 
+### Changed
+
+- Column filter `&` is now called *Field filter*.
+- Global column separator is now called *Default field separator*.
+
 ## [0.3.0] - 2021-03-29
 
 ### Added

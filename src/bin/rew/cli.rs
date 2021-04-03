@@ -256,9 +256,9 @@ pub struct Cli {
     )]
     pub quote: usize,
 
-    /// Global column separator (string)
+    /// Default field separator (string)
     ///
-    /// This value will be used as a separator for column filter.
+    /// This value will be used as a separator for field filter.
     #[clap(
         short = 's',
         long,
@@ -268,9 +268,9 @@ pub struct Cli {
     )]
     pub separator: Option<String>,
 
-    /// Global column separator (regular expression)
+    /// Default field separator (regular expression)
     ///
-    /// This value will be used as a separator for column filter.
+    /// This value will be used as a separator for field filter.
     #[clap(
         short = 'S',
         long,

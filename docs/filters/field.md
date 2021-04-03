@@ -1,12 +1,12 @@
-# 📊 Column filters
+# 📊 Field filters
 
 | Filter  | Description                                                     |
 | ------- | --------------------------------------------------------------- |
-| `&N:S`  | Split value using separator `S`, output `N`-th column.<br>Column indices `N` start from 1.<br>Use `-N` for backward indexing.<br>Any other character than `:` can be also used as a delimiter.<br>Use of `/` as a delimiter has special meaning (see below). |
-| `&N/S`  | Split value using regular expression `S`, output `N`-th column. |
-| `&N`    | Split value using global separator, output `N`-th column.       |
+| `&N:S`  | Split value using separator `S`, output `N`-th field.<br>Field indices `N` start from 1.<br>Use `-N` for backward indexing.<br>Any other character than `:` can be also used as a delimiter.<br>Use of `/` as a delimiter has special meaning (see below). |
+| `&N/S`  | Split value using regular expression `S`, output `N`-th field. |
+| `&N`    | Split value using default separator, output `N`-th field.       |
 
-By default, the global separator is *horizontal tab*.
+The default field separator is *horizontal tab*.
 
 - Use `-s, --separator` option to change it to a string.
 - Use `-S, --separator-regex` option to change it to a regular expression.

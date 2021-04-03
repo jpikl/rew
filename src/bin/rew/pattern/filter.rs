@@ -1,5 +1,5 @@
 use crate::pattern::char::{AsChar, Char};
-use crate::pattern::column::Column;
+use crate::pattern::field::Field;
 use crate::pattern::index::IndexRange;
 use crate::pattern::integer::parse_integer;
 use crate::pattern::number::NumberRange;
@@ -34,8 +34,8 @@ pub enum Filter {
     RemoveTrailDirSeparator,
     Substring(IndexRange),
     SubstringRev(IndexRange),
-    GetColumn(Column),
-    GetColumnRev(Column),
+    GetField(Field),
+    GetFieldRev(Field),
     ReplaceFirst(StringSubstitution),
     ReplaceAll(StringSubstitution),
     ReplaceEmpty(EmptySubstitution),
@@ -89,9 +89,9 @@ impl Filter {
                 '&' => {
                     let separator = &config.separator;
                     if reader.read_expected(RANGE_DELIMITER) {
-                        Ok(Self::GetColumnRev(Column::parse(reader, separator)?))
+                        Ok(Self::GetFieldRev(Field::parse(reader, separator)?))
                     } else {
-                        Ok(Self::GetColumn(Column::parse(reader, separator)?))
+                        Ok(Self::GetField(Field::parse(reader, separator)?))
                     }
                 }
                 'r' => Ok(Self::ReplaceFirst(StringSubstitution::parse(reader)?)),
@@ -146,8 +146,8 @@ impl Filter {
             Self::RemoveTrailDirSeparator => Ok(path::remove_trailing_dir_separator(value)),
             Self::Substring(range) => Ok(range.substr(value)),
             Self::SubstringRev(range) => Ok(range.substr_rev(value)),
-            Self::GetColumn(column) => Ok(column.get(&value).to_string()),
-            Self::GetColumnRev(column) => Ok(column.get_rev(&value).to_string()),
+            Self::GetField(field) => Ok(field.get(&value).to_string()),
+            Self::GetFieldRev(field) => Ok(field.get_rev(&value).to_string()),
             Self::ReplaceFirst(substitution) => Ok(substitution.replace_first(&value)),
             Self::ReplaceAll(substitution) => Ok(substitution.replace_all(&value)),
             Self::ReplaceEmpty(substitution) => Ok(substitution.replace(value)),
@@ -201,8 +201,8 @@ impl fmt::Display for Filter {
             Self::SubstringRev(range) => {
                 write!(formatter, "Substring from {} backward", range)
             }
-            Self::GetColumn(column) => write!(formatter, "Get {}", column),
-            Self::GetColumnRev(column) => write!(formatter, "Get {} backward", column),
+            Self::GetField(field) => write!(formatter, "Get {}", field),
+            Self::GetFieldRev(field) => write!(formatter, "Get {} backward", field),
             Self::ReplaceFirst(substitution) => write!(formatter, "Replace first {}", substitution),
             Self::ReplaceAll(substitution) => write!(formatter, "Replace all {}", substitution),
             Self::ReplaceEmpty(substitution) => {
@@ -252,7 +252,7 @@ mod tests {
     extern crate regex;
 
     use super::Filter;
-    use crate::pattern::column::Column;
+    use crate::pattern::field::Field;
     use crate::pattern::index::{Index, IndexRange};
     use crate::pattern::number::{Number, NumberRange};
     use crate::pattern::padding::Padding;
@@ -282,12 +282,12 @@ mod tests {
         #[test_case("-",        0..1, E::UnknownFilter('-'.into())                   ; "unknown")]
         #[test_case("#",        1..1, E::ExpectedRange                               ; "substring expected range")]
         #[test_case("#-",       2..2, E::ExpectedRange                               ; "substring rev expected range")]
-        #[test_case("&",        1..1, E::ExpectedNumber                              ; "column expected number")]
-        #[test_case("&-",       2..2, E::ExpectedNumber                              ; "column rev expected number")]
-        #[test_case("&1:",      3..3, E::ExpectedColumnSeparator                     ; "column expected separator")]
-        #[test_case("&-1:",     4..4, E::ExpectedColumnSeparator                     ; "column rev expected separator")]
-        #[test_case("&1/[0-9",  3..7, E::RegexInvalid(AnyString::any())              ; "column regex invalid")]
-        #[test_case("&-1/[0-9", 4..8, E::RegexInvalid(AnyString::any())              ; "column rev regex invalid")]
+        #[test_case("&",        1..1, E::ExpectedNumber                              ; "field expected number")]
+        #[test_case("&-",       2..2, E::ExpectedNumber                              ; "field rev expected number")]
+        #[test_case("&1:",      3..3, E::ExpectedFieldSeparator                      ; "field expected separator")]
+        #[test_case("&-1:",     4..4, E::ExpectedFieldSeparator                      ; "field rev expected separator")]
+        #[test_case("&1/[0-9",  3..7, E::RegexInvalid(AnyString::any())              ; "field regex invalid")]
+        #[test_case("&-1/[0-9", 4..8, E::RegexInvalid(AnyString::any())              ; "field rev regex invalid")]
         #[test_case("r",        1..1, E::ExpectedSubstitution                        ; "replace expected substitution")]
         #[test_case("R",        1..1, E::ExpectedSubstitution                        ; "replace all expected substitution")]
         #[test_case("=",        1..1, E::ExpectedRegex                               ; "regex match expected regex")]
@@ -330,12 +330,12 @@ mod tests {
         #[test_case("#-2-",         F::SubstringRev(index_range_from())     ; "substring rev from")]
         #[test_case("#-2-3",        F::SubstringRev(index_range_between())  ; "substring rev between")]
         #[test_case("#-2+3",        F::SubstringRev(index_range_length())   ; "substring rev length")]
-        #[test_case("&2",           F::GetColumn(column_global())           ; "column global separator")]
-        #[test_case("&2:,",         F::GetColumn(column_string())           ; "column string separator")]
-        #[test_case("&2/[, ]+",     F::GetColumn(column_regex())            ; "column regex separator")]
-        #[test_case("&-2",          F::GetColumnRev(column_global())        ; "column rev global separator")]
-        #[test_case("&-2:,",        F::GetColumnRev(column_string())        ; "column rev string separator")]
-        #[test_case("&-2/[, ]+",    F::GetColumnRev(column_regex())         ; "column rev regex separator")]
+        #[test_case("&2",           F::GetField(field_default())            ; "field default separator")]
+        #[test_case("&2:,",         F::GetField(field_string())             ; "field string separator")]
+        #[test_case("&2/[, ]+",     F::GetField(field_regex())              ; "field regex separator")]
+        #[test_case("&-2",          F::GetFieldRev(field_default())         ; "field rev default separator")]
+        #[test_case("&-2:,",        F::GetFieldRev(field_string())          ; "field rev string separator")]
+        #[test_case("&-2/[, ]+",    F::GetFieldRev(field_regex())           ; "field rev regex separator")]
         #[test_case("r/ab",         F::ReplaceFirst(subst_string_1())       ; "remove first")]
         #[test_case("r/ab/x",       F::ReplaceFirst(subst_string_2())       ; "replace first")]
         #[test_case("R/ab",         F::ReplaceAll(subst_string_1())         ; "remove all")]
@@ -422,10 +422,10 @@ mod tests {
         #[test_case("abcde",         F::SubstringRev(index_range_from()),    "abcd"     ; "substring rev from")]
         #[test_case("abcde",         F::SubstringRev(index_range_between()), "cd"       ; "substring rev between")]
         #[test_case("abcde",         F::SubstringRev(index_range_length()),  "bcd"      ; "substring rev length")]
-        #[test_case("a , b , c , d", F::GetColumn(column_string()),          " b "      ; "column string separator")]
-        #[test_case("a , b , c , d", F::GetColumn(column_regex()),           "b"        ; "column regex separator")]
-        #[test_case("a , b , c , d", F::GetColumnRev(column_string()),       " c "      ; "column rev string separator")]
-        #[test_case("a , b , c , d", F::GetColumnRev(column_regex()),        "c"        ; "column rev regex separator")]
+        #[test_case("a , b , c , d", F::GetField(field_string()),            " b "      ; "field string separator")]
+        #[test_case("a , b , c , d", F::GetField(field_regex()),             "b"        ; "field regex separator")]
+        #[test_case("a , b , c , d", F::GetFieldRev(field_string()),         " c "      ; "field rev string separator")]
+        #[test_case("a , b , c , d", F::GetFieldRev(field_regex()),          "c"        ; "field rev regex separator")]
         #[test_case("abcd_abcd",     F::ReplaceFirst(subst_string_1()),      "cd_abcd"  ; "remove first")]
         #[test_case("abcd_abcd",     F::ReplaceFirst(subst_string_2()),      "xcd_abcd" ; "replace first")]
         #[test_case("abcd_abcd",     F::ReplaceAll(subst_string_1()),        "cd_cd"    ; "remove all")]
@@ -501,10 +501,10 @@ mod tests {
     #[test_case(F::SubstringRev(index_range_from()),    "Substring from 2.. backward"         ; "substring rev from")]
     #[test_case(F::SubstringRev(index_range_between()), "Substring from 2..3 backward"        ; "substring rev between")]
     #[test_case(F::SubstringRev(index_range_length()),  "Substring from 2..4 backward"        ; "substring rev length")]
-    #[test_case(F::GetColumn(column_string()),          "Get column #2 (',' separator)"                                 ; "column string separator")]
-    #[test_case(F::GetColumn(column_regex()),           "Get column #2 (regular expression '[, ]+' separator)"          ; "column regex separator")]
-    #[test_case(F::GetColumnRev(column_string()),       "Get column #2 (',' separator) backward"                        ; "column rev string separator")]
-    #[test_case(F::GetColumnRev(column_regex()),        "Get column #2 (regular expression '[, ]+' separator) backward" ; "column rev regex separator")]
+    #[test_case(F::GetField(field_string()),            "Get field #2 (',' separator)"                                  ; "field string separator")]
+    #[test_case(F::GetField(field_regex()),             "Get field #2 (regular expression '[, ]+' separator)"           ; "field regex separator")]
+    #[test_case(F::GetFieldRev(field_string()),         "Get field #2 (',' separator) backward"                         ; "field rev string separator")]
+    #[test_case(F::GetFieldRev(field_regex()),          "Get field #2 (regular expression '[, ]+' separator) backward"  ; "field rev regex separator")]
     #[test_case(F::ReplaceFirst(subst_string_1()),      "Replace first 'ab' with ''"                                    ; "remove first")]
     #[test_case(F::ReplaceFirst(subst_string_2()),      "Replace first 'ab' with 'x'"                                   ; "replace first")]
     #[test_case(F::ReplaceAll(subst_string_1()),        "Replace all 'ab' with ''"                                      ; "remove all")]
@@ -557,22 +557,22 @@ mod tests {
         Range::<Index>(1, Some(4))
     }
 
-    fn column_global() -> Column {
-        Column {
+    fn field_default() -> Field {
+        Field {
             index: 1,
             separator: Separator::String(DEFAULT_SEPARATOR.into()),
         }
     }
 
-    fn column_string() -> Column {
-        Column {
+    fn field_string() -> Field {
+        Field {
             index: 1,
             separator: Separator::String(','.into()),
         }
     }
 
-    fn column_regex() -> Column {
-        Column {
+    fn field_regex() -> Field {
+        Field {
             index: 1,
             separator: Separator::Regex("[, ]+".into()),
         }

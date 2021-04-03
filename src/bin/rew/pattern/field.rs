@@ -6,12 +6,12 @@ use std::convert::TryInto;
 use std::fmt;
 
 #[derive(Debug, PartialEq)]
-pub struct Column {
+pub struct Field {
     pub index: IndexValue,
     pub separator: Separator,
 }
 
-impl Column {
+impl Field {
     pub fn parse(reader: &mut Reader<Char>, default_separator: &Separator) -> Result<Self> {
         let index = Index::parse(reader)?;
 
@@ -21,7 +21,7 @@ impl Column {
 
             if separator.is_empty() {
                 return Err(Error {
-                    kind: ErrorKind::ExpectedColumnSeparator,
+                    kind: ErrorKind::ExpectedFieldSeparator,
                     range: separator_start..reader.position(),
                 });
             }
@@ -72,11 +72,11 @@ impl Column {
     }
 }
 
-impl fmt::Display for Column {
+impl fmt::Display for Field {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         write!(
             formatter,
-            "column #{} ({} separator)",
+            "field #{} ({} separator)",
             self.index + 1,
             self.separator
         )
@@ -93,12 +93,12 @@ mod tests {
     #[test_case("",     0..0, ErrorKind::ExpectedNumber                 ; "empty")]
     #[test_case("x",    0..1, ErrorKind::ExpectedNumber                 ; "invalid number")]
     #[test_case("0",    0..1, ErrorKind::IndexZero                      ; "invalid index")]
-    #[test_case("1:",   2..2, ErrorKind::ExpectedColumnSeparator        ; "missing string separator")]
-    #[test_case("1/",   2..2, ErrorKind::ExpectedColumnSeparator        ; "missing regex separator")]
+    #[test_case("1:",   2..2, ErrorKind::ExpectedFieldSeparator         ; "missing string separator")]
+    #[test_case("1/",   2..2, ErrorKind::ExpectedFieldSeparator         ; "missing regex separator")]
     #[test_case("1/[0", 2..4, ErrorKind::RegexInvalid(AnyString::any()) ; "invalid regex separator")]
     fn parse_err(input: &str, range: ByteRange, kind: ErrorKind) {
         assert_eq!(
-            Column::parse(
+            Field::parse(
                 &mut Reader::from(input),
                 &Separator::String(DEFAULT_SEPARATOR.into())
             ),
@@ -114,11 +114,11 @@ mod tests {
         #[test_case("10:abc", 9, "abc"                            ; "index and separator")]
         fn parse(input: &str, index: IndexValue, separator: &str) {
             assert_eq!(
-                Column::parse(
+                Field::parse(
                     &mut Reader::from(input),
                     &Separator::String(DEFAULT_SEPARATOR.into())
                 ),
-                Ok(Column {
+                Ok(Field {
                     index,
                     separator: Separator::String(separator.into())
                 })
@@ -135,7 +135,7 @@ mod tests {
         #[test_case("a b",   2, " ", ""  ; "over last")]
         fn get(input: &str, index: IndexValue, separator: &str, output: &str) {
             assert_eq!(
-                Column {
+                Field {
                     index,
                     separator: Separator::String(separator.into())
                 }
@@ -154,7 +154,7 @@ mod tests {
         #[test_case("a b",   2, " ", ""  ; "over last")]
         fn get_rev(input: &str, index: IndexValue, separator: &str, output: &str) {
             assert_eq!(
-                Column {
+                Field {
                     index,
                     separator: Separator::String(separator.into())
                 }
@@ -166,12 +166,12 @@ mod tests {
         #[test]
         fn display() {
             assert_eq!(
-                Column {
+                Field {
                     index: 1,
                     separator: Separator::String("_".into())
                 }
                 .to_string(),
-                "column #2 ('_' separator)"
+                "field #2 ('_' separator)"
             );
         }
     }
@@ -185,8 +185,8 @@ mod tests {
         #[test_case("10/[0-9]+", 9, "[0-9]+" ; "index and separator")]
         fn parse(input: &str, index: IndexValue, separator: &str) {
             assert_eq!(
-                Column::parse(&mut Reader::from(input), &Separator::Regex("\\s+".into())),
-                Ok(Column {
+                Field::parse(&mut Reader::from(input), &Separator::Regex("\\s+".into())),
+                Ok(Field {
                     index,
                     separator: Separator::Regex(separator.into())
                 })
@@ -203,7 +203,7 @@ mod tests {
         #[test_case("a\t\tb",      2, "\\s+", ""  ; "over last")]
         fn get(input: &str, index: IndexValue, separator: &str, output: &str) {
             assert_eq!(
-                Column {
+                Field {
                     index,
                     separator: Separator::Regex(separator.into())
                 }
@@ -222,7 +222,7 @@ mod tests {
         #[test_case("a\t\tb",      2, "\\s+", ""  ; "over last")]
         fn get_rev(input: &str, index: IndexValue, separator: &str, output: &str) {
             assert_eq!(
-                Column {
+                Field {
                     index,
                     separator: Separator::Regex(separator.into())
                 }
@@ -234,12 +234,12 @@ mod tests {
         #[test]
         fn display() {
             assert_eq!(
-                Column {
+                Field {
                     index: 1,
                     separator: Separator::Regex("[0-9]+".into())
                 }
                 .to_string(),
-                "column #2 (regular expression '[0-9]+' separator)"
+                "field #2 (regular expression '[0-9]+' separator)"
             );
         }
     }
