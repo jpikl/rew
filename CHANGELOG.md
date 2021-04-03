@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Global column separator is now called *Default field separator*.
 - Default field separator is `\s+` (regular expression) instead of `\t` (horizontal tab).
 - Simplified and more consistent parse error messages.
+- Parse error messages contains hint how to resolve the error.
 
 ## [0.3.0] - 2021-03-29
 

@@ -94,7 +94,18 @@ fn run(cli: &Cli, io: &Io) -> Result {
         let pattern = match Pattern::parse(raw_pattern, &parse_config) {
             Ok(pattern) => pattern,
             Err(error) => {
-                write_pattern_error(&mut io.stderr(), &error, raw_pattern)?;
+                let mut stderr = io.stderr();
+                write_pattern_error(&mut stderr, &error, raw_pattern)?;
+
+                if let Some(hint) = error.kind.hint() {
+                    writeln!(stderr)?;
+                    let message = match hint {
+                        parse::ErrorHint::PatternSyntax => help::PATTERN_HINT,
+                        parse::ErrorHint::FilterUsage => help::FILTERS_HINT,
+                    };
+                    highlight(&mut stderr, message)?;
+                }
+
                 return Ok(EXIT_CODE_PARSE_ERROR);
             }
         };

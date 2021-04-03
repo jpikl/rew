@@ -94,6 +94,9 @@ pub const FILTERS: &str = indoc! {r#"
   `uA-`   `u` where `A <= u`
 "#};
 
+pub const PATTERN_HINT: &str = "Use `--help-pattern` flag to print pattern syntax reference.";
+pub const FILTERS_HINT: &str = "Use `--help-filters` flag to print filter reference.";
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -102,8 +105,10 @@ mod tests {
     use ntest::*;
     use test_case::test_case;
 
-    #[test_case(PATTERN ; "pattern")]
-    #[test_case(FILTERS ; "filters")]
+    #[test_case(PATTERN      ; "pattern")]
+    #[test_case(FILTERS      ; "filters")]
+    #[test_case(PATTERN_HINT ; "pattern hint")]
+    #[test_case(FILTERS_HINT ; "filters hint")]
     fn can_highlight(text: &str) {
         let mut output = ColoredOuput::new();
         highlight(&mut output, text).unwrap();

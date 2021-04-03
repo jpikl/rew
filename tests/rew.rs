@@ -339,6 +339,8 @@ mod errors {
                 
                 {
                 ^
+                
+                Use --help-pattern flag to print pattern syntax reference.
             "});
     }
 
