@@ -75,10 +75,11 @@ pub const FILTERS: &str = indoc! {r#"
 
 # FORMATTING
 
-  `t`  Trim
-  `^`  To uppercase    `i`  To ASCII
-  `v`  To lowercase    `I`  Remove non-ASCII chars
-
+  `t`  Trim            
+  `^`  To uppercase    `i`   To ASCII
+  `v`  To lowercase    `I`   Remove non-ASCII chars
+  
+  `*N`    Repeat `N` times
   `<<M`   Left pad with `M`            (`>>` or `>` to right pad)
   `<N:M`  Left pad `N` times with `M`    (`:` = any delimiter char)
 

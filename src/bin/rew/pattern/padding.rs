@@ -17,7 +17,7 @@ impl Padding {
         let position = reader.position();
         match reader.peek() {
             Some(prefix) => match prefix.as_char() {
-                '0'..='9' => Ok(Self::Repeated(Repetition::parse(reader)?)),
+                '0'..='9' => Ok(Self::Repeated(Repetition::parse_with_delimiter(reader)?)),
                 prefix if prefix == fixed_prefix => {
                     reader.seek();
                     Ok(Self::Fixed(reader.read_to_end().to_string()))
@@ -51,7 +51,7 @@ impl Padding {
     fn expand(&self) -> Cow<String> {
         match self {
             Self::Fixed(value) => Cow::Borrowed(value),
-            Self::Repeated(repetition) => Cow::Owned(repetition.expand()),
+            Self::Repeated(repetition) => Cow::Owned(repetition.expand("")),
         }
     }
 }
@@ -134,7 +134,7 @@ mod tests {
                 Padding::parse(&mut Reader::from(input), '<'),
                 Ok(Padding::Repeated(Repetition {
                     count,
-                    value: padding.into()
+                    value: Some(padding.into())
                 }))
             );
         }
@@ -148,7 +148,7 @@ mod tests {
             assert_eq!(
                 Padding::Repeated(Repetition {
                     count,
-                    value: padding.into()
+                    value: Some(padding.into())
                 })
                 .apply_left(input.into()),
                 output
@@ -164,7 +164,7 @@ mod tests {
             assert_eq!(
                 Padding::Repeated(Repetition {
                     count,
-                    value: padding.into()
+                    value: Some(padding.into())
                 })
                 .apply_right(input.into()),
                 output
@@ -176,7 +176,7 @@ mod tests {
             assert_eq!(
                 Padding::Repeated(Repetition {
                     count: 5,
-                    value: "abc".into()
+                    value: Some("abc".into())
                 })
                 .to_string(),
                 "5x 'abc'"

@@ -166,7 +166,7 @@ impl Filter {
             }
             Self::LeftPad(padding) => Ok(padding.apply_left(value)),
             Self::RightPad(padding) => Ok(padding.apply_right(value)),
-            Self::Repeat(repetition) => Ok(repetition.expand()),
+            Self::Repeat(repetition) => Ok(repetition.expand(&value)),
             Self::LocalCounter => Ok(context.local_counter.to_string()),
             Self::GlobalCounter => Ok(context.global_counter.to_string()),
             Self::RandomNumber(interval) => Ok(interval.random().to_string()),
@@ -357,7 +357,8 @@ mod tests {
         #[test_case("<2:abc",       F::LeftPad(padding_repeated())          ; "left pad repeated")]
         #[test_case(">>abcd",       F::RightPad(padding_fixed())            ; "right pad fixed")]
         #[test_case(">2:abc",       F::RightPad(padding_repeated())         ; "right pad repeated")]
-        #[test_case("*2:abc",       F::Repeat(repetition())                 ; "repetition ")]
+        #[test_case("*2",           F::Repeat(repetition_input())           ; "repetition input ")]
+        #[test_case("*2:abc",       F::Repeat(repetition_value())           ; "repetition value ")]
         #[test_case("c",            F::LocalCounter                         ; "local counter")]
         #[test_case("C",            F::GlobalCounter                        ; "global counter")]
         #[test_case("u",            F::RandomNumber(number_range_full())    ; "random number")]
@@ -447,7 +448,8 @@ mod tests {
         #[test_case("01",            F::LeftPad(padding_repeated()),         "abca01"   ; "left pad repeated")]
         #[test_case("01",            F::RightPad(padding_fixed()),           "01cd"     ; "right pad fixed")]
         #[test_case("01",            F::RightPad(padding_repeated()),        "01cabc"   ; "right pad repeated")]
-        #[test_case("",              F::Repeat(repetition()),                "abcabc"   ; "repetition ")]
+        #[test_case("01",            F::Repeat(repetition_input()),          "0101"     ; "repetition input ")]
+        #[test_case("01",            F::Repeat(repetition_value()),          "abcabc"   ; "repetition value ")]
         #[test_case("",              F::LocalCounter,                        "1"        ; "local counter")]
         #[test_case("",              F::GlobalCounter,                       "2"        ; "global counter")]
         #[test_case("",              F::RandomNumber(number_range_zero()),   "0"        ; "random number")]
@@ -529,7 +531,8 @@ mod tests {
     #[test_case(F::LeftPad(padding_repeated()),          "Left pad with 2x 'abc'"                          ; "left pad repeated")]
     #[test_case(F::RightPad(padding_fixed()),            "Right pad with 'abcd'"                           ; "right pad fixed")]
     #[test_case(F::RightPad(padding_repeated()),         "Right pad with 2x 'abc'"                         ; "right pad repeated")]
-    #[test_case(F::Repeat(repetition()),                 "Repeat 2x 'abc'"                                 ; "repetition ")]
+    #[test_case(F::Repeat(repetition_input()),           "Repeat 2x"                                       ; "repetition input ")]
+    #[test_case(F::Repeat(repetition_value()),           "Repeat 2x 'abc'"                                 ; "repetition value ")]
     #[test_case(F::LocalCounter,                         "Local counter"                                   ; "local counter")]
     #[test_case(F::GlobalCounter,                        "Global counter"                                  ; "global counter")]
     #[test_case(F::RandomNumber(number_range_full()),    "Random number from [0, 2^64)"                    ; "random number")]
@@ -627,13 +630,20 @@ mod tests {
     }
 
     fn padding_repeated() -> Padding {
-        Padding::Repeated(repetition())
+        Padding::Repeated(repetition_value())
     }
 
-    fn repetition() -> Repetition {
+    fn repetition_input() -> Repetition {
         Repetition {
             count: 2,
-            value: "abc".into(),
+            value: None,
+        }
+    }
+
+    fn repetition_value() -> Repetition {
+        Repetition {
+            count: 2,
+            value: Some("abc".into()),
         }
     }
 

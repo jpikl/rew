@@ -317,7 +317,7 @@ mod tests {
                         Parsed {
                             value: Filter::LeftPad(Padding::Repeated(Repetition {
                                 count: 3,
-                                value: "0".into(),
+                                value: Some("0".into()),
                             })),
                             range: 9..13,
                         },
