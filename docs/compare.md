@@ -1,11 +1,11 @@
-# 🔬 Comparison with similar tools
+# 🔬 Comparison - rew vs others
 
 ## rew vs rename/prename
 
 - Unlike `rename`, `rew` can read input paths directly from standard input.
   Use of `xargs` to pass output of `find` or [`fd`][fd] is not needed.
 - Unlike `rename`, `rew` is only a text-processing tool and it is unable to rename files.
-  You have to use accompanying `mvb`/`cpb` utilities or you can generate executable shell code.
+  You have to use accompanying `mvb` / `cpb` utilities or you can generate executable shell code.
 
 ```bash
 find -name '*.jpeg' | xargs rename .jpeg .jpg     # Rename *.jpeg files to *.jpg

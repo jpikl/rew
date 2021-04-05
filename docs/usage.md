@@ -16,7 +16,7 @@ When no pattern is provided, values are directly copied to standard output.
 input | rew [options]
 ```
 
-Use `-d, --diff` flag when piping output to `mvb`/`cpb` utilities to perform bulk move/copy.
+Use `-d, --diff` flag when piping output to `mvb` / `cpb` utilities to perform bulk move/copy.
 
 ```bash
 rew [options] [--] [pattern] -d | mvb

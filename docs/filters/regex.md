@@ -3,10 +3,10 @@
 | Filter                | Description                                   |
 | --------------------- | --------------------------------------------- |
 | `=E`                  | Match of a regular expression `E`.            |
-| `s:X:Y`               | Replace first match of a regular expression `X` with `Y`.<br>`Y` can reference capture groups from `X` using `$0`, `$1`, `$2`, ...<br>Any other character than `:` can be also used as a delimiter. |
-| `s:X`                 | Remove first match of a regular expression `X`.<br>Equivalent to `s:X:`. |
+| `s:X:Y`               | Replace first match of a regular expression `X` with `Y`.<br><small>`Y` can reference capture groups from `X` using `$0`, `$1`, `$2`, ...<br>Any other character than `:` can be also used as a delimiter.</small> |
+| `s:X`                 | Remove first match of a regular expression `X`.<br><small>Equivalent to `s:X:`.</small> |
 | `S:X:Y`<br>`S:X`      | Same as `s` but replaces/removes all matches. |
-| `@:X1:Y1:...:Xn:Yn:D` | Regular expression switch.<br>Output `Yi` for first `Xi` that matches input.<br>Output `D` when there is no match.<br>`Yi` can reference capture groups from `Xi` using `$0`, `$1`, `$2`, ...<br>Any other character than `:` can be also used as a delimiter.
+| `@:X1:Y1:...:Xn:Yn:D` | Regular expression switch.<br><small>Output `Yi` for first `Xi` that matches input.<br>Output `D` when there is no match.<br>`Yi` can reference capture groups from `Xi` using `$0`, `$1`, `$2`, ...<br>Any other character than `:` can be also used as a delimiter.</small>
 | `$0`, `$1`, `$2`, ... | Capture group of a global regular expression. |
 
 Examples:

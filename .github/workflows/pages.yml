@@ -1,9 +1,9 @@
-name: Deploy docs
+name: Deploy pages
 
 on:
   push:
     branches: [ stable-docs ]
-    paths: [ 'docs/**' ]
+    paths: [ 'docs/**', 'CHANGELOG.md' , 'LICENSE.md' ]
 
 jobs:
   deploy:
@@ -15,15 +15,12 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v1
+      - name: Generate pages
+        uses: jpikl/hatcher@v0.1
 
-      - name: Generate docs
-        run: npx docpress build
-
-      - name: Deploy docs
+      - name: Deploy pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./_docpress
+          publish_dir: ./pages
           force_orphan: true

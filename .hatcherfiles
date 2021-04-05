@@ -1,0 +1,18 @@
+index.md
+install.md
+usage.md
+pattern.md
+filters/index.md
+filters/path.md
+filters/substr.md
+filters/field.md
+filters/replace.md
+filters/regex.md
+filters/format.md
+filters/generate.md
+input.md
+output.md
+compare.md|🔬 Comparison
+examples.md
+../CHANGELOG.md|📈 Changelog
+../LICENSE.md|📃 License

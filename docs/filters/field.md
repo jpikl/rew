@@ -2,7 +2,7 @@
 
 | Filter  | Description                                                     |
 | ------- | --------------------------------------------------------------- |
-| `&N:S`  | Split value using separator `S`, output `N`-th field.<br>Field indices `N` start from 1.<br>Use `-N` for backward indexing.<br>Any other character than `:` can be also used as a delimiter.<br>Use of `/` as a delimiter has special meaning (see below). |
+| `&N:S`  | Split value using separator `S`, output `N`-th field.<br><small>Field indices `N` start from 1.<br>Use `-N` for backward indexing.<br>Any other character than `:` can be also used as a delimiter.<br>Use of `/` as a delimiter has special meaning (see below).</small> |
 | `&N/S`  | Split value using regular expression `S`, output `N`-th field. |
 | `&N`    | Split value using default separator, output `N`-th field.       |
 

@@ -2,10 +2,10 @@
 
 | Filter  | Description                                       |
 | ------- | ------------------------------------------------- |
-| `#A-B`  | Substring from index `A` to `B`.<br>Indices `A`, `B` start from 1 and are both inclusive.<br>Use `-A` for backward indexing. |
+| `#A-B`  | Substring from index `A` to `B`.<br><small>Indices `A`, `B` start from 1 and are both inclusive.<br>Use `-A` for backward indexing.</small> |
 | `#A+L`  | Substring from index `A` of length `L`.           |
 | `#A-`   | Substring from index `A` to end.                  |
-| `#A`    | Character at index `A`.<br>Equivalent to `#A-A`.  |
+| `#A`    | Character at index `A`.<br><small>Equivalent to `#A-A`.</small>  |
 
 Examples:
 

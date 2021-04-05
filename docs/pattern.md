@@ -24,14 +24,14 @@ Empty expression `{}` evaluates directly to input value.
 | `world` | `{}`         | `world`         |
 | `world` | `Hello, {}!` | `Hello, world!` |
 
-Expression may contain one or more filters, separated by `|`.
+Expression may contain one or more [filters](filters), separated by `|`.
 Filters are consecutively applied on input value.
 
-| Input      | Pattern         | Output     | Description                        |
-| ---------- | --------------- | ---------- | ---------------------------------- |
-| `old.JPEG` | `new.{e}`       | `new.JPEG` | Extension                          |
-| `old.JPEG` | `new.{e|l}`     | `new.jpeg` | Extension + Lowercase              |
-| `old.JPEG` | `new.{e|l|r:e}` | `new.jpg`  | Extension + Lowercase + Remove `e` |
+| Input      | Pattern         | Output     | Description                           |
+| ---------- | --------------- | ---------- | ------------------------------------- |
+| `old.JPEG` | `new.{e}`       | `new.JPEG` | Extension                             |
+| `old.JPEG` | `new.{e|l}`     | `new.jpeg` | Extension, Lowercase                  |
+| `old.JPEG` | `new.{e|l|r:e}` | `new.jpg`  | Extension, Lowercase, Remove&nbsp;`e` |
 
 Use `-q, --quote` flag to automatically wrap  output of every expression in quotes.
 
@@ -41,24 +41,13 @@ echo abc | rew {} -q  # Will print 'abc'
 echo abc | rew {} -qq # Will print "abc"
 ```
 
-## Filters
-
-Filters are categorized into the following groups.
-
-- [🛤 Path filters](filters/path.md)
-- [🆎 Substring filters](filters/substr.md)
-- [🔍 Replace filters](filters/replace.md)
-- [⭐️ Regex filters](filters/regex.md)
-- [🎨 Format filters](filters/format.md)
-- [🏭 Generators](filters/generators.md)
-
 ## Escaping
 
 Character `%` starts an escape sequence.
 
 | Sequence | Description                |
 | -------- |--------------------------- |
-| `%/`     | System directory separator<br>`\` on Windows<br>`/` everywhere else |
+| `%/`     | System directory separator<br><small>`\` on Windows<br>`/` everywhere else</small> |
 | `%n`     | Line feed                  |
 | `%r`     | Carriage return            |
 | `%t`     | Horizontal tab             |
