@@ -3,7 +3,7 @@ name: Deploy pages
 on:
   push:
     branches: [ stable-docs ]
-    paths: [ 'docs/**', 'CHANGELOG.md' , 'LICENSE.md' ]
+    paths: [ 'docs/**', 'CHANGELOG.md' , 'LICENSE.md', '.hatcherrc', '.hatcherfiles' ]
 
 jobs:
   deploy:
