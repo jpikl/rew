@@ -59,17 +59,3 @@ input_value_2 -> output_value_2
 ...
 input_value_N -> output_value_N
 ```
-
-## 💼 JSON lines mode
-
-- Enabled using `-j, --json-lines` flag.
-- Ignores `--print*` flags/options.
-- Ignores `--no-print-end` flag.
-- Prints transformations as JSON lines:
-
-```jsonl
-{"in":"input_value_1","out":"output_value_1"}
-{"in":"input_value_2","out":"output_value_2"}
-...
-{"in":"input_value_N","out":"output_value_N"}
-```

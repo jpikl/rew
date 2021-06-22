@@ -19,21 +19,15 @@ Examples:
 
 ## Regex match
 
-| Filter   | Description                                           |
-| -------- | ----------------------------------------------------- |
-| `=N:E`   | `N`-th match of a regular expression `E`.<br>*Indices `N` start from 1.<br>Use `-N` for backward indexing.<br>Any other character than `:` can be also used as a delimiter.* |
-| `=N-M:E` | `N`-th to `M`-th match of a regular expression `E`.<br>*This also includes any characters between matches.* |
-| `=N-:E`  | `N`-th to the last match of a regular expression `E`. |
+| Filter | Description                        |
+| ------ | ---------------------------------- |
+| `=E`   | Match of a regular expression `E`. |
 
 Examples:
 
-| Input        | Pattern      | Output     | Input        | Pattern       | Output     |
-| ------------ | ------------ | ---------- | ------------ | ------------- | ---------- |
-| `_12_34_56_` | `{=1:\d+}`   | `12`       | `_12_34_56_` | `{=-1:\d+}`   | `56`       |
-| `_12_34_56_` | `{=2:\d+}`   | `34`       | `_12_34_56_` | `{=-2:\d+}`   | `34`       |
-| `_12_34_56_` | `{=1-2:\d+}` | `12_34`    | `_12_34_56_` | `{=-1-2:\d+}` | `34_56`    |
-| `_12_34_56_` | `{=1-:\d+}`  | `12_34_56` | `_12_34_56_` | `{=-1-:\d+}`  | `12_34_56` |
-| `_12_34_56_` | `{=2-:\d+}`  | `34_56`    | `_12_34_56_` | `{=-2-:\d+}`  | `12_34`    |
+| Input     | Pattern  | Output  |
+| --------- | -------- | ------- |
+| `12_34`   | `{=\d+}` | `12`    |
 
 ## Regex switch
 
