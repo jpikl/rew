@@ -61,7 +61,7 @@ pub fn normalize(value: &str) -> BaseResult<String> {
                 normalized_components.push(component);
             }
             Component::ParentDir => match normalized_components.last() {
-                None | Some(Component::ParentDir) => normalized_components.push(component),
+                Some(Component::ParentDir) | None => normalized_components.push(component),
                 Some(Component::Normal(_)) => {
                     normalized_components.pop();
                 }
@@ -112,7 +112,7 @@ pub fn get_parent_directory(value: String) -> BaseResult<String> {
     match path.components().last() {
         Some(Component::Prefix(_)) => into_string(PathBuf::from(value).join(Component::RootDir)),
         Some(Component::RootDir) => Ok(value),
-        Some(Component::CurDir) | Some(Component::ParentDir) | None => {
+        Some(Component::CurDir | Component::ParentDir) | None => {
             into_string(PathBuf::from(value).join(Component::ParentDir))
         }
         Some(Component::Normal(_)) => {
@@ -140,9 +140,9 @@ pub fn get_file_name(value: &str) -> BaseResult<String> {
 
 pub fn get_last_name(value: &str) -> BaseResult<String> {
     match Path::new(value).components().last() {
-        Some(component @ Component::Normal(_))
-        | Some(component @ Component::CurDir)
-        | Some(component @ Component::ParentDir) => to_string(&component),
+        Some(component @ (Component::Normal(_) | Component::CurDir | Component::ParentDir)) => {
+            to_string(&component)
+        }
         _ => Ok(String::new()),
     }
 }

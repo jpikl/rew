@@ -74,7 +74,7 @@ impl Lexer {
 
         loop {
             match self.reader.peek_char() {
-                Some(EXPR_START) | Some(EXPR_END) | Some(PIPE) | None => break,
+                Some(EXPR_START | EXPR_END | PIPE) | None => break,
                 Some(value) if value == self.escape => {
                     let start = self.reader.position();
                     self.reader.seek();
