@@ -41,12 +41,11 @@ impl<O: Write + WriteColor> Values<O> {
             Mode::StandardNoEnd => {
                 if self.first_result {
                     self.first_result = false;
-                    write!(self.output, "{}", output_value)
                 } else {
                     write!(self.output, "{}", self.terminator)?;
                     self.flush_if_needed()?;
-                    write!(self.output, "{}", output_value)
                 }
+                write!(self.output, "{}", output_value)
             }
             Mode::Diff => {
                 write!(
