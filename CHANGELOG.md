@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `--explain-filters` flag to print an explanation like `--explain` but only for filters.
+- `-j, --json-lines` flag to enable JSON lines output mode.
 
 ### Changed
 

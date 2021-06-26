@@ -56,6 +56,8 @@ fn run(cli: &Cli, io: &Io) -> Result {
         output::Mode::Pretty
     } else if cli.diff {
         output::Mode::Diff
+    } else if cli.json_lines {
+        output::Mode::JsonLines
     } else if cli.no_print_end {
         output::Mode::StandardNoEnd
     } else {

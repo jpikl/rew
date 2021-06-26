@@ -11,6 +11,7 @@ pub enum Mode {
     StandardNoEnd,
     Diff,
     Pretty,
+    JsonLines,
 }
 
 pub struct Values<O: Write + WriteColor> {
@@ -63,6 +64,13 @@ impl<O: Write + WriteColor> Values<O> {
                 self.output.set_color(&spec_color(Color::Green))?;
                 writeln!(self.output, "{}", output_value)
             }
+            Mode::JsonLines => {
+                writeln!(
+                    self.output,
+                    r#"{{"in":"{}","out":"{}"}}"#,
+                    input_value, output_value
+                )
+            }
         }
     }
 
@@ -113,6 +121,7 @@ pub fn highlight_range<O: Write + WriteColor>(
 mod tests {
     use super::*;
     use common::testing::{ColoredOuput, OutputChunk};
+    use indoc::indoc;
     use test_case::test_case;
 
     #[test_case(Mode::Standard,      "",   plain("bd")               ; "standard no terminator")]
@@ -125,6 +134,10 @@ mod tests {
     #[test_case(Mode::Diff,          "\n", plain("<a\n>b\n<c\n>d\n") ; "diff newline terminator")]
     #[test_case(Mode::Diff,          "\0", plain("<a\0>b\0<c\0>d\0") ; "diff null terminator")]
     #[test_case(Mode::Pretty,        "x",  pretty()                  ; "pretty ")]
+    #[test_case(Mode::JsonLines,     "x",  plain(indoc! {r#"
+                                               {"in":"a","out":"b"}
+                                               {"in":"c","out":"d"}
+                                           "#})                      ; "json lines")]
     fn values_write(mode: Mode, terminator: &str, chunks: Vec<OutputChunk>) {
         let mut output = ColoredOuput::new();
         let mut values = Values::new(&mut output, mode, terminator);

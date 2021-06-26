@@ -127,14 +127,14 @@ pub struct Cli {
     #[clap(
         short = 'd',
         long,
-        conflicts_with = "pretty",
+        conflicts_with_all = &["pretty", "json-lines"],
         help_heading = OUTPUT_HEADING,
         long_about = highlight_static(indoc!{"
             Enable diff output mode
 
             Respects `--print*` flags/options.
             Ignores `--no-print-end` flag.
-            Prints machine-readable transformations as results:
+            Prints transformations in machine-readable format:
            
                 <input_value_1
                 >output_value_1
@@ -153,14 +153,14 @@ pub struct Cli {
     #[clap(
         short = 'p',
         long,
-        conflicts_with = "diff",
+        conflicts_with_all = &["diff", "json-lines"],
         help_heading = OUTPUT_HEADING,
         long_about = highlight_static(indoc!{"
             Enable pretty output mode
 
             Ignores `--print*` flags/options.
             Ignores `--no-print-end` flag.
-            Prints human-readable transformations as results:
+            Prints transformations in human-readable format:
 
                 input_value_1 -> output_value_1
                 input_value_2 -> output_value_2
@@ -169,6 +169,27 @@ pub struct Cli {
         "}),
     )]
     pub pretty: bool,
+
+    /// Enable JSON lines output mode
+    #[clap(
+    short = 'j',
+    long,
+    conflicts_with_all = &["pretty", "diff"],
+    help_heading = OUTPUT_HEADING,
+    long_about = highlight_static(indoc!{r#"
+            Enable JSON lines mode
+
+            Ignores `--print*` flags/options.
+            Ignores `--no-print-end` flag.
+            Prints transformations as JSON lines:
+
+                {"in":"input_value_1","out":"output_value_1"}
+                {"in":"input_value_2","out":"output_value_2"}
+                ...
+                {"in":"input_value_N","out":"output_value_N"}
+        "#}),
+    )]
+    pub json_lines: bool,
 
     /// When to use colors
     #[clap(
