@@ -124,12 +124,12 @@ impl Lexer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils::ByteRange;
+    use crate::utils::IndexRange;
     use test_case::test_case;
 
     #[test_case("%",  0..1, ErrorKind::UnterminatedEscapeSequence('%')   ; "unterminated escape sequence")]
     #[test_case("%x", 0..2, ErrorKind::UnknownEscapeSequence(['%', 'x']) ; "unknown escape sequence")]
-    fn err(input: &str, range: ByteRange, kind: ErrorKind) {
+    fn err(input: &str, range: IndexRange, kind: ErrorKind) {
         assert_eq!(
             Lexer::new(input, '%').read_token(),
             Err(Error { kind, range })
@@ -151,7 +151,7 @@ mod tests {
     #[                  test_case("%%", 0..2, Token::esc('%',  ['%', '%']) ; "escaped escape")]
     #[cfg_attr(unix,    test_case("%/", 0..2, Token::esc('/',  ['%', '/']) ; "escaped separator"))]
     #[cfg_attr(windows, test_case("%/", 0..2, Token::esc('\\', ['%', '/']) ; "escaped separator"))]
-    fn single_token(input: &str, range: ByteRange, value: Token) {
+    fn single_token(input: &str, range: IndexRange, value: Token) {
         let mut lexer = Lexer::new(input, '%');
         assert_eq!(lexer.read_token(), Ok(Some(Parsed { value, range })));
     }
@@ -167,7 +167,7 @@ mod tests {
     #[test_case(8,  10..12, Token::raw("fg") ; "token 8")]
     #[test_case(9,  12..13, Token::ExprEnd   ; "token 9")]
     #[test_case(10, 13..15, Token::raw("hi") ; "token 10")]
-    fn multiple_tokens(index: usize, range: ByteRange, value: Token) {
+    fn multiple_tokens(index: usize, range: IndexRange, value: Token) {
         let mut lexer = Lexer::new("a{|}bc{de|fg}hi", '%');
         for _ in 0..index {
             lexer.read_token().unwrap_or_default();

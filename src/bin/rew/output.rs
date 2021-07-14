@@ -1,4 +1,4 @@
-use crate::utils::{ByteRange, GetByteRange};
+use crate::utils::{GetIndexRange, IndexRange};
 use common::color::{spec_bold_color, spec_color};
 use common::output::write_error;
 use common::symbols::{DIFF_IN, DIFF_OUT};
@@ -83,21 +83,21 @@ impl<O: Write + WriteColor> Values<O> {
     }
 }
 
-pub fn write_pattern_error<O: Write + WriteColor, E: Error + GetByteRange>(
+pub fn write_pattern_error<O: Write + WriteColor, E: Error + GetIndexRange>(
     output: &mut O,
     error: &E,
     raw_pattern: &str,
 ) -> Result<()> {
     write_error(output, error)?;
     writeln!(output)?;
-    highlight_range(output, raw_pattern, error.range(), Color::Red)?;
+    highlight_range(output, raw_pattern, error.index_range(), Color::Red)?;
     output.reset()
 }
 
 pub fn highlight_range<O: Write + WriteColor>(
     output: &mut O,
     string: &str,
-    range: &ByteRange,
+    range: &IndexRange,
     color: Color,
 ) -> Result<()> {
     write!(output, "{}", &string[..range.start])?;
@@ -176,8 +176,8 @@ mod tests {
             }
         }
 
-        impl GetByteRange for CustomError {
-            fn range(&self) -> &ByteRange {
+        impl GetIndexRange for CustomError {
+            fn index_range(&self) -> &IndexRange {
                 &(1..3)
             }
         }

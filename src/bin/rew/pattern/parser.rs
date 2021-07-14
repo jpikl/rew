@@ -4,7 +4,7 @@ use crate::pattern::filter::Filter;
 use crate::pattern::lexer::{Lexer, ParsedToken, Token};
 use crate::pattern::parse::{Config, Error, ErrorKind, Parsed, Result};
 use crate::pattern::reader::Reader;
-use crate::utils::ByteRange;
+use crate::utils::IndexRange;
 use std::fmt;
 
 pub type ParsedFilter = Parsed<Filter>;
@@ -157,7 +157,7 @@ impl<'a> Parser<'a> {
         Ok(filters)
     }
 
-    fn parse_filter(&self, chars: &[Char], range: &ByteRange) -> Result<ParsedFilter> {
+    fn parse_filter(&self, chars: &[Char], range: &IndexRange) -> Result<ParsedFilter> {
         let mut reader = Reader::new(Vec::from(chars));
 
         let filter = Filter::parse(&mut reader, self.config).map_err(|mut error| {
@@ -194,7 +194,7 @@ impl<'a> Parser<'a> {
         self.token.as_ref().map(|token| &token.value)
     }
 
-    fn token_range(&self) -> &ByteRange {
+    fn token_range(&self) -> &IndexRange {
         self.token.as_ref().map_or(&(0..0), |token| &token.range)
     }
 }
@@ -218,11 +218,10 @@ mod tests {
 
     mod parse {
         use super::*;
-        use crate::pattern::index::Index;
         use crate::pattern::padding::Padding;
-        use crate::pattern::range::Range;
-        use crate::pattern::repetition::Repetition;
-        use crate::pattern::substitution::Substitution;
+        use crate::pattern::repeat::Repetition;
+        use crate::pattern::replace::Substitution;
+        use crate::pattern::substr::CharIndexRange;
         use test_case::test_case;
 
         #[test_case("|",      0..1, ErrorKind::PipeOutsideExpr                           ; "pipe outside expr")]
@@ -238,7 +237,7 @@ mod tests {
         #[test_case("{f|f",   0..1, ErrorKind::UnmatchedExprStart                        ; "missing pipe or expr end 2")]
         #[test_case("{f|ff",  4..5, ErrorKind::ExpectedPipeOrExprEnd                     ; "filter after filter 2")]
         #[test_case("{#2-1}", 2..5, ErrorKind::RangeStartOverEnd("2".into(), "1".into()) ; "invalid filter")]
-        fn err(input: &str, range: ByteRange, kind: ErrorKind) {
+        fn err(input: &str, range: IndexRange, kind: ErrorKind) {
             assert_eq!(
                 Parser::new(input, &Config::fixture()).parse_items(),
                 Err(Error { kind, range })
@@ -294,7 +293,7 @@ mod tests {
                         range: 3..4,
                     },
                     Parsed {
-                        value: Filter::Substring(Range::<Index>(0, Some(3))),
+                        value: Filter::Substring(CharIndexRange::new(0, Some(3))),
                         range: 5..9,
                     },
                 ]),

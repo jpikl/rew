@@ -1,14 +1,15 @@
 use std::fmt::{self, Debug};
 use std::ops::Range;
 
-pub type ByteRange = Range<usize>;
-
-pub trait GetByteRange {
-    fn range(&self) -> &ByteRange;
-}
-
 #[derive(Debug, Clone, PartialEq)]
 pub struct Empty;
+
+pub type Index = usize;
+pub type IndexRange = Range<Index>;
+
+pub trait GetIndexRange {
+    fn index_range(&self) -> &IndexRange;
+}
 
 #[derive(Debug, Clone)]
 pub struct AnyString(pub String);

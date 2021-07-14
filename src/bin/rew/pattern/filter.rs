@@ -1,15 +1,15 @@
 use crate::pattern::char::{AsChar, Char};
 use crate::pattern::field::Field;
-use crate::pattern::index::IndexRange;
 use crate::pattern::integer::parse_integer;
 use crate::pattern::number::NumberRange;
 use crate::pattern::padding::Padding;
 use crate::pattern::reader::Reader;
 use crate::pattern::regex::RegexHolder;
-use crate::pattern::repetition::Repetition;
-use crate::pattern::substitution::{EmptySubstitution, RegexSubstitution, StringSubstitution};
+use crate::pattern::repeat::Repetition;
+use crate::pattern::replace::{EmptySubstitution, RegexSubstitution, StringSubstitution};
+use crate::pattern::substr::CharIndexRange;
 use crate::pattern::switch::RegexSwitch;
-use crate::pattern::symbols::RANGE_DELIMITER;
+use crate::pattern::symbols::REVERSE_INDEX;
 use crate::pattern::uuid::random_uuid;
 use crate::pattern::{eval, parse, path};
 use std::fmt;
@@ -32,8 +32,8 @@ pub enum Filter {
     ExtensionWithDot,
     EnsureTrailDirSeparator,
     RemoveTrailDirSeparator,
-    Substring(IndexRange),
-    SubstringRev(IndexRange),
+    Substring(CharIndexRange),
+    SubstringRev(CharIndexRange),
     GetField(Field),
     GetFieldRev(Field),
     ReplaceFirst(StringSubstitution),
@@ -80,15 +80,15 @@ impl Filter {
                 'z' => Ok(Self::EnsureTrailDirSeparator),
                 'Z' => Ok(Self::RemoveTrailDirSeparator),
                 '#' => {
-                    if reader.read_expected(RANGE_DELIMITER) {
-                        Ok(Self::SubstringRev(IndexRange::parse(reader)?))
+                    if reader.read_expected(REVERSE_INDEX) {
+                        Ok(Self::SubstringRev(CharIndexRange::parse(reader)?))
                     } else {
-                        Ok(Self::Substring(IndexRange::parse(reader)?))
+                        Ok(Self::Substring(CharIndexRange::parse(reader)?))
                     }
                 }
                 '&' => {
                     let separator = &config.separator;
-                    if reader.read_expected(RANGE_DELIMITER) {
+                    if reader.read_expected(REVERSE_INDEX) {
                         Ok(Self::GetFieldRev(Field::parse(reader, separator)?))
                     } else {
                         Ok(Self::GetField(Field::parse(reader, separator)?))
@@ -169,7 +169,7 @@ impl Filter {
             Self::Repeat(repetition) => Ok(repetition.expand(&value)),
             Self::LocalCounter => Ok(context.local_counter.to_string()),
             Self::GlobalCounter => Ok(context.global_counter.to_string()),
-            Self::RandomNumber(interval) => Ok(interval.random().to_string()),
+            Self::RandomNumber(range) => Ok(range.random().to_string()),
             Self::RandomUuid => Ok(random_uuid()),
         }
     }
@@ -253,18 +253,17 @@ mod tests {
 
     use super::Filter;
     use crate::pattern::field::Field;
-    use crate::pattern::index::{Index, IndexRange};
-    use crate::pattern::number::{Number, NumberRange};
+    use crate::pattern::number::NumberRange;
     use crate::pattern::padding::Padding;
     use crate::pattern::parse::Separator;
-    use crate::pattern::range::Range;
-    use crate::pattern::repetition::Repetition;
-    use crate::pattern::substitution::{
+    use crate::pattern::repeat::Repetition;
+    use crate::pattern::replace::{
         EmptySubstitution, RegexSubstitution, StringSubstitution, Substitution,
     };
+    use crate::pattern::substr::CharIndexRange;
     use crate::pattern::switch::{Case, RegexSwitch};
     use crate::utils::Empty;
-    use crate::utils::{AnyString, ByteRange};
+    use crate::utils::{AnyString, IndexRange};
     use test_case::test_case;
 
     type F = Filter;
@@ -299,7 +298,7 @@ mod tests {
         #[test_case("$",        1..1, E::ExpectedNumber                              ; "regex capture expected number")]
         #[test_case("<x",       1..2, E::PaddingPrefixInvalid('<', Some('x'.into())) ; "padding left prefix invalid")]
         #[test_case(">y",       1..2, E::PaddingPrefixInvalid('>', Some('y'.into())) ; "padding right prefix invalid")]
-        fn err(input: &str, range: ByteRange, kind: ErrorKind) {
+        fn err(input: &str, range: IndexRange, kind: ErrorKind) {
             assert_eq!(
                 Filter::parse(&mut Reader::from(input), &Config::fixture()),
                 Err(Error { kind, range }),
@@ -543,20 +542,20 @@ mod tests {
         assert_eq!(filter.to_string(), result);
     }
 
-    fn index_range_at() -> IndexRange {
-        Range::<Index>(1, Some(2))
+    fn index_range_at() -> CharIndexRange {
+        CharIndexRange::new(1, Some(2))
     }
 
-    fn index_range_from() -> IndexRange {
-        Range::<Index>(1, None)
+    fn index_range_from() -> CharIndexRange {
+        CharIndexRange::new(1, None)
     }
 
-    fn index_range_between() -> IndexRange {
-        Range::<Index>(1, Some(3))
+    fn index_range_between() -> CharIndexRange {
+        CharIndexRange::new(1, Some(3))
     }
 
-    fn index_range_length() -> IndexRange {
-        Range::<Index>(1, Some(4))
+    fn index_range_length() -> CharIndexRange {
+        CharIndexRange::new(1, Some(4))
     }
 
     fn field_default() -> Field {
@@ -648,18 +647,18 @@ mod tests {
     }
 
     fn number_range_full() -> NumberRange {
-        Range::<Number>(0, None)
+        NumberRange::new(0, None)
     }
 
     fn number_range_from() -> NumberRange {
-        Range::<Number>(2, None)
+        NumberRange::new(2, None)
     }
 
     fn number_range_between() -> NumberRange {
-        Range::<Number>(2, Some(11))
+        NumberRange::new(2, Some(11))
     }
 
     fn number_range_zero() -> NumberRange {
-        Range::<Number>(0, Some(0))
+        NumberRange::new(0, Some(0))
     }
 }

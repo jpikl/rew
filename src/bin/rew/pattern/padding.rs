@@ -2,7 +2,7 @@ use crate::pattern::char::{AsChar, Char};
 use crate::pattern::escape::escape_str;
 use crate::pattern::parse::{Error, ErrorKind, Result};
 use crate::pattern::reader::Reader;
-use crate::pattern::repetition::Repetition;
+use crate::pattern::repeat::Repetition;
 use std::borrow::Cow;
 use std::fmt;
 
@@ -68,12 +68,12 @@ impl fmt::Display for Padding {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils::ByteRange;
+    use crate::utils::IndexRange;
     use test_case::test_case;
 
     #[test_case("",     0..0, ErrorKind::PaddingPrefixInvalid('<', None)             ; "no prefix")]
     #[test_case(">abc", 0..1, ErrorKind::PaddingPrefixInvalid('<', Some('>'.into())) ; "invalid prefix")]
-    fn parse_err(input: &str, range: ByteRange, kind: ErrorKind) {
+    fn parse_err(input: &str, range: IndexRange, kind: ErrorKind) {
         assert_eq!(
             Padding::parse(&mut Reader::from(input), '<'),
             Err(Error { kind, range })

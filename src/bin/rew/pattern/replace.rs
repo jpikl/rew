@@ -121,7 +121,7 @@ impl fmt::Display for RegexSubstitution {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils::ByteRange;
+    use crate::utils::IndexRange;
 
     mod empty {
         use super::*;
@@ -178,7 +178,7 @@ mod tests {
             #[test_case("",   0..0, ErrorKind::ExpectedSubstitution                  ; "empty")]
             #[test_case("/",  1..1, ErrorKind::SubstitutionWithoutTarget('/'.into()) ; "no target")]
             #[test_case("//", 1..1, ErrorKind::SubstitutionWithoutTarget('/'.into()) ; "empty target")]
-            fn err(input: &str, range: ByteRange, kind: ErrorKind) {
+            fn err(input: &str, range: IndexRange, kind: ErrorKind) {
                 assert_eq!(
                     StringSubstitution::parse(&mut Reader::from(input)),
                     Err(Error { kind, range })
@@ -264,7 +264,7 @@ mod tests {
             #[test_case("/",          1..1, ErrorKind::SubstitutionWithoutTarget('/'.into()) ; "no target")]
             #[test_case("//",         1..1, ErrorKind::SubstitutionWithoutTarget('/'.into()) ; "empty target")]
             #[test_case("/[0-9+/def", 1..6, ErrorKind::RegexInvalid(AnyString::any())        ; "invalid regex")]
-            fn err(input: &str, range: ByteRange, kind: ErrorKind) {
+            fn err(input: &str, range: IndexRange, kind: ErrorKind) {
                 assert_eq!(
                     RegexSubstitution::parse(&mut Reader::from(input)),
                     Err(Error { kind, range })

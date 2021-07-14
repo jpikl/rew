@@ -65,12 +65,12 @@ mod tests {
         use super::*;
         use crate::pattern::parse::{Error, ErrorKind};
         use crate::pattern::reader::Reader;
-        use crate::utils::ByteRange;
+        use crate::utils::IndexRange;
         use test_case::test_case;
 
         #[test_case("",   0..0, ErrorKind::ExpectedRepetition ; "empty")]
         #[test_case("ab", 0..2, ErrorKind::ExpectedNumber     ; "invalid count")]
-        fn err(input: &str, range: ByteRange, kind: ErrorKind) {
+        fn err(input: &str, range: IndexRange, kind: ErrorKind) {
             assert_eq!(
                 Repetition::parse(&mut Reader::from(input)),
                 Err(Error { kind, range })
@@ -95,13 +95,13 @@ mod tests {
         use super::*;
         use crate::pattern::parse::{Error, ErrorKind};
         use crate::pattern::reader::Reader;
-        use crate::utils::ByteRange;
+        use crate::utils::IndexRange;
         use test_case::test_case;
 
         #[test_case("",   0..0, ErrorKind::ExpectedRepetition         ; "empty")]
         #[test_case("ab", 0..2, ErrorKind::ExpectedNumber             ; "invalid count")]
         #[test_case("12", 2..2, ErrorKind::RepetitionWithoutDelimiter ; "missing delimiter")]
-        fn err(input: &str, range: ByteRange, kind: ErrorKind) {
+        fn err(input: &str, range: IndexRange, kind: ErrorKind) {
             assert_eq!(
                 Repetition::parse_with_delimiter(&mut Reader::from(input)),
                 Err(Error { kind, range })

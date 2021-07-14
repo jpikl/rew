@@ -1,5 +1,5 @@
 use crate::pattern::char::Char;
-use crate::pattern::index::{Index, IndexValue};
+use crate::pattern::index::parse_index;
 use crate::pattern::parse::{Error, ErrorKind, Result, Separator};
 use crate::pattern::reader::Reader;
 use std::convert::TryInto;
@@ -7,13 +7,13 @@ use std::fmt;
 
 #[derive(Debug, PartialEq)]
 pub struct Field {
-    pub index: IndexValue,
+    pub index: usize,
     pub separator: Separator,
 }
 
 impl Field {
     pub fn parse(reader: &mut Reader<Char>, default_separator: &Separator) -> Result<Self> {
-        let index = Index::parse(reader)?;
+        let index = parse_index(reader)?;
 
         if let Some(delimiter) = reader.read_char() {
             let separator_start = reader.position();
@@ -86,7 +86,7 @@ impl fmt::Display for Field {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils::{AnyString, ByteRange};
+    use crate::utils::{AnyString, IndexRange};
     use test_case::test_case;
 
     #[test_case("",     0..0, ErrorKind::ExpectedNumber                 ; "empty")]
@@ -95,7 +95,7 @@ mod tests {
     #[test_case("1:",   2..2, ErrorKind::ExpectedFieldSeparator         ; "missing string separator")]
     #[test_case("1/",   2..2, ErrorKind::ExpectedFieldSeparator         ; "missing regex separator")]
     #[test_case("1/[0", 2..4, ErrorKind::RegexInvalid(AnyString::any()) ; "invalid regex separator")]
-    fn parse_err(input: &str, range: ByteRange, kind: ErrorKind) {
+    fn parse_err(input: &str, range: IndexRange, kind: ErrorKind) {
         assert_eq!(
             Field::parse(&mut Reader::from(input), &Separator::String(' '.into())),
             Err(Error { kind, range })
@@ -108,7 +108,7 @@ mod tests {
 
         #[test_case("1",         0, "default" ; "index")]
         #[test_case("10:custom", 9, "custom"  ; "index and separator")]
-        fn parse(input: &str, index: IndexValue, separator: &str) {
+        fn parse(input: &str, index: usize, separator: &str) {
             assert_eq!(
                 Field::parse(
                     &mut Reader::from(input),
@@ -129,7 +129,7 @@ mod tests {
         #[test_case(" a b",  2, " ", "b" ; "last when first empty")]
         #[test_case("a b ",  2, " ", ""  ; "last when last empty")]
         #[test_case("a b",   2, " ", ""  ; "over last")]
-        fn get(input: &str, index: IndexValue, separator: &str, output: &str) {
+        fn get(input: &str, index: usize, separator: &str, output: &str) {
             assert_eq!(
                 Field {
                     index,
@@ -148,7 +148,7 @@ mod tests {
         #[test_case("a b ",  2, " ", "a" ; "last when first empty")]
         #[test_case(" a b",  2, " ", ""  ; "last when last empty")]
         #[test_case("a b",   2, " ", ""  ; "over last")]
-        fn get_rev(input: &str, index: IndexValue, separator: &str, output: &str) {
+        fn get_rev(input: &str, index: usize, separator: &str, output: &str) {
             assert_eq!(
                 Field {
                     index,
@@ -179,7 +179,7 @@ mod tests {
 
         #[test_case("1",         0, "\\s+"   ; "index")]
         #[test_case("10/[0-9]+", 9, "[0-9]+" ; "index and separator")]
-        fn parse(input: &str, index: IndexValue, separator: &str) {
+        fn parse(input: &str, index: usize, separator: &str) {
             assert_eq!(
                 Field::parse(&mut Reader::from(input), &Separator::Regex("\\s+".into())),
                 Ok(Field {
@@ -197,7 +197,7 @@ mod tests {
         #[test_case("\t\ta\t\tb",  2, "\\s+", "b" ; "last when first empty")]
         #[test_case("a\t\tb\t\t",  2, "\\s+", ""  ; "last when last empty")]
         #[test_case("a\t\tb",      2, "\\s+", ""  ; "over last")]
-        fn get(input: &str, index: IndexValue, separator: &str, output: &str) {
+        fn get(input: &str, index: usize, separator: &str, output: &str) {
             assert_eq!(
                 Field {
                     index,
@@ -216,7 +216,7 @@ mod tests {
         #[test_case("a\t\tb\t\t",  2, "\\s+", "a" ; "last when first empty")]
         #[test_case("\t\ta\t\tb",  2, "\\s+", ""  ; "last when last empty")]
         #[test_case("a\t\tb",      2, "\\s+", ""  ; "over last")]
-        fn get_rev(input: &str, index: IndexValue, separator: &str, output: &str) {
+        fn get_rev(input: &str, index: usize, separator: &str, output: &str) {
             assert_eq!(
                 Field {
                     index,

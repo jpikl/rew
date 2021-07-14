@@ -1,8 +1,8 @@
 use crate::pattern::char::{Char, EscapeSequence};
 use crate::pattern::escape::{escape_char, escape_str};
 use crate::pattern::regex::RegexHolder;
-use crate::pattern::symbols::{EXPR_END, EXPR_START, LENGTH_DELIMITER, PIPE, RANGE_DELIMITER};
-use crate::utils::{AnyString, ByteRange, GetByteRange};
+use crate::pattern::symbols::{EXPR_END, EXPR_START, PIPE, RANGE_OF_LENGTH, RANGE_TO};
+use crate::utils::{AnyString, GetIndexRange, IndexRange};
 use std::convert::Infallible;
 use std::{error, fmt, result};
 
@@ -39,7 +39,7 @@ impl fmt::Display for Separator {
 #[derive(Debug, PartialEq)]
 pub struct Parsed<T> {
     pub value: T,
-    pub range: ByteRange,
+    pub range: IndexRange,
 }
 
 #[cfg(test)]
@@ -55,13 +55,13 @@ pub type BaseResult<T> = result::Result<T, ErrorKind>;
 #[derive(Debug, PartialEq)]
 pub struct Error {
     pub kind: ErrorKind,
-    pub range: ByteRange,
+    pub range: IndexRange,
 }
 
 impl error::Error for Error {}
 
-impl GetByteRange for Error {
-    fn range(&self) -> &ByteRange {
+impl GetIndexRange for Error {
+    fn index_range(&self) -> &IndexRange {
         &self.range
     }
 }
@@ -163,20 +163,24 @@ impl fmt::Display for ErrorKind {
             Self::ExpectedPipeOrExprEnd => {
                 write!(formatter, "Expected '{}' or closing '{}'", PIPE, EXPR_END)
             }
-            Self::ExpectedRange => write!(formatter, "Expected range 'A-B', 'A-', 'A' or 'A+B'"),
+            Self::ExpectedRange => write!(
+                formatter,
+                "Expected range 'A{}B', 'A{}', 'A' or 'A{}B'",
+                RANGE_TO, RANGE_TO, RANGE_OF_LENGTH
+            ),
             Self::ExpectedRangeDelimiter(None) => {
-                write!(formatter, "Expected range delimiter '{}'", RANGE_DELIMITER)
+                write!(formatter, "Expected range delimiter '{}'", RANGE_TO)
             }
             Self::ExpectedRangeDelimiter(Some(char)) => write!(
                 formatter,
                 "Expected range delimiter '{}' but got {}",
-                RANGE_DELIMITER, char
+                RANGE_TO, char
             ),
             Self::ExpectedRangeLength => {
                 write!(
                     formatter,
                     "Expected range length after '{}'",
-                    LENGTH_DELIMITER
+                    RANGE_OF_LENGTH
                 )
             }
             Self::ExpectedRegex => write!(formatter, "Expected regular expression"),
@@ -277,7 +281,7 @@ mod tests {
                     kind: ErrorKind::ExpectedNumber,
                     range: 1..2
                 }
-                .range(),
+                .index_range(),
                 &(1..2)
             )
         }

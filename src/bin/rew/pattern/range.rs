@@ -1,44 +1,49 @@
 use crate::pattern::char::Char;
+use crate::pattern::index::shift_index;
 use crate::pattern::integer::{parse_integer, ParsableInt};
 use crate::pattern::parse::{BaseResult, Error, ErrorKind, Result};
 use crate::pattern::reader::Reader;
-use crate::pattern::symbols::{LENGTH_DELIMITER, RANGE_DELIMITER};
+use crate::pattern::symbols::{RANGE_OF_LENGTH, RANGE_TO};
 use num_traits::{CheckedAdd, One, Zero};
 
 pub trait RangeType {
-    const EMPTY_ALLOWED: bool;
-    const DELIMITER_REQUIRED: bool;
-    const LENGTH_DELIMITER_ALLOWED: bool;
-
     type Value: ParsableInt;
 
-    fn shift(value: Self::Value) -> BaseResult<Self::Value>;
+    const INDEX: bool;
+    const EMPTY_ALLOWED: bool;
+    const DELIMITER_REQUIRED: bool;
+    const LENGTH_ALLOWED: bool;
 }
 
 #[derive(Debug, PartialEq)]
 pub struct Range<T: RangeType>(pub T::Value, pub Option<T::Value>);
 
 impl<T: RangeType> Range<T> {
+    #[allow(dead_code)] // Clippy bug
+    pub fn new(start: T::Value, end: Option<T::Value>) -> Self {
+        Self(start, end)
+    }
+
     pub fn parse(reader: &mut Reader<Char>) -> Result<Self> {
         match reader.peek_char() {
             Some('0'..='9') => {
                 let start_pos = reader.position();
                 let start_val = parse_integer(reader)?;
 
-                let start = T::shift(start_val).map_err(|kind| Error {
+                let start = Self::maybe_shift(start_val).map_err(|kind| Error {
                     kind,
                     range: start_pos..reader.position(),
                 })?;
 
                 match reader.peek_char() {
-                    Some(RANGE_DELIMITER) => {
+                    Some(RANGE_TO) => {
                         reader.seek();
 
                         if let Some('0'..='9') = reader.peek_char() {
                             let end_pos = reader.position();
                             let end_val = parse_integer(reader)?;
 
-                            let end = T::shift(end_val).map_err(|kind| Error {
+                            let end = Self::maybe_shift(end_val).map_err(|kind| Error {
                                 kind,
                                 range: end_pos..reader.position(),
                             })?;
@@ -61,7 +66,7 @@ impl<T: RangeType> Range<T> {
                         }
                     }
 
-                    Some(LENGTH_DELIMITER) if T::LENGTH_DELIMITER_ALLOWED => {
+                    Some(RANGE_OF_LENGTH) if T::LENGTH_ALLOWED => {
                         reader.seek();
 
                         if let Some('0'..='9') = reader.peek_char() {
@@ -108,6 +113,14 @@ impl<T: RangeType> Range<T> {
         }
     }
 
+    fn maybe_shift(value: T::Value) -> BaseResult<T::Value> {
+        if T::INDEX {
+            shift_index(value)
+        } else {
+            Ok(value)
+        }
+    }
+
     pub fn start(&self) -> T::Value {
         self.0
     }
@@ -134,15 +147,12 @@ pub mod tests {
     type TestValue = u32;
 
     impl RangeType for TestType {
-        const EMPTY_ALLOWED: bool = false;
-        const DELIMITER_REQUIRED: bool = false;
-        const LENGTH_DELIMITER_ALLOWED: bool = false;
-
         type Value = TestValue;
 
-        fn shift(value: Self::Value) -> BaseResult<Self::Value> {
-            Ok(value)
-        }
+        const INDEX: bool = false;
+        const EMPTY_ALLOWED: bool = false;
+        const DELIMITER_REQUIRED: bool = false;
+        const LENGTH_ALLOWED: bool = false;
     }
 
     #[test_case(0, None,    0 ; "from 0 to none")]

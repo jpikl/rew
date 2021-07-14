@@ -2,8 +2,9 @@ pub const EXPR_START: char = '{';
 pub const EXPR_END: char = '}';
 pub const PIPE: char = '|';
 
-pub const RANGE_DELIMITER: char = '-';
-pub const LENGTH_DELIMITER: char = '+';
+pub const REVERSE_INDEX: char = '-';
+pub const RANGE_TO: char = '-';
+pub const RANGE_OF_LENGTH: char = '+';
 
 pub const DIR_SEPARATOR: char = '/';
 pub const LINE_FEED: char = 'n';

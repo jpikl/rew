@@ -5,10 +5,6 @@ use num_traits::PrimInt;
 use std::fmt::{Debug, Display};
 use std::str::FromStr;
 
-pub const fn get_bits<T>() -> usize {
-    std::mem::size_of::<T>() * 8
-}
-
 pub trait ParsableInt: PrimInt + FromStr + Display + Debug {}
 
 impl<T: PrimInt + FromStr + Display + Debug> ParsableInt for T {}
@@ -39,27 +35,17 @@ pub fn parse_integer<T: ParsableInt>(reader: &mut Reader<Char>) -> Result<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use test_case::test_case;
-
-    #[test_case(0u8,   8   ; "8-bit")]
-    #[test_case(0u16,  16  ; "16-bit")]
-    #[test_case(0u32,  32  ; "32-bit")]
-    #[test_case(0u64,  64  ; "64-bit")]
-    #[test_case(0u128, 128 ; "128-bit")]
-    fn gets_bits<T>(_: T, bits: usize) {
-        assert_eq!(super::get_bits::<T>(), bits);
-    }
 
     mod parse_integer {
         use super::*;
-        use crate::utils::ByteRange;
+        use crate::utils::IndexRange;
         use test_case::test_case;
 
         #[test_case("",     0..0, ErrorKind::ExpectedNumber                ; "empty")]
         #[test_case("ab",   0..2, ErrorKind::ExpectedNumber                ; "alpha")]
         #[test_case("256",  0..3, ErrorKind::IntegerOverflow("255".into()) ; "overflow")]
         #[test_case("256a", 0..3, ErrorKind::IntegerOverflow("255".into()) ; "overflow then alpha")]
-        fn err(input: &str, range: ByteRange, kind: ErrorKind) {
+        fn err(input: &str, range: IndexRange, kind: ErrorKind) {
             assert_eq!(
                 parse_integer::<u8>(&mut Reader::from(input)),
                 Err(Error { kind, range })

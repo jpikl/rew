@@ -114,7 +114,7 @@ mod tests {
 
     mod parse {
         use super::*;
-        use crate::utils::{AnyString, ByteRange};
+        use crate::utils::{AnyString, IndexRange};
         use test_case::test_case;
 
         #[test_case("",                0..0,   ErrorKind::ExpectedSwitch                      ; "empty")]
@@ -122,7 +122,7 @@ mod tests {
         #[test_case(":[a-z:",          1..5,   ErrorKind::RegexInvalid(AnyString::any())      ; "invalid")]
         #[test_case(":[a-z]:::",       7..8,   ErrorKind::SwitchWithoutMatcher(':'.into(), 2) ; "matcher delimiter delimiter")]
         #[test_case(":[a-z]:Lo:[A-Z:", 10..14, ErrorKind::RegexInvalid(AnyString::any())      ; "matcher result invalid")]
-        fn err(input: &str, range: ByteRange, kind: ErrorKind) {
+        fn err(input: &str, range: IndexRange, kind: ErrorKind) {
             assert_eq!(
                 RegexSwitch::parse(&mut Reader::from(input)),
                 Err(Error { kind, range })
@@ -277,7 +277,7 @@ mod tests {
                 .to_string(),
                 indoc! {"
                     variable output:
-                    
+
                         if input matches '^[a-z]+$'
                             output is 'lower'
                         else
@@ -305,7 +305,7 @@ mod tests {
                 .to_string(),
                 indoc! {"
                     variable output:
-                    
+
                         if input matches '^[a-z]+$'
                             output is 'lower'
                         else if input matches '^[A-Z]+$'

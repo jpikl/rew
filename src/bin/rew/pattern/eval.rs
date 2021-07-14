@@ -1,5 +1,5 @@
 use crate::pattern::filter::Filter;
-use crate::utils::{AnyString, ByteRange, GetByteRange};
+use crate::utils::{AnyString, GetIndexRange, IndexRange};
 use std::path::Path;
 use std::{error, fmt, result};
 
@@ -45,13 +45,13 @@ pub struct Error<'a> {
     pub kind: ErrorKind,
     pub value: String,
     pub cause: &'a Filter,
-    pub range: &'a ByteRange,
+    pub range: &'a IndexRange,
 }
 
 impl<'a> error::Error for Error<'a> {}
 
-impl<'a> GetByteRange for Error<'a> {
-    fn range(&self) -> &ByteRange {
+impl<'a> GetIndexRange for Error<'a> {
+    fn index_range(&self) -> &IndexRange {
         self.range
     }
 }
@@ -121,7 +121,7 @@ mod tests {
                     value: "abc".into(),
                     range: &(1..2)
                 }
-                .range(),
+                .index_range(),
                 &(1..2)
             )
         }

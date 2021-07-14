@@ -1,34 +1,29 @@
-use crate::pattern::integer::get_bits;
-use crate::pattern::parse::BaseResult;
 use crate::pattern::range::{Range, RangeType};
 use rand::thread_rng;
 use rand::Rng;
 use std::fmt;
 
+pub type Number = u64;
+pub type NumberRange = Range<NumberRangeType>;
+
 #[derive(PartialEq, Debug)]
-pub struct Number;
+pub struct NumberRangeType;
 
-pub type NumberRange = Range<Number>;
-pub type NumberValue = u64;
+impl RangeType for NumberRangeType {
+    type Value = Number;
 
-impl RangeType for Number {
+    const INDEX: bool = false;
     const EMPTY_ALLOWED: bool = true;
     const DELIMITER_REQUIRED: bool = true;
-    const LENGTH_DELIMITER_ALLOWED: bool = false;
-
-    type Value = NumberValue;
-
-    fn shift(value: Self::Value) -> BaseResult<Self::Value> {
-        Ok(value)
-    }
+    const LENGTH_ALLOWED: bool = false;
 }
 
 impl NumberRange {
-    pub fn random(&self) -> NumberValue {
+    pub fn random(&self) -> Number {
         let start = self.start();
-        let end = self.end().unwrap_or(NumberValue::MAX);
+        let end = self.end().unwrap_or(Number::MAX);
 
-        if start == 0 && end == NumberValue::MAX {
+        if start == 0 && end == Number::MAX {
             thread_rng().gen() // gen_range(start..=end) would cause an overflow in rand lib
         } else {
             thread_rng().gen_range(start..=end)
@@ -40,7 +35,12 @@ impl fmt::Display for NumberRange {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match &self {
             Range(start, Some(end)) => write!(formatter, "[{}, {}]", start, end - 1),
-            Range(start, None) => write!(formatter, "[{}, 2^{})", start, get_bits::<NumberValue>()),
+            Range(start, None) => write!(
+                formatter,
+                "[{}, 2^{})",
+                start,
+                std::mem::size_of::<Number>() * 8
+            ),
         }
     }
 }
@@ -54,7 +54,7 @@ mod tests {
         use super::*;
         use crate::pattern::parse::{Error, ErrorKind};
         use crate::pattern::reader::Reader;
-        use crate::utils::ByteRange;
+        use crate::utils::IndexRange;
         use test_case::test_case;
 
         #[test_case("-",   0..1, ErrorKind::RangeInvalid("-".into())                  ; "invalid")]
@@ -62,7 +62,7 @@ mod tests {
         #[test_case("0+1", 1..2, ErrorKind::ExpectedRangeDelimiter(Some('+'.into()))  ; "start with length")]
         #[test_case("1",   1..1, ErrorKind::ExpectedRangeDelimiter(None)              ; "no delimiter")]
         #[test_case("1ab", 1..2, ErrorKind::ExpectedRangeDelimiter(Some('a'.into()))  ; "wrong delimiter")]
-        fn err(input: &str, range: ByteRange, kind: ErrorKind) {
+        fn err(input: &str, range: IndexRange, kind: ErrorKind) {
             assert_eq!(
                 NumberRange::parse(&mut Reader::from(input)),
                 Err(Error { kind, range })
@@ -73,10 +73,10 @@ mod tests {
         #[test_case("0-",  0, None    ; "start no end")]
         #[test_case("0-1", 0, Some(2) ; "start below end")]
         #[test_case("1-1", 1, Some(2) ; "start equals end")]
-        fn ok(input: &str, start: NumberValue, end: Option<NumberValue>) {
+        fn ok(input: &str, start: Number, end: Option<Number>) {
             assert_eq!(
                 NumberRange::parse(&mut Reader::from(input)),
-                Ok(Range::<Number>(start, end))
+                Ok(NumberRange::new(start, end))
             );
         }
     }
@@ -85,25 +85,25 @@ mod tests {
         use super::*;
         use test_case::test_case;
 
-        const MAX: NumberValue = NumberValue::MAX;
+        const MAX: Number = Number::MAX;
 
         #[test_case(0,   Some(0), 0   ; "lowest")]
         #[test_case(MAX, None,    MAX ; "highest")]
-        fn certain(start: NumberValue, end: Option<NumberValue>, result: NumberValue) {
-            assert_eq!(Range::<Number>(start, end).random(), result);
+        fn certain(start: Number, end: Option<Number>, result: Number) {
+            assert_eq!(NumberRange::new(start, end).random(), result);
         }
 
         #[test_case(0, Some(MAX)     ; "from 0 to max")] // Should not overflow
         #[test_case(1, Some(MAX)     ; "from 1 to max")]
         #[test_case(0, Some(MAX - 1) ; "from 0 to max-1")]
-        fn uncertain(start: NumberValue, end: Option<NumberValue>) {
-            Range::<Number>(start, end).random();
+        fn uncertain(start: Number, end: Option<Number>) {
+            NumberRange::new(start, end).random();
         }
     }
 
     #[test_case(1, None,    "[1, 2^64)" ; "open")]
     #[test_case(1, Some(3), "[1, 2]"    ; "closed")]
-    fn display(start: NumberValue, end: Option<NumberValue>, result: &str) {
-        assert_eq!(Range::<Number>(start, end).to_string(), result);
+    fn display(start: Number, end: Option<Number>, result: &str) {
+        assert_eq!(NumberRange::new(start, end).to_string(), result);
     }
 }
