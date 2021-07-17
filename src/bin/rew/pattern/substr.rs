@@ -1,5 +1,6 @@
-use crate::pattern::range::{Range, RangeType};
 use std::fmt;
+
+use crate::pattern::range::{Range, RangeType};
 
 pub type CharIndexRange = Range<CharIndexRangeType>;
 
@@ -67,15 +68,17 @@ impl fmt::Display for CharIndexRange {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::pattern::error::ErrorRange;
     use test_case::test_case;
 
+    use super::*;
+    use crate::pattern::error::ErrorRange;
+
     mod parse {
+        use test_case::test_case;
+
         use super::*;
         use crate::pattern::parse::{Error, ErrorKind};
         use crate::pattern::reader::Reader;
-        use test_case::test_case;
 
         #[test_case("",     0..0, ErrorKind::ExpectedRange                             ; "empty")]
         #[test_case("-",    0..1, ErrorKind::RangeInvalid("-".into())                  ; "invalid")]

@@ -1,3 +1,5 @@
+use std::fmt;
+
 use crate::pattern::char::{AsChar, Char, Chars};
 use crate::pattern::error::ErrorRange;
 use crate::pattern::escape::escape_str;
@@ -5,7 +7,6 @@ use crate::pattern::filter::Filter;
 use crate::pattern::lexer::{Lexer, ParsedToken, Token};
 use crate::pattern::parse::{Config, Error, ErrorKind, Parsed, Result};
 use crate::pattern::reader::Reader;
-use std::fmt;
 
 pub type ParsedFilter = Parsed<Filter>;
 pub type ParsedItem = Parsed<Item>;
@@ -201,8 +202,9 @@ impl<'a> Parser<'a> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use test_case::test_case;
+
+    use super::*;
 
     #[test_case(Item::Constant("abc".into()),     "Constant 'abc'"            ; "constant")]
     #[test_case(Item::Expression(Vec::new()),     "Empty expression"          ; "empty expr")]
@@ -217,12 +219,13 @@ mod tests {
     }
 
     mod parse {
+        use test_case::test_case;
+
         use super::*;
         use crate::pattern::padding::Padding;
         use crate::pattern::repeat::Repetition;
         use crate::pattern::replace::Substitution;
         use crate::pattern::substr::CharIndexRange;
-        use test_case::test_case;
 
         #[test_case("|",      0..1, ErrorKind::PipeOutsideExpr                           ; "pipe outside expr")]
         #[test_case("}",      0..1, ErrorKind::UnmatchedExprEnd                          ; "unmatched expr end")]

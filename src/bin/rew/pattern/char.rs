@@ -1,7 +1,8 @@
-use crate::pattern::escape::escape_char;
 use std::fmt;
 use std::fmt::Debug;
 use std::ops::Deref;
+
+use crate::pattern::escape::escape_char;
 
 pub type EscapeSequence = [char; 2];
 
@@ -106,8 +107,9 @@ mod tests {
     use super::*;
 
     mod char_raw {
-        use super::*;
         use test_case::test_case;
+
+        use super::*;
 
         #[test]
         fn from_char() {
@@ -137,8 +139,9 @@ mod tests {
     }
 
     mod char_escaped {
-        use super::*;
         use test_case::test_case;
+
+        use super::*;
 
         #[test]
         fn as_char() {

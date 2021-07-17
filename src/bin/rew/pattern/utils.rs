@@ -39,8 +39,9 @@ mod tests {
     use super::*;
 
     mod any_string {
-        use super::*;
         use test_case::test_case;
+
+        use super::*;
 
         #[test_case("a", "a" ; "same")]
         #[test_case("a", "b" ; "different")]

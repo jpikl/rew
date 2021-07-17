@@ -1,9 +1,10 @@
+use std::fmt;
+
 use crate::pattern::char::Char;
 use crate::pattern::escape::escape_str;
 use crate::pattern::integer::parse_integer;
 use crate::pattern::parse::{Error, ErrorKind, Result};
 use crate::pattern::reader::Reader;
-use std::fmt;
 
 #[derive(Debug, PartialEq)]
 pub struct Repetition {
@@ -58,15 +59,17 @@ impl fmt::Display for Repetition {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use test_case::test_case;
 
+    use super::*;
+
     mod parse {
+        use test_case::test_case;
+
         use super::*;
         use crate::pattern::error::ErrorRange;
         use crate::pattern::parse::{Error, ErrorKind};
         use crate::pattern::reader::Reader;
-        use test_case::test_case;
 
         #[test_case("",   0..0, ErrorKind::ExpectedRepetition ; "empty")]
         #[test_case("ab", 0..2, ErrorKind::ExpectedNumber     ; "invalid count")]
@@ -92,11 +95,12 @@ mod tests {
     }
 
     mod parse_with_delimiter {
+        use test_case::test_case;
+
         use super::*;
         use crate::pattern::error::ErrorRange;
         use crate::pattern::parse::{Error, ErrorKind};
         use crate::pattern::reader::Reader;
-        use test_case::test_case;
 
         #[test_case("",   0..0, ErrorKind::ExpectedRepetition         ; "empty")]
         #[test_case("ab", 0..2, ErrorKind::ExpectedNumber             ; "invalid count")]

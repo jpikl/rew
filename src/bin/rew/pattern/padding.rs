@@ -1,10 +1,11 @@
+use std::borrow::Cow;
+use std::fmt;
+
 use crate::pattern::char::{AsChar, Char};
 use crate::pattern::escape::escape_str;
 use crate::pattern::parse::{Error, ErrorKind, Result};
 use crate::pattern::reader::Reader;
 use crate::pattern::repeat::Repetition;
-use std::borrow::Cow;
-use std::fmt;
 
 #[derive(Debug, PartialEq)]
 pub enum Padding {
@@ -67,9 +68,10 @@ impl fmt::Display for Padding {
 
 #[cfg(test)]
 mod tests {
+    use test_case::test_case;
+
     use super::*;
     use crate::pattern::error::ErrorRange;
-    use test_case::test_case;
 
     #[test_case("",     0..0, ErrorKind::PaddingPrefixInvalid('<', None)             ; "no prefix")]
     #[test_case(">abc", 0..1, ErrorKind::PaddingPrefixInvalid('<', Some('>'.into())) ; "invalid prefix")]
@@ -81,8 +83,9 @@ mod tests {
     }
 
     mod fixed {
-        use super::*;
         use test_case::test_case;
+
+        use super::*;
 
         #[test_case("<",    ""    ; "empty")]
         #[test_case("<abc", "abc" ; "nonempty")]
@@ -124,8 +127,9 @@ mod tests {
     }
 
     mod repeated {
-        use super::*;
         use test_case::test_case;
+
+        use super::*;
 
         #[test_case("10:",    10, ""    ; "empty")]
         #[test_case("10:abc", 10, "abc" ; "nonempty")]

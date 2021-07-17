@@ -1,7 +1,9 @@
-use crate::color::spec_color;
 use std::error::Error;
 use std::io::{Result, Write};
+
 use termcolor::{Color, WriteColor};
+
+use crate::color::spec_color;
 
 pub fn write_error<O: Write + WriteColor, E: Error>(output: &mut O, error: &E) -> Result<()> {
     output.set_color(&spec_color(Color::Red))?;
@@ -12,9 +14,10 @@ pub fn write_error<O: Write + WriteColor, E: Error>(output: &mut O, error: &E) -
 
 #[cfg(test)]
 pub mod tests {
+    use std::io::{self, ErrorKind};
+
     use super::*;
     use crate::testing::{ColoredOuput, OutputChunk};
-    use std::io::{self, ErrorKind};
 
     #[test]
     fn write_error() {

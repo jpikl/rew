@@ -1,7 +1,8 @@
-use crate::pattern::range::{Range, RangeType};
-use rand::thread_rng;
-use rand::Rng;
 use std::fmt;
+
+use rand::{thread_rng, Rng};
+
+use crate::pattern::range::{Range, RangeType};
 
 pub type Number = u64;
 pub type NumberRange = Range<NumberRangeType>;
@@ -47,15 +48,17 @@ impl fmt::Display for NumberRange {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use test_case::test_case;
 
+    use super::*;
+
     mod parse {
+        use test_case::test_case;
+
         use super::*;
         use crate::pattern::error::ErrorRange;
         use crate::pattern::parse::{Error, ErrorKind};
         use crate::pattern::reader::Reader;
-        use test_case::test_case;
 
         #[test_case("-",   0..1, ErrorKind::RangeInvalid("-".into())                  ; "invalid")]
         #[test_case("2-1", 0..3, ErrorKind::RangeStartOverEnd("2".into(), "1".into()) ; "start above end")]
@@ -82,8 +85,9 @@ mod tests {
     }
 
     mod random {
-        use super::*;
         use test_case::test_case;
+
+        use super::*;
 
         const MAX: Number = Number::MAX;
 

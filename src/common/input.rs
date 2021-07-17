@@ -1,5 +1,6 @@
-use crate::utils::str_from_utf8;
 use std::io::{BufRead, Result};
+
+use crate::utils::str_from_utf8;
 
 pub enum Terminator {
     Newline { required: bool },
@@ -68,9 +69,10 @@ impl<I: BufRead> Splitter<I> {
 
 #[cfg(test)]
 mod tests {
+    use test_case::test_case;
+
     use super::*;
     use crate::testing::unpack_io_error;
-    use test_case::test_case;
 
     const NONE: Terminator = Terminator::None;
     const NL_REQ: Terminator = Terminator::Newline { required: true };

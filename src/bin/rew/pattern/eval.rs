@@ -1,8 +1,9 @@
+use std::path::Path;
+use std::{error, fmt, result};
+
 use crate::pattern::error::{ErrorRange, GetErrorRange};
 use crate::pattern::filter::Filter;
 use crate::pattern::utils::AnyString;
-use std::path::Path;
-use std::{error, fmt, result};
 
 pub type Counter = u32;
 

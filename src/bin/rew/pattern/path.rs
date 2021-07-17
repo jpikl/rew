@@ -1,10 +1,11 @@
-use crate::pattern::eval::BaseResult;
-use crate::pattern::eval::ErrorKind;
-use crate::pattern::utils::AnyString;
-use normpath::PathExt;
-use pathdiff::diff_paths;
 use std::ffi::OsStr;
 use std::path::{is_separator, Component, Path, PathBuf, MAIN_SEPARATOR};
+
+use normpath::PathExt;
+use pathdiff::diff_paths;
+
+use crate::pattern::eval::{BaseResult, ErrorKind};
+use crate::pattern::utils::AnyString;
 
 pub fn to_absolute(value: String, working_dir: &Path) -> BaseResult<String> {
     if value.is_empty() {
@@ -215,9 +216,11 @@ fn to_str<S: AsRef<OsStr> + ?Sized>(value: &S) -> BaseResult<&str> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::ffi::OsString;
+
     use test_case::test_case;
+
+    use super::*;
 
     #[                 test_case("",             "{work}"           ; "empty")]
     #[cfg_attr(unix,   test_case("file.ext",     "{work}/file.ext"  ; "relative"))]
@@ -246,8 +249,9 @@ mod tests {
     }
 
     mod canonicalize {
-        use super::*;
         use test_case::test_case;
+
+        use super::*;
 
         #[test]
         fn err() {

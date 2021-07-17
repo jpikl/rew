@@ -1,11 +1,13 @@
+use std::fmt::Display;
+use std::io::{Result, Write};
+
+use common::color::spec_color;
+use termcolor::{Color, WriteColor};
+
 use crate::output::highlight_range;
 use crate::pattern::parse::Parsed;
 use crate::pattern::parser::Item;
 use crate::pattern::Pattern;
-use common::color::spec_color;
-use std::fmt::Display;
-use std::io::{Result, Write};
-use termcolor::{Color, WriteColor};
 
 impl Pattern {
     pub fn explain<O: Write + WriteColor>(&self, output: &mut O, all: bool) -> Result<()> {
@@ -45,11 +47,12 @@ impl Pattern {
 
 #[cfg(test)]
 mod tests {
+    use common::testing::{ColoredOuput, OutputChunk};
+    use test_case::test_case;
+
     use super::*;
     use crate::pattern::filter::Filter;
     use crate::pattern::parse::Parsed;
-    use common::testing::{ColoredOuput, OutputChunk};
-    use test_case::test_case;
 
     #[test_case(empty_pattern(),    false, Vec::new()      ; "empty filters")]
     #[test_case(empty_pattern(),    true,  Vec::new()      ; "empty all")]

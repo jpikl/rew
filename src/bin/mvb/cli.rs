@@ -97,8 +97,9 @@ impl TransferOptions for Cli {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use test_case::test_case;
+
+    use super::*;
 
     #[test_case(&[],                 None                      ; "default")]
     #[test_case(&["--color=always"], Some(ColorChoice::Always) ; "always")]

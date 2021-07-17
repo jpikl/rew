@@ -1,11 +1,12 @@
+use std::convert::{TryFrom, TryInto};
+use std::fmt;
+
 use crate::pattern::char::Char;
 use crate::pattern::escape::escape_str;
 use crate::pattern::parse::{Error, ErrorKind, Result};
 use crate::pattern::reader::Reader;
 use crate::pattern::regex::{add_capture_group_brackets, RegexHolder};
 use crate::pattern::utils::Empty;
-use std::convert::{TryFrom, TryInto};
-use std::fmt;
 
 #[derive(Debug, PartialEq)]
 pub struct Substitution<T> {
@@ -124,8 +125,9 @@ mod tests {
     use crate::pattern::error::ErrorRange;
 
     mod empty {
-        use super::*;
         use test_case::test_case;
+
+        use super::*;
 
         #[test_case("",    ""    ; "empty")]
         #[test_case("abc", "abc" ; "nonempty")]
@@ -168,12 +170,14 @@ mod tests {
     }
 
     mod string {
-        use super::*;
         use test_case::test_case;
 
+        use super::*;
+
         mod parse {
-            use super::*;
             use test_case::test_case;
+
+            use super::*;
 
             #[test_case("",   0..0, ErrorKind::ExpectedSubstitution                  ; "empty")]
             #[test_case("/",  1..1, ErrorKind::SubstitutionWithoutTarget('/'.into()) ; "no target")]
@@ -252,13 +256,15 @@ mod tests {
 
     mod regex {
         extern crate regex;
-        use super::*;
         use test_case::test_case;
 
+        use super::*;
+
         mod parse {
+            use test_case::test_case;
+
             use super::*;
             use crate::pattern::utils::AnyString;
-            use test_case::test_case;
 
             #[test_case("",           0..0, ErrorKind::ExpectedSubstitution                  ; "empty")]
             #[test_case("/",          1..1, ErrorKind::SubstitutionWithoutTarget('/'.into()) ; "no target")]

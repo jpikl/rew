@@ -1,8 +1,10 @@
+use std::io::{Result, Write};
+
+use lazy_static::lazy_static;
+use termcolor::{Buffer, Color, WriteColor};
+
 use crate::color::spec_color;
 use crate::utils::{into_static_str, str_from_utf8};
-use lazy_static::lazy_static;
-use std::io::{Result, Write};
-use termcolor::{Buffer, Color, WriteColor};
 
 const HEADING_PREFIX: &str = "# ";
 const PADDED_BLOCK_PREFIX: &str = "    ";
@@ -91,10 +93,11 @@ fn highlight_code<O: Write + WriteColor>(output: &mut O, line: &str) -> Result<(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::testing::{ColoredOuput, OutputChunk};
     use claim::*;
     use indoc::indoc;
+
+    use super::*;
+    use crate::testing::{ColoredOuput, OutputChunk};
 
     const SAMPLE_HELP: &str = indoc! {"
         # Heading

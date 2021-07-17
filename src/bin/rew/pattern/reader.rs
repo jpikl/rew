@@ -100,9 +100,10 @@ impl<T: AsChar> Reader<T> {
 
 #[cfg(test)]
 mod tests {
+    use test_case::test_case;
+
     use super::*;
     use crate::pattern::char::Char;
-    use test_case::test_case;
 
     const CHARS: [Char; 3] = [
         Char::Raw('a'),

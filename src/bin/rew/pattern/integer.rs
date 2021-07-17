@@ -1,9 +1,11 @@
+use std::fmt::{Debug, Display};
+use std::str::FromStr;
+
+use num_traits::PrimInt;
+
 use crate::pattern::char::Char;
 use crate::pattern::parse::{Error, ErrorKind, Result};
 use crate::pattern::reader::Reader;
-use num_traits::PrimInt;
-use std::fmt::{Debug, Display};
-use std::str::FromStr;
 
 pub trait ParsableInt: PrimInt + FromStr + Display + Debug {}
 
@@ -39,9 +41,8 @@ mod tests {
     mod parse_integer {
         use test_case::test_case;
 
-        use crate::pattern::error::ErrorRange;
-
         use super::*;
+        use crate::pattern::error::ErrorRange;
 
         #[test_case("",     0..0, ErrorKind::ExpectedNumber                ; "empty")]
         #[test_case("ab",   0..2, ErrorKind::ExpectedNumber                ; "alpha")]

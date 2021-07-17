@@ -1,9 +1,10 @@
+use std::fs;
+use std::path::Path;
+
 use fs_extra::error::{Error, ErrorKind, Result};
 use fs_extra::{dir, file};
 use lazy_static::lazy_static;
 use same_file::is_same_file;
-use std::fs;
-use std::path::Path;
 
 #[derive(PartialEq, Debug)]
 pub enum FileType {
@@ -122,13 +123,14 @@ fn get_dir_copy_options() -> dir::CopyOptions {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::transfer::testing::{debug_fse_error_kind, unpack_fse_error};
     use assert_fs::prelude::*;
     use assert_fs::{NamedTempFile, TempDir};
     use fs_extra::error::ErrorKind;
     use ntest::*;
     use test_case::test_case;
+
+    use super::*;
+    use crate::transfer::testing::{debug_fse_error_kind, unpack_fse_error};
 
     #[test_case(temp_dir().path(),            FileType::Dir     ; "dir")]
     #[test_case(touch(temp_file("a")).path(), FileType::File    ; "file")]

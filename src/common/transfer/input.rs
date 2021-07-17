@@ -1,8 +1,9 @@
-use crate::input::{Splitter, Terminator};
-use crate::symbols::{DIFF_IN, DIFF_OUT};
 use std::fmt;
 use std::io::{BufRead, Error, ErrorKind, Result};
 use std::path::PathBuf;
+
+use crate::input::{Splitter, Terminator};
+use crate::symbols::{DIFF_IN, DIFF_OUT};
 
 struct Position {
     item: usize,
@@ -104,9 +105,10 @@ mod tests {
     }
 
     mod path_diff {
+        use test_case::test_case;
+
         use super::*;
         use crate::testing::unpack_io_error;
-        use test_case::test_case;
 
         #[test_case("",                       0, None                 ; "empty")]
         #[test_case("<abc\n>def\n< g \n> h ", 0, Some(("abc", "def")) ; "nonempty 0")]

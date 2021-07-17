@@ -116,10 +116,9 @@ mod tests {
     mod parse {
         use test_case::test_case;
 
+        use super::*;
         use crate::pattern::error::ErrorRange;
         use crate::pattern::utils::AnyString;
-
-        use super::*;
 
         #[test_case("",                0..0,   ErrorKind::ExpectedSwitch                      ; "empty")]
         #[test_case("::",              0..1,   ErrorKind::SwitchWithoutMatcher(':'.into(), 0) ; "delimiter delimiter")]

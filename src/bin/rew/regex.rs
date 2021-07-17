@@ -1,5 +1,6 @@
-use regex::{Captures, Regex};
 use std::path::Path;
+
+use regex::{Captures, Regex};
 
 pub enum Solver<'a> {
     Value(&'a Regex),
@@ -29,10 +30,11 @@ impl<'a> Solver<'a> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use claim::*;
     use regex::Match;
     use test_case::test_case;
+
+    use super::*;
 
     #[test_case(Solver::Value(&regex()),    ""      ; "value empty")]
     #[test_case(Solver::Value(&regex()),    "ab/cd" ; "value nonempty")]

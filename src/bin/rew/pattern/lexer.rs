@@ -1,10 +1,11 @@
+use std::path::MAIN_SEPARATOR;
+
 use crate::pattern::char::Char;
 use crate::pattern::parse::{BaseResult, Error, ErrorKind, Parsed, Result};
 use crate::pattern::reader::Reader;
 use crate::pattern::symbols::{
     CARRIAGE_RETURN, DIR_SEPARATOR, EXPR_END, EXPR_START, HORIZONTAL_TAB, LINE_FEED, NULL, PIPE,
 };
-use std::path::MAIN_SEPARATOR;
 
 pub type ParsedToken = Parsed<Token>;
 
@@ -125,9 +126,8 @@ impl Lexer {
 mod tests {
     use test_case::test_case;
 
-    use crate::pattern::error::ErrorRange;
-
     use super::*;
+    use crate::pattern::error::ErrorRange;
 
     #[test_case("%",  0..1, ErrorKind::UnterminatedEscapeSequence('%')   ; "unterminated escape sequence")]
     #[test_case("%x", 0..2, ErrorKind::UnknownEscapeSequence(['%', 'x']) ; "unknown escape sequence")]

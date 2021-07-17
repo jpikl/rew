@@ -1,10 +1,11 @@
+use num_traits::{CheckedAdd, One, Zero};
+
 use crate::pattern::char::Char;
 use crate::pattern::index::shift_index;
 use crate::pattern::integer::{parse_integer, ParsableInt};
 use crate::pattern::parse::{BaseResult, Error, ErrorKind, Result};
 use crate::pattern::reader::Reader;
 use crate::pattern::symbols::{RANGE_OF_LENGTH, RANGE_TO};
-use num_traits::{CheckedAdd, One, Zero};
 
 pub trait RangeType {
     type Value: ParsableInt;
@@ -140,8 +141,9 @@ impl<T: RangeType> Range<T> {
 
 #[cfg(test)]
 pub mod tests {
-    use super::*;
     use test_case::test_case;
+
+    use super::*;
 
     struct TestType;
     type TestValue = u32;

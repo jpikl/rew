@@ -46,8 +46,9 @@ pub fn spec_bold_color(color: Color) -> ColorSpec {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use test_case::test_case;
+
+    use super::*;
 
     #[test_case("",     Err("invalid value")        ; "empty")]
     #[test_case("x",    Err("invalid value")        ; "invalid")]

@@ -1,8 +1,10 @@
-use crate::color::{spec_bold_color, spec_color};
-use crate::utils::str_from_utf8;
 use std::fmt;
 use std::io::{Error, ErrorKind, Result, Write};
+
 use termcolor::{Color, ColorSpec, WriteColor};
+
+use crate::color::{spec_bold_color, spec_color};
+use crate::utils::str_from_utf8;
 
 pub fn unpack_io_error(error: Error) -> (ErrorKind, String) {
     (error.kind(), error.to_string())
@@ -107,8 +109,9 @@ impl fmt::Debug for OutputChunk {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use ntest::*;
+
+    use super::*;
 
     #[test]
     fn unpack_io_error() {
@@ -155,8 +158,9 @@ mod tests {
     }
 
     mod output_chunk {
-        use super::*;
         use test_case::test_case;
+
+        use super::*;
 
         #[test_case(OutputChunk::plain("ab"),                   ColorSpec::new(),             "ab" ; "plain")]
         #[test_case(OutputChunk::color(Color::Red, "cd"),       spec_color(Color::Red),       "cd" ; "color")]

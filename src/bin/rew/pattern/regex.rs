@@ -1,13 +1,15 @@
-use crate::pattern::char::Char;
-use crate::pattern::parse::{Error, ErrorKind, Result};
-use crate::pattern::reader::Reader;
-use crate::pattern::utils::AnyString;
-use lazy_static::lazy_static;
-use regex::Regex;
 use std::borrow::Cow;
 use std::convert::{TryFrom, TryInto};
 use std::fmt;
 use std::ops::Deref;
+
+use lazy_static::lazy_static;
+use regex::Regex;
+
+use crate::pattern::char::Char;
+use crate::pattern::parse::{Error, ErrorKind, Result};
+use crate::pattern::reader::Reader;
+use crate::pattern::utils::AnyString;
 
 lazy_static! {
     static ref CAPTURE_GROUP_VAR_REGEX: Regex = Regex::new(r"\$(\d+)").unwrap();
@@ -90,8 +92,9 @@ impl fmt::Display for RegexHolder {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use test_case::test_case;
+
+    use super::*;
 
     #[test_case("",            ""                  ; "empty")]
     #[test_case("ab",          "ab"                ; "zero")]
@@ -102,12 +105,14 @@ mod tests {
     }
 
     mod regex_holder {
-        use super::*;
         use test_case::test_case;
 
+        use super::*;
+
         mod try_from {
-            use super::*;
             use test_case::test_case;
+
+            use super::*;
 
             #[test]
             fn err() {
@@ -128,9 +133,10 @@ mod tests {
         }
 
         mod parse {
+            use test_case::test_case;
+
             use super::*;
             use crate::pattern::error::ErrorRange;
-            use test_case::test_case;
 
             #[test_case("",     0..0, ErrorKind::ExpectedRegex                  ; "empty")]
             #[test_case("[0-9", 0..4, ErrorKind::RegexInvalid(AnyString::any()) ; "invalid")]

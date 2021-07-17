@@ -1,11 +1,13 @@
-use crate::pattern::error::GetErrorRange;
-use common::color::{spec_bold_color, spec_color};
-use common::output::write_error;
-use common::symbols::{DIFF_IN, DIFF_OUT};
 use std::error::Error;
 use std::io::{Result, Write};
 use std::ops::Range;
+
+use common::color::{spec_bold_color, spec_color};
+use common::output::write_error;
+use common::symbols::{DIFF_IN, DIFF_OUT};
 use termcolor::{Color, WriteColor};
+
+use crate::pattern::error::GetErrorRange;
 
 pub enum Mode {
     Standard,
@@ -120,11 +122,12 @@ pub fn highlight_range<O: Write + WriteColor>(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::pattern::error::ErrorRange;
     use common::testing::{ColoredOuput, OutputChunk};
     use indoc::indoc;
     use test_case::test_case;
+
+    use super::*;
+    use crate::pattern::error::ErrorRange;
 
     #[test_case(Mode::Standard,      "",   plain("bd")               ; "standard no terminator")]
     #[test_case(Mode::Standard,      "\n", plain("b\nd\n")           ; "standard newline terminator")]
@@ -165,8 +168,9 @@ mod tests {
 
     #[test]
     fn write_pattern_error() {
-        use super::*;
         use std::fmt;
+
+        use super::*;
 
         #[derive(Debug)]
         struct CustomError {}

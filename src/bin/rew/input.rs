@@ -1,6 +1,7 @@
-use common::input::{Splitter, Terminator};
 use std::io::{BufRead, Result};
 use std::slice::Iter;
+
+use common::input::{Splitter, Terminator};
 
 pub enum Values<'a, A: AsRef<str>, I: BufRead> {
     Args { iter: Iter<'a, A> },
@@ -30,9 +31,10 @@ impl<'a, A: AsRef<str>, I: BufRead> Values<'a, A, I> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use common::testing::unpack_io_error;
     use test_case::test_case;
+
+    use super::*;
 
     #[test_case(args(),  0, Some("a") ; "args 0")]
     #[test_case(args(),  1, Some("b") ; "args 1")]

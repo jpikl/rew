@@ -1,9 +1,11 @@
-use crate::color::choose_color;
-use crate::output::write_error;
-use clap::Clap;
 use std::io::{Stdin, StdinLock};
 use std::{io, process};
+
+use clap::Clap;
 use termcolor::{ColorChoice, StandardStream, StandardStreamLock};
+
+use crate::color::choose_color;
+use crate::output::write_error;
 
 pub const EXIT_CODE_OK: i32 = 0;
 pub const EXIT_CODE_IO_ERROR: i32 = 1;
@@ -65,9 +67,11 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use claim::*;
     use std::io::{Read, Write};
+
+    use claim::*;
+
+    use super::*;
 
     #[test]
     fn io() {

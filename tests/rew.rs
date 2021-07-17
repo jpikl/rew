@@ -1,10 +1,11 @@
 #[path = "utils.rs"]
 mod utils;
 
-use indoc::indoc;
-use predicates::prelude::*;
 use std::env;
 use std::path::Path;
+
+use indoc::indoc;
+use predicates::prelude::*;
 use utils::rew;
 
 mod no_pattern {
@@ -562,8 +563,9 @@ fn explain() {
 }
 
 mod blns {
-    use super::*;
     use naughty_strings::BLNS;
+
+    use super::*;
 
     #[test]
     fn pattern() {

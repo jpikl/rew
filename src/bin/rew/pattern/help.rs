@@ -99,11 +99,12 @@ pub const FILTERS_HINT: &str = "Use `--help-filters` flag to print filter refere
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use common::help::highlight;
     use common::testing::ColoredOuput;
     use ntest::*;
     use test_case::test_case;
+
+    use super::*;
 
     #[test_case(PATTERN      ; "pattern")]
     #[test_case(FILTERS      ; "filters")]

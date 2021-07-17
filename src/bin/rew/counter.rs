@@ -1,7 +1,9 @@
-use crate::pattern::path;
-use num_traits::PrimInt;
 use std::collections::HashMap;
 use std::str::FromStr;
+
+use num_traits::PrimInt;
+
+use crate::pattern::path;
 
 const INIT_ERROR: &str = "Invalid init value";
 const STEP_ERROR: &str = "Invalid step value";
@@ -127,8 +129,9 @@ mod tests {
         }
 
         mod from_str {
-            use super::*;
             use test_case::test_case;
+
+            use super::*;
 
             #[test_case("",      INIT_ERROR ; "empty")]
             #[test_case(":",     INIT_ERROR ; "separator")]
@@ -153,8 +156,9 @@ mod tests {
     }
 
     mod global_generator {
-        use super::*;
         use test_case::test_case;
+
+        use super::*;
 
         #[test]
         fn from_config() {
@@ -180,8 +184,9 @@ mod tests {
     }
 
     mod local_generator {
-        use super::*;
         use test_case::test_case;
+
+        use super::*;
 
         const A: &str = "a";
         const AX: &str = "a/b/..";

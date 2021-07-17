@@ -30,8 +30,9 @@ fn append_escaped_char(string: &mut String, char: char) {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use test_case::test_case;
+
+    use super::*;
 
     #[test_case('a',    "a"     ; "ascii")]
     #[test_case('á',    "á"     ; "non-ascii")]

@@ -1,8 +1,10 @@
-use crate::color::spec_color;
-use crate::transfer::fs::TransferMode;
 use std::io::{Result, Write};
 use std::path::Path;
+
 use termcolor::{Color, WriteColor};
+
+use crate::color::spec_color;
+use crate::transfer::fs::TransferMode;
 
 pub struct TransferLog<O: Write + WriteColor> {
     output: O,
@@ -53,9 +55,10 @@ impl<O: Write + WriteColor> TransferLog<O> {
 
 #[cfg(test)]
 pub mod tests {
+    use test_case::test_case;
+
     use super::*;
     use crate::testing::{ColoredOuput, OutputChunk};
-    use test_case::test_case;
 
     #[test_case(TransferMode::Move, "Moving"  ; "move ")]
     #[test_case(TransferMode::Copy, "Copying" ; "copy")]

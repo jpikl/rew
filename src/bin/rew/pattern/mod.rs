@@ -1,6 +1,5 @@
 use crate::pattern::filter::Filter;
-use crate::pattern::parser::Parser;
-use crate::pattern::parser::{Item, ParsedItem};
+use crate::pattern::parser::{Item, ParsedItem, Parser};
 
 mod char;
 pub mod error;
@@ -115,12 +114,13 @@ impl From<Vec<ParsedItem>> for Pattern {
 
 #[cfg(test)]
 mod tests {
+    use test_case::test_case;
+
     use super::filter::Filter;
     use super::parse::Parsed;
     use super::parser::Item;
     use super::Pattern;
     use crate::pattern::utils::AnyString;
-    use test_case::test_case;
 
     mod parse {
         use super::super::parse::{Config, Error, ErrorKind, Parsed};
@@ -186,10 +186,11 @@ mod tests {
     }
 
     mod eval {
+        use test_case::test_case;
+
         use super::super::eval::{Context, Error, ErrorKind};
         use super::*;
         use crate::pattern::parser::ParsedItem;
-        use test_case::test_case;
 
         #[test]
         fn err() {

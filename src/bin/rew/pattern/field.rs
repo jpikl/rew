@@ -1,9 +1,10 @@
+use std::convert::TryInto;
+use std::fmt;
+
 use crate::pattern::char::Char;
 use crate::pattern::index::parse_index;
 use crate::pattern::parse::{Error, ErrorKind, Result, Separator};
 use crate::pattern::reader::Reader;
-use std::convert::TryInto;
-use std::fmt;
 
 #[derive(Debug, PartialEq)]
 pub struct Field {
@@ -87,10 +88,9 @@ impl fmt::Display for Field {
 mod tests {
     use test_case::test_case;
 
+    use super::*;
     use crate::pattern::error::ErrorRange;
     use crate::pattern::utils::AnyString;
-
-    use super::*;
 
     #[test_case("",     0..0, ErrorKind::ExpectedNumber                 ; "empty")]
     #[test_case("x",    0..1, ErrorKind::ExpectedNumber                 ; "invalid number")]

@@ -1,13 +1,15 @@
-use crate::counter;
-use crate::pattern::eval;
+use std::path::PathBuf;
+
 use clap::{crate_name, crate_version, AppSettings, ArgSettings, Clap};
 use common::color::{parse_color, COLOR_CHOICES};
 use common::help::highlight_static;
 use common::run::Options;
 use indoc::indoc;
 use regex::Regex;
-use std::path::PathBuf;
 use termcolor::ColorChoice;
+
+use crate::counter;
+use crate::pattern::eval;
 
 const INPUT_HEADING: Option<&str> = Some("INPUT OPTIONS");
 const OUTPUT_HEADING: Option<&str> = Some("OUTPUT OPTIONS");
@@ -340,8 +342,9 @@ pub fn parse_single_byte_char(string: &str) -> Result<u8, &'static str> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use test_case::test_case;
+
+    use super::*;
 
     #[test_case(&[],                 None                      ; "default")]
     #[test_case(&["--color=always"], Some(ColorChoice::Always) ; "always")]
@@ -354,8 +357,9 @@ mod tests {
     }
 
     mod parse_single_byte_char {
-        use super::*;
         use test_case::test_case;
+
+        use super::*;
 
         #[test]
         fn ok() {

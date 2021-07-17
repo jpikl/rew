@@ -1,3 +1,7 @@
+use std::fmt;
+
+use unidecode::unidecode;
+
 use crate::pattern::char::{AsChar, Char};
 use crate::pattern::field::Field;
 use crate::pattern::integer::parse_integer;
@@ -12,8 +16,6 @@ use crate::pattern::switch::RegexSwitch;
 use crate::pattern::symbols::REVERSE_INDEX;
 use crate::pattern::uuid::random_uuid;
 use crate::pattern::{eval, parse, path};
-use std::fmt;
-use unidecode::unidecode;
 
 #[derive(Debug, PartialEq)]
 pub enum Filter {
@@ -253,6 +255,7 @@ mod tests {
 
     use test_case::test_case;
 
+    use super::Filter;
     use crate::pattern::error::ErrorRange;
     use crate::pattern::field::Field;
     use crate::pattern::number::NumberRange;
@@ -264,20 +267,16 @@ mod tests {
     };
     use crate::pattern::substr::CharIndexRange;
     use crate::pattern::switch::{Case, RegexSwitch};
-    use crate::pattern::utils::AnyString;
-    use crate::pattern::utils::Empty;
-
-    use super::Filter;
+    use crate::pattern::utils::{AnyString, Empty};
 
     type F = Filter;
 
     mod parse {
         use test_case::test_case;
 
+        use super::*;
         use crate::pattern::parse::{Config, Error, ErrorKind};
         use crate::pattern::reader::Reader;
-
-        use super::*;
 
         type E = ErrorKind;
 
@@ -389,10 +388,9 @@ mod tests {
     mod eval {
         use test_case::test_case;
 
+        use super::*;
         use crate::pattern::eval::{Context, ErrorKind};
         use crate::pattern::uuid::assert_uuid;
-
-        use super::*;
 
         #[test_case("non-existent", F::CanonicalPath, ErrorKind::CanonicalizationFailed(AnyString::any()) ; "canonicalization failed")]
         fn err(input: &str, filter: Filter, kind: ErrorKind) {
