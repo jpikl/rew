@@ -37,7 +37,7 @@ impl RegexSwitch {
                         let delimiter_index = 2 * cases.len();
 
                         return Err(Error {
-                            kind: ErrorKind::SwitchWithoutMatcher(delimiter, delimiter_index),
+                            kind: ErrorKind::RegexSwitchWithoutMatcher(delimiter, delimiter_index),
                             range: delimiter_start..value_end,
                         });
                     }
@@ -59,7 +59,7 @@ impl RegexSwitch {
             }
         } else {
             Err(Error {
-                kind: ErrorKind::ExpectedSwitch,
+                kind: ErrorKind::ExpectedRegexSwitch,
                 range: reader.position()..reader.end(),
             })
         }
@@ -120,11 +120,11 @@ mod tests {
         use crate::pattern::error::ErrorRange;
         use crate::pattern::utils::AnyString;
 
-        #[test_case("",                0..0,   ErrorKind::ExpectedSwitch                      ; "empty")]
-        #[test_case("::",              0..1,   ErrorKind::SwitchWithoutMatcher(':'.into(), 0) ; "delimiter delimiter")]
-        #[test_case(":[a-z:",          1..5,   ErrorKind::RegexInvalid(AnyString::any())      ; "invalid")]
-        #[test_case(":[a-z]:::",       7..8,   ErrorKind::SwitchWithoutMatcher(':'.into(), 2) ; "matcher delimiter delimiter")]
-        #[test_case(":[a-z]:Lo:[A-Z:", 10..14, ErrorKind::RegexInvalid(AnyString::any())      ; "matcher result invalid")]
+        #[test_case("",                0..0,   ErrorKind::ExpectedRegexSwitch                      ; "empty")]
+        #[test_case("::",              0..1,   ErrorKind::RegexSwitchWithoutMatcher(':'.into(), 0) ; "delimiter delimiter")]
+        #[test_case(":[a-z:",          1..5,   ErrorKind::RegexInvalid(AnyString::any())           ; "invalid")]
+        #[test_case(":[a-z]:::",       7..8,   ErrorKind::RegexSwitchWithoutMatcher(':'.into(), 2) ; "matcher delimiter delimiter")]
+        #[test_case(":[a-z]:Lo:[A-Z:", 10..14, ErrorKind::RegexInvalid(AnyString::any())           ; "matcher result invalid")]
         fn err(input: &str, range: ErrorRange, kind: ErrorKind) {
             assert_eq!(
                 RegexSwitch::parse(&mut Reader::from(input)),

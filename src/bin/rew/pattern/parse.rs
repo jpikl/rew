@@ -77,6 +77,7 @@ impl fmt::Display for Error {
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum ErrorKind {
+    ExpectedDelimiterChar,
     ExpectedFieldSeparator,
     ExpectedFilter,
     ExpectedNumber,
@@ -88,7 +89,7 @@ pub enum ErrorKind {
     ExpectedRegex,
     ExpectedRepetition,
     ExpectedSubstitution,
-    ExpectedSwitch,
+    ExpectedRegexSwitch,
     ExprStartInsideExpr,
     IndexZero,
     IntegerOverflow(String),
@@ -97,9 +98,8 @@ pub enum ErrorKind {
     RangeInvalid(String),
     RangeStartOverEnd(String, String),
     RegexInvalid(AnyString),
-    RepetitionWithoutDelimiter,
+    RegexSwitchWithoutMatcher(Char, usize),
     SubstitutionWithoutTarget(Char),
-    SwitchWithoutMatcher(Char, usize),
     UnknownEscapeSequence(EscapeSequence),
     UnknownFilter(Char),
     UnmatchedExprEnd,
@@ -116,6 +116,7 @@ pub enum ErrorHint {
 impl ErrorKind {
     pub fn hint(&self) -> Option<ErrorHint> {
         match self {
+            Self::ExpectedDelimiterChar => Some(ErrorHint::FilterUsage),
             Self::ExpectedFieldSeparator => Some(ErrorHint::FilterUsage),
             Self::ExpectedFilter => Some(ErrorHint::PatternSyntax),
             Self::ExpectedNumber => Some(ErrorHint::FilterUsage),
@@ -127,7 +128,7 @@ impl ErrorKind {
             Self::ExpectedRegex => Some(ErrorHint::FilterUsage),
             Self::ExpectedRepetition => Some(ErrorHint::FilterUsage),
             Self::ExpectedSubstitution => Some(ErrorHint::FilterUsage),
-            Self::ExpectedSwitch => Some(ErrorHint::FilterUsage),
+            Self::ExpectedRegexSwitch => Some(ErrorHint::FilterUsage),
             Self::ExprStartInsideExpr => Some(ErrorHint::PatternSyntax),
             Self::IndexZero => Some(ErrorHint::FilterUsage),
             Self::IntegerOverflow(_) => None,
@@ -136,9 +137,8 @@ impl ErrorKind {
             Self::RangeInvalid(_) => Some(ErrorHint::FilterUsage),
             Self::RangeStartOverEnd(_, _) => Some(ErrorHint::FilterUsage),
             Self::RegexInvalid(_) => Some(ErrorHint::PatternSyntax),
-            Self::RepetitionWithoutDelimiter => Some(ErrorHint::FilterUsage),
+            Self::RegexSwitchWithoutMatcher(_, _) => Some(ErrorHint::FilterUsage),
             Self::SubstitutionWithoutTarget(_) => Some(ErrorHint::FilterUsage),
-            Self::SwitchWithoutMatcher(_, _) => Some(ErrorHint::FilterUsage),
             Self::UnknownEscapeSequence(_) => Some(ErrorHint::PatternSyntax),
             Self::UnknownFilter(_) => Some(ErrorHint::FilterUsage),
             Self::UnmatchedExprEnd => Some(ErrorHint::PatternSyntax),
@@ -157,6 +157,7 @@ impl From<Infallible> for ErrorKind {
 impl fmt::Display for ErrorKind {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match self {
+            Self::ExpectedDelimiterChar => write!(formatter, "Expected delimiter character"),
             Self::ExpectedFieldSeparator => write!(formatter, "Expected field separator"),
             Self::ExpectedFilter => write!(formatter, "Expected filter after '{}'", PIPE),
             Self::ExpectedNumber => write!(formatter, "Expected number"),
@@ -187,11 +188,14 @@ impl fmt::Display for ErrorKind {
                 )
             }
             Self::ExpectedRegex => write!(formatter, "Expected regular expression"),
+            Self::ExpectedRegexSwitch => write!(
+                formatter,
+                "Expected regular expression switch ':X1:Y1:...:Xn:Yn:D'"
+            ),
             Self::ExpectedRepetition => {
                 write!(formatter, "Expected repetition 'N:V' or 'N'")
             }
             Self::ExpectedSubstitution => write!(formatter, "Expected substitution ':A:B' or ':A'"),
-            Self::ExpectedSwitch => write!(formatter, "Expected switch ':X1:Y1:...:Xn:Yn:D'"),
             Self::ExprStartInsideExpr => {
                 write!(formatter, "Unescaped '{}' inside expression", EXPR_START)
             }
@@ -219,19 +223,16 @@ impl fmt::Display for ErrorKind {
             Self::RegexInvalid(value) => {
                 write!(formatter, "Invalid regular expression '{}'", value)
             }
-            Self::RepetitionWithoutDelimiter => {
-                write!(formatter, "Repetition is missing delimiter after number")
-            }
+            Self::RegexSwitchWithoutMatcher(char, index) => write!(
+                formatter,
+                "Regular expression switch is missing value after {} delimiter #{}",
+                char,
+                index + 1,
+            ),
             Self::SubstitutionWithoutTarget(char) => write!(
                 formatter,
                 "Substitution is missing value after {} delimiter",
                 char
-            ),
-            Self::SwitchWithoutMatcher(char, index) => write!(
-                formatter,
-                "Switch is missing value after {} delimiter #{}",
-                char,
-                index + 1,
             ),
             Self::UnknownEscapeSequence(sequence) => write!(
                 formatter,
@@ -311,6 +312,7 @@ mod tests {
         type E = ErrorKind;
         type H = ErrorHint;
 
+        #[test_case(E::ExpectedDelimiterChar,                     Some(H::FilterUsage)   ; "expected delimiter char")]
         #[test_case(E::ExpectedFieldSeparator,                    Some(H::FilterUsage)   ; "expected field separator")]
         #[test_case(E::ExpectedFilter,                            Some(H::PatternSyntax) ; "expected filter")]
         #[test_case(E::ExpectedNumber,                            Some(H::FilterUsage)   ; "expected number")]
@@ -320,9 +322,9 @@ mod tests {
         #[test_case(E::ExpectedRangeDelimiter(None),              Some(H::FilterUsage)   ; "expected delimiter got none")]
         #[test_case(E::ExpectedRangeLength,                       Some(H::FilterUsage)   ; "expected range length")]
         #[test_case(E::ExpectedRegex,                             Some(H::FilterUsage)   ; "expected regex")]
+        #[test_case(E::ExpectedRegexSwitch,                       Some(H::FilterUsage)   ; "expected regex switch")]
         #[test_case(E::ExpectedRepetition,                        Some(H::FilterUsage)   ; "expected repetition")]
         #[test_case(E::ExpectedSubstitution,                      Some(H::FilterUsage)   ; "expected substitution")]
-        #[test_case(E::ExpectedSwitch,                            Some(H::FilterUsage)   ; "expected switch")]
         #[test_case(E::ExprStartInsideExpr,                       Some(H::PatternSyntax) ; "expr start inside expr")]
         #[test_case(E::IndexZero,                                 Some(H::FilterUsage)   ; "index zero")]
         #[test_case(E::IntegerOverflow("255".into()),             None                   ; "integer overflow")]
@@ -331,9 +333,8 @@ mod tests {
         #[test_case(E::RangeInvalid("abc".into()),                Some(H::FilterUsage)   ; "range invalid")]
         #[test_case(E::RangeStartOverEnd("2".into(), "1".into()), Some(H::FilterUsage)   ; "range start over end")]
         #[test_case(E::RegexInvalid("abc".into()),                Some(H::PatternSyntax) ; "regex invalid")]
-        #[test_case(E::RepetitionWithoutDelimiter,                Some(H::FilterUsage)   ; "repetition without delimiter")]
+        #[test_case(E::RegexSwitchWithoutMatcher('_'.into(), 0),  Some(H::FilterUsage)   ; "regex switch without matcher")]
         #[test_case(E::SubstitutionWithoutTarget('_'.into()),     Some(H::FilterUsage)   ; "substitution without target")]
-        #[test_case(E::SwitchWithoutMatcher('_'.into(), 0),       Some(H::FilterUsage)   ; "switch without matcher")]
         #[test_case(E::UnknownEscapeSequence(['%', 'x']),         Some(H::PatternSyntax) ; "unknown escape sequence" )]
         #[test_case(E::UnknownFilter('x'.into()),                 Some(H::FilterUsage)   ; "unknown filter")]
         #[test_case(E::UnmatchedExprEnd,                          Some(H::PatternSyntax) ; "unmatched expr end")]
@@ -343,36 +344,36 @@ mod tests {
             assert_eq!(kind.hint(), hint);
         }
 
-        #[test_case(E::ExpectedFieldSeparator,                      "Expected field separator"                          ; "expected field separator")]
-        #[test_case(E::ExpectedFilter,                              "Expected filter after '|'"                         ; "expected filter")]
-        #[test_case(E::ExpectedNumber,                              "Expected number"                                   ; "expected number")]
-        #[test_case(E::ExpectedFilterOrExprEnd,                     "Expected filter or closing '}'"                    ; "expected filter or expr end")]
-        #[test_case(E::ExpectedPipeOrExprEnd,                       "Expected '|' or closing '}'"                       ; "expected pipe or expr end")]
-        #[test_case(E::ExpectedRange,                               "Expected range 'A-B', 'A-', 'A' or 'A+B'"          ; "expected range")]
-        #[test_case(E::ExpectedRangeDelimiter(None),                "Expected range delimiter '-'"                      ; "expected delimiter got none")]
-        #[test_case(E::ExpectedRangeDelimiter(Some('x'.into())),    "Expected range delimiter '-' but got 'x'"          ; "expected delimiter got invalid")]
-        #[test_case(E::ExpectedRangeLength,                         "Expected range length after '+'"                   ; "expected range length")]
-        #[test_case(E::ExpectedRegex,                               "Expected regular expression"                       ; "expected regex")]
-        #[test_case(E::ExpectedRepetition,                          "Expected repetition 'N:V' or 'N'"                  ; "expected repetition")]
-        #[test_case(E::ExpectedSubstitution,                        "Expected substitution ':A:B' or ':A'"              ; "expected substitution")]
-        #[test_case(E::ExpectedSwitch,                              "Expected switch ':X1:Y1:...:Xn:Yn:D'"              ; "expected switch")]
-        #[test_case(E::ExprStartInsideExpr,                         "Unescaped '{' inside expression"                   ; "expr start inside expr")]
-        #[test_case(E::IndexZero,                                   "Indices start from 1, not 0"                       ; "index zero")]
-        #[test_case(E::IntegerOverflow("255".into()),               "Cannot parse value greater than 255"               ; "integer overflow")]
-        #[test_case(E::PaddingPrefixInvalid('<', None),             "Expected '<' prefix or number"                     ; "padding prefix missing")]
-        #[test_case(E::PaddingPrefixInvalid('<', Some('x'.into())), "Expected '<' prefix or number but got 'x'"         ; "padding prefix invalid")]
-        #[test_case(E::PipeOutsideExpr,                             "Unescaped '|' outside expression"                  ; "pipe outside expr")]
-        #[test_case(E::RangeInvalid("abc".into()),                  "Invalid range 'abc'"                               ; "range invalid")]
-        #[test_case(E::RangeStartOverEnd("2".into(), "1".into()),   "Range start 2 is greater than end 1"               ; "range start over end")]
-        #[test_case(E::RegexInvalid("abc".into()),                  "Invalid regular expression 'abc'"                  ; "regex invalid")]
-        #[test_case(E::RepetitionWithoutDelimiter,                  "Repetition is missing delimiter after number"      ; "repetition without delimiter")]
-        #[test_case(E::SubstitutionWithoutTarget('_'.into()),       "Substitution is missing value after '_' delimiter" ; "substitution without target")]
-        #[test_case(E::SwitchWithoutMatcher('_'.into(), 0),         "Switch is missing value after '_' delimiter #1"    ; "switch without matcher")]
-        #[test_case(E::UnknownEscapeSequence(['%', 'x']),           "Unknown escape sequence '%x'"                      ; "unknown escape sequence" )]
-        #[test_case(E::UnknownFilter('x'.into()),                   "Unknown filter 'x'"                                ; "unknown filter")]
-        #[test_case(E::UnmatchedExprEnd,                            "No matching '{' before expression end"             ; "unmatched expr end")]
-        #[test_case(E::UnmatchedExprStart,                          "No matching '}' after expression start"            ; "unmatched expr start")]
-        #[test_case(E::UnterminatedEscapeSequence('%'),             "Unterminated escape sequence '%'"                  ; "unterminated escape sequence")]
+        #[test_case(E::ExpectedDelimiterChar,                       "Expected delimiter character"                                      ; "expected delimiter character")]
+        #[test_case(E::ExpectedFieldSeparator,                      "Expected field separator"                                          ; "expected field separator")]
+        #[test_case(E::ExpectedFilter,                              "Expected filter after '|'"                                         ; "expected filter")]
+        #[test_case(E::ExpectedNumber,                              "Expected number"                                                   ; "expected number")]
+        #[test_case(E::ExpectedFilterOrExprEnd,                     "Expected filter or closing '}'"                                    ; "expected filter or expr end")]
+        #[test_case(E::ExpectedPipeOrExprEnd,                       "Expected '|' or closing '}'"                                       ; "expected pipe or expr end")]
+        #[test_case(E::ExpectedRange,                               "Expected range 'A-B', 'A-', 'A' or 'A+B'"                          ; "expected range")]
+        #[test_case(E::ExpectedRangeDelimiter(None),                "Expected range delimiter '-'"                                      ; "expected delimiter got none")]
+        #[test_case(E::ExpectedRangeDelimiter(Some('x'.into())),    "Expected range delimiter '-' but got 'x'"                          ; "expected delimiter got invalid")]
+        #[test_case(E::ExpectedRangeLength,                         "Expected range length after '+'"                                   ; "expected range length")]
+        #[test_case(E::ExpectedRegex,                               "Expected regular expression"                                       ; "expected regex")]
+        #[test_case(E::ExpectedRegexSwitch,                         "Expected regular expression switch ':X1:Y1:...:Xn:Yn:D'"           ; "expected switch")]
+        #[test_case(E::ExpectedRepetition,                          "Expected repetition 'N:V' or 'N'"                                  ; "expected repetition")]
+        #[test_case(E::ExpectedSubstitution,                        "Expected substitution ':A:B' or ':A'"                              ; "expected substitution")]
+        #[test_case(E::ExprStartInsideExpr,                         "Unescaped '{' inside expression"                                   ; "expr start inside expr")]
+        #[test_case(E::IndexZero,                                   "Indices start from 1, not 0"                                       ; "index zero")]
+        #[test_case(E::IntegerOverflow("255".into()),               "Cannot parse value greater than 255"                               ; "integer overflow")]
+        #[test_case(E::PaddingPrefixInvalid('<', None),             "Expected '<' prefix or number"                                     ; "padding prefix missing")]
+        #[test_case(E::PaddingPrefixInvalid('<', Some('x'.into())), "Expected '<' prefix or number but got 'x'"                         ; "padding prefix invalid")]
+        #[test_case(E::PipeOutsideExpr,                             "Unescaped '|' outside expression"                                  ; "pipe outside expr")]
+        #[test_case(E::RangeInvalid("abc".into()),                  "Invalid range 'abc'"                                               ; "range invalid")]
+        #[test_case(E::RangeStartOverEnd("2".into(), "1".into()),   "Range start 2 is greater than end 1"                               ; "range start over end")]
+        #[test_case(E::RegexInvalid("abc".into()),                  "Invalid regular expression 'abc'"                                  ; "regex invalid")]
+        #[test_case(E::RegexSwitchWithoutMatcher('_'.into(), 0),    "Regular expression switch is missing value after '_' delimiter #1" ; "switch without matcher")]
+        #[test_case(E::SubstitutionWithoutTarget('_'.into()),       "Substitution is missing value after '_' delimiter"                 ; "substitution without target")]
+        #[test_case(E::UnknownEscapeSequence(['%', 'x']),           "Unknown escape sequence '%x'"                                      ; "unknown escape sequence" )]
+        #[test_case(E::UnknownFilter('x'.into()),                   "Unknown filter 'x'"                                                ; "unknown filter")]
+        #[test_case(E::UnmatchedExprEnd,                            "No matching '{' before expression end"                             ; "unmatched expr end")]
+        #[test_case(E::UnmatchedExprStart,                          "No matching '}' after expression start"                            ; "unmatched expr start")]
+        #[test_case(E::UnterminatedEscapeSequence('%'),             "Unterminated escape sequence '%'"                                  ; "unterminated escape sequence")]
         fn display(kind: ErrorKind, result: &str) {
             assert_eq!(kind.to_string(), result);
         }

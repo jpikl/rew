@@ -35,7 +35,7 @@ impl Repetition {
             Ok(Self { count, value })
         } else if delimiter_required {
             Err(Error {
-                kind: ErrorKind::RepetitionWithoutDelimiter,
+                kind: ErrorKind::ExpectedDelimiterChar,
                 range: reader.position()..reader.end(),
             })
         } else {
@@ -102,9 +102,9 @@ mod tests {
         use crate::pattern::parse::{Error, ErrorKind};
         use crate::pattern::reader::Reader;
 
-        #[test_case("",   0..0, ErrorKind::ExpectedRepetition         ; "empty")]
-        #[test_case("ab", 0..2, ErrorKind::ExpectedNumber             ; "invalid count")]
-        #[test_case("12", 2..2, ErrorKind::RepetitionWithoutDelimiter ; "missing delimiter")]
+        #[test_case("",   0..0, ErrorKind::ExpectedRepetition    ; "empty")]
+        #[test_case("ab", 0..2, ErrorKind::ExpectedNumber        ; "invalid count")]
+        #[test_case("12", 2..2, ErrorKind::ExpectedDelimiterChar ; "missing delimiter")]
         fn err(input: &str, range: ErrorRange, kind: ErrorKind) {
             assert_eq!(
                 Repetition::parse_with_delimiter(&mut Reader::from(input)),
