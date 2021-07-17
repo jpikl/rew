@@ -24,7 +24,7 @@ pub fn shift_index<T: ParsableInt>(value: T) -> BaseResult<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils::ErrorRange;
+    use crate::pattern::error::ErrorRange;
     use test_case::test_case;
 
     mod parse_index {

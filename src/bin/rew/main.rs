@@ -16,7 +16,6 @@ mod input;
 mod output;
 mod pattern;
 mod regex;
-mod utils;
 
 const EXIT_CODE_PARSE_ERROR: i32 = 3;
 const EXIT_CODE_EVAL_ERROR: i32 = 4;

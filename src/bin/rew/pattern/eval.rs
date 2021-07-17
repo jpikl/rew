@@ -1,5 +1,6 @@
+use crate::pattern::error::{ErrorRange, GetErrorRange};
 use crate::pattern::filter::Filter;
-use crate::utils::{AnyString, ErrorRange, GetErrorRange};
+use crate::pattern::utils::AnyString;
 use std::path::Path;
 use std::{error, fmt, result};
 
@@ -85,12 +86,14 @@ impl fmt::Display for ErrorKind {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use test_case::test_case;
 
+    use super::*;
+
     mod eval_context_regex_capture {
-        use super::*;
         use test_case::test_case;
+
+        use super::*;
 
         #[test_case(0 ; "position 0")]
         #[test_case(1 ; "position 1")]

@@ -1,10 +1,10 @@
 use crate::pattern::char::{AsChar, Char, Chars};
+use crate::pattern::error::ErrorRange;
 use crate::pattern::escape::escape_str;
 use crate::pattern::filter::Filter;
 use crate::pattern::lexer::{Lexer, ParsedToken, Token};
 use crate::pattern::parse::{Config, Error, ErrorKind, Parsed, Result};
 use crate::pattern::reader::Reader;
-use crate::utils::ErrorRange;
 use std::fmt;
 
 pub type ParsedFilter = Parsed<Filter>;

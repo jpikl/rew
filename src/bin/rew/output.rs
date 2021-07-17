@@ -1,4 +1,4 @@
-use crate::utils::GetErrorRange;
+use crate::pattern::error::GetErrorRange;
 use common::color::{spec_bold_color, spec_color};
 use common::output::write_error;
 use common::symbols::{DIFF_IN, DIFF_OUT};
@@ -121,7 +121,7 @@ pub fn highlight_range<O: Write + WriteColor>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils::ErrorRange;
+    use crate::pattern::error::ErrorRange;
     use common::testing::{ColoredOuput, OutputChunk};
     use indoc::indoc;
     use test_case::test_case;

@@ -251,7 +251,9 @@ impl fmt::Display for Filter {
 mod tests {
     extern crate regex;
 
-    use super::Filter;
+    use test_case::test_case;
+
+    use crate::pattern::error::ErrorRange;
     use crate::pattern::field::Field;
     use crate::pattern::number::NumberRange;
     use crate::pattern::padding::Padding;
@@ -262,17 +264,20 @@ mod tests {
     };
     use crate::pattern::substr::CharIndexRange;
     use crate::pattern::switch::{Case, RegexSwitch};
-    use crate::utils::Empty;
-    use crate::utils::{AnyString, ErrorRange};
-    use test_case::test_case;
+    use crate::pattern::utils::AnyString;
+    use crate::pattern::utils::Empty;
+
+    use super::Filter;
 
     type F = Filter;
 
     mod parse {
-        use super::*;
+        use test_case::test_case;
+
         use crate::pattern::parse::{Config, Error, ErrorKind};
         use crate::pattern::reader::Reader;
-        use test_case::test_case;
+
+        use super::*;
 
         type E = ErrorKind;
 
@@ -382,10 +387,12 @@ mod tests {
     }
 
     mod eval {
-        use super::*;
+        use test_case::test_case;
+
         use crate::pattern::eval::{Context, ErrorKind};
         use crate::pattern::uuid::assert_uuid;
-        use test_case::test_case;
+
+        use super::*;
 
         #[test_case("non-existent", F::CanonicalPath, ErrorKind::CanonicalizationFailed(AnyString::any()) ; "canonicalization failed")]
         fn err(input: &str, filter: Filter, kind: ErrorKind) {

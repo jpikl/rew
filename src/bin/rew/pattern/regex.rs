@@ -1,7 +1,7 @@
 use crate::pattern::char::Char;
 use crate::pattern::parse::{Error, ErrorKind, Result};
 use crate::pattern::reader::Reader;
-use crate::utils::AnyString;
+use crate::pattern::utils::AnyString;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::borrow::Cow;
@@ -129,7 +129,7 @@ mod tests {
 
         mod parse {
             use super::*;
-            use crate::utils::ErrorRange;
+            use crate::pattern::error::ErrorRange;
             use test_case::test_case;
 
             #[test_case("",     0..0, ErrorKind::ExpectedRegex                  ; "empty")]

@@ -1,6 +1,6 @@
 use crate::pattern::eval::BaseResult;
 use crate::pattern::eval::ErrorKind;
-use crate::utils::AnyString;
+use crate::pattern::utils::AnyString;
 use normpath::PathExt;
 use pathdiff::diff_paths;
 use std::ffi::OsStr;

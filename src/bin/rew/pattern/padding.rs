@@ -68,7 +68,7 @@ impl fmt::Display for Padding {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils::ErrorRange;
+    use crate::pattern::error::ErrorRange;
     use test_case::test_case;
 
     #[test_case("",     0..0, ErrorKind::PaddingPrefixInvalid('<', None)             ; "no prefix")]

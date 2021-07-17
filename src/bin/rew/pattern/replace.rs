@@ -3,7 +3,7 @@ use crate::pattern::escape::escape_str;
 use crate::pattern::parse::{Error, ErrorKind, Result};
 use crate::pattern::reader::Reader;
 use crate::pattern::regex::{add_capture_group_brackets, RegexHolder};
-use crate::utils::Empty;
+use crate::pattern::utils::Empty;
 use std::convert::{TryFrom, TryInto};
 use std::fmt;
 
@@ -121,7 +121,7 @@ impl fmt::Display for RegexSubstitution {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils::ErrorRange;
+    use crate::pattern::error::ErrorRange;
 
     mod empty {
         use super::*;
@@ -257,7 +257,7 @@ mod tests {
 
         mod parse {
             use super::*;
-            use crate::utils::AnyString;
+            use crate::pattern::utils::AnyString;
             use test_case::test_case;
 
             #[test_case("",           0..0, ErrorKind::ExpectedSubstitution                  ; "empty")]

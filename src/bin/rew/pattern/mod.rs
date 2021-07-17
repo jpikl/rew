@@ -3,6 +3,7 @@ use crate::pattern::parser::Parser;
 use crate::pattern::parser::{Item, ParsedItem};
 
 mod char;
+pub mod error;
 mod escape;
 pub mod eval;
 mod explain;
@@ -25,6 +26,7 @@ mod replace;
 mod substr;
 mod switch;
 pub mod symbols;
+mod utils;
 mod uuid;
 
 #[derive(Debug, PartialEq)]
@@ -117,7 +119,7 @@ mod tests {
     use super::parse::Parsed;
     use super::parser::Item;
     use super::Pattern;
-    use crate::utils::AnyString;
+    use crate::pattern::utils::AnyString;
     use test_case::test_case;
 
     mod parse {

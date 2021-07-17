@@ -123,9 +123,11 @@ impl Lexer {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::utils::ErrorRange;
     use test_case::test_case;
+
+    use crate::pattern::error::ErrorRange;
+
+    use super::*;
 
     #[test_case("%",  0..1, ErrorKind::UnterminatedEscapeSequence('%')   ; "unterminated escape sequence")]
     #[test_case("%x", 0..2, ErrorKind::UnknownEscapeSequence(['%', 'x']) ; "unknown escape sequence")]

@@ -85,9 +85,12 @@ impl fmt::Display for Field {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::utils::{AnyString, ErrorRange};
     use test_case::test_case;
+
+    use crate::pattern::error::ErrorRange;
+    use crate::pattern::utils::AnyString;
+
+    use super::*;
 
     #[test_case("",     0..0, ErrorKind::ExpectedNumber                 ; "empty")]
     #[test_case("x",    0..1, ErrorKind::ExpectedNumber                 ; "invalid number")]
@@ -103,8 +106,9 @@ mod tests {
     }
 
     mod string {
-        use super::*;
         use test_case::test_case;
+
+        use super::*;
 
         #[test_case("1",         0, "default" ; "index")]
         #[test_case("10:custom", 9, "custom"  ; "index and separator")]
@@ -174,8 +178,10 @@ mod tests {
 
     mod regex {
         extern crate regex;
-        use super::*;
+
         use test_case::test_case;
+
+        use super::*;
 
         #[test_case("1",         0, "\\s+"   ; "index")]
         #[test_case("10/[0-9]+", 9, "[0-9]+" ; "index and separator")]

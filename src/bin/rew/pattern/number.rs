@@ -52,9 +52,9 @@ mod tests {
 
     mod parse {
         use super::*;
+        use crate::pattern::error::ErrorRange;
         use crate::pattern::parse::{Error, ErrorKind};
         use crate::pattern::reader::Reader;
-        use crate::utils::ErrorRange;
         use test_case::test_case;
 
         #[test_case("-",   0..1, ErrorKind::RangeInvalid("-".into())                  ; "invalid")]

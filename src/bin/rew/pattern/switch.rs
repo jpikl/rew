@@ -1,11 +1,12 @@
+use std::borrow::Cow;
+use std::convert::TryInto;
+use std::fmt;
+
 use crate::pattern::char::{AsChar, Char};
 use crate::pattern::escape::escape_str;
 use crate::pattern::parse::{Error, ErrorKind, Result};
 use crate::pattern::reader::Reader;
 use crate::pattern::regex::{add_capture_group_brackets, RegexHolder};
-use std::borrow::Cow;
-use std::convert::TryInto;
-use std::fmt;
 
 #[derive(Debug, PartialEq)]
 pub struct RegexSwitch {
@@ -113,9 +114,12 @@ mod tests {
     use super::*;
 
     mod parse {
-        use super::*;
-        use crate::utils::{AnyString, ErrorRange};
         use test_case::test_case;
+
+        use crate::pattern::error::ErrorRange;
+        use crate::pattern::utils::AnyString;
+
+        use super::*;
 
         #[test_case("",                0..0,   ErrorKind::ExpectedSwitch                      ; "empty")]
         #[test_case("::",              0..1,   ErrorKind::SwitchWithoutMatcher(':'.into(), 0) ; "delimiter delimiter")]
@@ -158,8 +162,9 @@ mod tests {
     }
 
     mod eval {
-        use super::*;
         use test_case::test_case;
+
+        use super::*;
 
         #[test_case("",    "" ; "empty")]
         #[test_case("abc", "" ; "nonempty")]
@@ -247,9 +252,10 @@ mod tests {
     }
 
     mod display {
-        use super::*;
         use indoc::indoc;
         use test_case::test_case;
+
+        use super::*;
 
         #[test_case("",    "constant output ''"    ; "empty")]
         #[test_case("abc", "constant output 'abc'" ; "nonempty")]

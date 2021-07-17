@@ -1,14 +1,7 @@
-use std::fmt::{self, Debug};
-use std::ops::Range;
+use std::fmt;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Empty;
-
-pub type ErrorRange = Range<usize>;
-
-pub trait GetErrorRange {
-    fn error_range(&self) -> &ErrorRange;
-}
 
 #[derive(Debug, Clone)]
 pub struct AnyString(pub String);

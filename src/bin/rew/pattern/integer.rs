@@ -37,9 +37,11 @@ mod tests {
     use super::*;
 
     mod parse_integer {
-        use super::*;
-        use crate::utils::ErrorRange;
         use test_case::test_case;
+
+        use crate::pattern::error::ErrorRange;
+
+        use super::*;
 
         #[test_case("",     0..0, ErrorKind::ExpectedNumber                ; "empty")]
         #[test_case("ab",   0..2, ErrorKind::ExpectedNumber                ; "alpha")]

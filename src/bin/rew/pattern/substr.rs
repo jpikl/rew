@@ -68,7 +68,7 @@ impl fmt::Display for CharIndexRange {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils::ErrorRange;
+    use crate::pattern::error::ErrorRange;
     use test_case::test_case;
 
     mod parse {

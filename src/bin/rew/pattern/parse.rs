@@ -1,11 +1,13 @@
-use crate::pattern::char::{Char, EscapeSequence};
-use crate::pattern::escape::{escape_char, escape_str};
-use crate::pattern::regex::RegexHolder;
-use crate::pattern::symbols::{EXPR_END, EXPR_START, PIPE, RANGE_OF_LENGTH, RANGE_TO};
-use crate::utils::{AnyString, ErrorRange, GetErrorRange};
 use std::convert::Infallible;
 use std::ops::Range;
 use std::{error, fmt, result};
+
+use crate::pattern::char::{Char, EscapeSequence};
+use crate::pattern::error::{ErrorRange, GetErrorRange};
+use crate::pattern::escape::{escape_char, escape_str};
+use crate::pattern::regex::RegexHolder;
+use crate::pattern::symbols::{EXPR_END, EXPR_START, PIPE, RANGE_OF_LENGTH, RANGE_TO};
+use crate::pattern::utils::AnyString;
 
 pub struct Config {
     pub escape: char,
@@ -263,8 +265,9 @@ impl fmt::Display for ErrorKind {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use test_case::test_case;
+
+    use super::*;
 
     #[test_case(Separator::String(",".into()),   "','"                       ; "string")]
     #[test_case(Separator::Regex("\\s+".into()), "regular expression '\\s+'" ; "regex")]
@@ -301,8 +304,9 @@ mod tests {
     }
 
     mod error_kind {
-        use super::*;
         use test_case::test_case;
+
+        use super::*;
 
         type E = ErrorKind;
         type H = ErrorHint;
