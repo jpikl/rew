@@ -4,7 +4,7 @@ use crate::pattern::filter::Filter;
 use crate::pattern::lexer::{Lexer, ParsedToken, Token};
 use crate::pattern::parse::{Config, Error, ErrorKind, Parsed, Result};
 use crate::pattern::reader::Reader;
-use crate::utils::IndexRange;
+use crate::utils::ErrorRange;
 use std::fmt;
 
 pub type ParsedFilter = Parsed<Filter>;
@@ -157,7 +157,7 @@ impl<'a> Parser<'a> {
         Ok(filters)
     }
 
-    fn parse_filter(&self, chars: &[Char], range: &IndexRange) -> Result<ParsedFilter> {
+    fn parse_filter(&self, chars: &[Char], range: &ErrorRange) -> Result<ParsedFilter> {
         let mut reader = Reader::new(Vec::from(chars));
 
         let filter = Filter::parse(&mut reader, self.config).map_err(|mut error| {
@@ -194,7 +194,7 @@ impl<'a> Parser<'a> {
         self.token.as_ref().map(|token| &token.value)
     }
 
-    fn token_range(&self) -> &IndexRange {
+    fn token_range(&self) -> &ErrorRange {
         self.token.as_ref().map_or(&(0..0), |token| &token.range)
     }
 }
@@ -237,7 +237,7 @@ mod tests {
         #[test_case("{f|f",   0..1, ErrorKind::UnmatchedExprStart                        ; "missing pipe or expr end 2")]
         #[test_case("{f|ff",  4..5, ErrorKind::ExpectedPipeOrExprEnd                     ; "filter after filter 2")]
         #[test_case("{#2-1}", 2..5, ErrorKind::RangeStartOverEnd("2".into(), "1".into()) ; "invalid filter")]
-        fn err(input: &str, range: IndexRange, kind: ErrorKind) {
+        fn err(input: &str, range: ErrorRange, kind: ErrorKind) {
             assert_eq!(
                 Parser::new(input, &Config::fixture()).parse_items(),
                 Err(Error { kind, range })

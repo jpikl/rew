@@ -54,7 +54,7 @@ mod tests {
         use super::*;
         use crate::pattern::parse::{Error, ErrorKind};
         use crate::pattern::reader::Reader;
-        use crate::utils::IndexRange;
+        use crate::utils::ErrorRange;
         use test_case::test_case;
 
         #[test_case("-",   0..1, ErrorKind::RangeInvalid("-".into())                  ; "invalid")]
@@ -62,7 +62,7 @@ mod tests {
         #[test_case("0+1", 1..2, ErrorKind::ExpectedRangeDelimiter(Some('+'.into()))  ; "start with length")]
         #[test_case("1",   1..1, ErrorKind::ExpectedRangeDelimiter(None)              ; "no delimiter")]
         #[test_case("1ab", 1..2, ErrorKind::ExpectedRangeDelimiter(Some('a'.into()))  ; "wrong delimiter")]
-        fn err(input: &str, range: IndexRange, kind: ErrorKind) {
+        fn err(input: &str, range: ErrorRange, kind: ErrorKind) {
             assert_eq!(
                 NumberRange::parse(&mut Reader::from(input)),
                 Err(Error { kind, range })

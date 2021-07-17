@@ -4,11 +4,10 @@ use std::ops::Range;
 #[derive(Debug, Clone, PartialEq)]
 pub struct Empty;
 
-pub type Index = usize;
-pub type IndexRange = Range<Index>;
+pub type ErrorRange = Range<usize>;
 
-pub trait GetIndexRange {
-    fn index_range(&self) -> &IndexRange;
+pub trait GetErrorRange {
+    fn error_range(&self) -> &ErrorRange;
 }
 
 #[derive(Debug, Clone)]

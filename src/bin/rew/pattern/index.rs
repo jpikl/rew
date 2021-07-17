@@ -24,8 +24,7 @@ pub fn shift_index<T: ParsableInt>(value: T) -> BaseResult<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils::Index;
-    use crate::utils::IndexRange;
+    use crate::utils::ErrorRange;
     use test_case::test_case;
 
     mod parse_index {
@@ -35,23 +34,23 @@ mod tests {
 
         #[test_case("abc",  0..3, ErrorKind::ExpectedNumber ; "invalid")]
         #[test_case("0abc", 0..1, ErrorKind::IndexZero      ; "zero")]
-        fn err(input: &str, range: IndexRange, kind: ErrorKind) {
+        fn err(input: &str, range: ErrorRange, kind: ErrorKind) {
             assert_eq!(
-                parse_index::<Index>(&mut Reader::from(input)),
+                parse_index::<usize>(&mut Reader::from(input)),
                 Err(Error { kind, range })
             );
         }
 
         #[test_case("1",      0   ; "one")]
         #[test_case("123abc", 122 ; "multiple digits and chars")]
-        fn ok(input: &str, result: Index) {
+        fn ok(input: &str, result: usize) {
             assert_eq!(parse_index(&mut Reader::from(input)), Ok(result));
         }
     }
 
     #[test_case(0, Err(ErrorKind::IndexZero) ; "zero")]
     #[test_case(1, Ok(0)                     ; "positive")]
-    fn shift_index(index: Index, result: BaseResult<usize>) {
+    fn shift_index(index: usize, result: BaseResult<usize>) {
         assert_eq!(super::shift_index(index), result)
     }
 }

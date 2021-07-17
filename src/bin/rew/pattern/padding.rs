@@ -68,12 +68,12 @@ impl fmt::Display for Padding {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils::IndexRange;
+    use crate::utils::ErrorRange;
     use test_case::test_case;
 
     #[test_case("",     0..0, ErrorKind::PaddingPrefixInvalid('<', None)             ; "no prefix")]
     #[test_case(">abc", 0..1, ErrorKind::PaddingPrefixInvalid('<', Some('>'.into())) ; "invalid prefix")]
-    fn parse_err(input: &str, range: IndexRange, kind: ErrorKind) {
+    fn parse_err(input: &str, range: ErrorRange, kind: ErrorKind) {
         assert_eq!(
             Padding::parse(&mut Reader::from(input), '<'),
             Err(Error { kind, range })

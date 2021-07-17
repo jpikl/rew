@@ -86,7 +86,7 @@ impl fmt::Display for Field {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils::{AnyString, IndexRange};
+    use crate::utils::{AnyString, ErrorRange};
     use test_case::test_case;
 
     #[test_case("",     0..0, ErrorKind::ExpectedNumber                 ; "empty")]
@@ -95,7 +95,7 @@ mod tests {
     #[test_case("1:",   2..2, ErrorKind::ExpectedFieldSeparator         ; "missing string separator")]
     #[test_case("1/",   2..2, ErrorKind::ExpectedFieldSeparator         ; "missing regex separator")]
     #[test_case("1/[0", 2..4, ErrorKind::RegexInvalid(AnyString::any()) ; "invalid regex separator")]
-    fn parse_err(input: &str, range: IndexRange, kind: ErrorKind) {
+    fn parse_err(input: &str, range: ErrorRange, kind: ErrorKind) {
         assert_eq!(
             Field::parse(&mut Reader::from(input), &Separator::String(' '.into())),
             Err(Error { kind, range })

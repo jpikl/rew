@@ -129,12 +129,12 @@ mod tests {
 
         mod parse {
             use super::*;
-            use crate::utils::IndexRange;
+            use crate::utils::ErrorRange;
             use test_case::test_case;
 
             #[test_case("",     0..0, ErrorKind::ExpectedRegex                  ; "empty")]
             #[test_case("[0-9", 0..4, ErrorKind::RegexInvalid(AnyString::any()) ; "invalid")]
-            fn err(input: &str, range: IndexRange, kind: ErrorKind) {
+            fn err(input: &str, range: ErrorRange, kind: ErrorKind) {
                 assert_eq!(
                     RegexHolder::parse(&mut Reader::from(input)),
                     Err(Error { kind, range })

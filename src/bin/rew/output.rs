@@ -1,9 +1,10 @@
-use crate::utils::{GetIndexRange, IndexRange};
+use crate::utils::GetErrorRange;
 use common::color::{spec_bold_color, spec_color};
 use common::output::write_error;
 use common::symbols::{DIFF_IN, DIFF_OUT};
 use std::error::Error;
 use std::io::{Result, Write};
+use std::ops::Range;
 use termcolor::{Color, WriteColor};
 
 pub enum Mode {
@@ -83,21 +84,21 @@ impl<O: Write + WriteColor> Values<O> {
     }
 }
 
-pub fn write_pattern_error<O: Write + WriteColor, E: Error + GetIndexRange>(
+pub fn write_pattern_error<O: Write + WriteColor, E: Error + GetErrorRange>(
     output: &mut O,
     error: &E,
     raw_pattern: &str,
 ) -> Result<()> {
     write_error(output, error)?;
     writeln!(output)?;
-    highlight_range(output, raw_pattern, error.index_range(), Color::Red)?;
+    highlight_range(output, raw_pattern, error.error_range(), Color::Red)?;
     output.reset()
 }
 
 pub fn highlight_range<O: Write + WriteColor>(
     output: &mut O,
     string: &str,
-    range: &IndexRange,
+    range: &Range<usize>,
     color: Color,
 ) -> Result<()> {
     write!(output, "{}", &string[..range.start])?;
@@ -120,6 +121,7 @@ pub fn highlight_range<O: Write + WriteColor>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::utils::ErrorRange;
     use common::testing::{ColoredOuput, OutputChunk};
     use indoc::indoc;
     use test_case::test_case;
@@ -176,8 +178,8 @@ mod tests {
             }
         }
 
-        impl GetIndexRange for CustomError {
-            fn index_range(&self) -> &IndexRange {
+        impl GetErrorRange for CustomError {
+            fn error_range(&self) -> &ErrorRange {
                 &(1..3)
             }
         }

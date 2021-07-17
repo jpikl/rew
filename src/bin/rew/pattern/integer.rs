@@ -38,14 +38,14 @@ mod tests {
 
     mod parse_integer {
         use super::*;
-        use crate::utils::IndexRange;
+        use crate::utils::ErrorRange;
         use test_case::test_case;
 
         #[test_case("",     0..0, ErrorKind::ExpectedNumber                ; "empty")]
         #[test_case("ab",   0..2, ErrorKind::ExpectedNumber                ; "alpha")]
         #[test_case("256",  0..3, ErrorKind::IntegerOverflow("255".into()) ; "overflow")]
         #[test_case("256a", 0..3, ErrorKind::IntegerOverflow("255".into()) ; "overflow then alpha")]
-        fn err(input: &str, range: IndexRange, kind: ErrorKind) {
+        fn err(input: &str, range: ErrorRange, kind: ErrorKind) {
             assert_eq!(
                 parse_integer::<u8>(&mut Reader::from(input)),
                 Err(Error { kind, range })

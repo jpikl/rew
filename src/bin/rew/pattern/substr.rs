@@ -1,5 +1,4 @@
 use crate::pattern::range::{Range, RangeType};
-use crate::utils::Index;
 use std::fmt;
 
 pub type CharIndexRange = Range<CharIndexRangeType>;
@@ -8,7 +7,7 @@ pub type CharIndexRange = Range<CharIndexRangeType>;
 pub struct CharIndexRangeType;
 
 impl RangeType for CharIndexRangeType {
-    type Value = Index;
+    type Value = usize;
 
     const INDEX: bool = true;
     const EMPTY_ALLOWED: bool = false;
@@ -69,7 +68,7 @@ impl fmt::Display for CharIndexRange {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils::IndexRange;
+    use crate::utils::ErrorRange;
     use test_case::test_case;
 
     mod parse {
@@ -85,7 +84,7 @@ mod tests {
         #[test_case("2-1",  0..3, ErrorKind::RangeStartOverEnd("2".into(), "1".into()) ; "start above end")]
         #[test_case("1+",   2..2, ErrorKind::ExpectedRangeLength                       ; "start no length")]
         #[test_case("1+ab", 2..4, ErrorKind::ExpectedRangeLength                       ; "start no length but chars")]
-        fn err(input: &str, range: IndexRange, kind: ErrorKind) {
+        fn err(input: &str, range: ErrorRange, kind: ErrorKind) {
             assert_eq!(
                 CharIndexRange::parse(&mut Reader::from(input)),
                 Err(Error { kind, range })
@@ -99,8 +98,8 @@ mod tests {
         #[test_case("1-1", 0, Some(1) ; "start equals end")]
         #[test_case("2+0", 1, Some(1) ; "start with zero length")]
         #[test_case("2+3", 1, Some(4) ; "start with positive length")]
-        #[test_case(&format!("2+{}", Index::MAX), 1, None ; "start with overflow length")]
-        fn ok(input: &str, start: Index, end: Option<Index>) {
+        #[test_case(&format!("2+{}", usize::MAX), 1, None ; "start with overflow length")]
+        fn ok(input: &str, start: usize, end: Option<usize>) {
             assert_eq!(
                 CharIndexRange::parse(&mut Reader::from(input)),
                 Ok(CharIndexRange::new(start, end))
@@ -124,7 +123,7 @@ mod tests {
     #[test_case("ábčd", 4, Some(4), ""     ; "after last after last")]
     #[test_case("ábčd", 4, Some(5), ""     ; "after last over last")]
     #[test_case("ábčd", 5, Some(5), ""     ; "over last over last")]
-    fn substr(input: &str, start: Index, end: Option<Index>, output: &str) {
+    fn substr(input: &str, start: usize, end: Option<usize>, output: &str) {
         assert_eq!(CharIndexRange::new(start, end).substr(input.into()), output);
     }
 
@@ -144,7 +143,7 @@ mod tests {
     #[test_case("ábčd", 4, Some(4), ""     ; "after last after last")]
     #[test_case("ábčd", 4, Some(5), ""     ; "after last over last")]
     #[test_case("ábčd", 5, Some(5), ""     ; "over last over last")]
-    fn substr_rev(input: &str, start: Index, end: Option<Index>, output: &str) {
+    fn substr_rev(input: &str, start: usize, end: Option<usize>, output: &str) {
         assert_eq!(
             CharIndexRange::new(start, end).substr_rev(input.into()),
             output
@@ -153,7 +152,7 @@ mod tests {
 
     #[test_case(1, None,    "2.."  ; "open")]
     #[test_case(1, Some(3), "2..3" ; "closed")]
-    fn display(start: Index, end: Option<Index>, result: &str) {
+    fn display(start: usize, end: Option<usize>, result: &str) {
         assert_eq!(CharIndexRange::new(start, end).to_string(), result);
     }
 }

@@ -2,8 +2,9 @@ use crate::pattern::char::{Char, EscapeSequence};
 use crate::pattern::escape::{escape_char, escape_str};
 use crate::pattern::regex::RegexHolder;
 use crate::pattern::symbols::{EXPR_END, EXPR_START, PIPE, RANGE_OF_LENGTH, RANGE_TO};
-use crate::utils::{AnyString, GetIndexRange, IndexRange};
+use crate::utils::{AnyString, ErrorRange, GetErrorRange};
 use std::convert::Infallible;
+use std::ops::Range;
 use std::{error, fmt, result};
 
 pub struct Config {
@@ -39,7 +40,7 @@ impl fmt::Display for Separator {
 #[derive(Debug, PartialEq)]
 pub struct Parsed<T> {
     pub value: T,
-    pub range: IndexRange,
+    pub range: Range<usize>,
 }
 
 #[cfg(test)]
@@ -55,13 +56,13 @@ pub type BaseResult<T> = result::Result<T, ErrorKind>;
 #[derive(Debug, PartialEq)]
 pub struct Error {
     pub kind: ErrorKind,
-    pub range: IndexRange,
+    pub range: ErrorRange,
 }
 
 impl error::Error for Error {}
 
-impl GetIndexRange for Error {
-    fn index_range(&self) -> &IndexRange {
+impl GetErrorRange for Error {
+    fn error_range(&self) -> &ErrorRange {
         &self.range
     }
 }
@@ -281,7 +282,7 @@ mod tests {
                     kind: ErrorKind::ExpectedNumber,
                     range: 1..2
                 }
-                .index_range(),
+                .error_range(),
                 &(1..2)
             )
         }

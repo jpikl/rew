@@ -263,7 +263,7 @@ mod tests {
     use crate::pattern::substr::CharIndexRange;
     use crate::pattern::switch::{Case, RegexSwitch};
     use crate::utils::Empty;
-    use crate::utils::{AnyString, IndexRange};
+    use crate::utils::{AnyString, ErrorRange};
     use test_case::test_case;
 
     type F = Filter;
@@ -298,7 +298,7 @@ mod tests {
         #[test_case("$",        1..1, E::ExpectedNumber                              ; "regex capture expected number")]
         #[test_case("<x",       1..2, E::PaddingPrefixInvalid('<', Some('x'.into())) ; "padding left prefix invalid")]
         #[test_case(">y",       1..2, E::PaddingPrefixInvalid('>', Some('y'.into())) ; "padding right prefix invalid")]
-        fn err(input: &str, range: IndexRange, kind: ErrorKind) {
+        fn err(input: &str, range: ErrorRange, kind: ErrorKind) {
             assert_eq!(
                 Filter::parse(&mut Reader::from(input), &Config::fixture()),
                 Err(Error { kind, range }),
