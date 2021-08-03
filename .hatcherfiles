@@ -4,9 +4,8 @@ usage.md
 pattern.md
 filters/index.md
 filters/path.md
-filters/substr.md
+filters/string.md
 filters/field.md
-filters/replace.md
 filters/regex.md
 filters/format.md
 filters/generate.md

@@ -15,15 +15,15 @@ impl Pattern {
             match &item.value {
                 Item::Constant(_) => {
                     if all {
-                        self.explain_part(output, &item, Color::Green)?;
+                        self.explain_part(output, item, Color::Green)?;
                     }
                 }
                 Item::Expression(filters) => {
                     if all {
-                        self.explain_part(output, &item, Color::Yellow)?;
+                        self.explain_part(output, item, Color::Yellow)?;
                     }
                     for filter in filters {
-                        self.explain_part(output, &filter, Color::Blue)?;
+                        self.explain_part(output, filter, Color::Blue)?;
                     }
                 }
             }

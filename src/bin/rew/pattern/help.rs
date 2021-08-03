@@ -3,10 +3,10 @@ use indoc::indoc;
 pub const PATTERN: &str = indoc! {r#"
 # SYNTAX
 
-  `abc`         Constant  
-  `{}`          Empty expression     
-  `{x}`         Expression with a filter    
-  `{x|y|z}`     Expression with multiple filters  
+  `abc`         Constant
+  `{}`          Empty expression
+  `{x}`         Expression with a filter
+  `{x|y|z}`     Expression with multiple filters
   `a{}b{x|y}c`  Mixed constant and expresions.
 
 # RULES
@@ -33,23 +33,23 @@ pub const FILTERS: &str = indoc! {r#"
 
   `f`  File name           `d`  Parent directory
   `F`  Last name           `D`  Remove last name
-  
+
   `b`  Base name           `e`  Extension
-  `B`  Remove extension    `E`  Extension with dot         
+  `B`  Remove extension    `E`  Extension with dot
 
   `w`  Working directory
-  
-  `a`  Absolute path       `p`  Normalized path        
+
+  `a`  Absolute path       `p`  Normalized path
   `A`  Relative path       `P`  Canonical path
 
-  `z`  Ensure trailing directory separator    
+  `z`  Ensure trailing directory separator
   `Z`  Remove trailing directory separator
 
 # SUBSTRING
 
   `#A-B`  From `A` to `B`         (`A`, `B` = inclusive 1-based index)
-  `#A+L`  From `A` of length `L`    (`-A` = backward indexing)   
-  `#A-`   From `A` to end         
+  `#A+L`  From `A` of length `L`    (`-A` = backward indexing)
+  `#A-`   From `A` to end
   `#A`    Character at `A`
 
 # FIELD
@@ -58,27 +58,40 @@ pub const FILTERS: &str = indoc! {r#"
   `&N/S`  Field `N`, regex separator `S`    (`N` = 1-based index)
   `&N`    Field `N`, default separator   (`-N` = backward indexing)
 
-# REPLACEMENT
+# STRING REPLACE
 
   `r:X:Y`  Replace `X` with `Y`      (`r` = first occurence)
   `r:X`    Remove `X`              (`R` = all occurences)
   `?D`     Replace empty with `D`  (`:` = any delimiter char)
 
-# REGULAR EXPRESSIONS
+# REGEX REPLACE
 
-  `=E`     Match of regex `E`           (`:` = any delimiter char)
-  `s:X:Y`  Replace match of `X` with `Y`  (`s` = first occurence)  
+  `s:X:Y`  Replace match of `X` with `Y`  (`s` = first occurence)
   `s:X`    Remove match of `X`          (`S` = all occurences)
 
+# REGEX MATCH
+
+  `=N:E`    `N`-th match of regex `E`                 (`:` = any delimiter char)
+  `=N-M:E`  `N`-th to `M`-th match of regex `E`      (`N`, `M` = inclusive 1-based index)
+  `=N-:E`   `N`-th to the last match of regex `E`    (`-N` = backward indexing)
+
+# REGEX SWITCH
+
+  `@:X:Y`    Output `Y` if input matches `X` (`:` = any delimiter char)
+  `@:X:Y:D`  Output `Y` if input matches `X`, `D` for no match
+
   `@:X1:Y1:...:Xn:Yn:D`  Output `Yi` for first match of `Xi`, `D` for no match
-  `$0`, `$1`, `$2`, ...      Capture group of a global regex or `s/S/@` regex
+
+# REGEX CAPTURES
+
+  `$0`, `$1`, `$2`, ...  Capture group of a global regex or `s/S/@` regex
 
 # FORMATTING
 
-  `t`  Trim            
+  `t`  Trim
   `^`  To uppercase    `i`   To ASCII
   `v`  To lowercase    `I`   Remove non-ASCII chars
-  
+
   `*N`    Repeat `N` times
   `<<M`   Left pad with `M`            (`>>` or `>` to right pad)
   `<N:M`  Left pad `N` times with `M`    (`:` = any delimiter char)
@@ -87,13 +100,15 @@ pub const FILTERS: &str = indoc! {r#"
 
   `*N:V`  Repeat `N` times `V`    (`:` = any delimiter char)
 
-  `u`  Random 64-bit number    `c`  Local counter           
-  `U`  Random UUID             `C`  Global counter   
+  `u`  Random 64-bit number    `c`  Local counter
+  `U`  Random UUID             `C`  Global counter
 
   `uA-B`  `u` where `A <= u <= B`
   `uA-`   `u` where `A <= u`
 "#};
 
+pub const REGEX_HINT: &str =
+    "Visit `https://docs.rs/regex/1/regex/#syntax` for regular expression syntax.";
 pub const PATTERN_HINT: &str = "Use `--help-pattern` flag to print pattern syntax reference.";
 pub const FILTERS_HINT: &str = "Use `--help-filters` flag to print filter reference.";
 

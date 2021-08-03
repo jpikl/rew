@@ -8,7 +8,7 @@ use crate::pattern::integer::parse_integer;
 use crate::pattern::number::NumberRange;
 use crate::pattern::padding::Padding;
 use crate::pattern::reader::Reader;
-use crate::pattern::regex::RegexHolder;
+use crate::pattern::regex::RegexMatcher;
 use crate::pattern::repeat::Repetition;
 use crate::pattern::replace::{EmptySubstitution, RegexSubstitution, StringSubstitution};
 use crate::pattern::substr::CharIndexRange;
@@ -41,7 +41,8 @@ pub enum Filter {
     ReplaceFirst(StringSubstitution),
     ReplaceAll(StringSubstitution),
     ReplaceEmpty(EmptySubstitution),
-    RegexMatch(RegexHolder),
+    RegexMatch(RegexMatcher),
+    RegexMatchRev(RegexMatcher),
     RegexReplaceFirst(RegexSubstitution),
     RegexReplaceAll(RegexSubstitution),
     RegexSwitch(RegexSwitch),
@@ -99,7 +100,13 @@ impl Filter {
                 'r' => Ok(Self::ReplaceFirst(StringSubstitution::parse(reader)?)),
                 'R' => Ok(Self::ReplaceAll(StringSubstitution::parse(reader)?)),
                 '?' => Ok(Self::ReplaceEmpty(EmptySubstitution::parse(reader)?)),
-                '=' => Ok(Self::RegexMatch(RegexHolder::parse(reader)?)),
+                '=' => {
+                    if reader.read_expected(REVERSE_INDEX) {
+                        Ok(Self::RegexMatchRev(RegexMatcher::parse(reader)?))
+                    } else {
+                        Ok(Self::RegexMatch(RegexMatcher::parse(reader)?))
+                    }
+                }
                 's' => Ok(Self::RegexReplaceFirst(RegexSubstitution::parse(reader)?)),
                 'S' => Ok(Self::RegexReplaceAll(RegexSubstitution::parse(reader)?)),
                 '@' => Ok(Self::RegexSwitch(RegexSwitch::parse(reader)?)),
@@ -153,7 +160,8 @@ impl Filter {
             Self::ReplaceFirst(substitution) => Ok(substitution.replace_first(&value)),
             Self::ReplaceAll(substitution) => Ok(substitution.replace_all(&value)),
             Self::ReplaceEmpty(substitution) => Ok(substitution.replace(value)),
-            Self::RegexMatch(regex) => Ok(regex.first_match(&value)),
+            Self::RegexMatch(range) => Ok(range.find(&value)),
+            Self::RegexMatchRev(range) => Ok(range.find_rev(&value)),
             Self::RegexReplaceFirst(substitution) => Ok(substitution.replace_first(&value)),
             Self::RegexReplaceAll(substitution) => Ok(substitution.replace_all(&value)),
             Self::RegexSwitch(switch) => Ok(switch.eval(&value).to_string()),
@@ -210,8 +218,9 @@ impl fmt::Display for Filter {
             Self::ReplaceEmpty(substitution) => {
                 write!(formatter, "Replace {}", substitution)
             }
-            Self::RegexMatch(substitution) => {
-                write!(formatter, "Match of regular expression '{}'", substitution)
+            Self::RegexMatch(matcher) => write!(formatter, "Regular expression match {}", matcher),
+            Self::RegexMatchRev(matcher) => {
+                write!(formatter, "Regular expression backward match {}", matcher)
             }
             Self::RegexReplaceFirst(substitution) => write!(
                 formatter,
@@ -261,6 +270,7 @@ mod tests {
     use crate::pattern::number::NumberRange;
     use crate::pattern::padding::Padding;
     use crate::pattern::parse::Separator;
+    use crate::pattern::regex::{RegexMatcher, RegexRange};
     use crate::pattern::repeat::Repetition;
     use crate::pattern::replace::{
         EmptySubstitution, RegexSubstitution, StringSubstitution, Substitution,
@@ -292,8 +302,10 @@ mod tests {
         #[test_case("&-1/[0-9", 4..8, E::RegexInvalid(AnyString::any())              ; "field rev regex invalid")]
         #[test_case("r",        1..1, E::ExpectedSubstitution                        ; "replace expected substitution")]
         #[test_case("R",        1..1, E::ExpectedSubstitution                        ; "replace all expected substitution")]
-        #[test_case("=",        1..1, E::ExpectedRegex                               ; "regex match expected regex")]
-        #[test_case("=[0",      1..3, E::RegexInvalid(AnyString::any())              ; "regex match invalid regex")]
+        #[test_case("=",        1..1, E::ExpectedRegexMatcher                        ; "regex match expected matcher")]
+        #[test_case("=:",       1..2, E::RangeInvalid(":".into())                    ; "regex match invalid range")]
+        #[test_case("=1:[0",    3..5, E::RegexInvalid(AnyString::any())              ; "regex match invalid regex")]
+        #[test_case("=-1:[0",   4..6, E::RegexInvalid(AnyString::any())              ; "regex match rev invalid regex")]
         #[test_case("s",        1..1, E::ExpectedSubstitution                        ; "regex replace expected substitution")]
         #[test_case("s/[0/",    2..4, E::RegexInvalid(AnyString::any())              ; "regex replace invalid regex")]
         #[test_case("S",        1..1, E::ExpectedSubstitution                        ; "regex replace all expected substitution")]
@@ -309,65 +321,70 @@ mod tests {
             )
         }
 
-        #[test_case("w",            F::WorkingDir                           ; "working dir")]
-        #[test_case("a",            F::AbsolutePath                         ; "absolute path")]
-        #[test_case("A",            F::RelativePath                         ; "relative path")]
-        #[test_case("p",            F::NormalizedPath                       ; "normalized path")]
-        #[test_case("P",            F::CanonicalPath                        ; "canonical path")]
-        #[test_case("d",            F::ParentDirectory                      ; "parent directory")]
-        #[test_case("D",            F::RemoveLastName                       ; "remove last name")]
-        #[test_case("f",            F::FileName                             ; "file name")]
-        #[test_case("F",            F::LastName                             ; "last name")]
-        #[test_case("b",            F::BaseName                             ; "base name")]
-        #[test_case("B",            F::RemoveExtension                      ; "remove extension")]
-        #[test_case("e",            F::Extension                            ; "extension")]
-        #[test_case("E",            F::ExtensionWithDot                     ; "extension with dot")]
-        #[test_case("z",            F::EnsureTrailDirSeparator              ; "ensure trail dir separator")]
-        #[test_case("Z",            F::RemoveTrailDirSeparator              ; "remove trail dir separator")]
-        #[test_case("#2",           F::Substring(index_range_at())          ; "substring at")]
-        #[test_case("#2-",          F::Substring(index_range_from())        ; "substring from")]
-        #[test_case("#2-3",         F::Substring(index_range_between())     ; "substring between")]
-        #[test_case("#2+3",         F::Substring(index_range_length())      ; "substring length")]
-        #[test_case("#-2",          F::SubstringRev(index_range_at())       ; "substring rev at")]
-        #[test_case("#-2-",         F::SubstringRev(index_range_from())     ; "substring rev from")]
-        #[test_case("#-2-3",        F::SubstringRev(index_range_between())  ; "substring rev between")]
-        #[test_case("#-2+3",        F::SubstringRev(index_range_length())   ; "substring rev length")]
-        #[test_case("&2",           F::GetField(field_default())            ; "field default separator")]
-        #[test_case("&2:,",         F::GetField(field_string())             ; "field string separator")]
-        #[test_case("&2/[, ]+",     F::GetField(field_regex())              ; "field regex separator")]
-        #[test_case("&-2",          F::GetFieldRev(field_default())         ; "field rev default separator")]
-        #[test_case("&-2:,",        F::GetFieldRev(field_string())          ; "field rev string separator")]
-        #[test_case("&-2/[, ]+",    F::GetFieldRev(field_regex())           ; "field rev regex separator")]
-        #[test_case("r/ab",         F::ReplaceFirst(subst_string_1())       ; "remove first")]
-        #[test_case("r/ab/x",       F::ReplaceFirst(subst_string_2())       ; "replace first")]
-        #[test_case("R/ab",         F::ReplaceAll(subst_string_1())         ; "remove all")]
-        #[test_case("R/ab/x",       F::ReplaceAll(subst_string_2())         ; "replace all")]
-        #[test_case("?x",           F::ReplaceEmpty(substitution_empty())   ; "replace empty")]
-        #[test_case("=[0-9]+",      F::RegexMatch("[0-9]+".into())          ; "regex match")]
-        #[test_case("s/[0-9]+",     F::RegexReplaceFirst(subst_regex_1())   ; "regex remove first")]
-        #[test_case("s/[0-9]+/x",   F::RegexReplaceFirst(subst_regex_2())   ; "regex replace first")]
-        #[test_case("S/[0-9]+",     F::RegexReplaceAll(subst_regex_1())     ; "regex remove all")]
-        #[test_case("S/[0-9]+/x",   F::RegexReplaceAll(subst_regex_2())     ; "regex replace all")]
-        #[test_case("@:[0-9]+:X:Y", F::RegexSwitch(regex_switch())          ; "regex switch ")]
-        #[test_case("$0",           F::RegexCapture(0)                      ; "regex capture 0")]
-        #[test_case("$10",          F::RegexCapture(10)                     ; "regex capture 10")]
-        #[test_case("t",            F::Trim                                 ; "trim")]
-        #[test_case("v",            F::ToLowercase                          ; "to lowercase")]
-        #[test_case("^",            F::ToUppercase                          ; "to uppercase")]
-        #[test_case("i",            F::ToAscii                              ; "to ascii")]
-        #[test_case("I",            F::RemoveNonAscii                       ; "remove non-ascii")]
-        #[test_case("<<abcd",       F::LeftPad(padding_fixed())             ; "left pad fixed")]
-        #[test_case("<2:abc",       F::LeftPad(padding_repeated())          ; "left pad repeated")]
-        #[test_case(">>abcd",       F::RightPad(padding_fixed())            ; "right pad fixed")]
-        #[test_case(">2:abc",       F::RightPad(padding_repeated())         ; "right pad repeated")]
-        #[test_case("*2",           F::Repeat(repetition_input())           ; "repetition input ")]
-        #[test_case("*2:abc",       F::Repeat(repetition_value())           ; "repetition value ")]
-        #[test_case("c",            F::LocalCounter                         ; "local counter")]
-        #[test_case("C",            F::GlobalCounter                        ; "global counter")]
-        #[test_case("u",            F::RandomNumber(number_range_full())    ; "random number")]
-        #[test_case("u2-",          F::RandomNumber(number_range_from())    ; "random number from")]
-        #[test_case("u2-10",        F::RandomNumber(number_range_between()) ; "random number between")]
-        #[test_case("U",            F::RandomUuid                           ; "random uuid")]
+        #[test_case("w",            F::WorkingDir                             ; "working dir")]
+        #[test_case("a",            F::AbsolutePath                           ; "absolute path")]
+        #[test_case("A",            F::RelativePath                           ; "relative path")]
+        #[test_case("p",            F::NormalizedPath                         ; "normalized path")]
+        #[test_case("P",            F::CanonicalPath                          ; "canonical path")]
+        #[test_case("d",            F::ParentDirectory                        ; "parent directory")]
+        #[test_case("D",            F::RemoveLastName                         ; "remove last name")]
+        #[test_case("f",            F::FileName                               ; "file name")]
+        #[test_case("F",            F::LastName                               ; "last name")]
+        #[test_case("b",            F::BaseName                               ; "base name")]
+        #[test_case("B",            F::RemoveExtension                        ; "remove extension")]
+        #[test_case("e",            F::Extension                              ; "extension")]
+        #[test_case("E",            F::ExtensionWithDot                       ; "extension with dot")]
+        #[test_case("z",            F::EnsureTrailDirSeparator                ; "ensure trail dir separator")]
+        #[test_case("Z",            F::RemoveTrailDirSeparator                ; "remove trail dir separator")]
+        #[test_case("#2",           F::Substring(index_range_at())            ; "substring at")]
+        #[test_case("#2-",          F::Substring(index_range_from())          ; "substring from")]
+        #[test_case("#2-3",         F::Substring(index_range_between())       ; "substring between")]
+        #[test_case("#2+3",         F::Substring(index_range_length())        ; "substring length")]
+        #[test_case("#-2",          F::SubstringRev(index_range_at())         ; "substring rev at")]
+        #[test_case("#-2-",         F::SubstringRev(index_range_from())       ; "substring rev from")]
+        #[test_case("#-2-3",        F::SubstringRev(index_range_between())    ; "substring rev between")]
+        #[test_case("#-2+3",        F::SubstringRev(index_range_length())     ; "substring rev length")]
+        #[test_case("&2",           F::GetField(field_default())              ; "field default separator")]
+        #[test_case("&2:,",         F::GetField(field_string())               ; "field string separator")]
+        #[test_case("&2/[, ]+",     F::GetField(field_regex())                ; "field regex separator")]
+        #[test_case("&-2",          F::GetFieldRev(field_default())           ; "field rev default separator")]
+        #[test_case("&-2:,",        F::GetFieldRev(field_string())            ; "field rev string separator")]
+        #[test_case("&-2/[, ]+",    F::GetFieldRev(field_regex())             ; "field rev regex separator")]
+        #[test_case("r/ab",         F::ReplaceFirst(subst_string_1())         ; "remove first")]
+        #[test_case("r/ab/x",       F::ReplaceFirst(subst_string_2())         ; "replace first")]
+        #[test_case("R/ab",         F::ReplaceAll(subst_string_1())           ; "remove all")]
+        #[test_case("R/ab/x",       F::ReplaceAll(subst_string_2())           ; "replace all")]
+        #[test_case("?x",           F::ReplaceEmpty(substitution_empty())     ; "replace empty")]
+        #[test_case("=2:[0-9]+",    F::RegexMatch(regex_matcher_at())         ; "regex match at")]
+        #[test_case("=2-:[0-9]+",   F::RegexMatch(regex_matcher_from())       ; "regex match from")]
+        #[test_case("=1-2:[0-9]+",  F::RegexMatch(regex_matcher_between())    ; "regex match between")]
+        #[test_case("=-2:[0-9]+",   F::RegexMatchRev(regex_matcher_at())      ; "regex match rev at")]
+        #[test_case("=-2-:[0-9]+",  F::RegexMatchRev(regex_matcher_from())    ; "regex match rev from")]
+        #[test_case("=-1-2:[0-9]+", F::RegexMatchRev(regex_matcher_between()) ; "regex match rev between")]
+        #[test_case("s/[0-9]+",     F::RegexReplaceFirst(subst_regex_1())     ; "regex remove first")]
+        #[test_case("s/[0-9]+/x",   F::RegexReplaceFirst(subst_regex_2())     ; "regex replace first")]
+        #[test_case("S/[0-9]+",     F::RegexReplaceAll(subst_regex_1())       ; "regex remove all")]
+        #[test_case("S/[0-9]+/x",   F::RegexReplaceAll(subst_regex_2())       ; "regex replace all")]
+        #[test_case("@:[0-9]+:X:Y", F::RegexSwitch(regex_switch())            ; "regex switch ")]
+        #[test_case("$0",           F::RegexCapture(0)                        ; "regex capture 0")]
+        #[test_case("$10",          F::RegexCapture(10)                       ; "regex capture 10")]
+        #[test_case("t",            F::Trim                                   ; "trim")]
+        #[test_case("v",            F::ToLowercase                            ; "to lowercase")]
+        #[test_case("^",            F::ToUppercase                            ; "to uppercase")]
+        #[test_case("i",            F::ToAscii                                ; "to ascii")]
+        #[test_case("I",            F::RemoveNonAscii                         ; "remove non-ascii")]
+        #[test_case("<<abcd",       F::LeftPad(padding_fixed())               ; "left pad fixed")]
+        #[test_case("<2:abc",       F::LeftPad(padding_repeated())            ; "left pad repeated")]
+        #[test_case(">>abcd",       F::RightPad(padding_fixed())              ; "right pad fixed")]
+        #[test_case(">2:abc",       F::RightPad(padding_repeated())           ; "right pad repeated")]
+        #[test_case("*2",           F::Repeat(repetition_input())             ; "repetition input ")]
+        #[test_case("*2:abc",       F::Repeat(repetition_value())             ; "repetition value ")]
+        #[test_case("c",            F::LocalCounter                           ; "local counter")]
+        #[test_case("C",            F::GlobalCounter                          ; "global counter")]
+        #[test_case("u",            F::RandomNumber(number_range_full())      ; "random number")]
+        #[test_case("u2-",          F::RandomNumber(number_range_from())      ; "random number from")]
+        #[test_case("u2-10",        F::RandomNumber(number_range_between())   ; "random number between")]
+        #[test_case("U",            F::RandomUuid                             ; "random uuid")]
         fn ok(input: &str, filter: Filter) {
             assert_eq!(
                 Filter::parse(&mut Reader::from(input), &Config::fixture()),
@@ -409,55 +426,60 @@ mod tests {
         #[cfg_attr(windows, test_case("a\\b\\..\\e\\.\\f\\", F::NormalizedPath,          "a\\e\\f"              ; "normalized path"))]
         #[cfg_attr(windows, test_case("./Cargo.toml",        F::CanonicalPath,           "C:\\work\\Cargo.toml" ; "canonical path"))]
         #[cfg_attr(windows, test_case("a\\b",                F::EnsureTrailDirSeparator, "a\\b\\"               ; "ensure trail dir separator"))]
-        #[test_case("a/b/c.d",       F::ParentDirectory,                     "a/b"      ; "parent directory")]
-        #[test_case("a/b/c.d",       F::RemoveLastName,                      "a/b"      ; "remove last name")]
-        #[test_case("a/b/c.d",       F::FileName,                            "c.d"      ; "file name")]
-        #[test_case("a/b/c.d",       F::LastName,                            "c.d"      ; "last name")]
-        #[test_case("a/b/c.d",       F::BaseName,                            "c"        ; "base name")]
-        #[test_case("a/b/c.d",       F::RemoveExtension,                     "a/b/c"    ; "remove extension")]
-        #[test_case("a/b/c.d",       F::Extension,                           "d"        ; "extension")]
-        #[test_case("a/b/c.d",       F::ExtensionWithDot,                    ".d"       ; "extension with dot")]
-        #[test_case("a/b/",          F::RemoveTrailDirSeparator,             "a/b"      ; "remove trail dir separator")]
-        #[test_case("abcde",         F::Substring(index_range_at()),         "b"        ; "substring at")]
-        #[test_case("abcde",         F::Substring(index_range_from()),       "bcde"     ; "substring from")]
-        #[test_case("abcde",         F::Substring(index_range_between()),    "bc"       ; "substring between")]
-        #[test_case("abcde",         F::Substring(index_range_length()),     "bcd"      ; "substring length")]
-        #[test_case("abcde",         F::SubstringRev(index_range_at()),      "d"        ; "substring rev at")]
-        #[test_case("abcde",         F::SubstringRev(index_range_from()),    "abcd"     ; "substring rev from")]
-        #[test_case("abcde",         F::SubstringRev(index_range_between()), "cd"       ; "substring rev between")]
-        #[test_case("abcde",         F::SubstringRev(index_range_length()),  "bcd"      ; "substring rev length")]
-        #[test_case("a , b , c , d", F::GetField(field_string()),            " b "      ; "field string separator")]
-        #[test_case("a , b , c , d", F::GetField(field_regex()),             "b"        ; "field regex separator")]
-        #[test_case("a , b , c , d", F::GetFieldRev(field_string()),         " c "      ; "field rev string separator")]
-        #[test_case("a , b , c , d", F::GetFieldRev(field_regex()),          "c"        ; "field rev regex separator")]
-        #[test_case("abcd_abcd",     F::ReplaceFirst(subst_string_1()),      "cd_abcd"  ; "remove first")]
-        #[test_case("abcd_abcd",     F::ReplaceFirst(subst_string_2()),      "xcd_abcd" ; "replace first")]
-        #[test_case("abcd_abcd",     F::ReplaceAll(subst_string_1()),        "cd_cd"    ; "remove all")]
-        #[test_case("abcd_abcd",     F::ReplaceAll(subst_string_2()),        "xcd_xcd"  ; "replace all")]
-        #[test_case("",              F::ReplaceEmpty(substitution_empty()),  "x"        ; "replace empty")]
-        #[test_case("a123y",         F::RegexMatch("[0-9]+".into()),         "123"      ; "regex match")]
-        #[test_case("12_34",         F::RegexReplaceFirst(subst_regex_1()),  "_34"      ; "regex remove first")]
-        #[test_case("12_34",         F::RegexReplaceFirst(subst_regex_2()),  "x_34"     ; "regex replace first")]
-        #[test_case("12_34",         F::RegexReplaceAll(subst_regex_1()),    "_"        ; "regex remove all")]
-        #[test_case("12_34",         F::RegexReplaceAll(subst_regex_2()),    "x_x"      ; "regex replace all")]
-        #[test_case("1",             F::RegexSwitch(regex_switch()),         "X"        ; "regex switch case")]
-        #[test_case("a",             F::RegexSwitch(regex_switch()),         "Y"        ; "regex switch default")]
-        #[test_case("",              F::RegexCapture(1),                     "a"        ; "regex capture")]
-        #[test_case(" abcd ",        F::Trim,                                "abcd"     ; "trim")]
-        #[test_case("ábčdÁBČD",      F::ToLowercase,                         "ábčdábčd" ; "to lowercase")]
-        #[test_case("ábčdÁBČD",      F::ToUppercase,                         "ÁBČDÁBČD" ; "to uppercase")]
-        #[test_case("ábčdÁBČD",      F::ToAscii,                             "abcdABCD" ; "to ascii")]
-        #[test_case("ábčdÁBČD",      F::RemoveNonAscii,                      "bdBD"     ; "remove non-ascii")]
-        #[test_case("01",            F::LeftPad(padding_fixed()),            "ab01"     ; "left pad fixed")]
-        #[test_case("01",            F::LeftPad(padding_repeated()),         "abca01"   ; "left pad repeated")]
-        #[test_case("01",            F::RightPad(padding_fixed()),           "01cd"     ; "right pad fixed")]
-        #[test_case("01",            F::RightPad(padding_repeated()),        "01cabc"   ; "right pad repeated")]
-        #[test_case("01",            F::Repeat(repetition_input()),          "0101"     ; "repetition input ")]
-        #[test_case("01",            F::Repeat(repetition_value()),          "abcabc"   ; "repetition value ")]
-        #[test_case("",              F::LocalCounter,                        "1"        ; "local counter")]
-        #[test_case("",              F::GlobalCounter,                       "2"        ; "global counter")]
-        #[test_case("",              F::RandomNumber(number_range_zero()),   "0"        ; "random number")]
-        #[test_case("",              F::RandomUuid,                          ""         ; "random uuid")]
+        #[test_case("a/b/c.d",       F::ParentDirectory,                        "a/b"      ; "parent directory")]
+        #[test_case("a/b/c.d",       F::RemoveLastName,                         "a/b"      ; "remove last name")]
+        #[test_case("a/b/c.d",       F::FileName,                               "c.d"      ; "file name")]
+        #[test_case("a/b/c.d",       F::LastName,                               "c.d"      ; "last name")]
+        #[test_case("a/b/c.d",       F::BaseName,                               "c"        ; "base name")]
+        #[test_case("a/b/c.d",       F::RemoveExtension,                        "a/b/c"    ; "remove extension")]
+        #[test_case("a/b/c.d",       F::Extension,                              "d"        ; "extension")]
+        #[test_case("a/b/c.d",       F::ExtensionWithDot,                       ".d"       ; "extension with dot")]
+        #[test_case("a/b/",          F::RemoveTrailDirSeparator,                "a/b"      ; "remove trail dir separator")]
+        #[test_case("abcde",         F::Substring(index_range_at()),            "b"        ; "substring at")]
+        #[test_case("abcde",         F::Substring(index_range_from()),          "bcde"     ; "substring from")]
+        #[test_case("abcde",         F::Substring(index_range_between()),       "bc"       ; "substring between")]
+        #[test_case("abcde",         F::Substring(index_range_length()),        "bcd"      ; "substring length")]
+        #[test_case("abcde",         F::SubstringRev(index_range_at()),         "d"        ; "substring rev at")]
+        #[test_case("abcde",         F::SubstringRev(index_range_from()),       "abcd"     ; "substring rev from")]
+        #[test_case("abcde",         F::SubstringRev(index_range_between()),    "cd"       ; "substring rev between")]
+        #[test_case("abcde",         F::SubstringRev(index_range_length()),     "bcd"      ; "substring rev length")]
+        #[test_case("a , b , c , d", F::GetField(field_string()),               " b "      ; "field string separator")]
+        #[test_case("a , b , c , d", F::GetField(field_regex()),                "b"        ; "field regex separator")]
+        #[test_case("a , b , c , d", F::GetFieldRev(field_string()),            " c "      ; "field rev string separator")]
+        #[test_case("a , b , c , d", F::GetFieldRev(field_regex()),             "c"        ; "field rev regex separator")]
+        #[test_case("abcd_abcd",     F::ReplaceFirst(subst_string_1()),         "cd_abcd"  ; "remove first")]
+        #[test_case("abcd_abcd",     F::ReplaceFirst(subst_string_2()),         "xcd_abcd" ; "replace first")]
+        #[test_case("abcd_abcd",     F::ReplaceAll(subst_string_1()),           "cd_cd"    ; "remove all")]
+        #[test_case("abcd_abcd",     F::ReplaceAll(subst_string_2()),           "xcd_xcd"  ; "replace all")]
+        #[test_case("",              F::ReplaceEmpty(substitution_empty()),     "x"        ; "replace empty")]
+        #[test_case("12_34_56",      F::RegexMatch(regex_matcher_at()),         "34"       ; "regex match at")]
+        #[test_case("12_34_56",      F::RegexMatch(regex_matcher_from()),       "34_56"    ; "regex match from")]
+        #[test_case("12_34_56",      F::RegexMatch(regex_matcher_between()),    "12_34"    ; "regex match between")]
+        #[test_case("12_34_56",      F::RegexMatchRev(regex_matcher_at()),      "34"       ; "regex match rev at")]
+        #[test_case("12_34_56",      F::RegexMatchRev(regex_matcher_from()),    "12_34"    ; "regex match rev from")]
+        #[test_case("12_34_56",      F::RegexMatchRev(regex_matcher_between()), "34_56"    ; "regex match rev between")]
+        #[test_case("12_34",         F::RegexReplaceFirst(subst_regex_1()),     "_34"      ; "regex remove first")]
+        #[test_case("12_34",         F::RegexReplaceFirst(subst_regex_2()),     "x_34"     ; "regex replace first")]
+        #[test_case("12_34",         F::RegexReplaceAll(subst_regex_1()),       "_"        ; "regex remove all")]
+        #[test_case("12_34",         F::RegexReplaceAll(subst_regex_2()),       "x_x"      ; "regex replace all")]
+        #[test_case("1",             F::RegexSwitch(regex_switch()),            "X"        ; "regex switch case")]
+        #[test_case("a",             F::RegexSwitch(regex_switch()),            "Y"        ; "regex switch default")]
+        #[test_case("",              F::RegexCapture(1),                        "a"        ; "regex capture")]
+        #[test_case(" abcd ",        F::Trim,                                   "abcd"     ; "trim")]
+        #[test_case("ábčdÁBČD",      F::ToLowercase,                            "ábčdábčd" ; "to lowercase")]
+        #[test_case("ábčdÁBČD",      F::ToUppercase,                            "ÁBČDÁBČD" ; "to uppercase")]
+        #[test_case("ábčdÁBČD",      F::ToAscii,                                "abcdABCD" ; "to ascii")]
+        #[test_case("ábčdÁBČD",      F::RemoveNonAscii,                         "bdBD"     ; "remove non-ascii")]
+        #[test_case("01",            F::LeftPad(padding_fixed()),               "ab01"     ; "left pad fixed")]
+        #[test_case("01",            F::LeftPad(padding_repeated()),            "abca01"   ; "left pad repeated")]
+        #[test_case("01",            F::RightPad(padding_fixed()),              "01cd"     ; "right pad fixed")]
+        #[test_case("01",            F::RightPad(padding_repeated()),           "01cabc"   ; "right pad repeated")]
+        #[test_case("01",            F::Repeat(repetition_input()),             "0101"     ; "repetition input ")]
+        #[test_case("01",            F::Repeat(repetition_value()),             "abcabc"   ; "repetition value ")]
+        #[test_case("",              F::LocalCounter,                           "1"        ; "local counter")]
+        #[test_case("",              F::GlobalCounter,                          "2"        ; "global counter")]
+        #[test_case("",              F::RandomNumber(number_range_zero()),      "0"        ; "random number")]
+        #[test_case("",              F::RandomUuid,                             ""         ; "random uuid")]
         fn ok(input: &str, filter: Filter, output: &str) {
             match filter {
                 Filter::CanonicalPath => {
@@ -483,43 +505,48 @@ mod tests {
         }
     }
 
-    #[test_case(F::WorkingDir,                          "Working directory"                   ; "working directory")]
-    #[test_case(F::AbsolutePath,                        "Absolute path"                       ; "absolute path")]
-    #[test_case(F::RelativePath,                        "Relative path"                       ; "relative path")]
-    #[test_case(F::NormalizedPath,                      "Normalized path"                     ; "normalized path")]
-    #[test_case(F::CanonicalPath,                       "Canonical path"                      ; "canonical path")]
-    #[test_case(F::ParentDirectory,                     "Parent directory"                    ; "parent directory")]
-    #[test_case(F::RemoveLastName,                      "Remove last name"                    ; "remove last name")]
-    #[test_case(F::FileName,                            "File name"                           ; "file name")]
-    #[test_case(F::LastName,                            "Last name"                           ; "last name")]
-    #[test_case(F::BaseName,                            "Base name"                           ; "base name")]
-    #[test_case(F::RemoveExtension,                     "Remove extension"                    ; "remove extension")]
-    #[test_case(F::Extension,                           "Extension"                           ; "extension")]
-    #[test_case(F::ExtensionWithDot,                    "Extension with dot"                  ; "extension with dot")]
-    #[test_case(F::EnsureTrailDirSeparator,             "Ensure trailing directory separator" ; "ensure trail dir separator")]
-    #[test_case(F::RemoveTrailDirSeparator,             "Remove trailing directory separator" ; "remove trail dir separator")]
-    #[test_case(F::Substring(index_range_at()),         "Substring from 2..2"                 ; "substring at")]
-    #[test_case(F::Substring(index_range_from()),       "Substring from 2.."                  ; "substring from")]
-    #[test_case(F::Substring(index_range_between()),    "Substring from 2..3"                 ; "substring between")]
-    #[test_case(F::Substring(index_range_length()),     "Substring from 2..4"                 ; "substring length")]
-    #[test_case(F::SubstringRev(index_range_at()),      "Substring from 2..2 backward"        ; "substring rev at")]
-    #[test_case(F::SubstringRev(index_range_from()),    "Substring from 2.. backward"         ; "substring rev from")]
-    #[test_case(F::SubstringRev(index_range_between()), "Substring from 2..3 backward"        ; "substring rev between")]
-    #[test_case(F::SubstringRev(index_range_length()),  "Substring from 2..4 backward"        ; "substring rev length")]
-    #[test_case(F::GetField(field_string()),            "Get field #2 (',' separator)"                                  ; "field string separator")]
-    #[test_case(F::GetField(field_regex()),             "Get field #2 (regular expression '[, ]+' separator)"           ; "field regex separator")]
-    #[test_case(F::GetFieldRev(field_string()),         "Get field #2 (',' separator) backward"                         ; "field rev string separator")]
-    #[test_case(F::GetFieldRev(field_regex()),          "Get field #2 (regular expression '[, ]+' separator) backward"  ; "field rev regex separator")]
-    #[test_case(F::ReplaceFirst(subst_string_1()),      "Replace first 'ab' with ''"                                    ; "remove first")]
-    #[test_case(F::ReplaceFirst(subst_string_2()),      "Replace first 'ab' with 'x'"                                   ; "replace first")]
-    #[test_case(F::ReplaceAll(subst_string_1()),        "Replace all 'ab' with ''"                                      ; "remove all")]
-    #[test_case(F::ReplaceAll(subst_string_2()),        "Replace all 'ab' with 'x'"                                     ; "replace all")]
-    #[test_case(F::ReplaceEmpty(substitution_empty()),  "Replace empty with 'x'"                                        ; "replace empty")]
-    #[test_case(F::RegexMatch("[0-9]+".into()),         "Match of regular expression '[0-9]+'"                          ; "regex match")]
-    #[test_case(F::RegexReplaceFirst(subst_regex_1()),  "Replace first match of regular expression '[0-9]+' with ''"    ; "regex remove first")]
-    #[test_case(F::RegexReplaceFirst(subst_regex_2()),  "Replace first match of regular expression '[0-9]+' with 'x'"   ; "regex replace first")]
-    #[test_case(F::RegexReplaceAll(subst_regex_1()),    "Replace all matches of regular expression '[0-9]+' with ''"    ; "regex remove all")]
-    #[test_case(F::RegexReplaceAll(subst_regex_2()),    "Replace all matches of regular expression '[0-9]+' with 'x'"   ; "regex replace all")]
+    #[test_case(F::WorkingDir,                             "Working directory"                   ; "working directory")]
+    #[test_case(F::AbsolutePath,                           "Absolute path"                       ; "absolute path")]
+    #[test_case(F::RelativePath,                           "Relative path"                       ; "relative path")]
+    #[test_case(F::NormalizedPath,                         "Normalized path"                     ; "normalized path")]
+    #[test_case(F::CanonicalPath,                          "Canonical path"                      ; "canonical path")]
+    #[test_case(F::ParentDirectory,                        "Parent directory"                    ; "parent directory")]
+    #[test_case(F::RemoveLastName,                         "Remove last name"                    ; "remove last name")]
+    #[test_case(F::FileName,                               "File name"                           ; "file name")]
+    #[test_case(F::LastName,                               "Last name"                           ; "last name")]
+    #[test_case(F::BaseName,                               "Base name"                           ; "base name")]
+    #[test_case(F::RemoveExtension,                        "Remove extension"                    ; "remove extension")]
+    #[test_case(F::Extension,                              "Extension"                           ; "extension")]
+    #[test_case(F::ExtensionWithDot,                       "Extension with dot"                  ; "extension with dot")]
+    #[test_case(F::EnsureTrailDirSeparator,                "Ensure trailing directory separator" ; "ensure trail dir separator")]
+    #[test_case(F::RemoveTrailDirSeparator,                "Remove trailing directory separator" ; "remove trail dir separator")]
+    #[test_case(F::Substring(index_range_at()),            "Substring from 2..2"                 ; "substring at")]
+    #[test_case(F::Substring(index_range_from()),          "Substring from 2.."                  ; "substring from")]
+    #[test_case(F::Substring(index_range_between()),       "Substring from 2..3"                 ; "substring between")]
+    #[test_case(F::Substring(index_range_length()),        "Substring from 2..4"                 ; "substring length")]
+    #[test_case(F::SubstringRev(index_range_at()),         "Substring from 2..2 backward"        ; "substring rev at")]
+    #[test_case(F::SubstringRev(index_range_from()),       "Substring from 2.. backward"         ; "substring rev from")]
+    #[test_case(F::SubstringRev(index_range_between()),    "Substring from 2..3 backward"        ; "substring rev between")]
+    #[test_case(F::SubstringRev(index_range_length()),     "Substring from 2..4 backward"        ; "substring rev length")]
+    #[test_case(F::GetField(field_string()),               "Get field #2 (',' separator)"                                  ; "field string separator")]
+    #[test_case(F::GetField(field_regex()),                "Get field #2 (regular expression '[, ]+' separator)"           ; "field regex separator")]
+    #[test_case(F::GetFieldRev(field_string()),            "Get field #2 (',' separator) backward"                         ; "field rev string separator")]
+    #[test_case(F::GetFieldRev(field_regex()),             "Get field #2 (regular expression '[, ]+' separator) backward"  ; "field rev regex separator")]
+    #[test_case(F::ReplaceFirst(subst_string_1()),         "Replace first 'ab' with ''"                                    ; "remove first")]
+    #[test_case(F::ReplaceFirst(subst_string_2()),         "Replace first 'ab' with 'x'"                                   ; "replace first")]
+    #[test_case(F::ReplaceAll(subst_string_1()),           "Replace all 'ab' with ''"                                      ; "remove all")]
+    #[test_case(F::ReplaceAll(subst_string_2()),           "Replace all 'ab' with 'x'"                                     ; "replace all")]
+    #[test_case(F::ReplaceEmpty(substitution_empty()),     "Replace empty with 'x'"                                        ; "replace empty")]
+    #[test_case(F::RegexMatch(regex_matcher_at()),         "Regular expression match #2 of '[0-9]+'"                       ; "regex match at")]
+    #[test_case(F::RegexMatch(regex_matcher_from()),       "Regular expression match #2-last of '[0-9]+'"                  ; "regex match from")]
+    #[test_case(F::RegexMatch(regex_matcher_between()),    "Regular expression match #1-2 of '[0-9]+'"                     ; "regex match between")]
+    #[test_case(F::RegexMatchRev(regex_matcher_at()),      "Regular expression backward match #2 of '[0-9]+'"              ; "regex match rev at")]
+    #[test_case(F::RegexMatchRev(regex_matcher_from()),    "Regular expression backward match #2-last of '[0-9]+'"         ; "regex match rev from")]
+    #[test_case(F::RegexMatchRev(regex_matcher_between()), "Regular expression backward match #1-2 of '[0-9]+'"            ; "regex match rev between")]
+    #[test_case(F::RegexReplaceFirst(subst_regex_1()),     "Replace first match of regular expression '[0-9]+' with ''"    ; "regex remove first")]
+    #[test_case(F::RegexReplaceFirst(subst_regex_2()),     "Replace first match of regular expression '[0-9]+' with 'x'"   ; "regex replace first")]
+    #[test_case(F::RegexReplaceAll(subst_regex_1()),       "Replace all matches of regular expression '[0-9]+' with ''"    ; "regex remove all")]
+    #[test_case(F::RegexReplaceAll(subst_regex_2()),       "Replace all matches of regular expression '[0-9]+' with 'x'"   ; "regex replace all")]
     #[test_case(
         F::RegexSwitch(regex_switch()),
         "Regular expression switch with variable output:\n\n    if input matches '[0-9]+'\n        output is 'X'\n    else\n        output is 'Y'";
@@ -616,6 +643,27 @@ mod tests {
         Substitution {
             target: "[0-9]+".into(),
             replacement: "x".into(),
+        }
+    }
+
+    fn regex_matcher_at() -> RegexMatcher {
+        RegexMatcher {
+            regex: "[0-9]+".into(),
+            range: RegexRange::new(1, Some(2)),
+        }
+    }
+
+    fn regex_matcher_from() -> RegexMatcher {
+        RegexMatcher {
+            regex: "[0-9]+".into(),
+            range: RegexRange::new(1, None),
+        }
+    }
+
+    fn regex_matcher_between() -> RegexMatcher {
+        RegexMatcher {
+            regex: "[0-9]+".into(),
+            range: RegexRange::new(0, Some(2)),
         }
     }
 

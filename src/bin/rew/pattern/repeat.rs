@@ -52,7 +52,7 @@ impl fmt::Display for Repetition {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match &self.value {
             None => write!(formatter, "{}x", self.count),
-            Some(value) => write!(formatter, "{}x '{}'", self.count, escape_str(&value)),
+            Some(value) => write!(formatter, "{}x '{}'", self.count, escape_str(value)),
         }
     }
 }

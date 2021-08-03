@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Regex match filter `=` requires index (or index range) as a first parameter.
 - Repetition filter `*` can be used without its *value* parameter to repeat input instead (e.g., `*2` instead of `*2:abc`).
 - Column filter `&` is now called *Field filter*.
 - Global column separator is now called *Default field separator*.

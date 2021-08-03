@@ -20,7 +20,7 @@ pub enum Item {
 impl fmt::Display for Item {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::Constant(value) => write!(formatter, "Constant '{}'", escape_str(&value)),
+            Self::Constant(value) => write!(formatter, "Constant '{}'", escape_str(value)),
             Self::Expression(filters) if filters.is_empty() => {
                 write!(formatter, "Empty expression")
             }
@@ -113,7 +113,7 @@ impl<'a> Parser<'a> {
         while let Some(token) = &self.token {
             match &token.value {
                 Token::Raw(raw) => {
-                    filters.push(self.parse_filter(&raw, &token.range)?);
+                    filters.push(self.parse_filter(raw, &token.range)?);
                 }
                 Token::Pipe => {
                     if filters.is_empty() {
@@ -127,7 +127,7 @@ impl<'a> Parser<'a> {
 
                         if let Some(token) = &self.token {
                             if let Token::Raw(raw) = &token.value {
-                                filters.push(self.parse_filter(&raw, &token.range)?)
+                                filters.push(self.parse_filter(raw, &token.range)?)
                             } else {
                                 return Err(Error {
                                     kind: ErrorKind::ExpectedFilter,

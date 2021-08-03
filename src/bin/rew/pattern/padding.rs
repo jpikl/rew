@@ -60,7 +60,7 @@ impl Padding {
 impl fmt::Display for Padding {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::Fixed(value) => write!(formatter, "'{}'", escape_str(&value)),
+            Self::Fixed(value) => write!(formatter, "'{}'", escape_str(value)),
             Self::Repeated(repetition) => write!(formatter, "{}", repetition),
         }
     }
