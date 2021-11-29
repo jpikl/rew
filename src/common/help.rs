@@ -43,9 +43,9 @@ pub fn highlight<O: Write + WriteColor>(output: &mut O, text: &str) -> Result<()
             write!(output, "{}", header)?;
         } else if let Some(block) = line.strip_prefix(PADDED_BLOCK_PREFIX) {
             write!(output, "{}", PADDED_BLOCK_PREFIX)?;
+            output.set_color(&spec_color(SECONDARY_COLOR))?;
 
             if let Some(command) = block.strip_prefix(SHELL_PREFIX) {
-                output.set_color(&spec_color(SECONDARY_COLOR))?;
                 write!(output, "{}", SHELL_PREFIX)?;
                 output.set_color(&spec_color(CODE_COLOR))?;
 
@@ -57,7 +57,6 @@ pub fn highlight<O: Write + WriteColor>(output: &mut O, text: &str) -> Result<()
                     write!(output, "{}", command)?;
                 }
             } else {
-                output.set_color(&spec_color(SECONDARY_COLOR))?;
                 write!(output, "{}", block)?;
             }
         } else {

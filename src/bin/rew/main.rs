@@ -123,8 +123,8 @@ fn run(cli: &Cli, io: &Io) -> Result {
         let local_counter_used = pattern.uses_local_counter();
         let regex_capture_used = pattern.uses_regex_capture();
 
-        let global_counter_config = cli.global_counter.unwrap_or_else(counter::Config::default);
-        let local_counter_config = cli.local_counter.unwrap_or_else(counter::Config::default);
+        let global_counter_config = cli.global_counter.unwrap_or_default();
+        let local_counter_config = cli.local_counter.unwrap_or_default();
 
         let mut global_counter_generator = counter::GlobalGenerator::from(&global_counter_config);
         let mut local_counter_generator = counter::LocalGenerator::from(&local_counter_config);
