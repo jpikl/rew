@@ -3,7 +3,7 @@ name: Pages
 on:
   workflow_dispatch:
   push:
-    branches: [ stable-docs ]
+    branches: [ gh-pages-source ]
     paths: [ 'docs/**', 'CHANGELOG.md' , 'LICENSE.md', '.hatcherrc', '.hatcherfiles' ]
 
 jobs:

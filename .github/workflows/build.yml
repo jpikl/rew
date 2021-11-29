@@ -2,10 +2,10 @@ name: Build
 
 on:
   push:
-    branches-ignore: [ stable-docs, gh-pages ]
+    branches-ignore: [ gh-pages-source, gh-pages ]
     paths: [ '**.rs', Cargo.toml, codecov.yml ]
   pull_request:
-    branches-ignore: [ stable-docs, gh-pages ]
+    branches-ignore: [ gh-pages-source, gh-pages ]
     paths: [ '**.rs', Cargo.toml, codecov.yml ]
 
 env:
