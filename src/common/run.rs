@@ -1,7 +1,7 @@
 use std::io::{Stdin, StdinLock};
 use std::{io, process};
 
-use clap::Clap;
+use clap::Parser;
 use termcolor::{ColorChoice, StandardStream, StandardStreamLock};
 
 use crate::color::choose_color;
@@ -13,7 +13,7 @@ pub const EXIT_CODE_CLI_ERROR: i32 = 2;
 
 pub type Result = io::Result<i32>;
 
-pub trait Options: Clap {
+pub trait Options: Parser {
     fn color(&self) -> Option<ColorChoice>;
 }
 

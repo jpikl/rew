@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use clap::{crate_name, crate_version, AppSettings, ArgSettings, Clap};
+use clap::{crate_name, crate_version, AppSettings, Parser};
 use common::color::{parse_color, COLOR_CHOICES};
 use common::help::highlight_static;
 use common::run::Options;
@@ -17,13 +17,12 @@ const PROCESSING_HEADING: Option<&str> = Some("PROCESSING OPTIONS");
 const PATTERN_HEADING: Option<&str> = Some("PATTERN OPTIONS");
 const HELP_HEADING: Option<&str> = Some("HELP OPTIONS");
 
-#[derive(Debug, Clap)]
+#[derive(Debug, Parser)]
 #[clap(
     name = crate_name!(),
     version = crate_version!(),
-    override_usage = "rew [options] [--] [pattern] [values]...",
+    override_usage = "rew [OPTIONS] [--] [PATTERN] [VALUES]...",
     after_help = highlight_static("Use `-h` for short descriptions and `--help` for more details."),
-    setting(AppSettings::ColoredHelp),
     setting(AppSettings::DeriveDisplayOrder),
     setting(AppSettings::DontCollapseArgsInUsage),
 )]
@@ -31,7 +30,6 @@ const HELP_HEADING: Option<&str> = Some("HELP OPTIONS");
 pub struct Cli {
     /// Output pattern
     #[clap(
-        setting(ArgSettings::AllowEmptyValues),
         long_about = highlight_static(indoc!{"
             Output pattern
 
@@ -45,7 +43,7 @@ pub struct Cli {
     pub pattern: Option<String>,
 
     /// Input values (read as lines from standard input by default)
-    #[clap(value_name = "value", setting(ArgSettings::AllowEmptyValues))]
+    #[clap()]
     pub values: Vec<String>,
 
     /// Read values terminated by a specific character, not newline
@@ -137,7 +135,7 @@ pub struct Cli {
             Respects `--print*` flags/options.
             Ignores `--no-print-end` flag.
             Prints transformations in machine-readable format:
-           
+
                 <input_value_1
                 >output_value_1
                 <input_value_2
@@ -145,7 +143,7 @@ pub struct Cli {
                 ...
                 <input_value_N
                 >output_value_N
-           
+
             Such output can be processed by accompanying `mvb` and `cpb` utilities to perform bulk move/copy.
         "}),
     )]
