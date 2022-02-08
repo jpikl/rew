@@ -4,8 +4,8 @@
 
 | Filter           | Description                                   |
 | ---------------- | --------------------------------------------- |
-| `s:X:Y`          | Replace first match of a regular expression `X` with `Y`.<br><small>`Y` can reference capture groups from `X` using `$0`, `$1`, `$2`, ...<br>Any other character than `:` can be also used as a delimiter.</small> |
-| `s:X`            | Remove first match of a regular expression `X`.<br><small>Equivalent to `s:X:`.</small> |
+| `s:X:Y`          | Replace first match of a regular expression `X` with `Y`.<br>*`Y` can reference capture groups from `X` using `$0`, `$1`, `$2`, ...<br>Any other character than `:` can be also used as a delimiter.* |
+| `s:X`            | Remove first match of a regular expression `X`.<br>*Equivalent to `s:X:`.* |
 | `S:X:Y`<br>`S:X` | Same as `s` but replaces/removes all matches. |
 
 Examples:
@@ -21,25 +21,25 @@ Examples:
 
 | Filter   | Description                                           |
 | -------- | ----------------------------------------------------- |
-| `=N:E`   | `N`-th match of a regular expression `E`.<br><small>Indices `N` start from 1.<br>Use `-N` for backward indexing.<br>Any other character than `:` can be also used as a delimiter.</small> |
-| `=N-M:E` | `N`-th to `M`-th match of a regular expression `E`.<br><small>This also includes any characters between matches.</small> |
+| `=N:E`   | `N`-th match of a regular expression `E`.<br>*Indices `N` start from 1.<br>Use `-N` for backward indexing.<br>Any other character than `:` can be also used as a delimiter.* |
+| `=N-M:E` | `N`-th to `M`-th match of a regular expression `E`.<br>*This also includes any characters between matches.* |
 | `=N-:E`  | `N`-th to the last match of a regular expression `E`. |
 
 Examples:
 
-| Input        | Pattern      | Output     | | Input        | Pattern       | Output     |
-| ------------ | ------------ | ---------- |-| ------------ | ------------- | ---------- |
-| `_12_34_56_` | `{=1:\d+}`   | `12`       | | `_12_34_56_` | `{=-1:\d+}`   | `56`       |
-| `_12_34_56_` | `{=2:\d+}`   | `34`       | | `_12_34_56_` | `{=-2:\d+}`   | `34`       |
-| `_12_34_56_` | `{=1-2:\d+}` | `12_34`    | | `_12_34_56_` | `{=-1-2:\d+}` | `34_56`    |
-| `_12_34_56_` | `{=1-:\d+}`  | `12_34_56` | | `_12_34_56_` | `{=-1-:\d+}`  | `12_34_56` |
-| `_12_34_56_` | `{=2-:\d+}`  | `34_56`    | | `_12_34_56_` | `{=-2-:\d+}`  | `12_34`    |
+| Input        | Pattern      | Output     | Input        | Pattern       | Output     |
+| ------------ | ------------ | ---------- | ------------ | ------------- | ---------- |
+| `_12_34_56_` | `{=1:\d+}`   | `12`       | `_12_34_56_` | `{=-1:\d+}`   | `56`       |
+| `_12_34_56_` | `{=2:\d+}`   | `34`       | `_12_34_56_` | `{=-2:\d+}`   | `34`       |
+| `_12_34_56_` | `{=1-2:\d+}` | `12_34`    | `_12_34_56_` | `{=-1-2:\d+}` | `34_56`    |
+| `_12_34_56_` | `{=1-:\d+}`  | `12_34_56` | `_12_34_56_` | `{=-1-:\d+}`  | `12_34_56` |
+| `_12_34_56_` | `{=2-:\d+}`  | `34_56`    | `_12_34_56_` | `{=-2-:\d+}`  | `12_34`    |
 
 ## Regex switch
 
 | Filter                | Description                                                       |
 | --------------------- | ----------------------------------------------------------------- |
-| `@:X:Y`               | Output `Y` if input matches regular expression `X`<br>Output nothing when there is no match..<br><small>`Y` can reference capture groups from `X` using `$0`, `$1`, `$2`, ...<br>Any other character than `:` can be also used as a delimiter.</small> |
+| `@:X:Y`               | Output `Y` if input matches regular expression `X`<br>Output nothing when there is no match..<br>*`Y` can reference capture groups from `X` using `$0`, `$1`, `$2`, ...<br>Any other character than `:` can be also used as a delimiter.* |
 | `@:X:Y:D`             | Output `Y` if input matches regular expression `X`.<br>Output `D` when there is no match. |
 | `@:X1:Y1:...:Xn:Yn:D` | Output `Yi` for first regular expression `Xi` that matches input.<br>Output `D` when there is no match. |
 | `@:D`                 | A switch without any `Xi`/`Yi` cases which will always output `D`. |

@@ -73,28 +73,28 @@ find -name '*.txt'  | rew -d "$HOME/Backup/{b}_{U}.{e}"  | cpb -v
 
 Normalize line endings in a file to `LF`
 
-````bash
-rew <input.txt >output.txt # LF is the default output terminator
-````
+```bash
+rw <input.txt >output.txt # LF is the default output terminator
+```
 
 Normalize line endings in a file to `CR+LF`.
 
-````bash
+```bash
 rew -T$'\r\n' <input.txt >output.txt
-````
+```
 
 Replace tabs with 4 spaces.
 
-````bash
+```bash
 rew '{R:%t:    }' <input.txt >output.txt
-````
+```
 
 That would also normalize line endings.
 To prevent such behaviour, we can process the text as a whole.
 
-````bash
+```bash
 rew -rR '{R:%t:    }' <input.txt >output.txt
-````
+```
 
 Print the first word from each line in lowercase and with removed diacritics (accents).
 

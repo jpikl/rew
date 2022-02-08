@@ -24,7 +24,7 @@ Empty expression `{}` evaluates directly to input value.
 | `world` | `{}`         | `world`         |
 | `world` | `Hello, {}!` | `Hello, world!` |
 
-Expression may contain one or more [filters](filters), separated by `|`.
+Expression may contain one or more [filters](filters/path.md), separated by `|`.
 Filters are consecutively applied on input value.
 
 | Input      | Pattern         | Output     | Description                           |
@@ -47,7 +47,7 @@ Character `%` starts an escape sequence.
 
 | Sequence | Description                |
 | -------- |--------------------------- |
-| `%/`     | System directory separator<br><small>`\` on Windows<br>`/` everywhere else</small> |
+| `%/`     | System directory separator<br>*`\` on Windows<br>`/` everywhere else* |
 | `%n`     | Line feed                  |
 | `%r`     | Carriage return            |
 | `%t`     | Horizontal tab             |

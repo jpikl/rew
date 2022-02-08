@@ -5,7 +5,7 @@ However, it is still possible (although meaningless) to pipe input into a genera
 
 | Filter | Description                            |
 | ------ | -------------------------------------- |
-| `*N:V` | Repeat `N` times `V`.<br><small>Any other character than `:` can be also used as a delimiter.</small> |
+| `*N:V` | Repeat `N` times `V`.<br>*Any other character than `:` can be also used as a delimiter.* |
 | `c`    | Local counter                          |
 | `C`    | Global counter                         |
 | `uA-B` | Random 64-bit number (`A` ≤ `u` ≤ `B`) |

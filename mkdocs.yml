@@ -1,0 +1,58 @@
+site_name: rew
+site_url: https://jpikl.github.io/rew
+site_description: A text processing CLI tool that rewrites FS paths according to a pattern.
+site_author: Jan Pikl
+copyright: Copyright © 2021 Jan Pikl
+repo_url: https://github.com/jpikl/rew
+theme:
+  name: material
+  icon:
+    logo: octicons/terminal-16
+  favicon: null
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to dark mode
+    - scheme: slate
+      primary: red
+      accent: red
+      toggle:
+        icon: material/weather-night
+        name: Switch to light mode
+  features:
+    - navigation.top
+    - navigation.instant
+extra:
+  generator: false
+extra_css:
+  - extra.css
+markdown_extensions:
+  - meta
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+nav:
+  - index.md
+  - install.md
+  - usage.md
+  - pattern.md
+  - 🕶 Filters:
+    - filters/path.md
+    - filters/string.md
+    - filters/field.md
+    - filters/regex.md
+    - filters/format.md
+    - filters/generate.md
+  - input.md
+  - output.md
+  - examples.md
+  - compare.md
+  - CHANGELOG.md
+  - 📃 License: LICENSE.md

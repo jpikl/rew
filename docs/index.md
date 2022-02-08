@@ -4,9 +4,9 @@
 
 ## How rew works
 
-1. Reads values from standard [input](input).
-2. Rewrites them according to a [pattern](pattern).
-3. Prints results to standard [output](output).
+1. Reads values from standard [input](input.md).
+2. Rewrites them according to a [pattern](pattern.md).
+3. Prints results to standard [output](output.md).
 
 ![How rew works](images/diagram.svg)
 

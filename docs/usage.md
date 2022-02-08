@@ -2,7 +2,7 @@
 
 ```bash
 rew [options] [--] [pattern] [values]...
-````
+```
 
 When no values are provided, they are read from standard input instead.
 

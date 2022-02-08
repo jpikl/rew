@@ -4,12 +4,12 @@ Path filters assume that their input value is a FS path.
 
 ## Path components
 
-| Filter | Description      |   | Filter | Description        |
-| ------ | ---------------- | - | ------ | ------------------ |
-| `d`    | Parent directory |   | `D`    | Remove last name   |
-| `f`    | File name        |   | `F`    | Last name          |
-| `b`    | Base name        |   | `B`    | Remove extension   |
-| `e`    | Extension        |   | `E`    | Extension with dot |
+| Filter | Description      | Filter | Description        |
+| ------ | ---------------- | ------ | ------------------ |
+| `d`    | Parent directory | `D`    | Remove last name   |
+| `f`    | File name        | `F`    | Last name          |
+| `b`    | Base name        | `B`    | Remove extension   |
+| `e`    | Extension        | `E`    | Extension with dot |
 
 For input value `/home/alice/notes.txt`, filters would evaluate to:
 
@@ -85,20 +85,20 @@ Normalized path `p` is constructed using the following rules:
 - Initial `..` components in a relative path are kept.
 - Empty path is resolved to `.` (current directory).
 
-| Input     | Output |   | Input     | Output |
-| --------- |------- | - | --------- |------- |
-| *(empty)* | `.`    |   | `/`       | `/`    |
-| `.`       | `.`    |   | `/.`      | `/`    |
-| `..`      | `..`   |   | `/..`     | `/`    |
-| `a/`      | `a`    |   | `/a/`     | `/a`   |
-| `a//`     | `a`    |   | `/a//`    | `/a`   |
-| `a/.`     | `a`    |   | `/a/.`    | `/a`   |
-| `a/..`    | `.`    |   | `/a/..`   | `/`    |
-| `./a`     | `a`    |   | `/./a`    | `/a`   |
-| `../a`    | `../a` |   | `/../a`   | `/a`   |
-| `a//b`    | `a/b`  |   | `/a//b`   | `/a/b` |
-| `a/./b`   | `a/b`  |   | `/a/./b`  | `/a/b` |
-| `a/../b`  | `b`    |   | `/a/../b` | `/b`   |
+| Input     | Output | Input     | Output |
+| --------- |------- | --------- |------- |
+| *(empty)* | `.`    | `/`       | `/`    |
+| `.`       | `.`    | `/.`      | `/`    |
+| `..`      | `..`   | `/..`     | `/`    |
+| `a/`      | `a`    | `/a/`     | `/a`   |
+| `a//`     | `a`    | `/a//`    | `/a`   |
+| `a/.`     | `a`    | `/a/.`    | `/a`   |
+| `a/..`    | `.`    | `/a/..`   | `/`    |
+| `./a`     | `a`    | `/./a`    | `/a`   |
+| `../a`    | `../a` | `/../a`   | `/a`   |
+| `a//b`    | `a/b`  | `/a//b`   | `/a/b` |
+| `a/./b`   | `a/b`  | `/a/./b`  | `/a/b` |
+| `a/../b`  | `b`    | `/a/../b` | `/b`   |
 
 Canonical path `P` works similarly to `p` but has some differences:
 

@@ -3,8 +3,8 @@ name: Pages
 on:
   workflow_dispatch:
   push:
-    branches: [ gh-pages-source ]
-    paths: [ 'docs/**', 'CHANGELOG.md' , 'LICENSE.md', '.hatcherrc', '.hatcherfiles' ]
+    branches: [ stable-docs ]
+    paths: [ 'docs/**', CHANGELOG.md , LICENSE.md, mkdocs.yml ]
 
 jobs:
   deploy:
@@ -13,15 +13,14 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v2
-        with:
-          persist-credentials: false
 
-      - name: Generate pages
-        uses: jpikl/hatcher@v0.1.2
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.x
+
+      - name: Install mkdocs material
+        run: pip install mkdocs-material
 
       - name: Deploy pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./pages
-          force_orphan: true
+        run: mkdocs gh-deploy --force

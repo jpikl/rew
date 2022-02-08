@@ -9,9 +9,9 @@
 | `I`    | Remove non-ASCII characters.           |
 | `*N`   | Repeat `N` times.                      |
 | `<<M`  | Left pad with mask `M`.                |
-| `<N:M` | Left pad with `N` times repeated mask `M`.<br><small>Any other character than `:` can be also used as a delimiter.</small> |
+| `<N:M` | Left pad with `N` times repeated mask `M`.<br>*Any other character than `:` can be also used as a delimiter.* |
 | `>>M`  | Right pad with mask `M`.               |
-| `>N:M` | Right pad with `N` times repeated mask `M`.<br><small>Any other character than `:` can be also used as a delimiter.</small> |
+| `>N:M` | Right pad with `N` times repeated mask `M`.<br>*Any other character than `:` can be also used as a delimiter.* |
 
 Examples:
 
