@@ -103,7 +103,7 @@ impl fmt::Debug for OutputChunk {
             (Some(color), false) => write!(fmt, "color(Color::{:?}, ", color)?,
         }
 
-        write!(fmt, "{:?})", self.value.replace("\n", "\\n"))
+        write!(fmt, "{:?})", self.value.replace('\n', "\\n"))
     }
 }
 

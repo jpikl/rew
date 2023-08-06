@@ -19,8 +19,7 @@ impl<'a> Context<'a> {
     pub fn regex_capture(&self, position: usize) -> &str {
         self.regex_captures
             .as_ref()
-            .map(|captures| captures.get(position))
-            .flatten()
+            .and_then(|captures| captures.get(position))
             .map_or("", |capture| capture.as_str())
     }
 
