@@ -9,7 +9,7 @@ env:
 
 jobs:
   release:
-    name: Release ${{ matrix.target }}
+    name: Release
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:

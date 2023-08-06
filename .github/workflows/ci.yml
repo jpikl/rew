@@ -1,13 +1,11 @@
-name: Build
+name: CI
 
 on:
   workflow_dispatch:
   push:
     branches-ignore: [ stable-docs, gh-pages ]
-    paths: [ '**.rs', Cargo.toml, codecov.yml ]
   pull_request:
     branches-ignore: [ stable-docs, gh-pages ]
-    paths: [ '**.rs', Cargo.toml, codecov.yml ]
 
 env:
   CARGO_TERM_COLOR: always
