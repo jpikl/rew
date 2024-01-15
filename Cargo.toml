@@ -1,0 +1,26 @@
+[package]
+name = "rew"
+version = "0.4.0"
+edition = "2021"
+
+[dependencies]
+anstream = "0.6.7"
+anyhow = "1.0.79"
+bstr = "1.9.0"
+clap = { version = "4.4.16", features = [
+    "cargo",
+    "derive",
+    "env",
+    "string",
+    "wrap_help",
+] }
+linereader = "0.4.0"
+owo-colors = "4.0.0"
+thiserror = "1.0.56"
+unidecode = "0.3.0"
+
+[profile.release]
+codegen-units = 1
+panic = "abort"
+strip = true
+lto = true
