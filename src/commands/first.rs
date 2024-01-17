@@ -12,7 +12,7 @@ pub const META: CommandMeta = command_meta! {
     run: run,
 };
 
-/// Output first N input line(s).
+/// Output first N input lines.
 #[derive(clap::Args)]
 struct Args {
     /// Number of lines to print.

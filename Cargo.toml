@@ -20,6 +20,11 @@ owo-colors = "4.0.0"
 thiserror = "1.0.56"
 unidecode = "0.3.0"
 
+[dev-dependencies]
+assert_cmd = "2.0.13"
+claims = "0.7.1"
+rstest = "0.18.2"
+
 [profile.release]
 codegen-units = 1
 panic = "abort"

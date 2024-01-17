@@ -23,7 +23,7 @@ fn run() -> Result<()> {
     let app = build_app(&commands);
 
     if let Some((name, matches)) = app.get_matches().subcommand() {
-        for command in &commands {
+        for command in commands {
             if name == command.name {
                 return (command.run)(matches);
             }
