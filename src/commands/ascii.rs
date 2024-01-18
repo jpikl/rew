@@ -30,6 +30,12 @@ fn run(global_args: GlobalArgs, args: Args) -> Result<()> {
     let mut buffer = Vec::with_capacity(OPTIMAL_IO_BUF_SIZE);
 
     reader.for_each_block(|block| {
+        if block.is_ascii() {
+            // ASCII check is cheap, optimize throughput by reusing input buffer
+            writer.write_block(&buffer)?;
+            return Ok(Processing::Continue);
+        }
+
         // Copying chars to a side buffer is faster then directly writing them to buffered writer
         if args.delete {
             block
@@ -42,8 +48,10 @@ fn run(global_args: GlobalArgs, args: Args) -> Result<()> {
                 .map(unidecode_char)
                 .for_each(|str| buffer.push_str(str));
         }
+
         writer.write_block(&buffer)?;
         buffer.clear();
+
         Ok(Processing::Continue)
     })
 }
