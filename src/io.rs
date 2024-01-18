@@ -30,7 +30,7 @@ pub enum Separator {
 }
 
 impl Separator {
-    fn as_byte(&self) -> u8 {
+    pub fn as_byte(&self) -> u8 {
         match self {
             Self::Newline => b'\n',
             Self::Null => b'\0',
@@ -74,7 +74,7 @@ impl Display for Buffering {
 
 impl Default for Buffering {
     fn default() -> Self {
-        if io::stdout().is_terminal() {
+        if io::stdin().is_terminal() {
             Self::Line
         } else {
             Self::Full
