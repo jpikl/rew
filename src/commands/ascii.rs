@@ -32,7 +32,7 @@ fn run(global_args: GlobalArgs, args: Args) -> Result<()> {
     reader.for_each_block(|block| {
         if block.is_ascii() {
             // ASCII check is cheap, optimize throughput by reusing input buffer
-            writer.write_block(&buffer)?;
+            writer.write_block(block)?;
             return Ok(Processing::Continue);
         }
 

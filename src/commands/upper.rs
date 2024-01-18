@@ -27,7 +27,7 @@ fn run(global_args: GlobalArgs, _args: Args) -> Result<()> {
         if block.is_ascii() {
             // ASCII check is cheap, optimize throughput by reusing input buffer
             block.make_ascii_uppercase();
-            writer.write_block(&block)?;
+            writer.write_block(block)?;
         } else {
             buffer.clear();
             block.to_uppercase_into(&mut buffer);
