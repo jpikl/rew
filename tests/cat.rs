@@ -1,32 +1,56 @@
 #[path = "utils.rs"]
 mod utils;
 
-use rstest::rstest;
-use utils::test_command;
-use utils::test_command_failure;
+use utils::Tc;
 
 #[test]
-fn cat_max_line() {
-    // Fits exactly the internal buffer including line terminator
-    test_command("cat", &["-l", "--max-line=8"], "0123456\n", "0123456\n");
-    // Line terminator does not fit into internal buffer
-    test_command_failure("cat", &["-l", "--max-line=8"], "01234567");
-}
+fn cat() {
+    let tc = Tc::cmd("cat");
 
-#[rstest]
-#[case(&[], "", "")]
-#[case(&[], "a\nbc", "a\nbc")]
-#[case(&["--buff=line"], "a", "a")]
-#[case(&["--buff=line"], "a\nbc", "a\nbc")]
-#[case(&[], &[0x00, 0x9f, 0x92, 0x96], &[0x00, 0x9f, 0x92, 0x96])]
-#[case(&["-l"], "", "")]
-#[case(&["-l"], "a\nbc", "a\nbc\n")]
-#[case(&["-l"], "a\r\nbc", "a\nbc\n")]
-#[case(&["-l"], "a\r\nbc", "a\nbc\n")]
-#[case(&["-l", "--buff=line"], "a\r\nbc", "a\nbc\n")]
-#[case(&["-l0"], "a\0bc", "a\0bc\0")]
-#[case(&["-l0", "--buff=line"], "a\0bc", "a\0bc\0")]
-#[case(&["-l"], &[0x00, 0x9f, 0x92, 0x96], &[0x00, 0x9f, 0x92, 0x96, 0x0a])]
-fn cat(#[case] args: &[&str], #[case] input: impl AsRef<[u8]>, #[case] output: impl AsRef<[u8]>) {
-    test_command("cat", args, input, output);
+    let empty = tc.clone().stdin("");
+    empty.clone().ok("");
+    empty.clone().arg("-0").ok("");
+    empty.clone().arg("-l").ok("");
+    empty.clone().arg("-l0").ok("");
+    empty.clone().arg("--buff=line").ok("");
+    empty.clone().arg("--buff=line").arg("-0").ok("");
+    empty.clone().arg("--buff=line").arg("-l").ok("");
+    empty.clone().arg("--buff=line").arg("-l0").ok("");
+
+    let lines = tc.clone().stdin("a\nbc\r\ndef\0ghij");
+    lines.clone().ok("a\nbc\r\ndef\0ghij");
+    lines.clone().arg("-0").ok("a\nbc\r\ndef\0ghij");
+    lines.clone().arg("-l").ok("a\nbc\ndef\0ghij\n");
+    lines.clone().arg("-l0").ok("a\nbc\r\ndef\0ghij\0");
+    lines.clone().arg("--buff=line").ok("a\nbc\r\ndef\0ghij");
+    lines.clone().arg("--buff=line").arg("-0").ok("a\nbc\r\ndef\0ghij");
+    lines.clone().arg("--buff=line").arg("-l").ok("a\nbc\ndef\0ghij\n");
+    lines.clone().arg("--buff=line").arg("-l0").ok("a\nbc\r\ndef\0ghij\0");
+
+    let non_utf8 = tc.clone().stdin([0x00, 0x9f, 0x92, 0x96]);
+    non_utf8.clone().ok([0x00, 0x9f, 0x92, 0x96]);
+    non_utf8.clone().arg("-0").ok([0x00, 0x9f, 0x92, 0x96]);
+    non_utf8.clone().arg("-l").ok([0x00, 0x9f, 0x92, 0x96, 0x0a]);
+    non_utf8.clone().arg("-l0").ok([0x00, 0x9f, 0x92, 0x96, 0x00]);
+    non_utf8.clone().arg("--buff=line").ok([0x00, 0x9f, 0x92, 0x96]);
+    non_utf8.clone().arg("--buff=line").arg("-0").ok([0x00, 0x9f, 0x92, 0x96]);
+    non_utf8.clone().arg("--buff=line").arg("-l").ok([0x00, 0x9f, 0x92, 0x96, 0x0a]);
+    non_utf8.clone().arg("--buff=line").arg("-l0").ok([0x00, 0x9f, 0x92, 0x96, 0x00]);
+
+    let max_line = tc.clone().arg("--max-line=8").arg("-l");
+    max_line.clone().stdin("0123456\n").ok("0123456\n");
+    max_line
+        .clone()
+        .stdin("01234567")
+        .err("error: cannot process input line bigger than '8' bytes\n");
+
+    Tc::shell("seq 1 10000 | %bin% cat | md5sum").ok("72d4ff27a28afbc066d5804999d5a504  -\n");
+    Tc::shell("seq 1 10000 | %bin% cat -0 | md5sum").ok("72d4ff27a28afbc066d5804999d5a504  -\n");
+    Tc::shell("seq 1 10000 | %bin% cat -l | md5sum").ok("72d4ff27a28afbc066d5804999d5a504  -\n");
+
+    Tc::shell("seq 1 10000 | %bin% cat -l0")
+        .err("error: cannot process input line bigger than '32768' bytes\n");
+
+    Tc::shell("seq 1 10000 | %bin% cat -l0 --max-line=65536 | md5sum")
+        .ok("b57df9dc6e3f5501464d52e2f67cce33  -\n"); // Adds NUL at the end
 }
