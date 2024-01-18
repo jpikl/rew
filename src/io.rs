@@ -141,7 +141,7 @@ impl<R: Read> Reader<R> {
         Ok(())
     }
 
-    pub fn for_each_block<F: FnMut(&[u8]) -> Result<Processing>>(
+    pub fn for_each_block<F: FnMut(&mut [u8]) -> Result<Processing>>(
         &mut self,
         mut action: F,
     ) -> Result<()> {
@@ -153,7 +153,7 @@ impl<R: Read> Reader<R> {
             if len == 0 {
                 break;
             }
-            match action(&buffer[..len]) {
+            match action(&mut buffer[..len]) {
                 Ok(Processing::Continue) => {}
                 Ok(Processing::Abort) => return Ok(()),
                 Err(err) => return Err(err),
