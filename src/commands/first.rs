@@ -22,14 +22,15 @@ struct Args {
 }
 
 fn run(global_args: GlobalArgs, args: Args) -> Result<()> {
-    let separator = Separator::from(&global_args).as_byte();
-    let mut reader = Reader::from(&global_args);
-    let mut writer = Writer::from(&global_args);
     let mut count = args.count;
 
     if count == 0 {
         return Ok(());
     }
+
+    let mut reader = Reader::from(&global_args);
+    let mut writer = Writer::from(&global_args);
+    let separator = Separator::from(&global_args).as_byte();
 
     // This is noticably faster than counting lines using `.for_each_line`
     reader.for_each_block(|block| {
