@@ -5,5 +5,7 @@ use utils::Tc;
 
 #[test]
 fn lower() {
-    Tc::cmd("lower").stdin("aBčĎ").ok("abčď");
+    let tc = Tc::cmd("lower");
+    tc.clone().stdin("abCD").ok("abcd");
+    tc.clone().stdin("ábČD").ok("ábčd");
 }

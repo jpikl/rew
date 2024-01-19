@@ -5,5 +5,7 @@ use utils::Tc;
 
 #[test]
 fn upper() {
-    Tc::cmd("upper").stdin("aBčĎ").ok("ABČĎ");
+    let tc = Tc::cmd("upper");
+    tc.clone().stdin("abCD").ok("ABCD");
+    tc.clone().stdin("ábČD").ok("ÁBČD");
 }
