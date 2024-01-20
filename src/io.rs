@@ -162,6 +162,24 @@ impl<R: Read> Reader<R> {
 
         Ok(())
     }
+
+    pub fn transfer_lines(&mut self, writer: &mut Writer<impl Write>) -> Result<()> {
+        self.for_each_line(|line| {
+            writer.write_line(line)?;
+            Ok(Processing::Continue)
+        })
+    }
+
+    pub fn transfer_blocks(&mut self, writer: &mut Writer<impl Write>) -> Result<()> {
+        self.for_each_block(|block| {
+            writer.write_block(block)?;
+            Ok(Processing::Continue)
+        })
+    }
+
+    pub fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
+        self.inner.read(buffer)
+    }
 }
 
 pub struct Writer<W> {
