@@ -74,7 +74,7 @@ impl Display for Buffering {
 
 impl Default for Buffering {
     fn default() -> Self {
-        if io::stdin().is_terminal() {
+        if io::stdout().is_terminal() {
             Self::Line
         } else {
             Self::Full

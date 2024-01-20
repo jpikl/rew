@@ -21,7 +21,7 @@ pub struct GlobalArgs {
     /// - `line` emits output after processing each line.
     /// - `full` emits output once the output buffer is full (ensuring max possible throughput).
     ///
-    /// Defaults to `line` when the output is TTY, otherwise is `full`.
+    /// Defaults to `line` when stdout is TTY, otherwise is `full`.
     #[arg(
         global = true,
         long,
