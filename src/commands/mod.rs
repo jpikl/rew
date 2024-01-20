@@ -5,6 +5,7 @@ mod cat;
 mod first;
 mod r#loop;
 mod lower;
+mod seq;
 mod trim;
 mod upper;
 
@@ -15,6 +16,7 @@ pub fn get_meta() -> Vec<&'static Meta> {
         &first::META,
         &r#loop::META,
         &lower::META,
+        &seq::META,
         &trim::META,
         &upper::META,
     ]

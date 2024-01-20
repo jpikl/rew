@@ -6,6 +6,7 @@ use claims::assert_ok;
 use std::env;
 use std::ffi::OsString;
 use std::process;
+use std::time::Duration;
 
 #[derive(Clone)]
 pub struct Tc {
@@ -62,6 +63,10 @@ impl Tc {
     }
 
     fn assert(self) -> Assert {
-        Command::new(self.bin).args(self.args).write_stdin(self.stdin.unwrap_or_default()).assert()
+        Command::new(self.bin)
+            .timeout(Duration::from_millis(500))
+            .args(self.args)
+            .write_stdin(self.stdin.unwrap_or_default())
+            .assert()
     }
 }
