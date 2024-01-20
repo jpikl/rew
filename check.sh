@@ -3,6 +3,5 @@
 set -eu
 
 cargo +nightly fmt
-cargo check
-cargo clippy
+cargo clippy -- -D clippy::all -D clippy::pedantic
 cargo test -q

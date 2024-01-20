@@ -1,4 +1,4 @@
-use crate::command::CommandMeta;
+use crate::command::Meta;
 
 mod ascii;
 mod cat;
@@ -8,7 +8,7 @@ mod lower;
 mod trim;
 mod upper;
 
-pub fn get_commands() -> Vec<&'static CommandMeta> {
+pub fn get_meta() -> Vec<&'static Meta> {
     vec![
         &ascii::META,
         &cat::META,

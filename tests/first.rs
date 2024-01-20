@@ -12,5 +12,6 @@ fn first() {
     tc.clone().arg("2").ok("a\nbc\n");
     tc.clone().arg("3").ok("a\nbc\n");
 
-    Tc::shell("seq 1 10000 | %bin% first 9999 | md5sum").ok("05fda6bec6aabc94d0fc54380ace8412  -\n")
+    Tc::shell("seq 1 10000 | %bin% first 9999 | md5sum")
+        .ok("05fda6bec6aabc94d0fc54380ace8412  -\n");
 }

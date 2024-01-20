@@ -9,6 +9,7 @@ use std::io::BufWriter;
 use std::io::StdinLock;
 use std::io::StdoutLock;
 
+#[allow(clippy::module_name_repetitions)]
 #[derive(Args, Default, Debug, Clone, Eq, PartialEq)]
 pub struct GlobalArgs {
     /// Line delimiter is NUL, not newline.
@@ -47,9 +48,10 @@ pub struct GlobalArgs {
 
 impl From<&GlobalArgs> for Separator {
     fn from(args: &GlobalArgs) -> Self {
-        match args.null {
-            false => Self::Newline,
-            true => Self::Null,
+        if args.null {
+            Self::Null
+        } else {
+            Self::Newline
         }
     }
 }
@@ -63,6 +65,6 @@ impl From<&GlobalArgs> for Reader<StdinLock<'static>> {
 impl From<&GlobalArgs> for Writer<BufWriter<StdoutLock<'static>>> {
     fn from(args: &GlobalArgs) -> Self {
         let inner = BufWriter::with_capacity(OPTIMAL_IO_BUF_SIZE, io::stdout().lock());
-        Self::new(inner, Separator::from(args), args.buff.clone())
+        Self::new(inner, Separator::from(args).as_byte(), args.buff.clone())
     }
 }

@@ -1,5 +1,5 @@
 use crate::args::GlobalArgs;
-use crate::command::CommandMeta;
+use crate::command::Meta;
 use crate::command_meta;
 use crate::io::Processing;
 use crate::io::Reader;
@@ -10,7 +10,7 @@ use bstr::ByteSlice;
 use bstr::ByteVec;
 use unidecode::unidecode_char;
 
-pub const META: CommandMeta = command_meta! {
+pub const META: Meta = command_meta! {
     name: "ascii",
     args: Args,
     run: run,
@@ -24,9 +24,9 @@ struct Args {
     delete: bool,
 }
 
-fn run(global_args: GlobalArgs, args: Args) -> Result<()> {
-    let mut reader = Reader::from(&global_args);
-    let mut writer = Writer::from(&global_args);
+fn run(global_args: &GlobalArgs, args: &Args) -> Result<()> {
+    let mut reader = Reader::from(global_args);
+    let mut writer = Writer::from(global_args);
     let mut buffer = Vec::with_capacity(OPTIMAL_IO_BUF_SIZE);
 
     reader.for_each_block(|block| {
@@ -40,7 +40,7 @@ fn run(global_args: GlobalArgs, args: Args) -> Result<()> {
         if args.delete {
             block
                 .chars()
-                .filter(|char| char.is_ascii())
+                .filter(char::is_ascii)
                 .for_each(|char| buffer.push(char as u8));
         } else {
             block

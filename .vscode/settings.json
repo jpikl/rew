@@ -1,5 +1,6 @@
 {
   "editor.formatOnSave": true,
   "rust-analyzer.check.command": "clippy",
+  "rust-analyzer.check.extraArgs": ["--", "-W", "clippy::pedantic"],
   "rust-analyzer.rustfmt.extraArgs": ["+nightly"]
 }

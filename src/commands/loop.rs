@@ -1,5 +1,5 @@
 use crate::args::GlobalArgs;
-use crate::command::CommandMeta;
+use crate::command::Meta;
 use crate::command_meta;
 use crate::io::copy_blocks;
 use crate::io::Reader;
@@ -7,7 +7,7 @@ use crate::io::Writer;
 use crate::io::OPTIMAL_IO_BUF_SIZE;
 use anyhow::Result;
 
-pub const META: CommandMeta = command_meta! {
+pub const META: Meta = command_meta! {
     name: "loop",
     args: Args,
     run: run,
@@ -21,14 +21,14 @@ struct Args {
     count: Option<u128>,
 }
 
-fn run(global_args: GlobalArgs, args: Args) -> Result<()> {
+fn run(global_args: &GlobalArgs, args: &Args) -> Result<()> {
     let count = args.count;
     if count == Some(0) {
         return Ok(());
     }
 
-    let mut reader = Reader::from(&global_args);
-    let mut writer = Writer::from(&global_args);
+    let mut reader = Reader::from(global_args);
+    let mut writer = Writer::from(global_args);
 
     if count == Some(1) {
         // Avoid buffering the whole input if there is only one output iteration

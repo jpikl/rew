@@ -16,10 +16,12 @@ pub struct Tc {
 
 #[allow(dead_code)]
 impl Tc {
+    #[must_use]
     pub fn cmd(cmd: &str) -> Self {
         Self::new(Self::bin()).arg(cmd)
     }
 
+    #[must_use]
     pub fn shell(cmd: &str) -> Self {
         let bin = env::var_os("SHELL").unwrap_or("sh".into());
         let cmd = cmd.replace("%bin%", &Self::bin().to_string_lossy());
@@ -39,11 +41,13 @@ impl Tc {
         }
     }
 
+    #[must_use]
     pub fn arg<T: Into<OsString>>(mut self, arg: T) -> Self {
         self.args.push(arg.into());
         self
     }
 
+    #[must_use]
     pub fn stdin<T: Into<Vec<u8>>>(mut self, stdin: T) -> Self {
         self.stdin.replace(stdin.into());
         self

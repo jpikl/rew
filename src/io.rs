@@ -175,10 +175,10 @@ pub struct Writer<W> {
 }
 
 impl<W: Write> Writer<W> {
-    pub fn new(inner: W, separator: Separator, buffering: Buffering) -> Self {
+    pub fn new(inner: W, separator: u8, buffering: Buffering) -> Self {
         Self {
             inner,
-            separator: separator.as_byte(),
+            separator,
             buffering,
         }
     }
