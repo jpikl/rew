@@ -1,6 +1,7 @@
 use crate::args::GlobalArgs;
 use crate::command::CommandMeta;
 use crate::command_meta;
+use crate::io::copy_blocks;
 use crate::io::Reader;
 use crate::io::Writer;
 use crate::io::OPTIMAL_IO_BUF_SIZE;
@@ -31,7 +32,7 @@ fn run(global_args: GlobalArgs, args: Args) -> Result<()> {
 
     if count == Some(1) {
         // Avoid buffering the whole input if there is only one output iteration
-        return reader.transfer_blocks(&mut writer);
+        return copy_blocks(&mut reader, &mut writer);
     }
 
     let mut buffer = vec![0; OPTIMAL_IO_BUF_SIZE];

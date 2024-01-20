@@ -1,6 +1,8 @@
 use crate::args::GlobalArgs;
 use crate::command::CommandMeta;
 use crate::command_meta;
+use crate::io::copy_blocks;
+use crate::io::copy_lines;
 use crate::io::Reader;
 use crate::io::Writer;
 use anyhow::Result;
@@ -28,8 +30,8 @@ fn run(global_args: GlobalArgs, args: Args) -> Result<()> {
     let mut writer = Writer::from(&global_args);
 
     if args.lines {
-        reader.transfer_lines(&mut writer)
+        copy_lines(&mut reader, &mut writer)
     } else {
-        reader.transfer_blocks(&mut writer)
+        copy_blocks(&mut reader, &mut writer)
     }
 }
