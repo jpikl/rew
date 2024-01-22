@@ -2,6 +2,7 @@ use crate::args::GlobalArgs;
 use crate::command::Meta;
 use crate::command_meta;
 use crate::io::Writer;
+use crate::range::StartRange;
 use anyhow::anyhow;
 use anyhow::Result;
 
@@ -14,15 +15,13 @@ pub const META: Meta = command_meta! {
 /// Print sequence of numbers as lines
 #[derive(clap::Args)]
 struct Args {
-    /// First number in sequence.
-    #[arg(default_value_t = 1, allow_negative_numbers = true)]
-    first: i128,
-
-    /// Last number in sequence.
+    /// Sequence range.
     ///
-    /// If not specified, the sequence is unbounded.
-    #[arg(allow_negative_numbers = true)]
-    last: Option<i128>,
+    /// Both `FROM` and `TO` are integers.
+    ///
+    /// `TO` may be ommited for an infinite sequence.
+    #[arg(value_name = "FROM..[TO]", default_value_t = StartRange(1, None), allow_hyphen_values = true)]
+    range: StartRange<i128>,
 
     /// Increment between numbers in sequence.
     ///
@@ -33,14 +32,14 @@ struct Args {
 
 #[allow(clippy::too_many_lines)]
 fn run(global_args: &GlobalArgs, args: &Args) -> Result<()> {
-    let first = args.first;
+    let StartRange(first, last) = args.range;
     let step = args.step;
 
     let mut value = first;
     let mut writer = Writer::from(global_args);
     let mut formatter = Formatter::new();
 
-    match args.last {
+    match last {
         Some(last) if first < last => {
             let step = step.unwrap_or(1);
             while value <= last {
