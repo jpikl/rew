@@ -1,26 +1,26 @@
 use anyhow::Result;
 use bstr::ByteSlice;
 use clap::ValueEnum;
+use derive_more::Display;
+use derive_more::Error;
 use linereader::LineReader;
 use memchr::memchr;
 use memchr::memrchr;
-use std::fmt::Display;
 use std::fmt::Formatter;
 use std::io;
 use std::io::BufReader;
 use std::io::IsTerminal;
 use std::io::Read;
 use std::io::Write;
-use thiserror::Error;
 
 // Optimal value for max IO throughput, according to https://www.evanjones.ca/read-write-buffer-size.html
 // Also confirmed by some custom benchmarks.
 // Also used internally by the `linereader` library.
 pub const OPTIMAL_IO_BUF_SIZE: usize = 32 * 1024;
 
-#[derive(Debug, Error, PartialEq)]
-#[error("cannot process input line bigger than '{}' bytes", .0)]
-struct MaxLineError(usize);
+#[derive(Debug, Display, Error, PartialEq)]
+#[display("cannot process input line bigger than '{_0}' bytes")]
+struct MaxLineError(#[error(not(source))] usize);
 
 #[derive(Clone, Default, Debug, PartialEq, Eq)]
 pub enum Separator {
