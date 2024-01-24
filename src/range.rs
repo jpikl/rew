@@ -19,10 +19,6 @@ pub struct Range<T>(pub Option<T>, pub Option<T>);
 #[allow(clippy::module_name_repetitions)]
 pub struct StartRange<T>(pub T, pub Option<T>);
 
-#[allow(dead_code)]
-#[allow(clippy::module_name_repetitions)]
-pub type IndexRange<T> = Range<Index<T>>;
-
 #[derive(Debug, Display, derive_more::Error, PartialEq)]
 pub enum Error {
     #[display("missing delimiter '..'")]
