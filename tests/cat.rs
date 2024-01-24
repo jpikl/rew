@@ -44,6 +44,7 @@ fn cat() {
         .stdin("01234567")
         .err("error: cannot process input line bigger than '8' bytes\n");
 
+    // Same hash as `seq 1 10000 | md5sum`
     Tc::shell("seq 1 10000 | %bin% cat | md5sum").ok("72d4ff27a28afbc066d5804999d5a504  -\n");
     Tc::shell("seq 1 10000 | %bin% cat -0 | md5sum").ok("72d4ff27a28afbc066d5804999d5a504  -\n");
     Tc::shell("seq 1 10000 | %bin% cat -l | md5sum").ok("72d4ff27a28afbc066d5804999d5a504  -\n");
@@ -51,6 +52,7 @@ fn cat() {
     Tc::shell("seq 1 10000 | %bin% cat -l0")
         .err("error: cannot process input line bigger than '32768' bytes\n");
 
+    // Same hash as `{ seq 1 10000; printf '\0'; } | md5sum`
     Tc::shell("seq 1 10000 | %bin% cat -l0 --max-line=65536 | md5sum")
         .ok("b57df9dc6e3f5501464d52e2f67cce33  -\n"); // Adds NUL at the end
 }
