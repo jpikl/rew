@@ -16,7 +16,6 @@ clap = { version = "4.4.16", features = [
 ] }
 derive_more = { version = "1.0.0-beta.6", features = ["display", "error"] }
 itoap = "1.0.1"
-linereader = "0.4.0"
 memchr = "2.7.1"
 owo-colors = "4.0.0"
 unidecode = "0.3.0"

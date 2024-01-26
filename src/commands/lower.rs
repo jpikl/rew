@@ -1,8 +1,7 @@
 use crate::args::GlobalArgs;
 use crate::command::Meta;
 use crate::command_meta;
-use crate::io::Processing;
-use crate::io::Reader;
+use crate::io::BlockReader;
 use crate::io::Writer;
 use crate::io::OPTIMAL_IO_BUF_SIZE;
 use anyhow::Result;
@@ -19,11 +18,11 @@ pub const META: Meta = command_meta! {
 struct Args;
 
 fn run(global_args: &GlobalArgs, _args: &Args) -> Result<()> {
-    let mut reader = Reader::from(global_args);
-    let mut writer = Writer::from(global_args);
+    let mut reader = BlockReader::from_stdin();
+    let mut writer = Writer::from_stdout(global_args);
     let mut buffer = Vec::with_capacity(OPTIMAL_IO_BUF_SIZE);
 
-    reader.for_each_block(|block| {
+    while let Some(block) = reader.read_block()? {
         if block.is_ascii() {
             // ASCII check is cheap, optimize throughput by reusing input buffer
             block.make_ascii_lowercase();
@@ -33,6 +32,7 @@ fn run(global_args: &GlobalArgs, _args: &Args) -> Result<()> {
             block.to_lowercase_into(&mut buffer);
             writer.write_block(&buffer)?;
         }
-        Ok(Processing::Continue)
-    })
+    }
+
+    Ok(())
 }

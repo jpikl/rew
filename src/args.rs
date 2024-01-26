@@ -1,13 +1,31 @@
-use crate::io::Buffering;
-use crate::io::Reader;
-use crate::io::Separator;
-use crate::io::Writer;
+use crate::io::LineConfig;
+use crate::io::LineReaderConfig;
+use crate::io::LineSeparator;
+use crate::io::WriterConfig;
 use crate::io::OPTIMAL_IO_BUF_SIZE;
 use clap::Args;
-use std::io;
-use std::io::BufWriter;
-use std::io::StdinLock;
-use std::io::StdoutLock;
+use clap::ValueEnum;
+use derive_more::Display;
+use std::io::stdout;
+use std::io::IsTerminal;
+
+#[derive(Clone, ValueEnum, Display, Debug, PartialEq, Eq)]
+pub enum BufMode {
+    #[display("line")]
+    Line,
+    #[display("full")]
+    Full,
+}
+
+impl Default for BufMode {
+    fn default() -> Self {
+        if stdout().is_terminal() {
+            Self::Line
+        } else {
+            Self::Full
+        }
+    }
+}
 
 #[allow(clippy::module_name_repetitions)]
 #[derive(Args, Default, Debug, Clone, Eq, PartialEq)]
@@ -18,19 +36,19 @@ pub struct GlobalArgs {
 
     /// Output buffering.
     ///
-    /// - `line` emits output after processing each line.
-    /// - `full` emits output once the output buffer is full (ensuring max possible throughput).
+    /// - `line` emits output after each new-line character (for interactive usage).
+    /// - `full` emits output once the output buffer is full (for maximal throughput).
     ///
     /// Defaults to `line` when stdout is TTY, otherwise is `full`.
     #[arg(
         global = true,
         long,
         env = "REW_BUFF",
-        default_value_t = Buffering::default(),
+        default_value_t = BufMode::default(),
         verbatim_doc_comment,
         hide_default_value = true,
     )]
-    buff: Buffering,
+    buff: BufMode,
 
     /// Maximum size of an input line (in bytes).
     ///
@@ -46,25 +64,27 @@ pub struct GlobalArgs {
     max_line: usize,
 }
 
-impl From<&GlobalArgs> for Separator {
-    fn from(args: &GlobalArgs) -> Self {
-        if args.null {
-            Self::Null
+impl LineConfig for GlobalArgs {
+    fn line_separator(&self) -> LineSeparator {
+        if self.null {
+            LineSeparator::Null
         } else {
-            Self::Newline
+            LineSeparator::Newline
         }
     }
 }
 
-impl From<&GlobalArgs> for Reader<StdinLock<'static>> {
-    fn from(args: &GlobalArgs) -> Self {
-        Self::new(io::stdin().lock(), Separator::from(args), args.max_line)
+impl LineReaderConfig for GlobalArgs {
+    fn line_buf_size(&self) -> usize {
+        self.max_line
     }
 }
 
-impl From<&GlobalArgs> for Writer<BufWriter<StdoutLock<'static>>> {
-    fn from(args: &GlobalArgs) -> Self {
-        let inner = BufWriter::with_capacity(OPTIMAL_IO_BUF_SIZE, io::stdout().lock());
-        Self::new(inner, Separator::from(args).as_byte(), args.buff.clone())
+impl WriterConfig for GlobalArgs {
+    fn write_is_buffered(&self) -> bool {
+        match self.buff {
+            BufMode::Line => false,
+            BufMode::Full => true,
+        }
     }
 }

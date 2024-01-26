@@ -1,9 +1,8 @@
 use crate::args::GlobalArgs;
 use crate::command::Meta;
 use crate::command_meta;
-use crate::io::Processing;
-use crate::io::Reader;
-use crate::io::Separator;
+use crate::io::BlockReader;
+use crate::io::LineConfig;
 use crate::io::Writer;
 use anyhow::Result;
 use memchr::memchr;
@@ -29,12 +28,11 @@ fn run(global_args: &GlobalArgs, args: &Args) -> Result<()> {
         return Ok(());
     }
 
-    let mut reader = Reader::from(global_args);
-    let mut writer = Writer::from(global_args);
-    let separator = Separator::from(global_args).as_byte();
+    let mut reader = BlockReader::from_stdin();
+    let mut writer = Writer::from_stdout(global_args);
+    let separator = global_args.line_separator().as_byte();
 
-    // This is noticably faster than counting lines using `.for_each_line`
-    reader.for_each_block(|block| {
+    while let Some(block) = reader.read_block()? {
         let mut remainder: &[u8] = block;
 
         while let Some(end) = memchr(separator, remainder) {
@@ -44,11 +42,12 @@ fn run(global_args: &GlobalArgs, args: &Args) -> Result<()> {
             if count == 0 {
                 let len = block.len() - remainder.len();
                 writer.write_block(&block[..len])?;
-                return Ok(Processing::Abort);
+                return Ok(());
             }
         }
 
         writer.write_block(block)?;
-        Ok(Processing::Continue)
-    })
+    }
+
+    Ok(())
 }

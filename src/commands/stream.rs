@@ -19,7 +19,7 @@ struct Args {
 }
 
 fn run(global_args: &GlobalArgs, args: &Args) -> Result<()> {
-    let mut writer = Writer::from(global_args);
+    let mut writer = Writer::from_stdout(global_args);
 
     for value in &args.values {
         #[cfg(target_family = "unix")]

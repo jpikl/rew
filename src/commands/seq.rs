@@ -36,7 +36,7 @@ fn run(global_args: &GlobalArgs, args: &Args) -> Result<()> {
     let step = args.step;
 
     let mut value = first;
-    let mut writer = Writer::from(global_args);
+    let mut writer = Writer::from_stdout(global_args);
     let mut formatter = Formatter::new();
 
     match last {
