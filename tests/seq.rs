@@ -32,5 +32,5 @@ fn seq() {
 
     tc.clone()
         .arg(format!("{}..", i128::MAX))
-        .err("error: number sequence overflown interger limit\n");
+        .err("error: number sequence reached interger limit\n");
 }

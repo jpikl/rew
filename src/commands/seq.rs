@@ -65,7 +65,7 @@ fn run(global_args: &GlobalArgs, args: &Args) -> Result<()> {
                 if let Some(new_value) = value.checked_add(step) {
                     value = new_value;
                 } else {
-                    return Err(anyhow!("number sequence overflown interger limit"));
+                    return Err(anyhow!("number sequence reached interger limit"));
                 }
             }
         }
