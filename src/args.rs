@@ -27,7 +27,6 @@ impl Default for BufMode {
     }
 }
 
-#[allow(clippy::module_name_repetitions)]
 #[derive(Args, Default, Debug, Clone, Eq, PartialEq)]
 pub struct GlobalArgs {
     /// Line delimiter is NUL, not newline.

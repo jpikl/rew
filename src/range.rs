@@ -16,7 +16,6 @@ pub struct Range<T>(pub Option<T>, pub Option<T>);
 #[derive(Debug, Display, PartialEq, Clone)]
 #[display(bound(T: Display))]
 #[display("{_0}..{}", format_opt(_1))]
-#[allow(clippy::module_name_repetitions)]
 pub struct StartRange<T>(pub T, pub Option<T>);
 
 #[derive(Debug, Display, derive_more::Error, PartialEq)]

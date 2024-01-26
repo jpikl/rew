@@ -9,7 +9,6 @@ pub struct Meta {
 }
 
 #[macro_export]
-#[allow(clippy::module_name_repetitions)]
 macro_rules! command_meta {
     (name: $name:literal, args: $args:ident, run: $run:ident,) => {
         $crate::command::Meta {

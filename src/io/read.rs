@@ -51,7 +51,6 @@ impl<R: Read> Source for BlockReader<R> {
 #[display("cannot process input line bigger than '{_0}' bytes")]
 struct MaxLineError(#[error(not(source))] usize);
 
-#[allow(clippy::module_name_repetitions)]
 pub trait LineReaderConfig {
     fn line_buf_size(&self) -> usize;
 }

@@ -9,7 +9,6 @@ use std::io::Read;
 use std::io::StdoutLock;
 use std::io::Write;
 
-#[allow(clippy::module_name_repetitions)]
 pub trait WriterConfig {
     fn write_is_buffered(&self) -> bool;
 }
