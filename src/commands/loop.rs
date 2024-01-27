@@ -1,4 +1,5 @@
 use crate::args::GlobalArgs;
+use crate::command::Group;
 use crate::command::Meta;
 use crate::command_meta;
 use crate::io::Writer;
@@ -11,6 +12,7 @@ use std::io::Read;
 
 pub const META: Meta = command_meta! {
     name: "loop",
+    group: Group::Transformers,
     args: Args,
     run: run,
 };

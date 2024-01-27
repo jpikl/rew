@@ -1,4 +1,5 @@
 use crate::args::GlobalArgs;
+use crate::command::Group;
 use crate::command::Meta;
 use crate::command_meta;
 use crate::io::BlockReader;
@@ -9,6 +10,7 @@ use bstr::ByteSlice;
 
 pub const META: Meta = command_meta! {
     name: "upper",
+    group: Group::Mappers,
     args: Args,
     run: run,
 };

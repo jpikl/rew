@@ -1,4 +1,5 @@
 use crate::args::GlobalArgs;
+use crate::command::Group;
 use crate::command::Meta;
 use crate::command_meta;
 use crate::io::BlockReader;
@@ -12,6 +13,7 @@ use std::io::stdout;
 
 pub const META: Meta = command_meta! {
     name: "skip",
+    group: Group::Filters,
     args: Args,
     run: run,
 };

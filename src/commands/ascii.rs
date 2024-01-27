@@ -1,4 +1,5 @@
 use crate::args::GlobalArgs;
+use crate::command::Group;
 use crate::command::Meta;
 use crate::command_meta;
 use crate::io::BlockReader;
@@ -11,6 +12,7 @@ use unidecode::unidecode_char;
 
 pub const META: Meta = command_meta! {
     name: "ascii",
+    group: Group::Mappers,
     args: Args,
     run: run,
 };

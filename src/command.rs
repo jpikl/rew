@@ -1,18 +1,33 @@
 use anyhow::Result;
 use clap::ArgMatches;
 use clap::Command;
+use derive_more::Display;
+
+#[derive(Display)]
+pub enum Group {
+    #[display("Mapper commands")]
+    Mappers,
+    #[display("Filter commands")]
+    Filters,
+    #[display("Transform commands")]
+    Transformers,
+    #[display("Generator commands")]
+    Generators,
+}
 
 pub struct Meta {
     pub name: &'static str,
+    pub group: Group,
     pub build: fn() -> Command,
     pub run: fn(&ArgMatches) -> Result<()>,
 }
 
 #[macro_export]
 macro_rules! command_meta {
-    (name: $name:literal, args: $args:ident, run: $run:ident,) => {
+    (name: $name:literal, group: $group:expr, args: $args:ident, run: $run:ident,) => {
         $crate::command::Meta {
             name: $name,
+            group: $group,
             build: || -> clap::Command {
                 use clap::Args as ClapArgs;
                 $args::augment_args(clap::Command::new($name))
