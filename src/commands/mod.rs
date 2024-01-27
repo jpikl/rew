@@ -3,6 +3,7 @@ use crate::command::Meta;
 mod ascii;
 mod cat;
 mod first;
+mod last;
 mod r#loop;
 mod lower;
 mod seq;
@@ -16,6 +17,7 @@ pub fn get_meta() -> Vec<&'static Meta> {
         &ascii::META,
         &cat::META,
         &first::META,
+        &last::META,
         &r#loop::META,
         &lower::META,
         &seq::META,
