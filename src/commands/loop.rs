@@ -1,13 +1,9 @@
-use crate::args::GlobalArgs;
+use crate::command::Context;
 use crate::command::Group;
 use crate::command::Meta;
 use crate::command_meta;
-use crate::io::BufSizeConfig;
-use crate::io::Writer;
 use anyhow::Result;
 use std::io::copy;
-use std::io::stdin;
-use std::io::stdout;
 use std::io::Read;
 
 pub const META: Meta = command_meta! {
@@ -25,7 +21,7 @@ struct Args {
     count: Option<u128>,
 }
 
-fn run(global_args: &GlobalArgs, args: &Args) -> Result<()> {
+fn run(context: &Context, args: &Args) -> Result<()> {
     let count = args.count;
 
     if count == Some(0) {
@@ -34,14 +30,14 @@ fn run(global_args: &GlobalArgs, args: &Args) -> Result<()> {
 
     if count == Some(1) {
         // Avoid buffering the whole input if there is only one output iteration
-        copy(&mut stdin().lock(), &mut stdout().lock())?;
+        copy(&mut context.raw_reader(), &mut context.raw_writer())?;
         return Ok(());
     }
 
-    let buf_size = global_args.buf_size();
-    let mut reader = stdin().lock();
-    let mut writer = Writer::from_stdout(global_args);
-    let mut buffer = vec![0; buf_size];
+    let buf_size = context.buf_size();
+    let mut reader = context.raw_reader();
+    let mut writer = context.writer();
+    let mut buffer = context.zeroed_buf();
     let mut end = 0;
 
     loop {

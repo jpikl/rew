@@ -1,15 +1,10 @@
-use crate::args::GlobalArgs;
+use crate::command::Context;
 use crate::command::Group;
 use crate::command::Meta;
 use crate::command_meta;
-use crate::io::BlockReader;
-use crate::io::LineConfig;
-use crate::io::Writer;
 use anyhow::Result;
 use memchr::memchr;
 use std::io::copy;
-use std::io::stdin;
-use std::io::stdout;
 
 pub const META: Meta = command_meta! {
     name: "skip",
@@ -26,17 +21,17 @@ struct Args {
     count: u128,
 }
 
-fn run(global_args: &GlobalArgs, args: &Args) -> Result<()> {
+fn run(context: &Context, args: &Args) -> Result<()> {
     let mut count = args.count;
 
     if count == 0 {
-        copy(&mut stdin().lock(), &mut stdout().lock())?;
+        copy(&mut context.raw_reader(), &mut context.raw_writer())?;
         return Ok(());
     }
 
-    let mut reader = BlockReader::from_stdin(global_args);
-    let mut writer = Writer::from_stdout(global_args);
-    let separator = global_args.line_separator().as_byte();
+    let mut reader = context.block_reader();
+    let mut writer = context.writer();
+    let separator = context.separator().as_byte();
 
     while let Some(block) = reader.read_block()? {
         let mut remainder: &[u8] = block;
@@ -56,5 +51,5 @@ fn run(global_args: &GlobalArgs, args: &Args) -> Result<()> {
         }
     }
 
-    writer.write_all_from(&mut reader)
+    writer.write_all_from(reader.get_mut())
 }

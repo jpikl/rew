@@ -1,10 +1,7 @@
-use crate::args::GlobalArgs;
+use crate::command::Context;
 use crate::command::Group;
 use crate::command::Meta;
 use crate::command_meta;
-use crate::io::BlockReader;
-use crate::io::LineConfig;
-use crate::io::Writer;
 use anyhow::Result;
 use memchr::memchr;
 
@@ -23,16 +20,16 @@ struct Args {
     count: u128,
 }
 
-fn run(global_args: &GlobalArgs, args: &Args) -> Result<()> {
+fn run(context: &Context, args: &Args) -> Result<()> {
     let mut count = args.count;
 
     if count == 0 {
         return Ok(());
     }
 
-    let mut reader = BlockReader::from_stdin(global_args);
-    let mut writer = Writer::from_stdout(global_args);
-    let separator = global_args.line_separator().as_byte();
+    let mut reader = context.block_reader();
+    let mut writer = context.writer();
+    let separator = context.separator().as_byte();
 
     while let Some(block) = reader.read_block()? {
         let mut remainder: &[u8] = block;

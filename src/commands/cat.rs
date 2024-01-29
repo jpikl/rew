@@ -1,14 +1,9 @@
-use crate::args::GlobalArgs;
+use crate::command::Context;
 use crate::command::Group;
 use crate::command::Meta;
 use crate::command_meta;
-use crate::io::BlockReader;
-use crate::io::LineReader;
-use crate::io::Writer;
 use anyhow::Result;
 use std::io::copy;
-use std::io::stdin;
-use std::io::stdout;
 
 pub const META: Meta = command_meta! {
     name: "cat",
@@ -33,24 +28,24 @@ struct Args {
     blocks: bool,
 }
 
-fn run(global_args: &GlobalArgs, args: &Args) -> Result<()> {
+fn run(context: &Context, args: &Args) -> Result<()> {
     if args.lines {
-        let mut reader = LineReader::from_stdin(global_args);
-        let mut writer = Writer::from_stdout(global_args);
+        let mut reader = context.line_reader();
+        let mut writer = context.writer();
 
         while let Some(line) = reader.read_line()? {
             writer.write_line(line)?;
         }
     } else if args.blocks {
-        let mut reader = BlockReader::from_stdin(global_args);
-        let mut writer = Writer::from_stdout(global_args);
+        let mut reader = context.block_reader();
+        let mut writer = context.writer();
 
         while let Some(block) = reader.read_block()? {
             writer.write_block(block)?;
         }
     } else {
-        let mut reader = stdin().lock();
-        let mut writer = stdout().lock();
+        let mut reader = context.raw_reader();
+        let mut writer = context.raw_writer();
 
         copy(&mut reader, &mut writer)?;
     }

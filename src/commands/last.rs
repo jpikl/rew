@@ -1,14 +1,10 @@
-use crate::args::GlobalArgs;
+use crate::command::Context;
 use crate::command::Group;
 use crate::command::Meta;
 use crate::command_meta;
-use crate::io::BufSizeConfig;
-use crate::io::LineConfig;
-use crate::io::Writer;
 use anyhow::Result;
 use memchr::memchr;
 use std::collections::LinkedList;
-use std::io::stdin;
 use std::io::Read;
 use std::mem::replace;
 
@@ -27,16 +23,16 @@ struct Args {
     count: usize,
 }
 
-fn run(global_args: &GlobalArgs, args: &Args) -> Result<()> {
+fn run(context: &Context, args: &Args) -> Result<()> {
     if args.count == 0 {
         return Ok(());
     }
 
-    let mut reader = stdin().lock();
+    let mut reader = context.raw_reader();
     let mut buffers = LinkedList::new();
-    let mut last_buf = LineBuf::new(global_args.buf_size());
+    let mut last_buf = LineBuf::new(context.zeroed_buf());
     let mut total_lines = 0;
-    let separator = global_args.line_separator().as_byte();
+    let separator = context.separator().as_byte();
 
     loop {
         let len = reader.read(last_buf.available())?;
@@ -50,7 +46,7 @@ fn run(global_args: &GlobalArgs, args: &Args) -> Result<()> {
         total_lines += last_buf.advance(len, separator);
 
         if last_buf.is_full() {
-            let new_buf = LineBuf::new(global_args.buf_size());
+            let new_buf = LineBuf::new(context.zeroed_buf());
             buffers.push_back(replace(&mut last_buf, new_buf));
 
             if let Some(first_buf) = buffers.front() {
@@ -71,7 +67,7 @@ fn run(global_args: &GlobalArgs, args: &Args) -> Result<()> {
         total_lines += 1;
     }
 
-    let mut writer = Writer::from_stdout(global_args);
+    let mut writer = context.writer();
 
     for buf in buffers {
         let mut data = buf.used();
@@ -101,9 +97,9 @@ struct LineBuf {
 }
 
 impl LineBuf {
-    fn new(size: usize) -> Self {
+    fn new(data: Vec<u8>) -> Self {
         Self {
-            data: vec![0u8; size],
+            data,
             end: 0,
             lines: 0,
         }

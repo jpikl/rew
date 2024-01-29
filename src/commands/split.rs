@@ -1,10 +1,7 @@
-use crate::args::GlobalArgs;
+use crate::command::Context;
 use crate::command::Group;
 use crate::command::Meta;
 use crate::command_meta;
-use crate::io::BlockReader;
-use crate::io::LineConfig;
-use crate::io::Writer;
 use anyhow::Result;
 use bstr::ByteSlice;
 use memchr::memchr;
@@ -28,12 +25,12 @@ struct Args {
     ignore_trailing: bool,
 }
 
-fn run(global_args: &GlobalArgs, args: &Args) -> Result<()> {
-    let mut reader = BlockReader::from_stdin(global_args);
-    let mut writer = Writer::from_stdout(global_args);
+fn run(context: &Context, args: &Args) -> Result<()> {
+    let mut reader = context.block_reader();
+    let mut writer = context.writer();
 
-    let trim_separator = global_args.line_separator().trim_fn();
-    let output_separator = global_args.line_separator().as_byte();
+    let trim_separator = context.separator().trim_fn();
+    let output_separator = context.separator().as_byte();
     let input_separator = args.separator;
 
     let mut last_block_terminated = false;

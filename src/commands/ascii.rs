@@ -1,10 +1,7 @@
-use crate::args::GlobalArgs;
+use crate::command::Context;
 use crate::command::Group;
 use crate::command::Meta;
 use crate::command_meta;
-use crate::io::BlockReader;
-use crate::io::BufSizeConfig;
-use crate::io::Writer;
 use anyhow::Result;
 use bstr::ByteSlice;
 use bstr::ByteVec;
@@ -25,10 +22,10 @@ struct Args {
     delete: bool,
 }
 
-fn run(global_args: &GlobalArgs, args: &Args) -> Result<()> {
-    let mut reader = BlockReader::from_stdin(global_args);
-    let mut writer = Writer::from_stdout(global_args);
-    let mut buffer = Vec::with_capacity(global_args.buf_size());
+fn run(context: &Context, args: &Args) -> Result<()> {
+    let mut reader = context.block_reader();
+    let mut writer = context.writer();
+    let mut buffer = context.uninit_buf();
 
     while let Some(block) = reader.read_block()? {
         if block.is_ascii() {

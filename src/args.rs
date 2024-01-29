@@ -1,7 +1,3 @@
-use crate::io::BufModeConfig;
-use crate::io::BufSizeConfig;
-use crate::io::LineConfig;
-use crate::io::LineSeparator;
 use clap::Args;
 use clap::ValueEnum;
 use derive_more::Display;
@@ -11,7 +7,7 @@ use std::io::IsTerminal;
 // Optimal value for max IO throughput, according to https://www.evanjones.ca/read-write-buffer-size.html
 // Also confirmed by some custom benchmarks.
 // Also used internally by the `linereader` library https://github.com/Freaky/rust-linereader.
-pub const DEFAULT_BUF_SIZE: usize = 32 * 1024;
+const DEFAULT_BUF_SIZE: usize = 32 * 1024;
 
 #[derive(Clone, ValueEnum, Display, Debug, PartialEq, Eq)]
 pub enum BufMode {
@@ -35,7 +31,7 @@ impl Default for BufMode {
 pub struct GlobalArgs {
     /// Line delimiter is NUL, not newline.
     #[arg(global = true, short = '0', long, env = "REW_NULL")]
-    null: bool,
+    pub null: bool,
 
     /// Output buffering mode.
     ///
@@ -54,7 +50,7 @@ pub struct GlobalArgs {
         verbatim_doc_comment,
         hide_default_value = true,
     )]
-    buf_mode: BufMode,
+    pub buf_mode: BufMode,
 
     /// Size of a buffer used for IO operations.
     ///
@@ -71,27 +67,5 @@ pub struct GlobalArgs {
         env = "REW_BUF_SIZE",
         default_value_t = DEFAULT_BUF_SIZE,
     )]
-    buf_size: usize,
-}
-
-impl LineConfig for GlobalArgs {
-    fn line_separator(&self) -> LineSeparator {
-        if self.null {
-            LineSeparator::Null
-        } else {
-            LineSeparator::Newline
-        }
-    }
-}
-
-impl BufModeConfig for GlobalArgs {
-    fn buf_full(&self) -> bool {
-        self.buf_mode == BufMode::Full
-    }
-}
-
-impl BufSizeConfig for GlobalArgs {
-    fn buf_size(&self) -> usize {
-        self.buf_size
-    }
+    pub buf_size: usize,
 }

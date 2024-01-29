@@ -1,8 +1,7 @@
-use crate::args::GlobalArgs;
+use crate::command::Context;
 use crate::command::Group;
 use crate::command::Meta;
 use crate::command_meta;
-use crate::io::Writer;
 use crate::range::StartRange;
 use anyhow::anyhow;
 use anyhow::Result;
@@ -33,12 +32,12 @@ struct Args {
 }
 
 #[allow(clippy::too_many_lines)]
-fn run(global_args: &GlobalArgs, args: &Args) -> Result<()> {
+fn run(context: &Context, args: &Args) -> Result<()> {
     let StartRange(first, last) = args.range;
     let step = args.step;
 
     let mut value = first;
-    let mut writer = Writer::from_stdout(global_args);
+    let mut writer = context.writer();
     let mut formatter = Formatter::new();
 
     match last {

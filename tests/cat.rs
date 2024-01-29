@@ -39,10 +39,7 @@ fn cat() {
 
     let max_line = tc.clone().arg("--buf-size=8").arg("-l");
     max_line.clone().stdin("0123456\n").ok("0123456\n");
-    max_line
-        .clone()
-        .stdin("01234567")
-        .err("error: cannot process input line bigger than '8' bytes\n");
+    max_line.clone().stdin("01234567").err("error: cannot fetch line longer than '8' bytes\n");
 
     // Same hash as `seq 1 10000 | md5sum`
     Tc::shell("seq 1 10000 | %bin% cat | md5sum").ok("72d4ff27a28afbc066d5804999d5a504  -\n");
@@ -50,7 +47,7 @@ fn cat() {
     Tc::shell("seq 1 10000 | %bin% cat -l | md5sum").ok("72d4ff27a28afbc066d5804999d5a504  -\n");
 
     Tc::shell("seq 1 10000 | %bin% cat -l0")
-        .err("error: cannot process input line bigger than '32768' bytes\n");
+        .err("error: cannot fetch line longer than '32768' bytes\n");
 
     // Same hash as `{ seq 1 10000; printf '\0'; } | md5sum`
     Tc::shell("seq 1 10000 | %bin% cat -l0 --buf-size=65536 | md5sum")

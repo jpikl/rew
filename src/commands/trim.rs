@@ -1,9 +1,7 @@
-use crate::args::GlobalArgs;
+use crate::command::Context;
 use crate::command::Group;
 use crate::command::Meta;
 use crate::command_meta;
-use crate::io::LineReader;
-use crate::io::Writer;
 use anyhow::Result;
 use bstr::ByteSlice;
 
@@ -28,9 +26,9 @@ struct Args {
     end: bool,
 }
 
-fn run(global_args: &GlobalArgs, args: &Args) -> Result<()> {
-    let mut reader = LineReader::from_stdin(global_args);
-    let mut writer = Writer::from_stdout(global_args);
+fn run(context: &Context, args: &Args) -> Result<()> {
+    let mut reader = context.line_reader();
+    let mut writer = context.writer();
 
     while let Some(line) = reader.read_line()? {
         let result = match (args.start, args.end) {

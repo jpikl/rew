@@ -1,8 +1,7 @@
-use crate::args::GlobalArgs;
+use crate::command::Context;
 use crate::command::Group;
 use crate::command::Meta;
 use crate::command_meta;
-use crate::io::Writer;
 use anyhow::Result;
 use std::ffi::OsString;
 
@@ -20,8 +19,8 @@ struct Args {
     values: Vec<OsString>,
 }
 
-fn run(global_args: &GlobalArgs, args: &Args) -> Result<()> {
-    let mut writer = Writer::from_stdout(global_args);
+fn run(context: &Context, args: &Args) -> Result<()> {
+    let mut writer = context.writer();
 
     for value in &args.values {
         #[cfg(target_family = "unix")]
