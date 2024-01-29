@@ -2,9 +2,9 @@ use crate::args::GlobalArgs;
 use crate::command::Group;
 use crate::command::Meta;
 use crate::command_meta;
+use crate::io::BufSizeConfig;
 use crate::io::LineConfig;
 use crate::io::Writer;
-use crate::io::OPTIMAL_IO_BUF_SIZE;
 use anyhow::Result;
 use memchr::memchr;
 use std::collections::LinkedList;
@@ -34,7 +34,7 @@ fn run(global_args: &GlobalArgs, args: &Args) -> Result<()> {
 
     let mut reader = stdin().lock();
     let mut buffers = LinkedList::new();
-    let mut last_buf = LineBuf::new();
+    let mut last_buf = LineBuf::new(global_args.buf_size());
     let mut total_lines = 0;
     let separator = global_args.line_separator().as_byte();
 
@@ -50,7 +50,8 @@ fn run(global_args: &GlobalArgs, args: &Args) -> Result<()> {
         total_lines += last_buf.advance(len, separator);
 
         if last_buf.is_full() {
-            buffers.push_back(replace(&mut last_buf, LineBuf::new()));
+            let new_buf = LineBuf::new(global_args.buf_size());
+            buffers.push_back(replace(&mut last_buf, new_buf));
 
             if let Some(first_buf) = buffers.front() {
                 if total_lines - first_buf.lines > args.count {
@@ -94,15 +95,15 @@ fn run(global_args: &GlobalArgs, args: &Args) -> Result<()> {
 }
 
 struct LineBuf {
-    data: [u8; OPTIMAL_IO_BUF_SIZE],
+    data: Vec<u8>,
     end: usize,
     lines: usize,
 }
 
 impl LineBuf {
-    fn new() -> Self {
+    fn new(size: usize) -> Self {
         Self {
-            data: [0u8; OPTIMAL_IO_BUF_SIZE],
+            data: vec![0u8; size],
             end: 0,
             lines: 0,
         }

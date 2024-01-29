@@ -2,8 +2,8 @@ use crate::args::GlobalArgs;
 use crate::command::Group;
 use crate::command::Meta;
 use crate::command_meta;
+use crate::io::BufSizeConfig;
 use crate::io::Writer;
-use crate::io::OPTIMAL_IO_BUF_SIZE;
 use anyhow::Result;
 use std::io::copy;
 use std::io::stdin;
@@ -38,9 +38,10 @@ fn run(global_args: &GlobalArgs, args: &Args) -> Result<()> {
         return Ok(());
     }
 
+    let buf_size = global_args.buf_size();
     let mut reader = stdin().lock();
     let mut writer = Writer::from_stdout(global_args);
-    let mut buffer = vec![0; OPTIMAL_IO_BUF_SIZE];
+    let mut buffer = vec![0; buf_size];
     let mut end = 0;
 
     loop {
@@ -54,8 +55,8 @@ fn run(global_args: &GlobalArgs, args: &Args) -> Result<()> {
         writer.write_block(&buffer[end..next_end])?;
         end = next_end;
 
-        if buffer.len() - end < OPTIMAL_IO_BUF_SIZE / 2 {
-            buffer.resize(buffer.len() + OPTIMAL_IO_BUF_SIZE, 0);
+        if buffer.len() - end < buf_size / 2 {
+            buffer.resize(buffer.len() + buf_size, 0);
         }
     }
 

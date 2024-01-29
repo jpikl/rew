@@ -1,7 +1,7 @@
 use super::conf::LineConfig;
 use super::conf::LineSeparator;
-use super::conf::OPTIMAL_IO_BUF_SIZE;
 use super::write::Source;
+use super::BufSizeConfig;
 use anyhow::Result;
 use derive_more::Display;
 use derive_more::Error;
@@ -12,20 +12,20 @@ use std::io::StdinLock;
 
 pub struct BlockReader<R> {
     inner: R,
-    buf: [u8; OPTIMAL_IO_BUF_SIZE],
+    buf: Vec<u8>,
 }
 
 impl BlockReader<StdinLock<'static>> {
-    pub fn from_stdin() -> Self {
-        Self::new(stdin().lock())
+    pub fn from_stdin(config: &impl BufSizeConfig) -> Self {
+        Self::new(stdin().lock(), config.buf_size())
     }
 }
 
 impl<R: Read> BlockReader<R> {
-    pub fn new(inner: R) -> Self {
+    pub fn new(inner: R, buf_size: usize) -> Self {
         Self {
             inner,
-            buf: [0; OPTIMAL_IO_BUF_SIZE],
+            buf: vec![0; buf_size],
         }
     }
 
@@ -65,12 +65,8 @@ pub struct LineReader<R> {
 }
 
 impl LineReader<StdinLock<'static>> {
-    pub fn from_stdin(config: &(impl LineConfig + LineReaderConfig)) -> Self {
-        Self::new(
-            stdin().lock(),
-            config.line_separator(),
-            config.line_buf_size(),
-        )
+    pub fn from_stdin(config: &(impl LineConfig + BufSizeConfig)) -> Self {
+        Self::new(stdin().lock(), config.line_separator(), config.buf_size())
     }
 }
 

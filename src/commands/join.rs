@@ -27,7 +27,7 @@ struct Args {
 }
 
 fn run(global_args: &GlobalArgs, args: &Args) -> Result<()> {
-    let mut reader = BlockReader::from_stdin();
+    let mut reader = BlockReader::from_stdin(global_args);
     let mut writer = Writer::from_stdout(global_args);
 
     let trim_sparator = global_args.line_separator().trim_fn();

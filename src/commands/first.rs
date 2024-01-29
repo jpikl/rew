@@ -30,7 +30,7 @@ fn run(global_args: &GlobalArgs, args: &Args) -> Result<()> {
         return Ok(());
     }
 
-    let mut reader = BlockReader::from_stdin();
+    let mut reader = BlockReader::from_stdin(global_args);
     let mut writer = Writer::from_stdout(global_args);
     let separator = global_args.line_separator().as_byte();
 

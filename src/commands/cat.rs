@@ -42,7 +42,7 @@ fn run(global_args: &GlobalArgs, args: &Args) -> Result<()> {
             writer.write_line(line)?;
         }
     } else if args.blocks {
-        let mut reader = BlockReader::from_stdin();
+        let mut reader = BlockReader::from_stdin(global_args);
         let mut writer = Writer::from_stdout(global_args);
 
         while let Some(block) = reader.read_block()? {

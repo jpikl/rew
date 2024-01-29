@@ -1,6 +1,7 @@
 use super::conf::LineConfig;
 use super::conf::LineSeparator;
-use super::conf::OPTIMAL_IO_BUF_SIZE;
+use super::BufModeConfig;
+use super::BufSizeConfig;
 use anyhow::Result;
 use std::io::copy;
 use std::io::stdout;
@@ -9,10 +10,6 @@ use std::io::Read;
 use std::io::StdoutLock;
 use std::io::Write;
 
-pub trait WriterConfig {
-    fn write_is_buffered(&self) -> bool;
-}
-
 pub struct Writer<W: Write> {
     inner: BufWriter<W>,
     separator: u8,
@@ -20,19 +17,20 @@ pub struct Writer<W: Write> {
 }
 
 impl Writer<StdoutLock<'static>> {
-    pub fn from_stdout(config: &(impl LineConfig + WriterConfig)) -> Self {
+    pub fn from_stdout(config: &(impl LineConfig + BufModeConfig + BufSizeConfig)) -> Self {
         Self::new(
             stdout().lock(),
             config.line_separator(),
-            config.write_is_buffered(),
+            config.buf_full(),
+            config.buf_size(),
         )
     }
 }
 
 impl<W: Write> Writer<W> {
-    pub fn new(inner: W, separator: LineSeparator, buffered: bool) -> Self {
+    pub fn new(inner: W, separator: LineSeparator, buffered: bool, buf_size: usize) -> Self {
         Self {
-            inner: BufWriter::with_capacity(OPTIMAL_IO_BUF_SIZE, inner),
+            inner: BufWriter::with_capacity(buf_size, inner),
             separator: separator.as_byte(),
             buffered,
         }

@@ -1,13 +1,17 @@
+use crate::io::BufModeConfig;
+use crate::io::BufSizeConfig;
 use crate::io::LineConfig;
-use crate::io::LineReaderConfig;
 use crate::io::LineSeparator;
-use crate::io::WriterConfig;
-use crate::io::OPTIMAL_IO_BUF_SIZE;
 use clap::Args;
 use clap::ValueEnum;
 use derive_more::Display;
 use std::io::stdout;
 use std::io::IsTerminal;
+
+// Optimal value for max IO throughput, according to https://www.evanjones.ca/read-write-buffer-size.html
+// Also confirmed by some custom benchmarks.
+// Also used internally by the `linereader` library https://github.com/Freaky/rust-linereader.
+pub const DEFAULT_BUF_SIZE: usize = 32 * 1024;
 
 #[derive(Clone, ValueEnum, Display, Debug, PartialEq, Eq)]
 pub enum BufMode {
@@ -33,34 +37,41 @@ pub struct GlobalArgs {
     #[arg(global = true, short = '0', long, env = "REW_NULL")]
     null: bool,
 
-    /// Output buffering.
+    /// Output buffering mode.
     ///
-    /// - `line` emits output after each new-line character (for interactive usage).
-    /// - `full` emits output once the output buffer is full (for maximal throughput).
+    /// - `line` - Writes to stdout after a line was processed or when the output buffer is full.
+    /// - `full` - Writes to stdout only when the output buffer is full.
     ///
-    /// Defaults to `line` when stdout is TTY, otherwise is `full`.
+    /// Defaults to `line` when stdout is TTY (for interactive usage), otherwise is `full` (for maximal throughput).
+    ///
+    /// Size of the output buffer can be configured through the `--buf-size` global option.
     #[arg(
         global = true,
         long,
-        env = "REW_BUFF",
+        name = "MODE",
+        env = "REW_BUF_MODE",
         default_value_t = BufMode::default(),
         verbatim_doc_comment,
         hide_default_value = true,
     )]
-    buff: BufMode,
+    buf_mode: BufMode,
 
-    /// Maximum size of an input line (in bytes).
+    /// Size of a buffer used for IO operations.
     ///
-    /// Attempt to process a longer input line will abort the execution.
+    /// Smaller values will reduce memory consumption but could negatively affect througput.
+    ///
+    /// Larger values will increase memory consumption but may improve troughput in some cases.
+    ///
+    /// Certain commands (which can only operate with whole lines) won't be able to fetch
+    /// a line bigger than this limit and will abort their execution instead.
     #[arg(
         global = true,
         long,
         name = "BYTES",
-        env = "REW_MAX_LINE",
-        default_value_t = OPTIMAL_IO_BUF_SIZE,
-        verbatim_doc_comment,
+        env = "REW_BUF_SIZE",
+        default_value_t = DEFAULT_BUF_SIZE,
     )]
-    max_line: usize,
+    buf_size: usize,
 }
 
 impl LineConfig for GlobalArgs {
@@ -73,17 +84,14 @@ impl LineConfig for GlobalArgs {
     }
 }
 
-impl LineReaderConfig for GlobalArgs {
-    fn line_buf_size(&self) -> usize {
-        self.max_line
+impl BufModeConfig for GlobalArgs {
+    fn buf_full(&self) -> bool {
+        self.buf_mode == BufMode::Full
     }
 }
 
-impl WriterConfig for GlobalArgs {
-    fn write_is_buffered(&self) -> bool {
-        match self.buff {
-            BufMode::Line => false,
-            BufMode::Full => true,
-        }
+impl BufSizeConfig for GlobalArgs {
+    fn buf_size(&self) -> usize {
+        self.buf_size
     }
 }

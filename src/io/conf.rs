@@ -1,12 +1,15 @@
 use bstr::ByteSlice;
 
-// Optimal value for max IO throughput, according to https://www.evanjones.ca/read-write-buffer-size.html
-// Also confirmed by some custom benchmarks.
-// Also used internally by the `linereader` library https://github.com/Freaky/rust-linereader.
-pub const OPTIMAL_IO_BUF_SIZE: usize = 32 * 1024;
-
 pub trait LineConfig {
     fn line_separator(&self) -> LineSeparator;
+}
+
+pub trait BufSizeConfig {
+    fn buf_size(&self) -> usize;
+}
+
+pub trait BufModeConfig {
+    fn buf_full(&self) -> bool;
 }
 
 #[derive(Copy, Clone)]

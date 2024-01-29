@@ -3,8 +3,8 @@ use crate::command::Group;
 use crate::command::Meta;
 use crate::command_meta;
 use crate::io::BlockReader;
+use crate::io::BufSizeConfig;
 use crate::io::Writer;
-use crate::io::OPTIMAL_IO_BUF_SIZE;
 use anyhow::Result;
 use bstr::ByteSlice;
 use bstr::ByteVec;
@@ -26,9 +26,9 @@ struct Args {
 }
 
 fn run(global_args: &GlobalArgs, args: &Args) -> Result<()> {
-    let mut reader = BlockReader::from_stdin();
+    let mut reader = BlockReader::from_stdin(global_args);
     let mut writer = Writer::from_stdout(global_args);
-    let mut buffer = Vec::with_capacity(OPTIMAL_IO_BUF_SIZE);
+    let mut buffer = Vec::with_capacity(global_args.buf_size());
 
     while let Some(block) = reader.read_block()? {
         if block.is_ascii() {
