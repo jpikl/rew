@@ -31,24 +31,23 @@ fn run(context: &Context, args: &Args) -> Result<()> {
     let input_separator = context.separator().as_byte();
     let output_separator = args.separator.as_bytes();
 
-    let mut print_separator_before = false;
+    let mut separate_next_block = false;
 
     while let Some(mut block) = reader.read_block()? {
         while let Some(pos) = memchr(input_separator, block) {
-            if print_separator_before {
+            if separate_next_block {
                 writer.write_block(output_separator)?;
             } else {
-                print_separator_before = true;
+                separate_next_block = true;
             }
             writer.write_block(trim_sparator(&block[..=pos]))?;
             block = &mut block[(pos + 1)..];
         }
 
         if !block.is_empty() {
-            if print_separator_before {
+            if separate_next_block {
                 writer.write_block(output_separator)?;
-            } else {
-                print_separator_before = true;
+                separate_next_block = false;
             }
             writer.write_block(block)?;
         }

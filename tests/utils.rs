@@ -64,8 +64,8 @@ impl Tc {
 
     fn assert(self) -> Assert {
         Command::new(self.bin)
-            .timeout(Duration::from_millis(500))
             .args(self.args)
+            .timeout(Duration::from_millis(500))
             .write_stdin(self.stdin.unwrap_or_default())
             .assert()
     }
