@@ -1,10 +1,7 @@
-#[path = "utils.rs"]
-mod utils;
-
-use utils::Tc;
+use crate::utils::Tc;
 
 #[test]
-fn first() {
+fn test() {
     let tc = Tc::cmd("skip").stdin("a\nbc\n");
     tc.clone().arg("0").ok("a\nbc\n");
     tc.clone().arg("1").ok("bc\n");

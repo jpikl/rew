@@ -1,10 +1,7 @@
-#[path = "utils.rs"]
-mod utils;
-
-use utils::Tc;
+use crate::utils::Tc;
 
 #[test]
-fn split() {
+fn test() {
     let tc = Tc::cmd("join").arg(":");
 
     tc.clone().stdin("").ok("\n");

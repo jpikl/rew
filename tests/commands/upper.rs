@@ -1,10 +1,7 @@
-#[path = "utils.rs"]
-mod utils;
-
-use utils::Tc;
+use crate::utils::Tc;
 
 #[test]
-fn upper() {
+fn test() {
     let tc = Tc::cmd("upper");
     tc.clone().stdin("abCD").ok("ABCD");
     tc.clone().stdin("ábČD").ok("ÁBČD");

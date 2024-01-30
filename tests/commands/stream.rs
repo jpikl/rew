@@ -1,10 +1,7 @@
-#[path = "utils.rs"]
-mod utils;
-
-use utils::Tc;
+use crate::utils::Tc;
 
 #[test]
-fn stream() {
+fn test() {
     let tc = Tc::cmd("stream");
 
     tc.clone().ok("");

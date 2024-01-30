@@ -15,7 +15,6 @@ pub struct Tc {
     stdin: Option<Vec<u8>>,
 }
 
-#[allow(dead_code)]
 impl Tc {
     #[must_use]
     pub fn cmd(cmd: &str) -> Self {

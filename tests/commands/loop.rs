@@ -1,10 +1,7 @@
-#[path = "utils.rs"]
-mod utils;
-
-use utils::Tc;
+use crate::utils::Tc;
 
 #[test]
-fn r#loop() {
+fn test() {
     let tc = Tc::cmd("loop");
 
     let single = tc.clone().stdin("ab");

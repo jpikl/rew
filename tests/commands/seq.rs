@@ -1,10 +1,7 @@
-#[path = "utils.rs"]
-mod utils;
-
-use utils::Tc;
+use crate::utils::Tc;
 
 #[test]
-fn seq() {
+fn test() {
     let tc = Tc::cmd("seq");
 
     tc.clone().arg("1..10").ok("1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n");

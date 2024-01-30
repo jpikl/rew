@@ -1,10 +1,7 @@
-#[path = "utils.rs"]
-mod utils;
-
-use utils::Tc;
+use crate::utils::Tc;
 
 #[test]
-fn trim() {
+fn test() {
     let tc = Tc::cmd("trim").stdin("  \n a \n  b  c  ");
     tc.clone().ok("\na\nb  c\n");
     tc.clone().arg("-s").ok("\na \nb  c  \n");

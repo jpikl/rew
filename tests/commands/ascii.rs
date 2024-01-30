@@ -1,10 +1,7 @@
-#[path = "utils.rs"]
-mod utils;
-
-use utils::Tc;
+use crate::utils::Tc;
 
 #[test]
-fn ascii() {
+fn test() {
     let tc = Tc::cmd("ascii");
     tc.clone().stdin("abCD").ok("abCD");
     tc.clone().stdin("ábČD").ok("abCD");

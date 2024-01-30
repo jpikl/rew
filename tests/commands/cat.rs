@@ -1,10 +1,7 @@
-#[path = "utils.rs"]
-mod utils;
-
-use utils::Tc;
+use crate::utils::Tc;
 
 #[test]
-fn cat() {
+fn test() {
     let tc = Tc::cmd("cat");
 
     let empty = tc.clone().stdin("");
