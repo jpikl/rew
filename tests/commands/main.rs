@@ -5,6 +5,7 @@ mod join;
 mod last;
 mod r#loop;
 mod lower;
+mod seq;
 mod skip;
 mod split;
 mod stream;

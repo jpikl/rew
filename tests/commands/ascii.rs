@@ -1,9 +1,8 @@
-use crate::utils::Tc;
+use crate::command_test;
 
-#[test]
-fn test() {
-    let tc = Tc::cmd("ascii");
-    tc.clone().stdin("abCD").ok("abCD");
-    tc.clone().stdin("ábČD").ok("abCD");
-    tc.clone().arg("-d").stdin("ábČD").ok("bD");
-}
+command_test!("ascii", {
+    replace_none: [ cmd  should "abCD" => "abCD" ],
+    replace_some: [ cmd should "ábČD" => "abCD" ],
+    delete_none: [ cmd "-d" should "abCD" => "abCD" ],
+    delete_some: [ cmd "-d" should "ábČD" => "bD" ],
+});

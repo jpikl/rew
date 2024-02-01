@@ -1,15 +1,16 @@
-use crate::utils::Tc;
+use crate::command_test;
 
-#[test]
-fn test() {
-    let tc = Tc::cmd("first").stdin("a\nbc\n");
-    tc.clone().ok("a\n");
-    tc.clone().arg("0").ok("");
-    tc.clone().arg("1").ok("a\n");
-    tc.clone().arg("2").ok("a\nbc\n");
-    tc.clone().arg("3").ok("a\nbc\n");
-
-    // Same hash as `seq 1 10000 | head -n9999 | md5sum`
-    Tc::shell("seq 1 10000 | %bin% first 9999 | md5sum")
-        .ok("05fda6bec6aabc94d0fc54380ace8412  -\n");
-}
+command_test!("first", {
+    default: [ cmd should "a\nbc\ndef\n" => "a\n" ],
+    count_0: [ cmd "0" should "a\nbc\ndef\n" => "" ],
+    count_1: [ cmd "1" should "a\nbc\ndef\n" => "a\n" ],
+    count_2: [ cmd "2" should "a\nbc\ndef\n" => "a\nbc\n" ],
+    count_3: [ cmd "3" should "a\nbc\ndef\n" => "a\nbc\ndef\n" ],
+    count_4: [ cmd "4" should "a\nbc\ndef\n" => "a\nbc\ndef\n" ],
+    buf_under: [ cmd "--buf-size=8" should "aaaaaa\nb\n" => "aaaaaa\n" ],
+    buf_exact: [ cmd "--buf-size=8" should "aaaaaaa\nb\n" => "aaaaaaa\n" ],
+    buf_over: [ cmd "--buf-size=8" should "aaaaaaaa\nb\n" => "aaaaaaaa\n" ],
+    buf_over_2: [ cmd "--buf-size=8" should "aaaaaaaaa\nb\n" => "aaaaaaaaa\n" ],
+    // seq 1 10000 | head -n9999 | md5sum
+    many: [ sh "seq 1 10000 | %cmd% 9999 | md5sum" should "" => "05fda6bec6aabc94d0fc54380ace8412  -\n" ],
+});

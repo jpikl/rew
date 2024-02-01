@@ -1,33 +1,22 @@
-use crate::utils::Tc;
+use crate::command_test;
 
-#[test]
-fn test() {
-    let tc = Tc::cmd("seq");
-
-    tc.clone().arg("1..10").ok("1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n");
-    tc.clone().arg("10..1").ok("10\n9\n8\n7\n6\n5\n4\n3\n2\n1\n");
-
-    tc.clone().arg("-10..-1").ok("-10\n-9\n-8\n-7\n-6\n-5\n-4\n-3\n-2\n-1\n");
-    tc.clone().arg("-1..-10").ok("-1\n-2\n-3\n-4\n-5\n-6\n-7\n-8\n-9\n-10\n");
-
-    tc.clone().arg("-1..1").ok("-1\n0\n1\n");
-    tc.clone().arg("1..-1").ok("1\n0\n-1\n");
-
-    tc.clone().arg("2..9").arg("-s2").ok("2\n4\n6\n8\n");
-    tc.clone().arg("2..10").arg("-s2").ok("2\n4\n6\n8\n10\n");
-    tc.clone().arg("9..2").arg("-s-3").ok("9\n6\n3\n");
-    tc.clone().arg("9..0").arg("-s-3").ok("9\n6\n3\n0\n");
-
-    tc.clone().arg("-1..-1").ok("-1\n");
-    tc.clone().arg("0..0").ok("0\n");
-    tc.clone().arg("1..1").ok("1\n");
-
-    Tc::shell("%bin% seq | head -n10").ok("1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n");
-    Tc::shell("%bin% seq 10.. | head -n10").ok("10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n");
-    Tc::shell("%bin% seq 10.. -s2 | head -n10").ok("10\n12\n14\n16\n18\n20\n22\n24\n26\n28\n");
-    Tc::shell("%bin% seq 10.. -s-3 | head -n10").ok("10\n7\n4\n1\n-2\n-5\n-8\n-11\n-14\n-17\n");
-
-    tc.clone()
-        .arg(format!("{}..", i128::MAX))
-        .err("error: number sequence reached interger limit\n");
-}
+command_test!("seq", {
+    pos_inc: [ cmd "1..10" should "" => "1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n" ],
+    pos_dec: [ cmd "10..1" should "" => "10\n9\n8\n7\n6\n5\n4\n3\n2\n1\n" ],
+    neg_inc: [ cmd "-10..-1" should "" => "-10\n-9\n-8\n-7\n-6\n-5\n-4\n-3\n-2\n-1\n" ],
+    neg_dec: [ cmd "-1..-10" should "" => "-1\n-2\n-3\n-4\n-5\n-6\n-7\n-8\n-9\n-10\n" ],
+    sign_inc: [ cmd "-1..1" should "" => "-1\n0\n1\n" ],
+    sign_dec: [ cmd "1..-1" should "" => "1\n0\n-1\n" ],
+    pos_step: [ cmd "2..9" "-s2" should "" => "2\n4\n6\n8\n" ],
+    pos_step_2: [ cmd "2..10" "-s2" should "" => "2\n4\n6\n8\n10\n" ],
+    neg_step: [ cmd "9..2" "-s-3" should "" => "9\n6\n3\n" ],
+    neg_step_2: [ cmd "9..0" "-s-3" should "" => "9\n6\n3\n0\n" ],
+    single_neg: [ cmd "-1..-1" should "" => "-1\n" ],
+    single_zero: [ cmd "0..0" should "" => "0\n" ],
+    single_pos: [ cmd "1..1" should "" => "1\n" ],
+    inf: [ sh "%cmd% | head -n10" should "" => "1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n" ],
+    inf_from: [ sh "%cmd% 10.. | head -n10" should "" => "10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n" ],
+    inf_pos_step: [ sh "%cmd% 10.. -s2 | head -n10" should "" => "10\n12\n14\n16\n18\n20\n22\n24\n26\n28\n" ],
+    inf_neg_step: [ sh "%cmd% 10.. -s-3 | head -n10" should "" => "10\n7\n4\n1\n-2\n-5\n-8\n-11\n-14\n-17\n" ],
+    overflow: [ cmd "170141183460469231731687303715884105727.." should "" => err "error: number sequence reached interger limit\n" ],
+});

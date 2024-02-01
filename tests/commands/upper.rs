@@ -1,8 +1,6 @@
-use crate::utils::Tc;
+use crate::command_test;
 
-#[test]
-fn test() {
-    let tc = Tc::cmd("upper");
-    tc.clone().stdin("abCD").ok("ABCD");
-    tc.clone().stdin("ábČD").ok("ÁBČD");
-}
+command_test!("upper", {
+    ascii: [ cmd should "abCD" => "ABCD" ],
+    non_ascii: [ cmd should "ábČD" => "ÁBČD" ],
+});
