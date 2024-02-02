@@ -176,6 +176,15 @@ impl<W: Write> Writer<W> {
         Ok(())
     }
 
+    pub fn write_separator(&mut self) -> Result<()> {
+        if self.buffered {
+            self.inner.write_all(&[self.separator])?;
+        } else {
+            self.inner.get_mut().write_all(&[self.separator])?;
+        }
+        Ok(())
+    }
+
     pub fn write_block(&mut self, block: &[u8]) -> Result<()> {
         if self.buffered {
             self.inner.write_all(block)?;

@@ -62,10 +62,17 @@ impl Display for Error {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Pattern(Vec<Item>);
 
+pub struct SimplePattern(Vec<SimpleItem>);
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Item {
     Constant(String),
     Expression(Vec<Command>),
+}
+
+pub enum SimpleItem {
+    Constant(String),
+    Expression,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -81,6 +88,27 @@ impl Pattern {
     }
 
     pub fn items(&self) -> &Vec<Item> {
+        &self.0
+    }
+
+    pub fn try_simplify(&self) -> Option<SimplePattern> {
+        let mut simple_items = Vec::new();
+
+        for item in self.items() {
+            let simple_item = match item {
+                Item::Constant(value) => SimpleItem::Constant(value.clone()),
+                Item::Expression(commands) if commands.is_empty() => SimpleItem::Expression,
+                Item::Expression(_) => return None,
+            };
+            simple_items.push(simple_item);
+        }
+
+        Some(SimplePattern(simple_items))
+    }
+}
+
+impl SimplePattern {
+    pub fn items(&self) -> &Vec<SimpleItem> {
         &self.0
     }
 }

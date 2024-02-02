@@ -3,6 +3,7 @@ use crate::command::Group;
 use crate::command::Meta;
 use crate::command_meta;
 use crate::pattern::Pattern;
+use crate::pattern::SimpleItem;
 use anyhow::Result;
 
 pub const META: Meta = command_meta! {
@@ -12,18 +13,44 @@ pub const META: Meta = command_meta! {
     run: run,
 };
 
-/// Compose parallel shell pipelines using a pattern
+/// Compose parallel shell pipelines using a pattern.
 #[derive(clap::Args)]
 struct Args {
-    /// Composition pattern
+    /// Composition pattern.
+    ///
+    /// `abc`             Constant  
+    /// `{}`              Empty expression     
+    /// `{cmd}`           Expression with a filter command
+    /// `{cmd a b}`       Expression with a filter command and args
+    /// `{x|y a b|z}`     Expression with a command pipeline
+    /// `a{}b{x|y a b}c`  Mixed constant and expresions.
+    #[arg(verbatim_doc_comment)]
     pattern: String,
 
-    /// Escape character for the pattern
+    /// Escape character for the pattern.
     #[arg(short, long, value_name = "CHAR", default_value_t = '\\')]
     escape: char,
 }
 
 fn run(context: &Context, args: &Args) -> Result<()> {
     let pattern = Pattern::parse(&args.pattern, args.escape)?;
-    context.writer().write_line(pattern.to_string().as_bytes())
+
+    if let Some(pattern) = pattern.try_simplify() {
+        let mut reader = context.line_reader();
+        let mut writer = context.writer();
+
+        while let Some(line) = reader.read_line()? {
+            for item in pattern.items() {
+                match item {
+                    SimpleItem::Constant(value) => writer.write_block(value.as_bytes())?,
+                    SimpleItem::Expression => writer.write_block(line)?,
+                }
+            }
+            writer.write_separator()?;
+        }
+
+        return Ok(());
+    }
+
+    unimplemented!();
 }
