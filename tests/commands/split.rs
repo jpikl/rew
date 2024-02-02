@@ -26,9 +26,7 @@ command_test!("split", {
     trail_many_trail: [ cmd "-t" ":" should "a:bc:def:" => "a\nbc\ndef\n" ],
     trail_many_trail_nl: [ cmd "-t" ":" should "a:bc:def:\n" => "a\nbc\ndef\n" ],
     trail_buf_under: [ cmd "-t" ":" "--buf-size=8" should "aaaaaa:\n" => "aaaaaa\n" ],
-    // FIXME
-
-    // trail_buf_exact: [ cmd "-t" ":" "--buf-size=8" should "aaaaaaa:\n" => "aaaaaaa\n" ],
+    trail_buf_exact: [ cmd "-t" ":" "--buf-size=8" should "aaaaaaa:\n" => "aaaaaaa\n" ],
     trail_buf_over: [ cmd "-t" ":" "--buf-size=8" should "aaaaaaaa:\n" => "aaaaaaaa\n" ],
     trail_buf_over_2: [ cmd "-t" ":" "--buf-size=8" should "aaaaaaaaa:\n" => "aaaaaaaaa\n" ],
 });
