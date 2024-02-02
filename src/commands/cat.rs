@@ -20,12 +20,12 @@ struct Args {
     /// Process data as lines.
     ///
     /// Will normalize newlines to LF as a side-effect.
-    #[arg(short, long, conflicts_with = "blocks")]
+    #[arg(short, long, conflicts_with = "chunks")]
     lines: bool,
 
-    /// Process data as blocks.
+    /// Process data as chunks.
     #[arg(short, long, conflicts_with = "lines")]
-    blocks: bool,
+    chunks: bool,
 }
 
 fn run(context: &Context, args: &Args) -> Result<()> {
@@ -36,12 +36,12 @@ fn run(context: &Context, args: &Args) -> Result<()> {
         while let Some(line) = reader.read_line()? {
             writer.write_line(line)?;
         }
-    } else if args.blocks {
-        let mut reader = context.block_reader();
+    } else if args.chunks {
+        let mut reader = context.chunk_reader();
         let mut writer = context.writer();
 
-        while let Some(block) = reader.read_block()? {
-            writer.write_block(block)?;
+        while let Some(chunk) = reader.read_chunk()? {
+            writer.write(chunk)?;
         }
     } else {
         let mut reader = context.raw_reader();

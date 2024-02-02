@@ -42,8 +42,8 @@ fn run(context: &Context, args: &Args) -> Result<()> {
         while let Some(line) = reader.read_line()? {
             for item in pattern.items() {
                 match item {
-                    SimpleItem::Constant(value) => writer.write_block(value.as_bytes())?,
-                    SimpleItem::Expression => writer.write_block(line)?,
+                    SimpleItem::Constant(value) => writer.write(value.as_bytes())?,
+                    SimpleItem::Expression => writer.write(line)?,
                 }
             }
             writer.write_separator()?;

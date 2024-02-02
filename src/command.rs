@@ -1,6 +1,6 @@
 use crate::args::BufMode;
 use crate::args::GlobalArgs;
-use crate::io::BlockReader;
+use crate::io::ChunkReader;
 use crate::io::LineReader;
 use crate::io::Separator;
 use crate::io::Writer;
@@ -67,8 +67,8 @@ impl Context {
         stdin().lock()
     }
 
-    pub fn block_reader(&self) -> BlockReader<StdinLock<'_>> {
-        BlockReader::new(self.raw_reader(), self.buf_size())
+    pub fn chunk_reader(&self) -> ChunkReader<StdinLock<'_>> {
+        ChunkReader::new(self.raw_reader(), self.buf_size())
     }
 
     pub fn line_reader(&self) -> LineReader<StdinLock<'_>> {

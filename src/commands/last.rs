@@ -78,12 +78,12 @@ fn run(context: &Context, args: &Args) -> Result<()> {
                 total_lines -= 1;
 
                 if total_lines == args.count {
-                    writer.write_block(data)?;
+                    writer.write(data)?;
                     break;
                 }
             }
         } else {
-            writer.write_block(data)?;
+            writer.write(data)?;
         }
     }
 

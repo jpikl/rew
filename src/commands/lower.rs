@@ -17,19 +17,19 @@ pub const META: Meta = command_meta! {
 struct Args;
 
 fn run(context: &Context, _args: &Args) -> Result<()> {
-    let mut reader = context.block_reader();
+    let mut reader = context.chunk_reader();
     let mut writer = context.writer();
     let mut buffer = context.uninit_buf();
 
-    while let Some(block) = reader.read_block()? {
-        if block.is_ascii() {
+    while let Some(chunk) = reader.read_chunk()? {
+        if chunk.is_ascii() {
             // ASCII check is cheap, optimize throughput by reusing input buffer
-            block.make_ascii_lowercase();
-            writer.write_block(block)?;
+            chunk.make_ascii_lowercase();
+            writer.write(chunk)?;
         } else {
             buffer.clear();
-            block.to_lowercase_into(&mut buffer);
-            writer.write_block(&buffer)?;
+            chunk.to_lowercase_into(&mut buffer);
+            writer.write(&buffer)?;
         }
     }
 

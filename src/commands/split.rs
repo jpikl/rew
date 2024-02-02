@@ -25,7 +25,7 @@ struct Args {
 }
 
 fn run(context: &Context, args: &Args) -> Result<()> {
-    let mut reader = context.block_reader();
+    let mut reader = context.chunk_reader();
     let mut writer = context.writer();
 
     let input_separator = args.separator;
@@ -33,38 +33,38 @@ fn run(context: &Context, args: &Args) -> Result<()> {
     let trim_output_separator = context.separator().trim_fn();
 
     let mut ending_separator_written = false;
-    let mut start_next_block_separated = false;
+    let mut start_next_chunk_separated = false;
 
-    while let Some(mut block) = reader.read_block()? {
-        if start_next_block_separated {
-            writer.write_block(&[output_separator])?;
+    while let Some(mut chunk) = reader.read_chunk()? {
+        if start_next_chunk_separated {
+            writer.write(&[output_separator])?;
             ending_separator_written = true;
         }
 
-        let trimmed_block_len = trim_output_separator(block).len();
-        if trimmed_block_len < block.len() {
+        let trimmed_chunk_len = trim_output_separator(chunk).len();
+        if trimmed_chunk_len < chunk.len() {
             // Write the trimmed separator once we know there is more data
-            block = &mut block[..trimmed_block_len];
-            start_next_block_separated = true;
+            chunk = &mut chunk[..trimmed_chunk_len];
+            start_next_chunk_separated = true;
         } else {
-            start_next_block_separated = false;
+            start_next_chunk_separated = false;
         }
 
-        if trimmed_block_len > 0 {
-            let mut remainder = &mut block[..];
+        if trimmed_chunk_len > 0 {
+            let mut remainder = &mut chunk[..];
 
             while let Some(pos) = memchr(input_separator, remainder) {
                 remainder[pos] = output_separator;
                 remainder = &mut remainder[(pos + 1)..];
             }
 
-            writer.write_block(block)?;
-            ending_separator_written = block[trimmed_block_len - 1] == output_separator;
+            writer.write(chunk)?;
+            ending_separator_written = chunk[trimmed_chunk_len - 1] == output_separator;
         }
     }
 
     if !ending_separator_written || !args.ignore_trailing {
-        writer.write_block(&[output_separator])?;
+        writer.write(&[output_separator])?;
     }
 
     Ok(())

@@ -24,7 +24,7 @@ struct Args {
 }
 
 fn run(context: &Context, args: &Args) -> Result<()> {
-    let mut reader = context.block_reader();
+    let mut reader = context.chunk_reader();
     let mut writer = context.writer();
 
     let output_separator = args.separator.as_bytes();
@@ -33,15 +33,15 @@ fn run(context: &Context, args: &Args) -> Result<()> {
 
     let mut start_next_item_separated = false;
 
-    while let Some(block) = reader.read_block()? {
-        let mut remainder: &[u8] = block;
+    while let Some(chunk) = reader.read_chunk()? {
+        let mut remainder: &[u8] = chunk;
 
         while let Some(pos) = memchr(input_separator, remainder) {
             if start_next_item_separated {
-                writer.write_block(output_separator)?;
+                writer.write(output_separator)?;
             }
 
-            writer.write_block(trim_input_sparator(&remainder[..=pos]))?;
+            writer.write(trim_input_sparator(&remainder[..=pos]))?;
             remainder = &remainder[(pos + 1)..];
 
             // Write the trimmed separator once we know there is more data
@@ -50,17 +50,17 @@ fn run(context: &Context, args: &Args) -> Result<()> {
 
         if !remainder.is_empty() {
             if start_next_item_separated {
-                writer.write_block(output_separator)?;
+                writer.write(output_separator)?;
             }
 
-            writer.write_block(remainder)?;
+            writer.write(remainder)?;
             start_next_item_separated = false;
         }
     }
 
     if args.trailing {
-        writer.write_block(output_separator)?;
+        writer.write(output_separator)?;
     }
 
-    writer.write_block(&[input_separator])
+    writer.write(&[input_separator])
 }

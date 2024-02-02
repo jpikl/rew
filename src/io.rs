@@ -46,12 +46,12 @@ fn trim_null(mut line: &[u8]) -> &[u8] {
     line
 }
 
-pub struct BlockReader<R> {
+pub struct ChunkReader<R> {
     inner: R,
     buf: Vec<u8>,
 }
 
-impl<R: Read> BlockReader<R> {
+impl<R: Read> ChunkReader<R> {
     pub fn new(inner: R, buf_size: usize) -> Self {
         Self {
             inner,
@@ -63,7 +63,7 @@ impl<R: Read> BlockReader<R> {
         &mut self.inner
     }
 
-    pub fn read_block(&mut self) -> Result<Option<&mut [u8]>> {
+    pub fn read_chunk(&mut self) -> Result<Option<&mut [u8]>> {
         let len = self.inner.read(&mut self.buf)?;
         if len > 0 {
             Ok(Some(&mut self.buf[..len]))
@@ -166,30 +166,19 @@ impl<W: Write> Writer<W> {
     }
 
     pub fn write_line(&mut self, line: &[u8]) -> Result<()> {
-        if self.buffered {
-            self.inner.write_all(line)?;
-            self.inner.write_all(&[self.separator])?;
-        } else {
-            self.inner.get_mut().write_all(line)?;
-            self.inner.get_mut().write_all(&[self.separator])?;
-        }
-        Ok(())
+        self.write(line)?;
+        self.write_separator()
     }
 
     pub fn write_separator(&mut self) -> Result<()> {
-        if self.buffered {
-            self.inner.write_all(&[self.separator])?;
-        } else {
-            self.inner.get_mut().write_all(&[self.separator])?;
-        }
-        Ok(())
+        self.write(&[self.separator])
     }
 
-    pub fn write_block(&mut self, block: &[u8]) -> Result<()> {
+    pub fn write(&mut self, buf: &[u8]) -> Result<()> {
         if self.buffered {
-            self.inner.write_all(block)?;
+            self.inner.write_all(buf)?;
         } else {
-            self.inner.get_mut().write_all(block)?;
+            self.inner.get_mut().write_all(buf)?;
         }
         Ok(())
     }

@@ -29,12 +29,12 @@ fn run(context: &Context, args: &Args) -> Result<()> {
         return Ok(());
     }
 
-    let mut reader = context.block_reader();
+    let mut reader = context.chunk_reader();
     let mut writer = context.writer();
     let separator = context.separator().as_byte();
 
-    while let Some(block) = reader.read_block()? {
-        let mut remainder: &[u8] = block;
+    while let Some(chunk) = reader.read_chunk()? {
+        let mut remainder: &[u8] = chunk;
 
         while let Some(end) = memchr(separator, remainder) {
             remainder = &remainder[(end + 1)..];
@@ -46,7 +46,7 @@ fn run(context: &Context, args: &Args) -> Result<()> {
         }
 
         if count == 0 {
-            writer.write_block(remainder)?;
+            writer.write(remainder)?;
             break;
         }
     }

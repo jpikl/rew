@@ -23,31 +23,31 @@ struct Args {
 }
 
 fn run(context: &Context, args: &Args) -> Result<()> {
-    let mut reader = context.block_reader();
+    let mut reader = context.chunk_reader();
     let mut writer = context.writer();
     let mut buffer = context.uninit_buf();
 
-    while let Some(block) = reader.read_block()? {
-        if block.is_ascii() {
+    while let Some(chunk) = reader.read_chunk()? {
+        if chunk.is_ascii() {
             // ASCII check is cheap, optimize throughput by reusing input buffer
-            writer.write_block(block)?;
+            writer.write(chunk)?;
             continue;
         }
 
         // Copying chars to a side buffer is faster then directly writing them to buffered writer
         if args.delete {
-            block
+            chunk
                 .chars()
                 .filter(char::is_ascii)
                 .for_each(|char| buffer.push(char as u8));
         } else {
-            block
+            chunk
                 .chars()
                 .map(unidecode_char)
                 .for_each(|str| buffer.push_str(str));
         }
 
-        writer.write_block(&buffer)?;
+        writer.write(&buffer)?;
         buffer.clear();
     }
 

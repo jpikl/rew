@@ -48,7 +48,7 @@ fn run(context: &Context, args: &Args) -> Result<()> {
 
         // Write the first output iteration as we read the input
         let next_end = end + len;
-        writer.write_block(&buffer[end..next_end])?;
+        writer.write(&buffer[end..next_end])?;
         end = next_end;
 
         if buffer.len() - end < buf_size / 2 {
@@ -59,13 +59,13 @@ fn run(context: &Context, args: &Args) -> Result<()> {
     if let Some(mut count) = count {
         // We already did first output iteration during reading phase
         while count > 1 {
-            writer.write_block(&buffer[..end])?;
+            writer.write(&buffer[..end])?;
             count -= 1;
         }
         return Ok(());
     }
 
     loop {
-        writer.write_block(&buffer[..end])?;
+        writer.write(&buffer[..end])?;
     }
 }
