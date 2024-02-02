@@ -10,6 +10,7 @@ use clap::Command;
 use derive_more::Display;
 use std::io::stdin;
 use std::io::stdout;
+use std::io::Read;
 use std::io::StdinLock;
 use std::io::StdoutLock;
 
@@ -53,6 +54,7 @@ macro_rules! command_meta {
     };
 }
 
+#[derive(Clone)]
 pub struct Context(GlobalArgs);
 
 impl From<GlobalArgs> for Context {
@@ -72,7 +74,11 @@ impl Context {
     }
 
     pub fn line_reader(&self) -> LineReader<StdinLock<'_>> {
-        LineReader::new(self.raw_reader(), self.separator(), self.buf_size())
+        self.line_reader_from(self.raw_reader())
+    }
+
+    pub fn line_reader_from<R: Read>(&self, reader: R) -> LineReader<R> {
+        LineReader::new(reader, self.separator(), self.buf_size())
     }
 
     #[allow(clippy::unused_self)]
