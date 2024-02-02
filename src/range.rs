@@ -116,7 +116,8 @@ mod tests {
 
     #[rstest]
     #[case("", IntErrorKind::Empty)]
-    #[case("x", IntErrorKind::InvalidDigit)]
+    #[case("x", IntErrorKind::InvalidDigit)] // Forward parsing branch
+    #[case("-y", IntErrorKind::InvalidDigit)] // Backward parsing branch
     fn index_parse_err(#[case] input: &str, #[case] output: IntErrorKind) {
         assert_err_eq!(
             Index::<i32>::from_str(input).map_err(|err| err.kind().clone()),

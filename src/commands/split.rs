@@ -50,7 +50,7 @@ fn run(context: &Context, args: &Args) -> Result<()> {
             start_next_block_separated = false;
         }
 
-        if !block.is_empty() {
+        if trimmed_block_len > 0 {
             let mut remainder = &mut block[..];
 
             while let Some(pos) = memchr(input_separator, remainder) {

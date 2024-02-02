@@ -13,4 +13,5 @@ command_test!("skip", {
     buf_over_2: [ cmd "1" "--buf-size=8" should "aaaaaaaaa\nb\n" => "b\n" ],
     // seq 1 20000 | tail -n-10000 | md5sum
     many: [ sh "seq 1 20000 | %cmd% 10000 | md5sum" should "" => "8857ef28723cc4788a8ca7456214fc0c  -\n" ],
+    many_buf_line: [ sh "seq 1 20000 | %cmd% --buf-mode=line 10000 | md5sum" should "" => "8857ef28723cc4788a8ca7456214fc0c  -\n" ],
 });
