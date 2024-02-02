@@ -13,6 +13,7 @@ mod split;
 mod stream;
 mod trim;
 mod upper;
+mod x;
 
 pub fn get_meta() -> Vec<&'static Meta> {
     vec![
@@ -29,5 +30,6 @@ pub fn get_meta() -> Vec<&'static Meta> {
         &stream::META,
         &trim::META,
         &upper::META,
+        &x::META,
     ]
 }

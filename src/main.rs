@@ -2,6 +2,7 @@ mod args;
 mod command;
 mod commands;
 mod io;
+mod pattern;
 mod range;
 
 use anyhow::Error;
