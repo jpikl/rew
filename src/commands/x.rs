@@ -15,6 +15,7 @@ use bstr::ByteVec;
 use std::env::current_exe;
 use std::io::Write;
 use std::panic::resume_unwind;
+use std::process::Child;
 use std::process::ChildStdin;
 use std::process::ChildStdout;
 use std::process::Command;
@@ -81,27 +82,45 @@ enum EvalItem {
 }
 
 fn eval_pattern(context: &Context, pattern: &Pattern) -> Result<()> {
-    let mut stdins = Vec::new();
+    let mut children = Vec::new();
     let mut items = Vec::new();
+    let mut stdins = Vec::new();
 
+    // Build and spawn child process pipelines.
     for item in pattern.items() {
         match &item {
             Item::Constant(value) => items.push(EvalItem::Constant(value.clone())),
             Item::Expression(ref commands) => {
-                let (stdin, stdout) = build_command_pipeline(commands)?;
-                stdins.push(stdin);
+                let (stdin, mut new_children, stdout) = build_command_pipeline(commands)?;
+                children.append(&mut new_children);
                 items.push(EvalItem::Reader(context.line_reader_from(stdout)));
+                stdins.push(Some(stdin));
             }
         }
     }
 
+    // "reader" thread which distributes main process stdin to all child processes.
     let thread_context = context.clone();
-    let thread_result: JoinHandle<Result<()>> = thread::spawn(move || {
+    let thread: JoinHandle<Result<()>> = thread::spawn(move || {
         let mut reader = thread_context.chunk_reader();
 
         while let Some(chunk) = reader.read_chunk()? {
-            for mut stdin in &stdins {
-                stdin.write_all(chunk)?;
+            for stdin in &mut stdins {
+                if let Some(reader) = stdin {
+                    if let Err(err) = reader.write_all(chunk) {
+                        if err.kind() == std::io::ErrorKind::BrokenPipe {
+                            // Do not end the whole thread just because one child process ended.
+                            // Keep writing data to the other child processes which are still running.
+                            stdin.take();
+                        } else {
+                            return Err(err.into());
+                        }
+                    }
+                }
+            }
+
+            if stdins.iter().all(Option::is_none) {
+                break; // All child stdins are closed.
             }
         }
 
@@ -111,6 +130,7 @@ fn eval_pattern(context: &Context, pattern: &Pattern) -> Result<()> {
     let mut writer = context.writer();
     let mut buffer = context.uninit_buf();
 
+    // Compose output lines from constant parts and child processes stdout.
     'outer: loop {
         for item in &mut items {
             match item {
@@ -119,7 +139,7 @@ fn eval_pattern(context: &Context, pattern: &Pattern) -> Result<()> {
                     if let Some(line) = reader.read_line()? {
                         buffer.push_str(line);
                     } else {
-                        break 'outer;
+                        break 'outer; // Quit as soon as one of child processes ends.
                     }
                 }
             }
@@ -129,15 +149,36 @@ fn eval_pattern(context: &Context, pattern: &Pattern) -> Result<()> {
         buffer.clear();
     }
 
-    match thread_result.join() {
-        Ok(res) => res,
-        Err(err) => resume_unwind(err),
+    // Make sure all child processes are terminated.
+    // This will cause the "reader" thread to end by detecting "broken pipe" everywhere.
+    for mut child in children {
+        if child.try_wait()?.is_none() {
+            child.kill()?;
+        }
     }
+
+    // Try wait for the "reader" thread to finish (non-blockingly)
+    if thread.is_finished() {
+        return match thread.join() {
+            Ok(res) => res,
+            Err(err) => resume_unwind(err),
+        };
+    }
+
+    // At this moment, the "reader" thread is blocked on read from stdin.
+    // There is no way how to interrupt it, so we just let the thread die alongside the main process.
+    // Reimplementing this with async Rust is probably not worth the effort, because:
+    // 1. It only happens during interactive usage (when stdin is TTY).
+    // 2. And all child process pipelines must contain at least one process which does not read from stdin.
+    Ok(())
 }
 
-fn build_command_pipeline(commands: &[pattern::Command]) -> Result<(ChildStdin, ChildStdout)> {
-    let mut stdin: Option<ChildStdin> = None;
-    let mut stdout: Option<ChildStdout> = None;
+fn build_command_pipeline(
+    commands: &[pattern::Command],
+) -> Result<(ChildStdin, Vec<Child>, ChildStdout)> {
+    let mut children = Vec::new();
+    let mut stdin = None;
+    let mut stdout = None;
 
     for command in commands {
         let mut child = if let Some(stdout) = stdout {
@@ -157,6 +198,7 @@ fn build_command_pipeline(commands: &[pattern::Command]) -> Result<(ChildStdin, 
         }
 
         stdout = child.stdout.take();
+        children.push(child);
     }
 
     if stdin.is_none() && stdout.is_none() {
@@ -177,7 +219,7 @@ fn build_command_pipeline(commands: &[pattern::Command]) -> Result<(ChildStdin, 
         .take()
         .expect("Could not get ChildStdout from command pipeline");
 
-    Ok((stdin, stdout))
+    Ok((stdin, children, stdout))
 }
 
 fn build_command(params: &pattern::Command) -> Result<Command> {
@@ -189,6 +231,7 @@ fn build_command(params: &pattern::Command) -> Result<Command> {
         }
     }
 
+    // TODO: try to wrap using stdbuf to set buffering
     let mut command = Command::new(&params.name);
     command.args(&params.args);
     Ok(command)
@@ -198,6 +241,7 @@ fn build_internal_command(name: &str, args: &[String]) -> Result<Command> {
     let mut args = args.to_vec();
     args.insert(0, name.to_owned());
 
+    // TODO: pass null/buff config through env
     let mut command = Command::new(current_exe()?);
     command.args(&args);
     Ok(command)
