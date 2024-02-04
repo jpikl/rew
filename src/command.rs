@@ -90,7 +90,7 @@ impl Context {
         Writer::new(
             self.raw_writer(),
             self.separator(),
-            self.0.buf_mode == BufMode::Full,
+            self.buf_mode().is_full(),
             self.buf_size(),
         )
     }
@@ -101,6 +101,10 @@ impl Context {
 
     pub fn uninit_buf(&self) -> Vec<u8> {
         Vec::with_capacity(self.buf_size())
+    }
+
+    pub fn buf_mode(&self) -> BufMode {
+        self.0.buf_mode
     }
 
     pub fn buf_size(&self) -> usize {

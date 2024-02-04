@@ -14,11 +14,16 @@ clap = { version = "4.4.16", features = [
     "string",
     "wrap_help",
 ] }
-derive_more = { version = "1.0.0-beta.6", features = ["display", "error"] }
+derive_more = { version = "1.0.0-beta.6", features = [
+    "display",
+    "error",
+    "is_variant",
+] }
 itoap = "1.0.1"
 memchr = "2.7.1"
 owo-colors = "4.0.0"
 unidecode = "0.3.0"
+which = "6.0.0"
 
 [dev-dependencies]
 assert_cmd = "2.0.13"

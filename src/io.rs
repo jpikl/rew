@@ -1,13 +1,14 @@
 use anyhow::anyhow;
 use anyhow::Result;
 use bstr::ByteSlice;
+use derive_more::IsVariant;
 use memchr::memchr;
 use std::io::copy;
 use std::io::BufWriter;
 use std::io::Read;
 use std::io::Write;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, IsVariant)]
 pub enum Separator {
     Newline,
     Null,

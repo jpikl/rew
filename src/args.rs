@@ -1,6 +1,7 @@
 use clap::Args;
 use clap::ValueEnum;
 use derive_more::Display;
+use derive_more::IsVariant;
 use std::io::stdout;
 use std::io::IsTerminal;
 
@@ -9,7 +10,11 @@ use std::io::IsTerminal;
 // Also used internally by the `linereader` library https://github.com/Freaky/rust-linereader.
 const DEFAULT_BUF_SIZE: usize = 32 * 1024;
 
-#[derive(Clone, ValueEnum, Display, Debug, PartialEq, Eq)]
+pub const ENV_NULL: &str = "REW_NULL";
+pub const ENV_BUF_MODE: &str = "REW_BUF_MODE";
+pub const ENV_BUF_SIZE: &str = "REW_BUF_SIZE";
+
+#[derive(Clone, Copy, ValueEnum, Display, Debug, IsVariant, PartialEq, Eq)]
 pub enum BufMode {
     #[display("line")]
     Line,
@@ -30,7 +35,7 @@ impl Default for BufMode {
 #[derive(Args, Default, Debug, Clone, Eq, PartialEq)]
 pub struct GlobalArgs {
     /// Line delimiter is NUL, not newline.
-    #[arg(global = true, short = '0', long, env = "REW_NULL")]
+    #[arg(global = true, short = '0', long, env = ENV_NULL)]
     pub null: bool,
 
     /// Output buffering mode.
@@ -45,7 +50,7 @@ pub struct GlobalArgs {
         global = true,
         long,
         name = "MODE",
-        env = "REW_BUF_MODE",
+        env = ENV_BUF_MODE,
         default_value_t = BufMode::default(),
         verbatim_doc_comment,
         hide_default_value = true,
@@ -64,7 +69,7 @@ pub struct GlobalArgs {
         global = true,
         long,
         name = "BYTES",
-        env = "REW_BUF_SIZE",
+        env = ENV_BUF_SIZE,
         default_value_t = DEFAULT_BUF_SIZE,
     )]
     pub buf_size: usize,
