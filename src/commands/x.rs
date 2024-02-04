@@ -9,12 +9,15 @@ use crate::command_meta;
 use crate::commands::cat;
 use crate::io::LineReader;
 use crate::pattern;
+use crate::pattern::Expression;
+use crate::pattern::ExpressionValue;
 use crate::pattern::Item;
 use crate::pattern::Pattern;
 use crate::pattern::SimpleItem;
 use crate::pattern::SimplePattern;
 use anyhow::Result;
 use bstr::ByteVec;
+use std::env;
 use std::env::current_exe;
 use std::io::Write;
 use std::panic::resume_unwind;
@@ -96,8 +99,9 @@ fn eval_pattern(context: &Context, pattern: &Pattern) -> Result<()> {
     for item in pattern.items() {
         match &item {
             Item::Constant(value) => items.push(EvalItem::Constant(value.clone())),
-            Item::Expression(ref commands) => {
-                let (stdin, mut new_children, stdout) = command_builder.build_pipeline(commands)?;
+            Item::Expression(ref expression) => {
+                let (stdin, mut new_children, stdout) =
+                    command_builder.build_expression(expression)?;
 
                 children.append(&mut new_children);
                 items.push(EvalItem::Reader(context.line_reader_from(stdout)));
@@ -199,21 +203,59 @@ impl<'a> CommandBuilder<'a> {
         }
     }
 
+    fn build_expression(
+        &mut self,
+        expr: &Expression,
+    ) -> Result<(Option<ChildStdin>, Vec<Child>, ChildStdout)> {
+        match &expr.value {
+            ExpressionValue::RawShell(command) => Self::build_raw_shell(command, expr.no_stdin),
+            ExpressionValue::Pipeline(commands) => self.build_pipeline(commands, expr.no_stdin),
+        }
+    }
+
+    fn build_raw_shell(
+        sh_command: &str,
+        no_stdin: bool,
+    ) -> Result<(Option<ChildStdin>, Vec<Child>, ChildStdout)> {
+        let shell = env::var_os("SHELL").unwrap_or("sh".into());
+        let mut command = Command::new(shell);
+
+        command.arg("-c");
+        command.arg(sh_command);
+        command.stdout(Stdio::piped());
+
+        if no_stdin {
+            command.stdin(Stdio::null());
+        } else {
+            command.stdin(Stdio::piped());
+        }
+
+        let mut child = command.spawn()?;
+        let stdin = child.stdin.take();
+
+        let stdout = child
+            .stdout
+            .take()
+            .expect("Could not get ChildStdout from raw shell");
+
+        Ok((stdin, vec![child], stdout))
+    }
+
     fn build_pipeline(
         &mut self,
         commands: &[pattern::Command],
+        mut no_stdin: bool,
     ) -> Result<(Option<ChildStdin>, Vec<Child>, ChildStdout)> {
         let mut children = Vec::new();
         let mut stdin = None;
         let mut stdout = None;
-        let mut stdin_disabled = false;
 
         for params in commands {
             let (mut command, group) = self.build(params)?;
 
             if group == Group::Generators {
                 command.stdin(Stdio::null());
-                stdin_disabled = true;
+                no_stdin = true;
             } else if let Some(stdout) = stdout {
                 command.stdin(Stdio::from(stdout));
             } else {
@@ -223,7 +265,7 @@ impl<'a> CommandBuilder<'a> {
             command.stdout(Stdio::piped());
             let mut child = command.spawn()?;
 
-            if stdin_disabled {
+            if no_stdin {
                 stdin = None;
             } else if stdin.is_none() {
                 stdin = child.stdin.take(); // The first process in pipeline
@@ -247,7 +289,7 @@ impl<'a> CommandBuilder<'a> {
         let stdin = stdin.take();
         let stdout = stdout
             .take()
-            .expect("Could not get ChildStdout from command pipeline");
+            .expect("Could not get ChildStdout from pipeline");
 
         Ok((stdin, children, stdout))
     }

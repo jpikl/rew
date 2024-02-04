@@ -10,6 +10,9 @@ use std::str::Chars;
 const EXPR_START: char = '{';
 const EXPR_END: char = '}';
 const PIPE: char = '|';
+
+const NO_STDIN_MARKER: char = ':';
+const RAW_SHELL_MARKER: char = '#';
 const EXTERN_MARKER: char = '!';
 
 const SINGLE_QUOTE: char = '\'';
@@ -31,7 +34,7 @@ pub struct Error {
 #[derive(Debug, Display, PartialEq)]
 pub enum ErrorKind {
     #[display("the previous {EXPR_START} was not closed")]
-    UnexpectedExpressionStart,
+    UnexpectedExprStart,
     #[display("missing command before {PIPE}")]
     MissingCommandBefore,
     #[display("missing command after {PIPE}")]
@@ -39,9 +42,11 @@ pub enum ErrorKind {
     #[display("missing closing {_0}")]
     MissingClosingQuote(char),
     #[display("missing opening {EXPR_START}")]
-    MissingExpressionStart,
+    MissingExprStart,
     #[display("missing closing {EXPR_END}")]
-    MissingExpressionEnd,
+    MissingExprEnd,
+    #[display("empty shell command")]
+    EmptyShellCommand,
 }
 
 impl Display for Error {
@@ -64,15 +69,27 @@ pub struct Pattern(Vec<Item>);
 
 pub struct SimplePattern(Vec<SimpleItem>);
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Display, Clone, PartialEq)]
 pub enum Item {
     Constant(String),
-    Expression(Vec<Command>),
+    Expression(Expression),
 }
 
 pub enum SimpleItem {
     Constant(String),
     Expression,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Expression {
+    pub no_stdin: bool,
+    pub value: ExpressionValue,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum ExpressionValue {
+    Pipeline(Vec<Command>),
+    RawShell(String),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -97,7 +114,10 @@ impl Pattern {
         for item in self.items() {
             let simple_item = match item {
                 Item::Constant(value) => SimpleItem::Constant(value.clone()),
-                Item::Expression(commands) if commands.is_empty() => SimpleItem::Expression,
+                Item::Expression(Expression {
+                    no_stdin: _,
+                    value: ExpressionValue::Pipeline(commands),
+                }) if commands.is_empty() => SimpleItem::Expression,
                 Item::Expression(_) => return None,
             };
             simple_items.push(simple_item);
@@ -122,19 +142,29 @@ impl Display for Pattern {
     }
 }
 
-impl Display for Item {
+impl Display for Expression {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{{")?;
+        if self.no_stdin {
+            write!(f, ":")?;
+        }
+        write!(f, "{}", self.value)?;
+        write!(f, "}}")
+    }
+}
+
+impl Display for ExpressionValue {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Constant(value) => write!(f, "{value}"),
-            Self::Expression(commands) => {
-                write!(f, "{{")?;
+            Self::RawShell(command) => write!(f, "#`{command}`"),
+            Self::Pipeline(commands) => {
                 for (i, command) in commands.iter().enumerate() {
                     if i > 0 {
                         write!(f, "|")?;
                     }
                     write!(f, "{command}")?;
                 }
-                write!(f, "}}")
+                Ok(())
             }
         }
     }
@@ -191,9 +221,7 @@ impl Parser<'_> {
         while let Some(char) = self.peek() {
             match char {
                 EXPR_START => break,
-                EXPR_END => {
-                    return Err(self.error(ErrorKind::MissingExpressionStart, self.position))
-                }
+                EXPR_END => return Err(self.err(ErrorKind::MissingExprStart)),
                 char if char == self.escape => {
                     let is_escapable = |char| matches!(char, EXPR_START | EXPR_END);
                     constant.push(self.parse_escape_sequence(is_escapable));
@@ -205,29 +233,58 @@ impl Parser<'_> {
         Ok(constant)
     }
 
-    fn parse_expression(&mut self) -> Result<Vec<Command>> {
+    fn parse_expression(&mut self) -> Result<Expression> {
         let start_position = self.position;
 
         self.consume(EXPR_START);
+
+        let no_stdin = self.try_consume(NO_STDIN_MARKER);
+        let raw_shell = self.try_consume(RAW_SHELL_MARKER);
+
         self.consume_whitespaces();
 
-        let mut command = Vec::new();
+        let value = if raw_shell {
+            ExpressionValue::RawShell(self.parse_raw_shell()?)
+        } else {
+            ExpressionValue::Pipeline(self.parse_pipeline()?)
+        };
+
+        if self.try_consume(EXPR_END) {
+            Ok(Expression { no_stdin, value })
+        } else {
+            Err(self.err_at(ErrorKind::MissingExprEnd, start_position))
+        }
+    }
+
+    fn parse_raw_shell(&mut self) -> Result<String> {
+        let mut command = String::new();
+
+        while let Some(char) = self.peek() {
+            match char {
+                EXPR_START => return Err(self.err(ErrorKind::UnexpectedExprStart)),
+                EXPR_END => break,
+                _ => command.push(self.consume(char)),
+            }
+        }
+
+        if command.trim().is_empty() {
+            Err(self.err(ErrorKind::EmptyShellCommand))
+        } else {
+            Ok(command)
+        }
+    }
+
+    fn parse_pipeline(&mut self) -> Result<Vec<Command>> {
+        let mut commands = Vec::new();
         let mut command_expected = false;
 
         while let Some(char) = self.peek() {
             match char {
-                EXPR_START => {
-                    return Err(self.error(ErrorKind::UnexpectedExpressionStart, self.position))
-                }
-                PIPE => return Err(self.error(ErrorKind::MissingCommandBefore, self.position)),
-                EXPR_END => {
-                    if command_expected {
-                        return Err(self.error(ErrorKind::MissingCommandAfter, self.position));
-                    }
-                    break;
-                }
+                EXPR_START => return Err(self.err(ErrorKind::UnexpectedExprStart)),
+                PIPE => return Err(self.err(ErrorKind::MissingCommandBefore)),
+                EXPR_END => break,
                 _ => {
-                    command.push(self.parse_command()?);
+                    commands.push(self.parse_command()?);
                     command_expected = self.try_consume(PIPE);
 
                     if command_expected {
@@ -238,15 +295,14 @@ impl Parser<'_> {
         }
 
         if command_expected {
-            Err(self.error(ErrorKind::MissingCommandAfter, self.position))
-        } else if self.try_consume(EXPR_END) {
-            Ok(command)
+            Err(self.err(ErrorKind::MissingCommandAfter))
         } else {
-            Err(self.error(ErrorKind::MissingExpressionEnd, start_position))
+            Ok(commands)
         }
     }
 
     fn parse_command(&mut self) -> Result<Command> {
+        let external = self.try_consume(EXTERN_MARKER);
         let name = self.parse_arg()?;
         let mut args = Vec::new();
 
@@ -262,19 +318,11 @@ impl Parser<'_> {
             }
         }
 
-        if let Some(name) = name.strip_prefix(EXTERN_MARKER) {
-            Ok(Command {
-                name: name.to_string(),
-                args,
-                external: true,
-            })
-        } else {
-            Ok(Command {
-                name,
-                args,
-                external: false,
-            })
-        }
+        Ok(Command {
+            name,
+            args,
+            external,
+        })
     }
 
     fn parse_arg(&mut self) -> Result<String> {
@@ -309,7 +357,7 @@ impl Parser<'_> {
             }
         }
 
-        Err(self.error(ErrorKind::MissingClosingQuote(quote), start_position))
+        Err(self.err_at(ErrorKind::MissingClosingQuote(quote), start_position))
     }
 
     fn parse_unquote_arg(&mut self) -> String {
@@ -389,7 +437,15 @@ impl Parser<'_> {
         }
     }
 
-    fn error(&self, kind: ErrorKind, position: usize) -> Error {
+    fn err(&self, kind: ErrorKind) -> Error {
+        Error {
+            input: self.input.clone(),
+            kind,
+            position: self.position,
+        }
+    }
+
+    fn err_at(&self, kind: ErrorKind, position: usize) -> Error {
         Error {
             input: self.input.clone(),
             kind,
@@ -426,9 +482,11 @@ mod tests {
     #[case("{name arg}",       "{`name` `arg`}")]
     #[case("{name arg1 arg2}", "{`name` `arg1` `arg2`}")]
     // Command with args - External
-    #[case("{!name}",           "{!`name`}")]
-    #[case("{!name arg}",       "{!`name` `arg`}")]
-    #[case("{!name arg1 arg2}", "{!`name` `arg1` `arg2`}")]
+    #[case("{!name}",             "{!`name`}")]
+    #[case("{!name arg}",         "{!`name` `arg`}")]
+    #[case("{!name arg1 arg2}",   "{!`name` `arg1` `arg2`}")]
+    #[case("{!'name' arg1 arg2}", "{!`name` `arg1` `arg2`}")] // External marker
+    #[case("{'!name' arg1 arg2}", "{`!name` `arg1` `arg2`}")] // ! is part for command name
     // Command pipelines
     #[case("{n1|n2}",                  "{`n1`|`n2`}")]
     #[case("{n1|n2|n3}",               "{`n1`|`n2`|`n3`}")]
@@ -443,6 +501,23 @@ mod tests {
     "  c1  {}  c2  {  n1  }  c3  {  n2  a21  a22  }  c4  {  n3 |  n4  a41  |  n5  a51  a52  }  c5  ",
     "  c1  {}  c2  {`n1`}  c3  {`n2` `a21` `a22`}  c4  {`n3`|`n4` `a41`|`n5` `a51` `a52`}  c5  ",
     )]
+    // Pipeline markers
+    #[case("{:n1|n2}", "{:`n1`|`n2`}")]
+    #[case("{: n1|n2}", "{:`n1`|`n2`}")]
+    #[case("{ :n1|n2}", "{`:n1`|`n2`}")] // : is part for command name
+    #[case("{ : n1|n2}", "{`:` `n1`|`n2`}")] // : is separate command
+    #[case("{#n1|n2}", "{#`n1|n2`}")]
+    #[case("{# n1|n2}", "{#`n1|n2`}")]
+    #[case("{ #n1|n2}", "{`#n1`|`n2`}")] // # is part for command name
+    #[case("{ # n1|n2}", "{`#` `n1`|`n2`}")] // # is separate command
+    #[case("{:#n1|n2}", "{:#`n1|n2`}")]
+    #[case("{:# n1|n2}", "{:#`n1|n2`}")]
+    #[case("{ :#n1|n2}", "{`:#n1`|`n2`}")] // :# is part for command name
+    #[case("{ :# n1|n2}", "{`:#` `n1`|`n2`}")] // :# is separate command
+    #[case("{#:n1|n2}", "{#`:n1|n2`}")] // : is part of shell command
+    #[case("{#: n1|n2}", "{#`: n1|n2`}")] // : is part of shell command
+    #[case("{ #:n1|n2}", "{`#:n1`|`n2`}")] // #: is part for command name
+    #[case("{ #: n1|n2}", "{`#:` `n1`|`n2`}")] // #: is separate command
     // Escaping - General
     #[case("%",  "%")] // No
     #[case("%%", "%")] // Yes
@@ -494,15 +569,18 @@ mod tests {
     }
 
     #[rstest]
-    #[case("{{",   1, ErrorKind::UnexpectedExpressionStart)]
-    #[case("{a{",  2, ErrorKind::UnexpectedExpressionStart)] // Different condition than the one before
-    #[case("{|",   1, ErrorKind::MissingCommandBefore)]
-    #[case("{a|",  3, ErrorKind::MissingCommandAfter)]
-    #[case("{a|}", 3, ErrorKind::MissingCommandAfter)] // Different condition than the one before
-    #[case("{'a",  1, ErrorKind::MissingClosingQuote('\''))]
-    #[case("{\"a", 1, ErrorKind::MissingClosingQuote('"'))]
-    #[case("}",    0, ErrorKind::MissingExpressionStart)]
-    #[case("{",    0, ErrorKind::MissingExpressionEnd)]
+    #[case("{{",    1, ErrorKind::UnexpectedExprStart)]
+    #[case("{a{",   2, ErrorKind::UnexpectedExprStart)] // Different condition than the one before
+    #[case("{#a{",  3, ErrorKind::UnexpectedExprStart)] // Different condition for raw shell
+    #[case("{|",    1, ErrorKind::MissingCommandBefore)]
+    #[case("{a|",   3, ErrorKind::MissingCommandAfter)]
+    #[case("{a|}",  3, ErrorKind::MissingCommandAfter)] // Different condition than the one before
+    #[case("{'a",   1, ErrorKind::MissingClosingQuote('\''))]
+    #[case("{\"a",  1, ErrorKind::MissingClosingQuote('"'))]
+    #[case("}",     0, ErrorKind::MissingExprStart)]
+    #[case("{",     0, ErrorKind::MissingExprEnd)]
+    #[case("{#}",   2, ErrorKind::EmptyShellCommand)]
+    #[case("{# }",  3, ErrorKind::EmptyShellCommand)]
     #[timeout(Duration::from_secs(1))] // To protect against possible infinite loops
     fn parse_err(#[case] input: &str, #[case] position: usize, #[case] kind: ErrorKind) {
         let error = assert_err!(Pattern::parse(input, '%'));
@@ -519,7 +597,7 @@ mod tests {
         let error = Error {
             input: "abc}".into(),
             position: 3,
-            kind: ErrorKind::MissingExpressionStart,
+            kind: ErrorKind::MissingExprStart,
         };
         let expected_result = format!(
             "pattern syntax error at position {}\n\nabc}}\n   {}\n   {}\n",

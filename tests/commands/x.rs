@@ -24,6 +24,9 @@ command_test!("x", {
     line_buf_many: [ cmd "--buf-mode=line" "x_{}_{trim -s}_{tr -d 'b'}_{trim -s | tr -d 'b'}_y" should " a \n  bc  " => "x_ a _a _ a _a _y\nx_  bc  _bc  _  c  _c  _y\n" ],
     records_none: [ cmd "-0" "x_{}_{trim -s}_{tr -d 'b'}_{trim -s | tr -d 'b'}_y" should "" => "" ],
     records_many: [ cmd "-0" "x_{}_{trim -s}_{tr -d 'b'}_{trim -s | tr -d 'b'}_y" should " a \0  bc  " => "x_ a _a _ a _a _y\0x_  bc  _bc  _  c  _c  _y\0" ],
+    shell_none: [ cmd "x_{# sed -E 's/^ +//' | tr -d 'b'}_y" should "" => "" ],
+    shell_many: [ cmd "x_{# sed -E 's/^ +//' | tr -d 'b'}_y" should " a \n  bc  " => "x_a _y\nx_c  _y\n" ],
+    shell_redirect: [ cmd "x_{# sed -E 's/^ +//' | tr -d 'b' >/dev/null}_y" should " a \n  bc  " => "" ],
     generator: [ cmd "x_{seq 1..2}_y" should "" => "x_1_y\nx_2_y\n" ],
     cat_and_generator_none: [ cmd "x_{}_{seq 1..2}_y" should "" => "" ],
     cat_and_generator_less: [ cmd "x_{}_{seq 1..2}_y" should "a" => "x_a_1_y\n" ],
@@ -31,4 +34,5 @@ command_test!("x", {
     cat_and_generator_more: [ cmd "x_{}_{seq 1..2}_y" should "a\nbc\ndef" => "x_a_1_y\nx_bc_2_y\n" ],
     // Should not get stuck by pipeline command not reading its stdin
     cat_and_generator_many: [ sh "seq 1 100000 | %cmd% 'x_{}_{seq 1..100000}_y' | wc -l" should "" => "100000\n" ],
+    shell_and_generator_many: [ sh "seq 1 100000 | %cmd% 'x_{}_{:# seq 1 100000}_y' | wc -l" should "" => "100000\n" ],
 });
