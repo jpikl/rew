@@ -1,0 +1,6 @@
+- Turn seq `-s` option into optional positional arg.
+- Mute `Test receiver disconnected` errors in failed tests.
+- Add README.md, LICENSE.md and FAQ.md.
+- Setup fuzz testing for pattern.
+- Setup CI.
+- Setup mdBook and docs/man generator.
