@@ -5,7 +5,7 @@ use crate::command_meta;
 use anyhow::Result;
 use bstr::ByteSlice;
 use bstr::ByteVec;
-use unidecode::unidecode_char;
+use deunicode::deunicode_char;
 
 pub const META: Meta = command_meta! {
     name: "ascii",
@@ -43,8 +43,8 @@ fn run(context: &Context, args: &Args) -> Result<()> {
         } else {
             chunk
                 .chars()
-                .map(unidecode_char)
-                .for_each(|str| buffer.push_str(str));
+                .map(deunicode_char)
+                .for_each(|str| buffer.push_str(str.unwrap_or("?")));
         }
 
         writer.write(&buffer)?;
