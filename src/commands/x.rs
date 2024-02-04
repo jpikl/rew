@@ -98,9 +98,13 @@ fn eval_pattern(context: &Context, pattern: &Pattern) -> Result<()> {
             Item::Constant(value) => items.push(EvalItem::Constant(value.clone())),
             Item::Expression(ref commands) => {
                 let (stdin, mut new_children, stdout) = command_builder.build_pipeline(commands)?;
+
                 children.append(&mut new_children);
                 items.push(EvalItem::Reader(context.line_reader_from(stdout)));
-                stdins.push(Some(stdin));
+
+                if stdin.is_some() {
+                    stdins.push(stdin);
+                }
             }
         }
     }
@@ -108,6 +112,10 @@ fn eval_pattern(context: &Context, pattern: &Pattern) -> Result<()> {
     // "reader" thread which distributes main process stdin to all child processes.
     let thread_context = context.clone();
     let thread: JoinHandle<Result<()>> = thread::spawn(move || {
+        if stdins.iter().all(Option::is_none) {
+            return Ok(()); // None of child proceses use stdin.
+        }
+
         let mut reader = thread_context.chunk_reader();
 
         while let Some(chunk) = reader.read_chunk()? {
@@ -136,7 +144,7 @@ fn eval_pattern(context: &Context, pattern: &Pattern) -> Result<()> {
     let mut writer = context.writer();
     let mut buffer = context.uninit_buf();
 
-    // Compose output lines from constant parts and child processes stdout.
+    // Compose output lines from child processes stdout.
     'outer: loop {
         for item in &mut items {
             match item {
@@ -150,20 +158,19 @@ fn eval_pattern(context: &Context, pattern: &Pattern) -> Result<()> {
                 }
             }
         }
-
         writer.write_line(&buffer)?;
         buffer.clear();
     }
 
     // Make sure all child processes are terminated.
-    // This will cause the "reader" thread to end by detecting "broken pipe" everywhere.
+    // This will cause the "reader" thread to end by detecting "broken pipes".
     for mut child in children {
         if child.try_wait()?.is_none() {
             child.kill()?;
         }
     }
 
-    // Try to wait for the "reader" thread to finish (non-blockingly)
+    // Try to wait for the "reader" thread to finish (non-blockingly).
     if thread.is_finished() {
         return match thread.join() {
             Ok(res) => res,
@@ -174,8 +181,8 @@ fn eval_pattern(context: &Context, pattern: &Pattern) -> Result<()> {
     // At this moment, the "reader" thread is blocked on read from stdin.
     // There is no way how to interrupt it, so we just let the thread die alongside the main process.
     // Reimplementing this with async Rust is probably not worth the effort, because:
-    // 1. It only happens during interactive usage (when stdin is TTY).
-    // 2. And all child process pipelines must contain at least one process which does not open stdin.
+    // 1. It only happens during interactive usage when stdin is TTY.
+    // 2. And all process pipelines must contain at least one process which does not open stdin.
     Ok(())
 }
 
@@ -195,33 +202,38 @@ impl<'a> CommandBuilder<'a> {
     fn build_pipeline(
         &mut self,
         commands: &[pattern::Command],
-    ) -> Result<(ChildStdin, Vec<Child>, ChildStdout)> {
+    ) -> Result<(Option<ChildStdin>, Vec<Child>, ChildStdout)> {
         let mut children = Vec::new();
         let mut stdin = None;
         let mut stdout = None;
+        let mut stdin_disabled = false;
 
-        for command in commands {
-            let mut child = if let Some(stdout) = stdout {
-                self.build(command)?
-                    .stdin(Stdio::from(stdout))
-                    .stdout(Stdio::piped())
-                    .spawn()?
+        for params in commands {
+            let (mut command, group) = self.build(params)?;
+
+            if group == Group::Generators {
+                command.stdin(Stdio::null());
+                stdin_disabled = true;
+            } else if let Some(stdout) = stdout {
+                command.stdin(Stdio::from(stdout));
             } else {
-                self.build(command)?
-                    .stdin(Stdio::piped())
-                    .stdout(Stdio::piped())
-                    .spawn()?
-            };
+                command.stdin(Stdio::piped());
+            }
 
-            if stdin.is_none() {
-                stdin = child.stdin.take();
+            command.stdout(Stdio::piped());
+            let mut child = command.spawn()?;
+
+            if stdin_disabled {
+                stdin = None;
+            } else if stdin.is_none() {
+                stdin = child.stdin.take(); // The first process in pipeline
             }
 
             stdout = child.stdout.take();
             children.push(child);
         }
 
-        if stdin.is_none() && stdout.is_none() {
+        if stdout.is_none() {
             let mut child = self
                 .build_default_internal()?
                 .stdin(Stdio::piped())
@@ -232,10 +244,7 @@ impl<'a> CommandBuilder<'a> {
             stdout = child.stdout.take();
         }
 
-        let stdin = stdin
-            .take()
-            .expect("Could not get ChildStdin from command pipeline");
-
+        let stdin = stdin.take();
         let stdout = stdout
             .take()
             .expect("Could not get ChildStdout from command pipeline");
@@ -243,12 +252,31 @@ impl<'a> CommandBuilder<'a> {
         Ok((stdin, children, stdout))
     }
 
-    fn build(&mut self, params: &pattern::Command) -> Result<Command> {
-        if !params.external {
+    fn build(&mut self, params: &pattern::Command) -> Result<(Command, Group)> {
+        let pattern::Command {
+            name,
+            args,
+            external,
+        } = params;
+
+        if !external {
             for meta in get_meta() {
-                if meta.name == params.name {
-                    return self.build_internal(&params.name, &params.args);
+                if meta.name == name {
+                    let command = self.build_internal(Some(name), args)?;
+                    return Ok((command, meta.group));
                 }
+            }
+            if name == env!("CARGO_PKG_NAME") {
+                if let Some((name, args)) = args.split_first() {
+                    for meta in get_meta() {
+                        if meta.name == name {
+                            let command = self.build_internal(Some(name), args)?;
+                            return Ok((command, meta.group));
+                        }
+                    }
+                }
+                let command = self.build_internal(None, args)?;
+                return Ok((command, Group::Transformers));
             }
         }
 
@@ -256,29 +284,34 @@ impl<'a> CommandBuilder<'a> {
             if let Ok(stdbuf) = self.stdbuf() {
                 let mut command = Command::new(stdbuf);
                 command.arg("-oL"); // Output line buffering
-                command.arg(&params.name);
-                command.args(&params.args);
-                return Ok(command);
+                command.arg(name);
+                command.args(args);
+                return Ok((command, Group::Transformers));
             }
         }
 
-        let mut command = Command::new(&params.name);
-        command.args(&params.args);
-        Ok(command)
+        let mut command = Command::new(name);
+        command.args(args);
+        Ok((command, Group::Transformers))
     }
 
-    fn build_internal(&self, name: &str, args: &[String]) -> Result<Command> {
+    fn build_internal(&self, name: Option<&str>, args: &[String]) -> Result<Command> {
         let mut command = Command::new(current_exe()?);
+
         command.env(ENV_NULL, self.context.separator().is_null().to_string());
         command.env(ENV_BUF_MODE, self.context.buf_mode().to_string());
         command.env(ENV_BUF_SIZE, self.context.buf_size().to_string());
-        command.arg(name);
+
+        if let Some(name) = name {
+            command.arg(name);
+        }
+
         command.args(args);
         Ok(command)
     }
 
     fn build_default_internal(&self) -> Result<Command> {
-        self.build_internal(cat::META.name, &[])
+        self.build_internal(Some(cat::META.name), &[])
     }
 
     fn stdbuf(&mut self) -> &which::Result<PathBuf> {

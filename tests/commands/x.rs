@@ -13,6 +13,7 @@ command_test!("x", {
     escaped_alt_many: [ cmd "-e%" "x_%{%}_y" should "a\nbc" => "x_{}_y\nx_{}_y\n" ],
     internal_cmd_none: [ cmd "x_{trim -s}_y" should "" => "" ],
     internal_cmd_many: [ cmd "x_{trim -s}_y" should " a \n  bc  " => "x_a _y\nx_bc  _y\n" ],
+    internal_cmd_wrapped: [ cmd "x_{rew trim -s}_y" should " a \n  bc  " => "x_a _y\nx_bc  _y\n" ],
     external_cmd_none: [ cmd "x_{tr -d 'b'}_y" should "" => "" ],
     external_cmd_many: [ cmd "x_{tr -d 'b'}_y" should "a\nbc" => "x_a_y\nx_c_y\n" ],
     pipeline_none: [ cmd "x_{trim -s | tr -d 'b'}_y" should "" => "" ],
@@ -28,4 +29,6 @@ command_test!("x", {
     cat_and_generator_less: [ cmd "x_{}_{seq 1..2}_y" should "a" => "x_a_1_y\n" ],
     cat_and_generator_eq: [ cmd "x_{}_{seq 1..2}_y" should "a\nbc" => "x_a_1_y\nx_bc_2_y\n" ],
     cat_and_generator_more: [ cmd "x_{}_{seq 1..2}_y" should "a\nbc\ndef" => "x_a_1_y\nx_bc_2_y\n" ],
+    // Should not get stuck by pipeline command not reading its stdin
+    cat_and_generator_many: [ sh "seq 1 100000 | %cmd% 'x_{}_{seq 1..100000}_y' | wc -l" should "" => "100000\n" ],
 });

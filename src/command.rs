@@ -14,7 +14,7 @@ use std::io::Read;
 use std::io::StdinLock;
 use std::io::StdoutLock;
 
-#[derive(Display)]
+#[derive(Display, Clone, Copy, PartialEq)]
 pub enum Group {
     #[display("Mapper commands")]
     Mappers,
