@@ -1,6 +1,5 @@
 - Turn seq `-s` option into optional positional arg.
 - Allow multiple x patterns, internally joined into one.
 - Add README.md, LICENSE.md and FAQ.md.
-- Setup fuzz testing for pattern.
 - Setup CI.
 - Setup mdBook and docs/man generator.

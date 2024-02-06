@@ -3,6 +3,9 @@ name = "rew"
 version = "0.4.0"
 edition = "2021"
 
+[features]
+lib = [] # Used by cargo-fuzz targets
+
 [dependencies]
 anstream = "0.6.7"
 anyhow = "1.0.79"
