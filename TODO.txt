@@ -1,5 +1,5 @@
 - Turn seq `-s` option into optional positional arg.
-- Mute `Test receiver disconnected` errors in failed tests.
+- Allow multiple x patterns, internally joined into one.
 - Add README.md, LICENSE.md and FAQ.md.
 - Setup fuzz testing for pattern.
 - Setup CI.

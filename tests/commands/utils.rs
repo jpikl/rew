@@ -103,9 +103,9 @@ pub fn with_timeout(test: fn()) {
 
     match receiver.recv_timeout(timeout) {
         Ok(()) => {}
+        Err(RecvTimeoutError::Disconnected) => panic!(""), // Code inside the thread panicked
         Err(RecvTimeoutError::Timeout) => {
             panic!("Test run longer then allowed {} ms", timeout.as_millis())
         }
-        Err(RecvTimeoutError::Disconnected) => panic!("Test receiver disconnected"),
     }
 }
