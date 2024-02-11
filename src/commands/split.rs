@@ -15,7 +15,7 @@ pub const META: Meta = command_meta! {
 /// Split input into lines using a separator.
 #[derive(clap::Args)]
 struct Args {
-    //// Separator (single byte character).
+    /// Separator (single byte character).
     #[arg(value_parser = parse_separator)]
     separator: u8,
 

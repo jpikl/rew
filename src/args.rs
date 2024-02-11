@@ -16,8 +16,12 @@ pub const ENV_BUF_SIZE: &str = "REW_BUF_SIZE";
 
 #[derive(Clone, Copy, ValueEnum, Display, Debug, IsVariant, PartialEq, Eq)]
 pub enum BufMode {
+    /// Writes to stdout after a line was processed or when the output buffer is full.
+    /// Enabled by default when stdout is TTY (for interactive usage).
     #[display("line")]
     Line,
+    /// Writes to stdout only when the output buffer is full.
+    /// Enabled by default when stdout is not TTY (for maximal throughput).
     #[display("full")]
     Full,
 }
@@ -39,13 +43,6 @@ pub struct GlobalArgs {
     pub null: bool,
 
     /// Output buffering mode.
-    ///
-    /// - `line` - Writes to stdout after a line was processed or when the output buffer is full.
-    /// - `full` - Writes to stdout only when the output buffer is full.
-    ///
-    /// Defaults to `line` when stdout is TTY (for interactive usage), otherwise is `full` (for maximal throughput).
-    ///
-    /// Size of the output buffer can be configured through the `--buf-size` global option.
     #[arg(
         global = true,
         long,

@@ -15,7 +15,7 @@ pub const META: Meta = command_meta! {
 /// Join input lines using a separator.
 #[derive(clap::Args)]
 struct Args {
-    //// Separator.
+    /// Separator.
     separator: String,
 
     /// Print trailing separator at the end.
