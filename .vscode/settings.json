@@ -1,6 +1,14 @@
 {
   "editor.formatOnSave": true,
   "rust-analyzer.check.command": "clippy",
-  "rust-analyzer.check.extraArgs": ["--", "-W", "clippy::pedantic", "-A", "clippy::module_name_repetitions"],
-  "rust-analyzer.rustfmt.extraArgs": ["+nightly"]
+  "rust-analyzer.check.extraArgs": [
+    "--", 
+    "-W", "clippy::pedantic",
+    "-A", "clippy::module_name_repetitions", 
+    "-A", "clippy::must_use_candidate",
+    "-A", "clippy::missing_panics_doc",
+    "-A", "clippy::missing_errors_doc",
+  ],
+  "rust-analyzer.rustfmt.extraArgs": ["+nightly"],
+  "rust-analyzer.linkedProjects": ["./Cargo.toml", "./fuzz/Cargo.toml"]
 }

@@ -1,4 +1,4 @@
-use super::get_meta;
+use super::METAS;
 use crate::args::ENV_BUF_MODE;
 use crate::args::ENV_BUF_SIZE;
 use crate::args::ENV_NULL;
@@ -302,7 +302,7 @@ impl<'a> CommandBuilder<'a> {
         } = params;
 
         if !external {
-            for meta in get_meta() {
+            for meta in METAS {
                 if meta.name == name {
                     let command = self.build_internal(Some(name), args)?;
                     return Ok((command, meta.group));
@@ -310,7 +310,7 @@ impl<'a> CommandBuilder<'a> {
             }
             if name == env!("CARGO_PKG_NAME") {
                 if let Some((name, args)) = args.split_first() {
-                    for meta in get_meta() {
+                    for meta in METAS {
                         if meta.name == name {
                             let command = self.build_internal(Some(name), args)?;
                             return Ok((command, meta.group));

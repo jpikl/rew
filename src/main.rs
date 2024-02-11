@@ -1,63 +1,25 @@
-mod args;
-mod command;
-mod commands;
-mod io;
-mod pattern;
-mod range;
-
 use anyhow::Error;
 use anyhow::Result;
-use args::GlobalArgs;
-use clap::command;
-use clap::Args;
-use clap::Command;
-use owo_colors::OwoColorize;
-use std::io::Write;
+use rew::app::build_app;
+use rew::app::handle_error;
+use rew::commands::METAS;
 
 fn main() {
     handle_error(run().or_else(ignore_broken_pipe));
 }
 
 fn run() -> Result<()> {
-    let commands = commands::get_meta();
-    let app = build_app(&commands);
+    let app = build_app(&METAS);
 
     if let Some((name, matches)) = app.get_matches().subcommand() {
-        for command in commands {
-            if name == command.name {
-                return (command.run)(matches);
+        for meta in METAS {
+            if name == meta.name {
+                return (meta.run)(matches);
             }
         }
     }
 
     unreachable!("clap should handle missing or invalid command");
-}
-
-fn build_app(commands: &Vec<&'static command::Meta>) -> Command {
-    let mut app = command!("rew").subcommand_required(true);
-
-    for command in commands {
-        app = app.subcommand((command.build)());
-    }
-
-    GlobalArgs::augment_args(app.next_help_heading("Global options"))
-}
-
-fn handle_error(result: Result<()>) {
-    if let Err(error) = result {
-        report_error(&error, &mut anstream::stderr()).expect("Failed to write error to stderr!");
-        std::process::exit(1);
-    }
-}
-
-fn report_error(error: &Error, stderr: &mut impl Write) -> std::io::Result<()> {
-    writeln!(stderr, "{}: {}", "error".red().bold(), error)?;
-
-    for cause in error.chain().skip(1) {
-        writeln!(stderr, "{}: {}", "cause".red(), cause)?;
-    }
-
-    Ok(())
 }
 
 fn ignore_broken_pipe(error: Error) -> Result<()> {
