@@ -46,7 +46,7 @@ pub struct GlobalArgs {
     #[arg(
         global = true,
         long,
-        name = "MODE",
+        value_name = "MODE",
         env = ENV_BUF_MODE,
         default_value_t = BufMode::default(),
         verbatim_doc_comment,
@@ -65,7 +65,7 @@ pub struct GlobalArgs {
     #[arg(
         global = true,
         long,
-        name = "BYTES",
+        value_name = "BYTES",
         env = ENV_BUF_SIZE,
         default_value_t = DEFAULT_BUF_SIZE,
     )]
