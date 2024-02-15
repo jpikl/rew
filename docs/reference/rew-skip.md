@@ -11,7 +11,7 @@ rew skip [OPTIONS] <COUNT>
 ## Arguments
 
 <dl>
-<dt><code><COUNT></code></dt>
+<dt><code>&lt;COUNT&gt;</code></dt>
 <dd>
 Number of lines to skip
 </dd>

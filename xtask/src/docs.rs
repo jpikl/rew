@@ -177,7 +177,7 @@ fn write_pos_arg(writer: &mut impl Write, arg: &PositionalArg<'_>) -> Result<()>
     write!(writer, "<dt><code>")?;
 
     if arg.is_required() {
-        write!(writer, "<{}>", arg.name())?;
+        write!(writer, "&lt;{}&gt;", arg.name())?;
     } else {
         write!(writer, "[{}]", arg.name())?;
     }

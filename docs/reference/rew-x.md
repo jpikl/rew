@@ -11,7 +11,7 @@ rew x [OPTIONS] <PATTERN>
 ## Arguments
 
 <dl>
-<dt><code><PATTERN></code></dt>
+<dt><code>&lt;PATTERN&gt;</code></dt>
 <dd>
 Composition pattern.
 </dd>

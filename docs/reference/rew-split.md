@@ -11,7 +11,7 @@ rew split [OPTIONS] <SEPARATOR>
 ## Arguments
 
 <dl>
-<dt><code><SEPARATOR></code></dt>
+<dt><code>&lt;SEPARATOR&gt;</code></dt>
 <dd>
 Separator (single byte character)
 </dd>
