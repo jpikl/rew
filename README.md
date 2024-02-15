@@ -1,5 +1,7 @@
 # rew
 
+> _The Swiss Army Knife of line-oriented text processing._
+
 [![Build](https://img.shields.io/github/actions/workflow/status/jpikl/rew/ci.yml?branch=master)](https://github.com/jpikl/rew/actions/workflows/ci.yml)
 [![Coverage](https://img.shields.io/codecov/c/github/jpikl/rew/master?token=9K88E1ZCBU)](https://codecov.io/gh/jpikl/rew)
 [![Version](https://img.shields.io/crates/v/rew.svg)](https://crates.io/crates/rew)
@@ -9,16 +11,16 @@
 
 <!-- ANCHOR: description -->
 
-> _The Swiss Army Knife of line-oriented text processing._
+**rew** is a collection of command-line tools for line-oriented text processing.
 
-**rew** provides you with various tools for:
+It includes tools for a wide range of tasks, such as:
 
 - Text filtering, transformation and generation.
 - File system paths manipulation.
 - Parallel shell pipeline composition.
 - Shell metaprogramming (code generation).
 
-All tools are distributed as a single binary (in [BusyBox](https://www.busybox.net) style).
+All tools are distributed as a single binary (similar to [BusyBox](https://www.busybox.net)).
 
 <!-- ANCHOR_END: description -->
 

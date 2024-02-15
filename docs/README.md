@@ -1,6 +1,7 @@
 # Introduction
 
 {{#include ../README.md:description}}
+
 {{#include ../README.md:showcase}}
 
 ## License
