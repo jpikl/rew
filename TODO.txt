@@ -1,4 +1,5 @@
-- Turn seq `-s` option into optional positional arg.
+- Organize commands into groups in docs generator.
 - Allow multiple x patterns, internally joined into one.
 - Setup CI.
 - Setup man generator.
+- Add examples to docs/man.
