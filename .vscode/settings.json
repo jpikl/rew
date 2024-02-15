@@ -10,5 +10,5 @@
     "-A", "clippy::missing_errors_doc",
   ],
   "rust-analyzer.rustfmt.extraArgs": ["+nightly"],
-  "rust-analyzer.linkedProjects": ["./Cargo.toml", "./fuzz/Cargo.toml"]
+  "rust-analyzer.linkedProjects": ["./Cargo.toml", "./xtask/Cargo.toml", "./fuzz/Cargo.toml"]
 }
