@@ -18,7 +18,7 @@
 - Parallel shell pipeline composition.
 - Shell metaprogramming (code generation).
 
-All tools are distributed in a single binary (in [BusyBox](https://www.busybox.net) style).
+All tools are distributed as a single binary (in [BusyBox](https://www.busybox.net) style).
 
 <!-- ANCHOR_END: description -->
 

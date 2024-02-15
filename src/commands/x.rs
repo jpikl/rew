@@ -42,13 +42,6 @@ pub const META: Meta = command_meta! {
 #[derive(clap::Args)]
 struct Args {
     /// Composition pattern.
-    ///
-    /// `abc`             Constant  
-    /// `{}`              Empty expression     
-    /// `{cmd}`           Expression with a filter command
-    /// `{cmd a b}`       Expression with a filter command and args
-    /// `{x|y a b|z}`     Expression with a command pipeline
-    /// `a{}b{x|y a b}c`  Mixed constant and expresions.
     #[arg(verbatim_doc_comment)]
     pattern: String,
 

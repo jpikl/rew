@@ -4,30 +4,19 @@ There are multiple ways to install **rew**.
 
 ## Pre-compiled binary
 
-Go to the [GitHub Releases page](https://github.com/jpikl/rew/releases), download the version for your platform and extract the archive.
+Can be downloaded from [GitHub Releases page](https://github.com/jpikl/rew/releases).
 
-## Build from source using Rust
+## Building from sources
 
-Set up a [Rust development environment](https://www.rust-lang.org/tools/install), then run the following command:
+Set up a [Rust development environment](https://www.rust-lang.org/tools/install), then run one of the following commands:
 
-```shell
+```sh
+# The latest stable version:
 cargo install rew
-```
 
-This will download **rew** sources from [crates.io](https://crates.io/crates/rew), build them and install the result into Cargo's binary directory (`~/.cargo/bin/` by default).
-
-To uninstall it later, run the following command:
-
-```shell
-cargo uninstall rew
-```
-
-### Installing the latest development version
-
-Run the following command:
-
-```shell
+# The latest development version:
 cargo install --git https://github.com/jpikl/rew.git rew
 ```
 
-This will install the most recent (and probably unstable) development version from [GitHub repository](https://github.com/jpikl/rew).
+The result will be stored into Cargo's binary directory.
+By default, this is `~/.cargo/bin/`.

@@ -20,13 +20,13 @@ struct Args {
     ///
     /// Both `FROM` and `TO` are integers.
     ///
-    /// `TO` may be ommited for an infinite sequence.
+    /// `TO` may be ommited to produce an infinite sequence.
     #[arg(value_name = "FROM..[TO]", default_value_t = StartRange(1, None), allow_hyphen_values = true)]
     range: StartRange<i128>,
 
     /// Increment between numbers in sequence.
     ///
-    /// Defaults to 1 for increasing sequence, -1 for decreasing one.
+    /// Default value: `1` (for increasing sequence), `-1` (for decreasing sequence)
     #[arg(short, long, allow_negative_numbers = true)]
     step: Option<i128>,
 }
