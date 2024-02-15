@@ -190,6 +190,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "fuzz"
+version = "0.0.0"
+dependencies = [
+ "libfuzzer-sys",
+ "rew",
+]
+
+[[package]]
 name = "heck"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -298,14 +306,6 @@ dependencies = [
  "memchr",
  "owo-colors",
  "which",
-]
-
-[[package]]
-name = "rew-fuzz"
-version = "0.0.0"
-dependencies = [
- "libfuzzer-sys",
- "rew",
 ]
 
 [[package]]
