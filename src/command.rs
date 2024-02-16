@@ -14,16 +14,45 @@ use std::io::Read;
 use std::io::StdinLock;
 use std::io::StdoutLock;
 
-#[derive(Display, Clone, Copy, PartialEq)]
+#[derive(Display, Default, Clone, Copy, PartialEq)]
 pub enum Group {
-    #[display("Mapper commands")]
-    Mappers,
-    #[display("Filter commands")]
-    Filters,
+    #[default]
+    #[display("Commands")]
+    General,
     #[display("Transform commands")]
     Transformers,
+    #[display("Mapper commands")]
+    Mappers,
+    #[display("Path commands")]
+    Paths,
+    #[display("Filter commands")]
+    Filters,
     #[display("Generator commands")]
     Generators,
+}
+
+impl Group {
+    pub fn description(&self) -> Option<&'static str> {
+        match self {
+            Self::General => None,
+            Self::Transformers => Some("Transform input text to output. May output a different number of lines than was on input."),
+            Self::Mappers => Some("Transform each input line to output. Should output the same number of lines as was on input."),
+            Self::Paths => Some("Just like mapper commands but expect input lines to be filesystem paths."),
+            Self::Filters => Some("Output only certain input lines based on some criteria."),
+            Self::Generators => Some("Generate lines, ignore standard input."),
+        }
+    }
+
+    pub fn values() -> Vec<Group> {
+        vec![
+            Self::General,
+            Self::Transformers,
+            Self::Mappers,
+            Self::Paths,
+            Self::Filters,
+            Self::Generators,
+        ]
+    }
 }
 
 pub struct Meta {

@@ -5,6 +5,8 @@ use clap::builder::StyledStr;
 use clap::builder::ValueRange;
 use clap::Arg;
 use clap::Command;
+use rew::command::Group;
+use rew::commands::get_meta;
 use std::borrow::Cow;
 
 pub struct Adapter<'a> {
@@ -73,12 +75,44 @@ impl<'a> Adapter<'a> {
     }
 
     pub fn subcommands(&'a self) -> Option<Vec<Adapter<'a>>> {
+        self.filter_subcommands(|_| true)
+    }
+
+    pub fn groupped_subcommands(&'a self) -> Option<Vec<(Group, Vec<Adapter<'a>>)>> {
+        let mut groups = Vec::new();
+
+        for group in Group::values() {
+            let filter = |subcommand: &&Command| {
+                if self.parents.is_empty() {
+                    let meta = get_meta(subcommand.get_name());
+                    meta.map(|sc| sc.group).unwrap_or_default() == group
+                } else {
+                    false
+                }
+            };
+            if let Some(subcommands) = self.filter_subcommands(filter) {
+                groups.push((group, subcommands));
+            }
+        }
+
+        if groups.is_empty() {
+            None
+        } else {
+            Some(groups)
+        }
+    }
+
+    pub fn filter_subcommands(
+        &'a self,
+        filter: impl (Fn(&&Command) -> bool),
+    ) -> Option<Vec<Adapter<'a>>> {
         if self.name() == "help" {
             return None;
         }
 
         let subcommands = self
             .raw_sucommands()
+            .filter(filter)
             .map(|subcommand| Adapter {
                 inner: subcommand,
                 parents: self.parents_and_self(),

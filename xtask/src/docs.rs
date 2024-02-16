@@ -5,6 +5,7 @@ use crate::command::OptionalArg;
 use crate::command::PositionalArg;
 use anyhow::anyhow;
 use anyhow::Result;
+use rew::command::Group;
 use std::fs::File;
 use std::io::Read;
 use std::io::Write;
@@ -85,8 +86,10 @@ fn write_reference(writer: &mut impl Write, command: &Adapter<'_>) -> Result<()>
     write_heading(writer, command)?;
     write_usage(writer, command)?;
 
-    if let Some(subcommands) = command.subcommands() {
-        write_subcommands(writer, &subcommands)?;
+    if let Some(groups) = command.groupped_subcommands() {
+        for (group, subcommands) in groups {
+            write_subcommands(writer, group, &subcommands)?;
+        }
     }
 
     if let Some(positionals) = command.pos_args() {
@@ -134,9 +137,19 @@ fn write_usage(writer: &mut impl Write, command: &Adapter<'_>) -> Result<()> {
     Ok(())
 }
 
-fn write_subcommands(writer: &mut impl Write, subcommands: &[Adapter<'_>]) -> Result<()> {
+fn write_subcommands(
+    writer: &mut impl Write,
+    group: Group,
+    subcommands: &[Adapter<'_>],
+) -> Result<()> {
     writeln!(writer)?;
-    writeln!(writer, "## Commands")?;
+    writeln!(writer, "## {group}")?;
+
+    if let Some(description) = group.description() {
+        writeln!(writer)?;
+        writeln!(writer, "{description}")?;
+    }
+
     writeln!(writer)?;
     writeln!(writer, "<dl>")?;
 
