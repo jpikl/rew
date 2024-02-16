@@ -31,3 +31,7 @@ pub const METAS: [&Meta; 14] = [
     &upper::META,
     &x::META,
 ];
+
+pub fn get_meta(name: &str) -> Option<&'static Meta> {
+    METAS.iter().find(|meta| meta.name == name).copied()
+}

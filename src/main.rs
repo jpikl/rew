@@ -2,6 +2,7 @@ use anyhow::Error;
 use anyhow::Result;
 use rew::app::build_app;
 use rew::app::handle_error;
+use rew::commands::get_meta;
 use rew::commands::METAS;
 
 fn main() {
@@ -12,10 +13,8 @@ fn run() -> Result<()> {
     let app = build_app(&METAS);
 
     if let Some((name, matches)) = app.get_matches().subcommand() {
-        for meta in METAS {
-            if name == meta.name {
-                return (meta.run)(matches);
-            }
+        if let Some(meta) = get_meta(name) {
+            return (meta.run)(matches);
         }
     }
 
