@@ -1,3 +1,2 @@
 - Setup CI.
 - Setup man generator.
-- Add examples to docs/man.

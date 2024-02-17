@@ -11,6 +11,7 @@ pub const META: Meta = command_meta! {
     group: Group::Filters,
     args: Args,
     run: run,
+    examples: Vec::new,
 };
 
 /// Skip first N input lines, output the rest.

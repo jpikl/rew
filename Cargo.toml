@@ -11,6 +11,9 @@ homepage = "https://jpikl.github.io/rew"
 license = "MIT"
 edition = "2021"
 
+[features]
+docs = []
+
 [dependencies]
 anstream = "0.6.7"
 anyhow = "1.0.79"

@@ -5,15 +5,19 @@ Compose parallel shell pipelines using a pattern
 ## Usage
 
 ```
-rew x [OPTIONS] <PATTERN>
+rew x [OPTIONS] <PATTERN>...
 ```
 
 ## Arguments
 
 <dl>
-<dt><code>&lt;PATTERN&gt;</code></dt>
+<dt><code>&lt;PATTERN&gt;...</code></dt>
 <dd>
-Composition pattern.
+Output pattern(s).
+
+Describes how each output line is constructed from the input.
+
+Multiple patterns are joined together using a space character.
 </dd>
 </dl>
 

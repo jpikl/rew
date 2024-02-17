@@ -11,6 +11,7 @@ pub const META: Meta = command_meta! {
     group: Group::Generators,
     args: Args,
     run: run,
+    examples: Vec::new,
 };
 
 /// Print sequence of numbers as lines

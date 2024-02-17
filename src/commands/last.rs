@@ -13,6 +13,7 @@ pub const META: Meta = command_meta! {
     group: Group::Filters,
     args: Args,
     run: run,
+    examples: Vec::new,
 };
 
 /// Output last N input lines.

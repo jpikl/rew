@@ -6,6 +6,7 @@ use clap::builder::StyledStr;
 use clap::builder::ValueRange;
 use clap::Arg;
 use clap::Command;
+use rew::command::Example;
 use rew::command::Group;
 use rew::command::Meta;
 use rew::commands::get_meta;
@@ -39,6 +40,13 @@ impl<'a> Adapter<'a> {
 
     fn group(&self) -> Group {
         self.meta().map(|sc| sc.group).unwrap_or_default()
+    }
+
+    pub fn examples(&self) -> impl Iterator<Item = Example> {
+        self.meta()
+            .map(|meta| (meta.examples)())
+            .unwrap_or_default()
+            .into_iter()
     }
 
     pub fn name(&self) -> &str {

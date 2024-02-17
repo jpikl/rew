@@ -60,11 +60,19 @@ pub struct Meta {
     pub group: Group,
     pub build: fn() -> Command,
     pub run: fn(&ArgMatches) -> Result<()>,
+    pub examples: fn() -> Vec<Example>,
+}
+
+pub struct Example {
+    pub name: &'static str,
+    pub args: &'static [&'static str],
+    pub input: &'static [&'static str],
+    pub output: &'static [&'static str],
 }
 
 #[macro_export]
 macro_rules! command_meta {
-    (name: $name:literal, group: $group:expr, args: $args:ident, run: $run:ident,) => {
+    (name: $name:literal, group: $group:expr, args: $args:ident, run: $run:ident, examples: $examples:expr,) => {
         $crate::command::Meta {
             name: $name,
             group: $group,
@@ -79,6 +87,7 @@ macro_rules! command_meta {
                 let args = $args::from_arg_matches(matches)?;
                 $run(&context, &args)
             },
+            examples: $examples,
         }
     };
 }

@@ -1,4 +1,5 @@
 use crate::command::Context;
+use crate::command::Example;
 use crate::command::Group;
 use crate::command::Meta;
 use crate::command_meta;
@@ -10,6 +11,20 @@ pub const META: Meta = command_meta! {
     group: Group::Filters,
     args: Args,
     run: run,
+    examples: || vec![
+        Example {
+            name: "Print the first line",
+            args: &[],
+            input: &["first", "second", "third"],
+            output: &["first"],
+        },
+        Example {
+            name: "Print first two lines",
+            args: &["2"],
+            input: &["first", "second", "third"],
+            output: &["first", "second"],
+        },
+    ],
 };
 
 /// Output first N input lines.

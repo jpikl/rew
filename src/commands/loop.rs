@@ -11,6 +11,7 @@ pub const META: Meta = command_meta! {
     group: Group::Transformers,
     args: Args,
     run: run,
+    examples: Vec::new,
 };
 
 /// Repeatedly output all captured input.

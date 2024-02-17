@@ -5,6 +5,7 @@ use crate::command::OptionalArg;
 use crate::command::PositionalArg;
 use anyhow::anyhow;
 use anyhow::Result;
+use rew::command::Example;
 use std::fs::File;
 use std::io::Read;
 use std::io::Write;
@@ -179,6 +180,15 @@ fn write_reference(writer: &mut impl Write, command: &Adapter<'_>) -> Result<()>
         };
     }
 
+    if let Some(examples) = command.examples().non_empty() {
+        writeln!(writer)?;
+        writeln!(writer, "## Examples")?;
+
+        for example in examples {
+            write_example(writer, command, &example)?;
+        }
+    }
+
     Ok(())
 }
 
@@ -250,5 +260,38 @@ fn write_arg(writer: &mut impl Write, arg: &BaseArg<'_>) -> Result<()> {
     }
 
     writeln!(writer, "</dd>")?;
+    Ok(())
+}
+
+fn write_example(writer: &mut impl Write, command: &Adapter<'_>, example: &Example) -> Result<()> {
+    writeln!(writer)?;
+    writeln!(writer, "{}", example.name)?;
+    writeln!(writer)?;
+    writeln!(writer, "```sh")?;
+    write!(writer, "> ")?;
+
+    if !example.input.is_empty() {
+        write!(writer, "printf '%s\\n'")?;
+
+        for line in example.input {
+            write!(writer, " '{line}'")?;
+        }
+
+        write!(writer, " | ")?;
+    }
+
+    write!(writer, "{}", command.full_name())?;
+
+    for arg in example.args {
+        if arg.trim() != *arg || arg.contains('|') {
+            write!(writer, " '{arg}'")?;
+        } else {
+            write!(writer, " {arg}")?;
+        }
+    }
+
+    writeln!(writer)?;
+    writeln!(writer, "{}", example.output.join("\n"))?;
+    writeln!(writer, "```")?;
     Ok(())
 }

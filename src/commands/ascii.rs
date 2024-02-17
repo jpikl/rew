@@ -1,4 +1,5 @@
 use crate::command::Context;
+use crate::command::Example;
 use crate::command::Group;
 use crate::command::Meta;
 use crate::command_meta;
@@ -12,6 +13,20 @@ pub const META: Meta = command_meta! {
     group: Group::Mappers,
     args: Args,
     run: run,
+    examples: || vec![
+        Example {
+            name: "Convert input to ASCII",
+            args: &[],
+            input: &["Æneid", "étude", "🦀rocks!"],
+            output: &["AEneid", "etude", "crab rocks!"],
+        },
+        Example {
+            name: "Delete non-ASCII characters from input",
+            args: &["-d"],
+            input: &["Æneid", "étude", "🦀rocks!"],
+            output: &["neid", "tude", "rocks!"],
+        },
+    ],
 };
 
 /// Convert characters to ASCII.

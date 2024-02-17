@@ -10,6 +10,7 @@ pub const META: Meta = command_meta! {
     group: Group::Mappers,
     args: Args,
     run: run,
+    examples: Vec::new,
 };
 
 /// Convert characters to lowercase.

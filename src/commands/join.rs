@@ -1,4 +1,5 @@
 use crate::command::Context;
+use crate::command::Example;
 use crate::command::Group;
 use crate::command::Meta;
 use crate::command_meta;
@@ -10,6 +11,20 @@ pub const META: Meta = command_meta! {
     group: Group::Transformers,
     args: Args,
     run: run,
+    examples: || vec![
+        Example {
+            name: "Join lines using comma",
+            args: &[","],
+            input: &["first", "second", "third"],
+            output: &["first,second,third"],
+        },
+        Example {
+            name: "Join lines using comma (include trailing comma)",
+            args: &["-t", ","],
+            input: &["first", "second", "third"],
+            output: &["first,second,third,"],
+        },
+    ],
 };
 
 /// Join input lines using a separator.

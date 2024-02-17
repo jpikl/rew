@@ -99,7 +99,7 @@ Can be also set using `REW_NULL` environment variable.
 
 <dt><code>--buf-mode &lt;MODE&gt;</code></dt>
 <dd>
-Output buffering mode.
+Output buffering mode
 
 Possible values:
 

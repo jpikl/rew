@@ -35,3 +35,19 @@ Print help (see a summary with '-h')
 ## Global options
 
 See [rew reference](rew.md#global-options) for list of additional global options.
+
+## Examples
+
+Join lines using comma
+
+```sh
+> printf '%s\n' 'first' 'second' 'third' | rew join ,
+first,second,third
+```
+
+Join lines using comma (include trailing comma)
+
+```sh
+> printf '%s\n' 'first' 'second' 'third' | rew join -t ,
+first,second,third,
+```
