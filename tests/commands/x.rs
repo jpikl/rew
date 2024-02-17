@@ -24,6 +24,7 @@ command_test!("x", {
     line_buf_many: [ cmd "--buf-mode=line" "x_{}_{trim -s}_{tr -d 'b'}_{trim -s | tr -d 'b'}_y" should " a \n  bc  " => "x_ a _a _ a _a _y\nx_  bc  _bc  _  c  _c  _y\n" ],
     records_none: [ cmd "-0" "x_{}_{trim -s}_{tr -d 'b'}_{trim -s | tr -d 'b'}_y" should "" => "" ],
     records_many: [ cmd "-0" "x_{}_{trim -s}_{tr -d 'b'}_{trim -s | tr -d 'b'}_y" should " a \0  bc  " => "x_ a _a _ a _a _y\0x_  bc  _bc  _  c  _c  _y\0" ],
+    multipattern: [ cmd "x" "{}" "{trim}" should "a\n bc " => "x a a\nx  bc  bc\n" ],
     shell_none: [ cmd "x_{# sed -E 's/^ +//' | tr -d 'b'}_y" should "" => "" ],
     shell_many: [ cmd "x_{# sed -E 's/^ +//' | tr -d 'b'}_y" should " a \n  bc  " => "x_a _y\nx_c  _y\n" ],
     shell_redirect: [ cmd "x_{# sed -E 's/^ +//' | tr -d 'b' >/dev/null}_y" should " a \n  bc  " => "" ],

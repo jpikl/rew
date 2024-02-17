@@ -49,7 +49,6 @@ pub struct GlobalArgs {
         value_name = "MODE",
         env = ENV_BUF_MODE,
         default_value_t = BufMode::default(),
-        verbatim_doc_comment,
         hide_default_value = true,
     )]
     pub buf_mode: BufMode,

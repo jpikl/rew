@@ -41,9 +41,13 @@ pub const META: Meta = command_meta! {
 /// Compose parallel shell pipelines using a pattern.
 #[derive(clap::Args)]
 struct Args {
-    /// Composition pattern.
-    #[arg(verbatim_doc_comment)]
-    pattern: String,
+    /// Output pattern(s).
+    ///
+    /// Describes how each output line is constructed from the input.
+    ///
+    /// Multiple patterns are joined together using a space character.
+    #[arg(required = true)]
+    pattern: Vec<String>,
 
     /// Escape character for the pattern.
     #[arg(short, long, value_name = "CHAR", default_value_t = '\\')]
@@ -51,7 +55,8 @@ struct Args {
 }
 
 fn run(context: &Context, args: &Args) -> Result<()> {
-    let pattern = Pattern::parse(&args.pattern, args.escape)?;
+    let raw_pattern = args.pattern.join(" ");
+    let pattern = Pattern::parse(&raw_pattern, args.escape)?;
 
     if let Some(pattern) = pattern.try_simplify() {
         return eval_simple_pattern(context, &pattern);
