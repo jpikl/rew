@@ -35,23 +35,25 @@ Visit [rew website](https://jpikl.github.io/rew) for installation, usage, exampl
 Let's start with output of the standard Unix `find` command:
 
 ```sh
-> find src -type f
+> find -type f
 
-src/README.TXT
-src/image_1.JPG
-src/image_2.JPEG
+./README.TXT
+./image_1.JPG
+./image_2.JPEG
 ```
 
 Use `rew` subcommands to query components of each path:
 
 ```sh
-> find src -type f | rew base
+> find -type f | rew base
 
 README
 image_1
 image_2
+```
 
-> find src -type f | rew ext
+```sh
+> find -type f | rew ext
 
 TXT
 JPG
@@ -61,13 +63,15 @@ JPEG
 Combine multiple `rew` subcommands to get normalized results:
 
 ```sh
-> find src -type f | rew ext | rew lower
+> find -type f | rew ext | rew lower
 
 txt
 jpg
 jpeg
+```
 
-> find src -type f | rew ext | rew lower | rew replace eg g
+```sh
+> find -type f | rew ext | rew lower | rew replace eg g
 
 txt
 jpg
@@ -77,40 +81,40 @@ jpg
 Compose multiple pipelines using `x` subcommand:
 
 ```sh
-> find src -type f | rew x 'dst/{base}.{ext | lower | replace eg g}'
+> find -type f | rew x 'out/{base}.{ext | lower | replace eg g}'
 
-dst/README.txt
-dst/image_1.jpg
-dst/image_2.jpg
+out/README.txt
+out/image_1.jpg
+out/image_2.jpg
 ```
 
 Update the pattern to generate shell code:
 
 ```sh
-> find src -type f | rew x 'mv {} dst/{base}.{ext | lower | replace eg g}'
+> find -type f | rew x 'mv {} out/{base}.{ext | lower | replace eg g}'
 
-mv src/README.TXT dst/README.txt
-mv src/image_1.JPG dst/image_1.jpg
-mv src/image_2.JPEG dst/image_2.jpg
+mv ./README.TXT out/README.txt
+mv ./image_1.JPG out/image_1.jpg
+mv ./image_2.JPEG out/image_2.jpg
 ```
 
 And pipe it into a shell for execution:
 
 ```sh
-> find src -type f | rew x 'mv {} dst/{base}.{ext | lower | replace eg g}' | sh
+> find -type f | rew x 'mv {} out/{base}.{ext | lower | replace eg g}' | sh
 ```
 
 Or into a tool like [GNU parallel](https://www.gnu.org/software/parallel/parallel.html) for even faster execution:
 
 ```sh
-> find src -type f | rew x 'mv {} dst/{base}.{ext | lower | replace eg g}' | parallel
+> find -type f | rew x 'mv {} out/{base}.{ext | lower | replace eg g}' | parallel
 ```
 
 You are not limited only to `rew` subcommands. Call whatever tool you like.
 For example, let's use `sed` instead of `rew replace`:
 
 ```sh
-> find src -type f | rew x 'mv {} dst/{base}.{ext | lower | sed s/eg/g/}' | sh
+> find -type f | rew x 'mv {} out/{base}.{ext | lower | sed s/eg/g/}' | sh
 ```
 
 Have fun using rew!
