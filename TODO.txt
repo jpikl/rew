@@ -1,4 +1,3 @@
-- Add logging for docs generator
 - Allow multiple x patterns, internally joined into one.
 - Setup CI.
 - Setup man generator.

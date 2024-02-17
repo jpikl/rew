@@ -11,6 +11,8 @@ use std::io::Write;
 use std::path::Path;
 
 pub fn generate_summary(command: &Adapter<'_>, path: &Path) -> Result<()> {
+    println!("Updating summary in {path:?}");
+
     let mut file = File::open(path)?;
     let mut content = String::new();
 
@@ -68,6 +70,8 @@ fn write_summary(writer: &mut impl Write, command: &Adapter<'_>) -> Result<()> {
 
 pub fn generate_reference(command: &Adapter<'_>, dir: &Path) -> Result<()> {
     let path = dir.join(command.file_stem()).with_extension("md");
+    println!("Generating {:?} reference to {path:?}", command.full_name());
+
     write_reference(&mut File::create(path)?, command)?;
 
     for subcommand in command.subcommands() {
