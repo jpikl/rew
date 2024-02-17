@@ -1,11 +1,10 @@
 use crate::command::Adapter;
 use crate::command::BaseArg;
-use crate::command::GlobalArgs;
+use crate::command::NonEmpty;
 use crate::command::OptionalArg;
 use crate::command::PositionalArg;
 use anyhow::anyhow;
 use anyhow::Result;
-use rew::command::Group;
 use std::fs::File;
 use std::io::Read;
 use std::io::Write;
@@ -60,10 +59,8 @@ fn write_summary(writer: &mut impl Write, command: &Adapter<'_>) -> Result<()> {
         command.file_stem()
     )?;
 
-    if let Some(subcommands) = command.subcommands() {
-        for subcommand in &subcommands {
-            write_summary(writer, subcommand)?;
-        }
+    for subcommand in command.subcommands() {
+        write_summary(writer, &subcommand)?;
     }
 
     Ok(())
@@ -73,48 +70,18 @@ pub fn generate_reference(command: &Adapter<'_>, dir: &Path) -> Result<()> {
     let path = dir.join(command.file_stem()).with_extension("md");
     write_reference(&mut File::create(path)?, command)?;
 
-    if let Some(subcommands) = command.subcommands() {
-        for subcommand in subcommands {
-            generate_reference(&subcommand, dir)?;
-        }
+    for subcommand in command.subcommands() {
+        generate_reference(&subcommand, dir)?;
     }
 
     Ok(())
 }
 
 fn write_reference(writer: &mut impl Write, command: &Adapter<'_>) -> Result<()> {
-    write_heading(writer, command)?;
-    write_usage(writer, command)?;
-
-    if let Some(groups) = command.groupped_subcommands() {
-        for (group, subcommands) in groups {
-            write_subcommands(writer, group, &subcommands)?;
-        }
-    }
-
-    if let Some(positionals) = command.pos_args() {
-        write_pos_args(writer, &positionals)?;
-    }
-
-    if let Some(options) = command.opt_args() {
-        write_opt_args(writer, &options)?;
-    }
-
-    if let Some(options) = command.global_opt_args() {
-        write_global_opt_args(writer, &options)?;
-    }
-
-    Ok(())
-}
-
-fn write_heading(writer: &mut impl Write, command: &Adapter<'_>) -> Result<()> {
     writeln!(writer, "# {}", command.full_name())?;
     writeln!(writer)?;
     writeln!(writer, "{}", command.description()?)?;
-    Ok(())
-}
 
-fn write_usage(writer: &mut impl Write, command: &Adapter<'_>) -> Result<()> {
     writeln!(writer)?;
     writeln!(writer, "## Usage")?;
     writeln!(writer)?;
@@ -134,30 +101,78 @@ fn write_usage(writer: &mut impl Write, command: &Adapter<'_>) -> Result<()> {
 
     writeln!(writer)?;
     writeln!(writer, "```")?;
-    Ok(())
-}
 
-fn write_subcommands(
-    writer: &mut impl Write,
-    group: Group,
-    subcommands: &[Adapter<'_>],
-) -> Result<()> {
-    writeln!(writer)?;
-    writeln!(writer, "## {group}")?;
-
-    if let Some(description) = group.description() {
+    for (group, subcommands) in command.groupped_subcommands() {
         writeln!(writer)?;
-        writeln!(writer, "{description}")?;
+        writeln!(writer, "## {group}")?;
+
+        if let Some(description) = group.description() {
+            writeln!(writer)?;
+            writeln!(writer, "{description}")?;
+        }
+
+        writeln!(writer)?;
+        writeln!(writer, "<dl>")?;
+
+        for subcommand in subcommands {
+            write_subcommand(writer, &subcommand)?;
+        }
+
+        writeln!(writer, "</dl>")?;
     }
 
-    writeln!(writer)?;
-    writeln!(writer, "<dl>")?;
+    if let Some(args) = command.pos_args().non_empty() {
+        writeln!(writer)?;
+        writeln!(writer, "## Arguments")?;
+        writeln!(writer)?;
+        writeln!(writer, "<dl>")?;
 
-    for subcommand in subcommands {
-        write_subcommand(writer, subcommand)?;
+        for arg in args {
+            write_pos_arg(writer, &arg)?;
+        }
+
+        writeln!(writer, "</dl>")?;
     }
 
-    writeln!(writer, "</dl>")?;
+    if let Some(args) = command.opt_args().non_empty() {
+        writeln!(writer)?;
+        writeln!(writer, "## Options")?;
+        writeln!(writer)?;
+        writeln!(writer, "<dl>")?;
+
+        for arg in args {
+            write_opt_arg(writer, &arg)?;
+        }
+
+        writeln!(writer, "</dl>")?;
+    }
+
+    if let Some(args) = command.global_opt_args() {
+        writeln!(writer)?;
+        writeln!(writer, "## Global options")?;
+
+        if let Some(command) = &args.inherited_from {
+            writeln!(writer)?;
+            writeln!(
+                writer,
+                "See [{} reference]({}.md#global-options) for list of additional global options.",
+                command.full_name(),
+                command.file_stem()
+            )?;
+        }
+
+        if let Some(args) = &args.own {
+            writeln!(writer)?;
+            writeln!(writer, "<dl>")?;
+
+            for arg in args {
+                write_opt_arg(writer, arg)?;
+            }
+
+            writeln!(writer, "</dl>")?;
+        }
+    }
+
     Ok(())
 }
 
@@ -169,20 +184,6 @@ fn write_subcommand(writer: &mut impl Write, subcommands: &Adapter<'_>) -> Resul
         subcommands.name()
     )?;
     writeln!(writer, "<dd>{}</dd>", subcommands.short_description()?)?;
-    Ok(())
-}
-
-fn write_pos_args(writer: &mut impl Write, args: &[PositionalArg<'_>]) -> Result<()> {
-    writeln!(writer)?;
-    writeln!(writer, "## Arguments")?;
-    writeln!(writer)?;
-    writeln!(writer, "<dl>")?;
-
-    for arg in args {
-        write_pos_arg(writer, arg)?;
-    }
-
-    writeln!(writer, "</dl>")?;
     Ok(())
 }
 
@@ -203,20 +204,6 @@ fn write_pos_arg(writer: &mut impl Write, arg: &PositionalArg<'_>) -> Result<()>
     write_arg(writer, arg.base())
 }
 
-fn write_opt_args(writer: &mut impl Write, args: &[OptionalArg<'_>]) -> Result<()> {
-    writeln!(writer)?;
-    writeln!(writer, "## Options")?;
-    writeln!(writer)?;
-    writeln!(writer, "<dl>")?;
-
-    for arg in args {
-        write_opt_arg(writer, arg)?;
-    }
-
-    writeln!(writer, "</dl>")?;
-    Ok(())
-}
-
 fn write_opt_arg(writer: &mut impl Write, arg: &OptionalArg<'_>) -> Result<()> {
     writeln!(writer)?;
     write!(writer, "<dt><code>{}", arg.names().join(", "))?;
@@ -227,34 +214,6 @@ fn write_opt_arg(writer: &mut impl Write, arg: &OptionalArg<'_>) -> Result<()> {
 
     writeln!(writer, "</code></dt>")?;
     write_arg(writer, arg.base())
-}
-
-fn write_global_opt_args(writer: &mut impl Write, args: &GlobalArgs<'_>) -> Result<()> {
-    writeln!(writer)?;
-    writeln!(writer, "## Global options")?;
-
-    if let Some(command) = &args.inherited_from {
-        writeln!(writer)?;
-        writeln!(
-            writer,
-            "See [{} reference]({}.md#global-options) for list of additional global options.",
-            command.full_name(),
-            command.file_stem()
-        )?;
-    }
-
-    if let Some(args) = &args.own {
-        writeln!(writer)?;
-        writeln!(writer, "<dl>")?;
-
-        for arg in args {
-            write_opt_arg(writer, arg)?;
-        }
-
-        writeln!(writer, "</dl>")?;
-    }
-
-    Ok(())
 }
 
 fn write_arg(writer: &mut impl Write, arg: &BaseArg<'_>) -> Result<()> {

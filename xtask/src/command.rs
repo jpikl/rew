@@ -8,6 +8,7 @@ use clap::Command;
 use rew::command::Group;
 use rew::commands::get_meta;
 use std::borrow::Cow;
+use std::iter::Peekable;
 
 pub struct Adapter<'a> {
     inner: &'a Command,
@@ -61,10 +62,8 @@ impl<'a> Adapter<'a> {
             args.push(SynopsisArg::Options);
         }
 
-        if let Some(pos_args) = self.pos_args() {
-            for arg in pos_args {
-                args.push(SynopsisArg::Positional(arg));
-            }
+        for arg in self.pos_args() {
+            args.push(SynopsisArg::Positional(arg));
         }
 
         if self.raw_sucommands().next().is_some() {
@@ -74,84 +73,41 @@ impl<'a> Adapter<'a> {
         args
     }
 
-    pub fn subcommands(&'a self) -> Option<Vec<Adapter<'a>>> {
-        self.filter_subcommands(|_| true)
-    }
-
-    pub fn groupped_subcommands(&'a self) -> Option<Vec<(Group, Vec<Adapter<'a>>)>> {
-        let mut groups = Vec::new();
-
-        for group in Group::values() {
-            let filter = |subcommand: &&Command| {
-                if self.parents.is_empty() {
-                    let meta = get_meta(subcommand.get_name());
-                    meta.map(|sc| sc.group).unwrap_or_default() == group
-                } else {
-                    false
-                }
-            };
-            if let Some(subcommands) = self.filter_subcommands(filter) {
-                groups.push((group, subcommands));
-            }
-        }
-
-        if groups.is_empty() {
-            None
-        } else {
-            Some(groups)
-        }
-    }
-
-    pub fn filter_subcommands(
-        &'a self,
-        filter: impl (Fn(&&Command) -> bool),
-    ) -> Option<Vec<Adapter<'a>>> {
-        if self.name() == "help" {
-            return None;
-        }
-
-        let subcommands = self
-            .raw_sucommands()
-            .filter(filter)
+    pub fn subcommands(&'a self) -> impl Iterator<Item = Adapter<'a>> {
+        self.raw_sucommands()
+            .filter(|_| self.name() != "help")
             .map(|subcommand| Adapter {
                 inner: subcommand,
                 parents: self.parents_and_self(),
             })
-            .collect::<Vec<_>>();
+    }
 
-        if subcommands.is_empty() {
-            None
+    pub fn groupped_subcommands(
+        &'a self,
+    ) -> impl Iterator<Item = (Group, impl Iterator<Item = Adapter<'a>>)> {
+        Group::values().into_iter().filter_map(|group| {
+            self.subcommands()
+                .filter(move |subcommand| subcommand.group() == group)
+                .non_empty()
+                .map(|iter| (group, iter))
+        })
+    }
+
+    fn group(&self) -> Group {
+        if self.parents.len() == 1 {
+            // Check group only for the main subcommands
+            get_meta(self.name()).map(|sc| sc.group).unwrap_or_default()
         } else {
-            Some(subcommands)
+            Group::General
         }
     }
 
-    pub fn pos_args(&self) -> Option<Vec<PositionalArg<'_>>> {
-        let positionals = self
-            .raw_pos_args()
-            .map(BaseArg)
-            .map(PositionalArg)
-            .collect::<Vec<_>>();
-
-        if positionals.is_empty() {
-            None
-        } else {
-            Some(positionals)
-        }
+    pub fn pos_args(&self) -> impl Iterator<Item = PositionalArg<'_>> {
+        self.raw_pos_args().map(BaseArg).map(PositionalArg)
     }
 
-    pub fn opt_args(&self) -> Option<Vec<OptionalArg<'_>>> {
-        let options = self
-            .raw_opt_args()
-            .map(BaseArg)
-            .map(OptionalArg)
-            .collect::<Vec<_>>();
-
-        if options.is_empty() {
-            None
-        } else {
-            Some(options)
-        }
+    pub fn opt_args(&self) -> impl Iterator<Item = OptionalArg<'_>> {
+        self.raw_opt_args().map(BaseArg).map(OptionalArg)
     }
 
     pub fn global_opt_args(&'a self) -> Option<GlobalArgs<'a>> {
@@ -425,5 +381,20 @@ impl Value {
                 self.0.get_name()
             )
         })
+    }
+}
+
+pub trait NonEmpty {
+    fn non_empty(self) -> Option<impl Iterator>;
+}
+
+impl<I: Iterator> NonEmpty for I {
+    fn non_empty(self) -> Option<Peekable<I>> {
+        let mut iter = self.peekable();
+        if iter.peek().is_some() {
+            Some(iter)
+        } else {
+            None
+        }
     }
 }
