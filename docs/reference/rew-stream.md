@@ -6,7 +6,6 @@ Print arguments as lines
 
 ```
 rew stream [OPTIONS] [VALUES]...
-
 ```
 
 ## Arguments

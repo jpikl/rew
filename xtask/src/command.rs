@@ -6,6 +6,7 @@ use clap::builder::ValueRange;
 use clap::Arg;
 use clap::Command;
 use rew::command::Group;
+use rew::command::Meta;
 use rew::commands::get_meta;
 use std::borrow::Cow;
 use std::iter::Peekable;
@@ -23,8 +24,20 @@ impl<'a> Adapter<'a> {
         }
     }
 
-    pub fn parents_and_self(&self) -> Vec<&'a Command> {
+    fn parents_and_self(&self) -> Vec<&'a Command> {
         [&self.parents[..], &[self.inner]].concat()
+    }
+
+    fn meta(&self) -> Option<&'static Meta> {
+        if self.parents.len() == 1 {
+            get_meta(self.name()) // Only the main commands have metadata
+        } else {
+            None
+        }
+    }
+
+    fn group(&self) -> Group {
+        self.meta().map(|sc| sc.group).unwrap_or_default()
     }
 
     pub fn name(&self) -> &str {
@@ -58,7 +71,7 @@ impl<'a> Adapter<'a> {
     pub fn synopsis_args(&'a self) -> Vec<SynopsisArg<'a>> {
         let mut args = Vec::new();
 
-        if self.raw_opt_args().next().is_some() {
+        if self.opt_args().next().is_some() {
             args.push(SynopsisArg::Options);
         }
 
@@ -66,7 +79,7 @@ impl<'a> Adapter<'a> {
             args.push(SynopsisArg::Positional(arg));
         }
 
-        if self.raw_sucommands().next().is_some() {
+        if self.subcommands().next().is_some() || self.name() == "help" {
             args.push(SynopsisArg::Commands(self));
         }
 
@@ -74,7 +87,9 @@ impl<'a> Adapter<'a> {
     }
 
     pub fn subcommands(&'a self) -> impl Iterator<Item = Adapter<'a>> {
-        self.raw_sucommands()
+        self.inner
+            .get_subcommands()
+            .filter(|subcommand| !subcommand.is_hide_set())
             .filter(|_| self.name() != "help")
             .map(|subcommand| Adapter {
                 inner: subcommand,
@@ -93,28 +108,36 @@ impl<'a> Adapter<'a> {
         })
     }
 
-    fn group(&self) -> Group {
-        if self.parents.len() == 1 {
-            // Check group only for the main subcommands
-            get_meta(self.name()).map(|sc| sc.group).unwrap_or_default()
-        } else {
-            Group::General
-        }
-    }
-
     pub fn pos_args(&self) -> impl Iterator<Item = PositionalArg<'_>> {
-        self.raw_pos_args().map(BaseArg).map(PositionalArg)
+        self.inner
+            .get_arguments()
+            .filter(|arg| !arg.is_hide_set())
+            .filter(|arg| arg.is_positional())
+            .map(BaseArg)
+            .map(PositionalArg)
     }
 
     pub fn opt_args(&self) -> impl Iterator<Item = OptionalArg<'_>> {
-        self.raw_opt_args().map(BaseArg).map(OptionalArg)
+        self.inner
+            .get_arguments()
+            .filter(|arg| !arg.is_hide_set())
+            .filter(|arg| !arg.is_positional())
+            .filter(|arg| !arg.is_global_set())
+            .map(BaseArg)
+            .map(OptionalArg)
     }
 
     pub fn global_opt_args(&'a self) -> Option<GlobalArgs<'a>> {
         let mut inherited = Vec::new();
         let mut own = Vec::new();
 
-        for global_arg in self.raw_global_opt_args() {
+        for global_arg in self
+            .inner
+            .get_arguments()
+            .filter(|arg| !arg.is_hide_set())
+            .filter(|arg| !arg.is_positional())
+            .filter(|arg| arg.is_global_set())
+        {
             if self.parents.iter().any(|parent| {
                 parent
                     .get_arguments()
@@ -151,32 +174,6 @@ impl<'a> Adapter<'a> {
             })
         }
     }
-
-    fn raw_sucommands(&'a self) -> impl Iterator<Item = &'a Command> {
-        self.inner
-            .get_subcommands()
-            .filter(|subcommand| !subcommand.is_hide_set())
-    }
-
-    fn raw_opt_args(&'a self) -> impl Iterator<Item = &'a Arg> {
-        self.raw_args()
-            .filter(|arg| !arg.is_positional())
-            .filter(|arg| !arg.is_global_set())
-    }
-
-    fn raw_global_opt_args(&'a self) -> impl Iterator<Item = &'a Arg> {
-        self.raw_args()
-            .filter(|arg| !arg.is_positional())
-            .filter(|arg| arg.is_global_set())
-    }
-
-    fn raw_pos_args(&'a self) -> impl Iterator<Item = &'a Arg> {
-        self.raw_args().filter(|arg| arg.is_positional())
-    }
-
-    fn raw_args(&'a self) -> impl Iterator<Item = &'a Arg> {
-        self.inner.get_arguments().filter(|arg| !arg.is_hide_set())
-    }
 }
 
 pub enum SynopsisArg<'a> {
@@ -208,8 +205,9 @@ impl<'a> SynopsisArg<'a> {
 
     pub fn is_many(&self) -> bool {
         match self {
+            Self::Options => false,
             Self::Positional(arg) => arg.is_many(),
-            _ => false,
+            Self::Commands(command) => command.name() == "help",
         }
     }
 }

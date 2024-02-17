@@ -21,7 +21,7 @@ Composition pattern.
 
 <dl>
 
-<dt><code>-e, --escape <CHAR></code></dt>
+<dt><code>-e, --escape &lt;CHAR&gt;</code></dt>
 <dd>
 Escape character for the pattern
 

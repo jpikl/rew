@@ -27,7 +27,7 @@ Default value: `1..`
 
 <dl>
 
-<dt><code>-s, --step <STEP></code></dt>
+<dt><code>-s, --step &lt;STEP&gt;</code></dt>
 <dd>
 Increment between numbers in sequence.
 

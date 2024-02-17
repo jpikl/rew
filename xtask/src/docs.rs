@@ -95,7 +95,7 @@ fn write_reference(writer: &mut impl Write, command: &Adapter<'_>) -> Result<()>
             write!(writer, " [{}]", arg.name())?;
         }
         if arg.is_many() {
-            writeln!(writer, "...")?;
+            write!(writer, "...")?;
         }
     }
 
@@ -209,7 +209,7 @@ fn write_opt_arg(writer: &mut impl Write, arg: &OptionalArg<'_>) -> Result<()> {
     write!(writer, "<dt><code>{}", arg.names().join(", "))?;
 
     for value_name in arg.value_names() {
-        write!(writer, " <{value_name}>")?;
+        write!(writer, " &lt;{value_name}&gt;")?;
     }
 
     writeln!(writer, "</code></dt>")?;

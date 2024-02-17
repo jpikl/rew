@@ -97,7 +97,7 @@ Line delimiter is NUL, not newline
 Can be also set using `REW_NULL` environment variable.
 </dd>
 
-<dt><code>--buf-mode <MODE></code></dt>
+<dt><code>--buf-mode &lt;MODE&gt;</code></dt>
 <dd>
 Output buffering mode.
 
@@ -109,7 +109,7 @@ Possible values:
 Can be also set using `REW_BUF_MODE` environment variable.
 </dd>
 
-<dt><code>--buf-size <BYTES></code></dt>
+<dt><code>--buf-size &lt;BYTES&gt;</code></dt>
 <dd>
 Size of a buffer used for IO operations.
 
