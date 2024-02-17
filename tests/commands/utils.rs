@@ -20,7 +20,7 @@ macro_rules! command_test {
 
 #[macro_export]
 macro_rules! command_test_case {
-    ($ident:ident, $name:literal, cmd $($arg:literal)* should $stdin:expr => $stdout:expr) => {
+    ($ident:ident, $name:literal, cmd $($arg:literal)* assert $stdin:expr => $stdout:expr) => {
         #[test]
         fn $ident() {
             $crate::utils::with_timeout(|| {
@@ -31,7 +31,7 @@ macro_rules! command_test_case {
             });
         }
     };
-    ($ident:ident, $name:literal, cmd $($arg:literal)* should $stdin:expr => err $stderr:expr) => {
+    ($ident:ident, $name:literal, cmd $($arg:literal)* assert $stdin:expr => err $stderr:expr) => {
         #[test]
         fn $ident() {
             $crate::utils::with_timeout(|| {
@@ -41,7 +41,7 @@ macro_rules! command_test_case {
             });
         }
     };
-    ($ident:ident, $name:literal, sh $template:literal should $stdin:expr => $stdout:expr) => {
+    ($ident:ident, $name:literal, sh $template:literal assert $stdin:expr => $stdout:expr) => {
         #[test]
         fn $ident() {
             $crate::utils::with_timeout(|| {
@@ -52,7 +52,7 @@ macro_rules! command_test_case {
             });
         }
     };
-    ($ident:ident, $name:literal, sh $template:literal should $stdin:expr => err $stderr:expr) => {
+    ($ident:ident, $name:literal, sh $template:literal assert $stdin:expr => err $stderr:expr) => {
         #[test]
         fn $ident() {
             $crate::utils::with_timeout(|| {
