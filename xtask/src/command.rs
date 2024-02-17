@@ -1,6 +1,7 @@
 use anyhow::anyhow;
 use anyhow::Result;
 use clap::builder::PossibleValue;
+use clap::builder::Str;
 use clap::builder::StyledStr;
 use clap::builder::ValueRange;
 use clap::Arg;
@@ -89,8 +90,8 @@ impl<'a> Adapter<'a> {
     pub fn subcommands(&'a self) -> impl Iterator<Item = Adapter<'a>> {
         self.inner
             .get_subcommands()
+            .take_while(|_| self.name() != "help")
             .filter(|subcommand| !subcommand.is_hide_set())
-            .filter(|_| self.name() != "help")
             .map(|subcommand| Adapter {
                 inner: subcommand,
                 parents: self.parents_and_self(),
@@ -111,8 +112,7 @@ impl<'a> Adapter<'a> {
     pub fn pos_args(&self) -> impl Iterator<Item = PositionalArg<'_>> {
         self.inner
             .get_arguments()
-            .filter(|arg| !arg.is_hide_set())
-            .filter(|arg| arg.is_positional())
+            .filter(|arg| !arg.is_hide_set() && arg.is_positional())
             .map(BaseArg)
             .map(PositionalArg)
     }
@@ -120,62 +120,51 @@ impl<'a> Adapter<'a> {
     pub fn opt_args(&self) -> impl Iterator<Item = OptionalArg<'_>> {
         self.inner
             .get_arguments()
-            .filter(|arg| !arg.is_hide_set())
-            .filter(|arg| !arg.is_positional())
-            .filter(|arg| !arg.is_global_set())
+            .filter(|arg| !arg.is_hide_set() && !arg.is_positional() && !arg.is_global_set())
             .map(BaseArg)
             .map(OptionalArg)
     }
 
-    pub fn global_opt_args(&'a self) -> Option<GlobalArgs<'a>> {
-        let mut inherited = Vec::new();
-        let mut own = Vec::new();
-
-        for global_arg in self
-            .inner
+    pub fn global_opt_args(&self) -> impl Iterator<Item = OptionalArg<'_>> {
+        self.inner
             .get_arguments()
-            .filter(|arg| !arg.is_hide_set())
-            .filter(|arg| !arg.is_positional())
-            .filter(|arg| arg.is_global_set())
-        {
-            if self.parents.iter().any(|parent| {
-                parent
-                    .get_arguments()
-                    .any(|arg| arg.get_id() == global_arg.get_id())
-            }) {
-                inherited.push(global_arg.get_id());
-            } else {
-                own.push(OptionalArg(BaseArg(global_arg)));
-            }
-        }
+            .filter(|arg| !arg.is_hide_set() && !arg.is_positional() && arg.is_global_set())
+            .map(BaseArg)
+            .map(OptionalArg)
+    }
 
-        let own = if own.is_empty() { None } else { Some(own) };
-
-        let inherited_from = self
+    pub fn own_args<'b>(
+        &self,
+        args: &'b [OptionalArg<'a>],
+    ) -> impl Iterator<Item = &'b OptionalArg<'a>> {
+        let parent_arg_ids = self
             .parents
+            .iter()
+            .flat_map(|parent| parent.get_arguments())
+            .map(Arg::get_id)
+            .collect::<Vec<_>>();
+
+        args.iter()
+            .filter(move |arg| !parent_arg_ids.contains(&arg.base().0.get_id()))
+    }
+
+    pub fn parent_with_args(&self, args: &[OptionalArg<'a>]) -> Option<Adapter<'a>> {
+        let arg_ids = args
+            .iter()
+            .map(|arg| arg.base().0.get_id())
+            .collect::<Vec<_>>();
+
+        self.parents
             .iter()
             .rev()
             .find(|parent| {
                 parent
                     .get_arguments()
-                    .any(|arg| inherited.contains(&arg.get_id()))
+                    .any(|arg| arg_ids.contains(&arg.get_id()))
             })
-            .map(|parent| Adapter {
-                inner: parent,
-                parents: Vec::new(),
-            });
-
-        if inherited_from.is_none() && own.is_none() {
-            None
-        } else {
-            Some(GlobalArgs {
-                inherited_from,
-                own,
-            })
-        }
+            .map(|parent| Adapter::new(parent))
     }
 }
-
 pub enum SynopsisArg<'a> {
     Options,
     Positional(PositionalArg<'a>),
@@ -270,23 +259,14 @@ impl<'a> OptionalArg<'a> {
         names
     }
 
-    pub fn value_names(&self) -> Vec<String> {
-        if !self.base().value_range().takes_values() {
-            return Vec::new();
-        }
+    pub fn value_names(&self) -> impl Iterator<Item = &Str> {
         self.base()
             .0
             .get_value_names()
             .unwrap_or_default()
             .iter()
-            .map(ToString::to_string)
-            .collect()
+            .take_while(move |_| self.base().value_range().takes_values())
     }
-}
-
-pub struct GlobalArgs<'a> {
-    pub inherited_from: Option<Adapter<'a>>,
-    pub own: Option<Vec<OptionalArg<'a>>>,
 }
 
 pub struct BaseArg<'a>(&'a Arg);
@@ -310,52 +290,37 @@ impl<'a> BaseArg<'a> {
             .ok_or_else(|| anyhow!("Argument '{}' does not have description", self.0.get_id()))
     }
 
-    pub fn possible_values(&self) -> Option<Vec<Value>> {
-        if self.0.is_hide_possible_values_set() {
-            return None;
-        }
+    pub fn possible_values(&self) -> impl Iterator<Item = Value> {
+        let is_hidden = self.0.is_hide_possible_values_set();
+        let is_needed = self.0.is_positional() || self.value_range().takes_values();
 
-        if self.0.is_positional() || self.value_range().takes_values() {
-            let values = self
-                .0
-                .get_possible_values()
-                .into_iter()
-                .filter(|value| !value.is_hide_set())
-                .map(Value)
-                .collect::<Vec<Value>>();
-
-            if !values.is_empty() {
-                return Some(values);
-            }
-        }
-
-        None
+        self.0
+            .get_possible_values()
+            .into_iter()
+            .take_while(move |_| !is_hidden && is_needed)
+            .filter(|value| !value.is_hide_set())
+            .map(Value)
     }
 
     pub fn default_value(&self) -> Option<String> {
-        if self.0.is_hide_default_value_set() || !self.value_range().takes_values() {
-            return None;
-        }
+        let is_hidden = self.0.is_hide_default_value_set();
+        let is_needed = self.value_range().takes_values();
 
-        let values = self.0.get_default_values();
-        if values.is_empty() {
-            return None;
-        }
-
-        let result = values
+        self.0
+            .get_default_values()
             .iter()
+            .take_while(move |_| !is_hidden && is_needed)
             .map(|value| value.to_string_lossy())
-            .collect::<Vec<_>>()
-            .join(",");
-
-        Some(result)
+            .non_empty()
+            .map(|iter| iter.collect::<Vec<_>>().join(","))
     }
 
     pub fn env_var(&self) -> Option<Cow<'_, str>> {
         if self.0.is_hide_env_set() {
-            return None;
+            None
+        } else {
+            self.0.get_env().map(|value| value.to_string_lossy())
         }
-        self.0.get_env().map(|value| value.to_string_lossy())
     }
 
     fn value_range(&self) -> ValueRange {

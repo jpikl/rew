@@ -147,21 +147,23 @@ fn write_reference(writer: &mut impl Write, command: &Adapter<'_>) -> Result<()>
         writeln!(writer, "</dl>")?;
     }
 
-    if let Some(args) = command.global_opt_args() {
+    if let Some(args) = command.global_opt_args().non_empty() {
+        let args = args.collect::<Vec<_>>();
+
         writeln!(writer)?;
         writeln!(writer, "## Global options")?;
 
-        if let Some(command) = &args.inherited_from {
+        if let Some(parent) = command.parent_with_args(&args) {
             writeln!(writer)?;
             writeln!(
                 writer,
                 "See [{} reference]({}.md#global-options) for list of additional global options.",
-                command.full_name(),
-                command.file_stem()
+                parent.full_name(),
+                parent.file_stem()
             )?;
         }
 
-        if let Some(args) = &args.own {
+        if let Some(args) = command.own_args(&args).non_empty() {
             writeln!(writer)?;
             writeln!(writer, "<dl>")?;
 
@@ -170,7 +172,7 @@ fn write_reference(writer: &mut impl Write, command: &Adapter<'_>) -> Result<()>
             }
 
             writeln!(writer, "</dl>")?;
-        }
+        };
     }
 
     Ok(())
@@ -220,7 +222,7 @@ fn write_arg(writer: &mut impl Write, arg: &BaseArg<'_>) -> Result<()> {
     writeln!(writer, "<dd>")?;
     writeln!(writer, "{}", arg.description()?)?;
 
-    if let Some(possible_values) = arg.possible_values() {
+    if let Some(possible_values) = arg.possible_values().non_empty() {
         writeln!(writer)?;
         writeln!(writer, "Possible values:")?;
         writeln!(writer)?;
