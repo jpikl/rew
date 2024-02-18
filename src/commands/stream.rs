@@ -30,7 +30,7 @@ fn run(context: &Context, args: &Args) -> Result<()> {
             use std::os::unix::ffi::OsStrExt;
             writer.write_line(value.as_bytes())?;
         }
-        #[cfg(target_family = "windows")]
+        #[cfg(not(target_family = "unix"))]
         {
             writer.write_line(value.to_string_lossy().as_bytes())?;
         }
