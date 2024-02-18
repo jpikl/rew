@@ -18,10 +18,12 @@ use crate::pattern::SimpleItem;
 use crate::pattern::SimplePattern;
 use anyhow::Result;
 use bstr::ByteVec;
+use clap::builder::OsStr;
 use std::env;
 use std::env::current_exe;
 use std::io::Write;
 use std::panic::resume_unwind;
+use std::path::Path;
 use std::path::PathBuf;
 use std::process::Child;
 use std::process::ChildStdin;
@@ -31,6 +33,11 @@ use std::process::Stdio;
 use std::thread;
 use std::thread::JoinHandle;
 use which::which;
+
+#[cfg(target_family = "windows")]
+const DEFAULT_SHELL: &str = "cmd";
+#[cfg(not(target_family = "windows"))]
+const DEFAULT_SHELL: &str = "sh";
 
 pub const META: Meta = command_meta! {
     name: "x",
@@ -54,6 +61,12 @@ struct Args {
     /// Escape character for the pattern.
     #[arg(short, long, value_name = "CHAR", default_value_t = '\\')]
     escape: char,
+
+    /// Shell used to evaluate `{# ...}` expressions.
+    ///
+    /// Default value: `cmd` on Windows, `sh` everywhere else.
+    #[arg(short, long, env = "SHELL")]
+    shell: Option<String>,
 }
 
 fn run(context: &Context, args: &Args) -> Result<()> {
@@ -64,7 +77,7 @@ fn run(context: &Context, args: &Args) -> Result<()> {
         return eval_simple_pattern(context, &pattern);
     }
 
-    eval_pattern(context, &pattern)
+    eval_pattern(context, &pattern, args.shell.as_deref())
 }
 
 fn eval_simple_pattern(context: &Context, pattern: &SimplePattern) -> Result<()> {
@@ -89,8 +102,8 @@ enum EvalItem {
     Reader(LineReader<ChildStdout>),
 }
 
-fn eval_pattern(context: &Context, pattern: &Pattern) -> Result<()> {
-    let mut command_builder = CommandBuilder::new(context);
+fn eval_pattern(context: &Context, pattern: &Pattern, shell: Option<&str>) -> Result<()> {
+    let mut command_builder = CommandBuilder::new(context, shell);
     let mut children = Vec::new();
     let mut items = Vec::new();
     let mut stdins = Vec::new();
@@ -192,13 +205,15 @@ fn eval_pattern(context: &Context, pattern: &Pattern) -> Result<()> {
 
 struct CommandBuilder<'a> {
     context: &'a Context,
+    shell: Option<&'a str>,
     stdbuf_path: Option<which::Result<PathBuf>>,
 }
 
 impl<'a> CommandBuilder<'a> {
-    fn new(context: &'a Context) -> Self {
+    fn new(context: &'a Context, shell: Option<&'a str>) -> Self {
         Self {
             context,
+            shell,
             stdbuf_path: None,
         }
     }
@@ -208,19 +223,25 @@ impl<'a> CommandBuilder<'a> {
         expr: &Expression,
     ) -> Result<(Option<ChildStdin>, Vec<Child>, ChildStdout)> {
         match &expr.value {
-            ExpressionValue::RawShell(command) => Self::build_raw_shell(command, expr.no_stdin),
+            ExpressionValue::RawShell(command) => self.build_raw_shell(command, expr.no_stdin),
             ExpressionValue::Pipeline(commands) => self.build_pipeline(commands, expr.no_stdin),
         }
     }
 
     fn build_raw_shell(
+        &self,
         sh_command: &str,
         no_stdin: bool,
     ) -> Result<(Option<ChildStdin>, Vec<Child>, ChildStdout)> {
-        let shell = env::var_os("SHELL").unwrap_or("sh".into());
+        let shell = self.shell.unwrap_or(DEFAULT_SHELL);
         let mut command = Command::new(shell);
 
-        command.arg("-c");
+        if Path::new(shell).file_stem() == Some(&OsStr::from("cmd")) {
+            command.arg("/c");
+        } else {
+            command.arg("-c");
+        }
+
         command.arg(sh_command);
         command.stdout(Stdio::piped());
 

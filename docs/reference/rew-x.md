@@ -32,6 +32,15 @@ Escape character for the pattern
 Default value: `\`
 </dd>
 
+<dt><code>-s, --shell &lt;SHELL&gt;</code></dt>
+<dd>
+Shell used to evaluate `{# ...}` expressions.
+
+Default value: `cmd` on Windows, `sh` everywhere else.
+
+Can be also set using `SHELL` environment variable.
+</dd>
+
 <dt><code>-h, --help</code></dt>
 <dd>
 Print help (see a summary with '-h')
