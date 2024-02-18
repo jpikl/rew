@@ -1,6 +1,5 @@
 - Support `rew x --shell=sh` + fix system shell detection.
 - Add examples for all commands.
-- Exclude examples from release build.
 - Better error reporting from `rew x` process failures.
 - Finish user guide (performance, caveats, global opts propagation in `rew x`, forward compatibility, versioning).
 - Setup CI (clippy, format, test, coverage).

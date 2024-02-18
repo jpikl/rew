@@ -7,7 +7,6 @@ use crate::io::Writer;
 use anyhow::Result;
 use clap::ArgMatches;
 use clap::Command;
-use derive_more::Display;
 use std::io::stdin;
 use std::io::stdout;
 use std::io::Read;
@@ -37,9 +36,21 @@ macro_rules! command_meta {
 }
 
 #[macro_export]
+#[cfg(feature = "docs")]
 macro_rules! command_examples {
     ($($name:literal: { args: $args:expr, input: $input:expr, output: $output:expr, }),*,) => {
         || vec![$($crate::command::Example { name: $name, args: $args, input: $input, output: $output }),*]
+    };
+    () => {
+        Vec::new
+    };
+}
+
+#[macro_export]
+#[cfg(not(feature = "docs"))]
+macro_rules! command_examples {
+    ($($name:literal: { args: $args:expr, input: $input:expr, output: $output:expr, }),*,) => {
+        Vec::new
     };
     () => {
         Vec::new
@@ -54,24 +65,37 @@ pub struct Meta {
     pub examples: fn() -> Vec<Example>,
 }
 
-#[derive(Display, Default, Clone, Copy, PartialEq)]
+#[derive(Default, Clone, Copy, PartialEq)]
 pub enum Group {
     #[default]
-    #[display("Commands")]
     General,
-    #[display("Transform commands")]
     Transformers,
-    #[display("Mapper commands")]
     Mappers,
-    #[display("Path commands")]
     Paths,
-    #[display("Filter commands")]
     Filters,
-    #[display("Generator commands")]
     Generators,
 }
 
+#[cfg(feature = "docs")]
+impl std::fmt::Display for Group {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.name())
+    }
+}
+
+#[cfg(feature = "docs")]
 impl Group {
+    pub fn name(&self) -> &'static str {
+        match self {
+            Self::General => "Commands",
+            Self::Transformers => "Transform commands",
+            Self::Mappers => "Mapper commands",
+            Self::Paths => "Path commands",
+            Self::Filters => "Filter commands",
+            Self::Generators => "Generator commands",
+        }
+    }
+
     pub fn description(&self) -> Option<&'static str> {
         match self {
             Self::General => None,

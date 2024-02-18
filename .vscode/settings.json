@@ -1,5 +1,6 @@
 {
   "editor.formatOnSave": true,
+  "rust-analyzer.cargo.features": "all", 
   "rust-analyzer.check.command": "clippy",
   "rust-analyzer.check.extraArgs": [
     "--", 
