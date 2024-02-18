@@ -11,7 +11,13 @@ pub const META: Meta = command_meta! {
     group: Group::Generators,
     args: Args,
     run: run,
-    examples: command_examples! [],
+    examples: command_examples! [
+        "Print arguments as lines": {
+            args: &["first", "second", "third"],
+            input: &[],
+            output: &["first", "second", "third"],
+        },
+    ],
 };
 
 /// Print arguments as lines.

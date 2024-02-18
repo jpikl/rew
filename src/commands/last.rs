@@ -14,7 +14,18 @@ pub const META: Meta = command_meta! {
     group: Group::Filters,
     args: Args,
     run: run,
-    examples: command_examples! [],
+    examples: command_examples! [
+        "Print the last line": {
+            args: &[],
+            input: &["first", "second", "third"],
+            output: &["third"],
+        },
+        "Print the last two lines": {
+            args: &["2"],
+            input: &["first", "second", "third"],
+            output: &["second", "third"],
+        },
+    ],
 };
 
 /// Output last N input lines.

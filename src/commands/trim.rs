@@ -11,7 +11,23 @@ pub const META: Meta = command_meta! {
     group: Group::Mappers,
     args: Args,
     run: run,
-    examples: command_examples! [],
+    examples: command_examples! [
+        "Trim whitespaces from both sides of lines": {
+            args: &[],
+            input: &["  Hello World!  "],
+            output: &["Hello World!"],
+        },
+        "Trim whitespaces from start of lines": {
+            args: &["-s"],
+            input: &["  Hello World!  "],
+            output: &["Hello World!  "],
+        },
+        "Trim whitespaces from end of lines": {
+            args: &["-e"],
+            input: &["  Hello World!  "],
+            output: &["  Hello World!"],
+        },
+    ],
 };
 
 /// Trim whitespaces from each line.

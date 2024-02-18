@@ -32,3 +32,20 @@ Print help (see a summary with '-h')
 ## Global options
 
 See [rew reference](rew.md#global-options) for list of additional global options.
+
+## Examples
+
+Print the last line
+
+```sh
+> printf '%s\n' 'first' 'second' 'third' | rew last
+third
+```
+
+Print the last two lines
+
+```sh
+> printf '%s\n' 'first' 'second' 'third' | rew last 2
+second
+third
+```

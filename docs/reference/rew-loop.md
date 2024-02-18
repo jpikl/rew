@@ -30,3 +30,15 @@ Print help (see a summary with '-h')
 ## Global options
 
 See [rew reference](rew.md#global-options) for list of additional global options.
+
+## Examples
+
+Repeat all input two times
+
+```sh
+> printf '%s\n' 'first' 'second' | rew loop 2
+first
+second
+first
+second
+```

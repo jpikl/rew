@@ -30,3 +30,14 @@ Print help (see a summary with '-h')
 ## Global options
 
 See [rew reference](rew.md#global-options) for list of additional global options.
+
+## Examples
+
+Print arguments as lines
+
+```sh
+> rew stream first second third
+first
+second
+third
+```

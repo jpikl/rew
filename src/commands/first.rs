@@ -17,7 +17,7 @@ pub const META: Meta = command_meta! {
             input: &["first", "second", "third"],
             output: &["first"],
         },
-        "Print first two lines": {
+        "Print the first two lines": {
             args: &["2"],
             input: &["first", "second", "third"],
             output: &["first", "second"],

@@ -42,7 +42,7 @@ Print the first line
 first
 ```
 
-Print first two lines
+Print the first two lines
 
 ```sh
 > printf '%s\n' 'first' 'second' 'third' | rew first 2

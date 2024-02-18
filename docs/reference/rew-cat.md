@@ -35,3 +35,14 @@ Print help (see a summary with '-h')
 ## Global options
 
 See [rew reference](rew.md#global-options) for list of additional global options.
+
+## Examples
+
+Copy input to output
+
+```sh
+> printf '%s\n' 'first' 'second' 'third' | rew cat
+first
+second
+third
+```

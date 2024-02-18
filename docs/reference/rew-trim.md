@@ -33,3 +33,26 @@ Print help (see a summary with '-h')
 ## Global options
 
 See [rew reference](rew.md#global-options) for list of additional global options.
+
+## Examples
+
+Trim whitespaces from both sides of lines
+
+```sh
+> echo '  Hello World!  ' | rew trim
+Hello World!
+```
+
+Trim whitespaces from start of lines
+
+```sh
+> echo '  Hello World!  ' | rew trim -s
+Hello World!  
+```
+
+Trim whitespaces from end of lines
+
+```sh
+> echo '  Hello World!  ' | rew trim -e
+  Hello World!
+```

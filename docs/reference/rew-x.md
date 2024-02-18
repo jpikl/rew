@@ -18,6 +18,7 @@ Output pattern(s).
 Describes how each output line is constructed from the input.
 
 Multiple patterns are joined together using a space character.
+
 </dd>
 </dl>
 
@@ -30,15 +31,18 @@ Multiple patterns are joined together using a space character.
 Escape character for the pattern
 
 Default value: `\`
+
 </dd>
 
 <dt><code>-s, --shell &lt;SHELL&gt;</code></dt>
 <dd>
-Shell used to evaluate `{# ...}` expressions.
+
+Shell used to evaluate `x` expressions.
 
 Default value: `cmd` on Windows, `sh` everywhere else.
 
 Can be also set using `SHELL` environment variable.
+
 </dd>
 
 <dt><code>-h, --help</code></dt>
@@ -50,3 +54,32 @@ Print help (see a summary with '-h')
 ## Global options
 
 See [rew reference](rew.md#global-options) for list of additional global options.
+
+## Examples
+
+Empty expression is replaced by input line
+
+```sh
+> printf '%s\n' 'first' 'second' 'third' | rew x 'Hello {}!'
+Hello first!
+Hello second!
+Hello third!
+```
+
+Expression with commands to process input line
+
+```sh
+> printf '%s\n' 'first' 'second' 'third' | rew x 'Hello {upper}!'
+Hello FIRST!
+Hello SECOND!
+Hello THIRD!
+```
+
+Multiple expressions run as parallel shell pipelines
+
+```sh
+> printf '%s\n' 'first' 'second' 'third' | rew x '{seq}. Hello {upper}!'
+1. Hello FIRST!
+2. Hello SECOND!
+3. Hello THIRD!
+```

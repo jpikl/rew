@@ -12,7 +12,28 @@ pub const META: Meta = command_meta! {
     group: Group::Generators,
     args: Args,
     run: run,
-    examples: command_examples! [],
+    examples: command_examples! [
+        "Print numbers from 1 to 3": {
+            args: &["1..3"],
+            input: &[],
+            output: &["1", "2", "3"],
+        },
+        "Print numbers from 1 to 5 with step 2": {
+            args: &["1..5", "-s2"],
+            input: &[],
+            output: &["1", "3", "5"],
+        },
+        "Print numbers from 1 to -1": {
+            args: &["1..-1"],
+            input: &[],
+            output: &["1", "0", "-1"],
+        },
+        "Print numbers from 1 to -3 with step -2": {
+            args: &["1..-3", "-s-2"],
+            input: &[],
+            output: &["1", "-1", "-3"],
+        },
+    ],
 };
 
 /// Print sequence of numbers as lines

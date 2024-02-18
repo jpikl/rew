@@ -44,7 +44,23 @@ pub const META: Meta = command_meta! {
     group: Group::Transformers,
     args: Args,
     run: run,
-    examples: command_examples! [],
+    examples: command_examples! [
+        "Empty expression is replaced by input line": {
+            args: &["Hello {}!"],
+            input: &["first", "second", "third"],
+            output: &["Hello first!", "Hello second!", "Hello third!"],
+        },
+        "Expression with commands to process input line": {
+            args: &["Hello {upper}!"],
+            input: &["first", "second", "third"],
+            output: &["Hello FIRST!", "Hello SECOND!", "Hello THIRD!"],
+        },
+        "Multiple expressions run as parallel shell pipelines": {
+            args: &["{seq}. Hello {upper}!"],
+            input: &["first", "second", "third"],
+            output: &["1. Hello FIRST!", "2. Hello SECOND!", "3. Hello THIRD!"],
+        },
+    ],
 };
 
 /// Compose parallel shell pipelines using a pattern.

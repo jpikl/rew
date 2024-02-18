@@ -271,10 +271,14 @@ fn write_example(writer: &mut impl Write, command: &Adapter<'_>, example: &Examp
     write!(writer, "> ")?;
 
     if !example.input.is_empty() {
-        write!(writer, "printf '%s\\n'")?;
+        if example.input.len() == 1 {
+            write!(writer, "echo '{}'", example.input[0])?;
+        } else {
+            write!(writer, "printf '%s\\n'")?;
 
-        for line in example.input {
-            write!(writer, " '{line}'")?;
+            for line in example.input {
+                write!(writer, " '{line}'")?;
+            }
         }
 
         write!(writer, " | ")?;
@@ -283,7 +287,7 @@ fn write_example(writer: &mut impl Write, command: &Adapter<'_>, example: &Examp
     write!(writer, "{}", command.full_name())?;
 
     for arg in example.args {
-        if arg.trim() != *arg || arg.contains('|') {
+        if arg.contains(' ') || arg.contains('|') {
             write!(writer, " '{arg}'")?;
         } else {
             write!(writer, " {arg}")?;

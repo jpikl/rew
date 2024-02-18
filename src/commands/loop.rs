@@ -12,7 +12,13 @@ pub const META: Meta = command_meta! {
     group: Group::Transformers,
     args: Args,
     run: run,
-    examples: command_examples! [],
+    examples: command_examples! [
+        "Repeat all input two times": {
+            args: &["2"],
+            input: &["first", "second"],
+            output: &["first", "second", "first", "second"],
+        },
+    ],
 };
 
 /// Repeatedly output all captured input.

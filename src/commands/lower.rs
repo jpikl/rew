@@ -11,7 +11,13 @@ pub const META: Meta = command_meta! {
     group: Group::Mappers,
     args: Args,
     run: run,
-    examples: command_examples! [],
+    examples: command_examples! [
+        "Convert characters to lowercase": {
+            args: &[],
+            input: &["Hello World!"],
+            output: &["hello world!"],
+        },
+    ],
 };
 
 /// Convert characters to lowercase.

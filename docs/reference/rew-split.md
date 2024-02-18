@@ -35,3 +35,33 @@ Print help (see a summary with '-h')
 ## Global options
 
 See [rew reference](rew.md#global-options) for list of additional global options.
+
+## Examples
+
+Split input into lines on comma
+
+```sh
+> echo 'first,second,third' | rew split ,
+first
+second
+third
+```
+
+Split input into lines on comma (process trailing comma)
+
+```sh
+> echo 'first,second,third,' | rew split ,
+first
+second
+third
+
+```
+
+Split input into lines on comma (ignore trailing comma)
+
+```sh
+> echo 'first,second,third,' | rew split -t ,
+first
+second
+third
+```

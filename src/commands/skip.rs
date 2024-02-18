@@ -12,7 +12,18 @@ pub const META: Meta = command_meta! {
     group: Group::Filters,
     args: Args,
     run: run,
-    examples: command_examples! [],
+    examples: command_examples! [
+        "Skip the first line": {
+            args: &["1"],
+            input: &["first", "second", "third"],
+            output: &["second", "third"],
+        },
+        "Skip the first two lines": {
+            args: &["2"],
+            input: &["first", "second", "third"],
+            output: &["third"],
+        },
+    ],
 };
 
 /// Skip first N input lines, output the rest.

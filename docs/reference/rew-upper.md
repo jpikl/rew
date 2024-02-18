@@ -21,3 +21,12 @@ Print help (see a summary with '-h')
 ## Global options
 
 See [rew reference](rew.md#global-options) for list of additional global options.
+
+## Examples
+
+Convert characters to uppercase
+
+```sh
+> echo 'Hello World!' | rew upper
+HELLO WORLD!
+```
