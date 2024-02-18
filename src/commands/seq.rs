@@ -1,6 +1,7 @@
 use crate::command::Context;
 use crate::command::Group;
 use crate::command::Meta;
+use crate::command_examples;
 use crate::command_meta;
 use crate::range::StartRange;
 use anyhow::anyhow;
@@ -11,7 +12,7 @@ pub const META: Meta = command_meta! {
     group: Group::Generators,
     args: Args,
     run: run,
-    examples: Vec::new,
+    examples: command_examples! [],
 };
 
 /// Print sequence of numbers as lines

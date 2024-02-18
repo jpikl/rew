@@ -1,7 +1,7 @@
 use crate::command::Context;
-use crate::command::Example;
 use crate::command::Group;
 use crate::command::Meta;
+use crate::command_examples;
 use crate::command_meta;
 use anyhow::Result;
 use memchr::memchr;
@@ -11,15 +11,13 @@ pub const META: Meta = command_meta! {
     group: Group::Filters,
     args: Args,
     run: run,
-    examples: || vec![
-        Example {
-            name: "Print the first line",
+    examples: command_examples![
+        "Print the first line": {
             args: &[],
             input: &["first", "second", "third"],
             output: &["first"],
         },
-        Example {
-            name: "Print first two lines",
+        "Print first two lines": {
             args: &["2"],
             input: &["first", "second", "third"],
             output: &["first", "second"],

@@ -5,6 +5,7 @@ use crate::args::ENV_NULL;
 use crate::command::Context;
 use crate::command::Group;
 use crate::command::Meta;
+use crate::command_examples;
 use crate::command_meta;
 use crate::commands::cat;
 use crate::io::LineReader;
@@ -36,7 +37,7 @@ pub const META: Meta = command_meta! {
     group: Group::Transformers,
     args: Args,
     run: run,
-    examples: Vec::new,
+    examples: command_examples! [],
 };
 
 /// Compose parallel shell pipelines using a pattern.

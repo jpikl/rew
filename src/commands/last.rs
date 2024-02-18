@@ -1,6 +1,7 @@
 use crate::command::Context;
 use crate::command::Group;
 use crate::command::Meta;
+use crate::command_examples;
 use crate::command_meta;
 use anyhow::Result;
 use memchr::memchr;
@@ -13,7 +14,7 @@ pub const META: Meta = command_meta! {
     group: Group::Filters,
     args: Args,
     run: run,
-    examples: Vec::new,
+    examples: command_examples! [],
 };
 
 /// Output last N input lines.

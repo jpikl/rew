@@ -14,6 +14,46 @@ use std::io::Read;
 use std::io::StdinLock;
 use std::io::StdoutLock;
 
+#[macro_export]
+macro_rules! command_meta {
+    (name: $name:literal, group: $group:expr, args: $args:ident, run: $run:ident, examples: $examples:expr,) => {
+        $crate::command::Meta {
+            name: $name,
+            group: $group,
+            build: || -> clap::Command {
+                use clap::Args as ClapArgs;
+                $args::augment_args(clap::Command::new($name))
+            },
+            run: |matches| -> anyhow::Result<()> {
+                use clap::FromArgMatches;
+                let global_args = $crate::args::GlobalArgs::from_arg_matches(matches)?;
+                let context = $crate::command::Context::from(global_args);
+                let args = $args::from_arg_matches(matches)?;
+                $run(&context, &args)
+            },
+            examples: $examples,
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! command_examples {
+    ($($name:literal: { args: $args:expr, input: $input:expr, output: $output:expr, }),*,) => {
+        || vec![$($crate::command::Example { name: $name, args: $args, input: $input, output: $output }),*]
+    };
+    () => {
+        Vec::new
+    };
+}
+
+pub struct Meta {
+    pub name: &'static str,
+    pub group: Group,
+    pub build: fn() -> Command,
+    pub run: fn(&ArgMatches) -> Result<()>,
+    pub examples: fn() -> Vec<Example>,
+}
+
 #[derive(Display, Default, Clone, Copy, PartialEq)]
 pub enum Group {
     #[default]
@@ -55,41 +95,11 @@ impl Group {
     }
 }
 
-pub struct Meta {
-    pub name: &'static str,
-    pub group: Group,
-    pub build: fn() -> Command,
-    pub run: fn(&ArgMatches) -> Result<()>,
-    pub examples: fn() -> Vec<Example>,
-}
-
 pub struct Example {
     pub name: &'static str,
     pub args: &'static [&'static str],
     pub input: &'static [&'static str],
     pub output: &'static [&'static str],
-}
-
-#[macro_export]
-macro_rules! command_meta {
-    (name: $name:literal, group: $group:expr, args: $args:ident, run: $run:ident, examples: $examples:expr,) => {
-        $crate::command::Meta {
-            name: $name,
-            group: $group,
-            build: || -> clap::Command {
-                use clap::Args as ClapArgs;
-                $args::augment_args(clap::Command::new($name))
-            },
-            run: |matches| -> anyhow::Result<()> {
-                use clap::FromArgMatches;
-                let global_args = $crate::args::GlobalArgs::from_arg_matches(matches)?;
-                let context = $crate::command::Context::from(global_args);
-                let args = $args::from_arg_matches(matches)?;
-                $run(&context, &args)
-            },
-            examples: $examples,
-        }
-    };
 }
 
 #[derive(Clone)]
