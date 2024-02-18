@@ -24,12 +24,12 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Task {
-    /// Generate markdown documentation.
+    /// Generate documentation.
     #[command()]
-    GenDocs,
+    Docs,
     /// Generate man pages.
     #[command()]
-    GenMan,
+    Man,
 }
 
 fn main() {
@@ -49,7 +49,7 @@ fn run() -> Result<()> {
     app.build();
 
     match cli.task {
-        Task::GenDocs => {
+        Task::Docs => {
             let docs_path = root_path.join("docs");
             let reference_path = docs_path.join("reference");
             let summary_path = docs_path.join("SUMMARY.md");
@@ -62,7 +62,7 @@ fn run() -> Result<()> {
             generate_summary(&adapter, &summary_path)?;
             generate_reference(&adapter, &reference_path)?;
         }
-        Task::GenMan => unimplemented!(),
+        Task::Man => unimplemented!(),
     }
 
     Ok(())
