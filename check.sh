@@ -2,14 +2,21 @@
 
 set -eu
 
-cargo +nightly fmt
+run() {
+    echo -e "\033[33m> $@\033[0m"
+    $@
+    echo -e "\033[32m> SUCCESS\033[0m"
+    echo
+}
+
+run cargo +nightly fmt --all
 
 for arg in "" --all-features; do
-    cargo clippy $arg -- \
+    run cargo clippy --workspace $arg -- \
         -D clippy::all \
         -D clippy::pedantic \
         -A clippy::module_name_repetitions \
-        -A clippy::must_use_candidate 
+        -A clippy::must_use_candidate
 done
 
-cargo test -q --all-features
+run cargo test --quiet --all-features --all-targets

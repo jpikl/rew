@@ -9,5 +9,4 @@
     "-A", "clippy::must_use_candidate",
   ],
   "rust-analyzer.rustfmt.extraArgs": ["+nightly"],
-  "rust-analyzer.linkedProjects": ["./Cargo.toml", "./xtask/Cargo.toml", "./fuzz/Cargo.toml"],
 }

@@ -1,3 +1,10 @@
+[workspace]
+members = [".", "fuzz", "xtask"]
+
+[workspace.dependencies]
+anyhow = "1.0.79"
+clap = { version = "4.4.16" }
+
 [package]
 name = "rew"
 version = "0.4.0"
@@ -16,9 +23,9 @@ docs = []
 
 [dependencies]
 anstream = "0.6.7"
-anyhow = "1.0.79"
+anyhow = { workspace = true }
 bstr = "1.9.0"
-clap = { version = "4.4.16", features = [
+clap = { workspace = true, features = [
     "cargo",
     "derive",
     "env",
