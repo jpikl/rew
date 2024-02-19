@@ -19,7 +19,7 @@ pub const META: Meta = command_meta! {
             output: &["1", "2", "3"],
         },
         "Print numbers from 1 to 5 with step 2": {
-            args: &["1..5", "-s2"],
+            args: &["1..5", "2"],
             input: &[],
             output: &["1", "3", "5"],
         },
@@ -29,7 +29,7 @@ pub const META: Meta = command_meta! {
             output: &["1", "0", "-1"],
         },
         "Print numbers from 1 to -3 with step -2": {
-            args: &["1..-3", "-s-2"],
+            args: &["1..-3", "-2"],
             input: &[],
             output: &["1", "-1", "-3"],
         },
@@ -50,7 +50,7 @@ struct Args {
     /// Increment between numbers in sequence.
     ///
     /// Default value: `1` (for increasing sequence), `-1` (for decreasing sequence)
-    #[arg(short, long, allow_negative_numbers = true)]
+    #[arg(allow_negative_numbers = true)]
     step: Option<i128>,
 }
 

@@ -5,7 +5,7 @@ Print sequence of numbers as lines
 ## Usage
 
 ```
-rew seq [OPTIONS] [FROM..[TO]]
+rew seq [OPTIONS] [FROM..[TO]] [STEP]
 ```
 
 ## Arguments
@@ -22,19 +22,18 @@ Both `FROM` and `TO` are integers.
 
 Default value: `1..`
 </dd>
-</dl>
-
-## Options
-
-<dl>
-
-<dt><code>-s, --step &lt;STEP&gt;</code></dt>
+<dt><code>[STEP]</code></dt>
 <dd>
 
 Increment between numbers in sequence.
 
 Default value: `1` (for increasing sequence), `-1` (for decreasing sequence)
 </dd>
+</dl>
+
+## Options
+
+<dl>
 
 <dt><code>-h, --help</code></dt>
 <dd>
@@ -61,7 +60,7 @@ Print numbers from 1 to 3
 Print numbers from 1 to 5 with step 2
 
 ```sh
-> rew seq 1..5 -s2
+> rew seq 1..5 2
 1
 3
 5
@@ -79,7 +78,7 @@ Print numbers from 1 to -1
 Print numbers from 1 to -3 with step -2
 
 ```sh
-> rew seq 1..-3 -s-2
+> rew seq 1..-3 -2
 1
 -1
 -3
