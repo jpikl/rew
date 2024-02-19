@@ -13,6 +13,7 @@ rew split [OPTIONS] <SEPARATOR>
 <dl>
 <dt><code>&lt;SEPARATOR&gt;</code></dt>
 <dd>
+
 Separator (single byte character)
 </dd>
 </dl>
@@ -23,11 +24,13 @@ Separator (single byte character)
 
 <dt><code>-t, --ignore-trailing</code></dt>
 <dd>
+
 Ignore trailing separator at the end of input
 </dd>
 
 <dt><code>-h, --help</code></dt>
 <dd>
+
 Print help (see a summary with '-h')
 </dd>
 </dl>

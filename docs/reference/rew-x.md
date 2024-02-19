@@ -13,12 +13,12 @@ rew x [OPTIONS] <PATTERN>...
 <dl>
 <dt><code>&lt;PATTERN&gt;...</code></dt>
 <dd>
+
 Output pattern(s).
 
 Describes how each output line is constructed from the input.
 
 Multiple patterns are joined together using a space character.
-
 </dd>
 </dl>
 
@@ -28,25 +28,25 @@ Multiple patterns are joined together using a space character.
 
 <dt><code>-e, --escape &lt;CHAR&gt;</code></dt>
 <dd>
+
 Escape character for the pattern
 
 Default value: `\`
-
 </dd>
 
 <dt><code>-s, --shell &lt;SHELL&gt;</code></dt>
 <dd>
 
-Shell used to evaluate `x` expressions.
+Shell used to evaluate `{# ...}` expressions.
 
 Default value: `cmd` on Windows, `sh` everywhere else.
 
 Can be also set using `SHELL` environment variable.
-
 </dd>
 
 <dt><code>-h, --help</code></dt>
 <dd>
+
 Print help (see a summary with '-h')
 </dd>
 </dl>
@@ -69,17 +69,17 @@ Hello third!
 Expression with commands to process input line
 
 ```sh
-> printf '%s\n' 'first' 'second' 'third' | rew x 'Hello {upper}!'
-Hello FIRST!
-Hello SECOND!
-Hello THIRD!
+> printf '%s\n' 'first' 'second' 'third' | rew x 'Hello {upper | sed s/[AEIO]/_/g}!'
+Hello F_RST!
+Hello S_C_ND!
+Hello TH_RD!
 ```
 
 Multiple expressions run as parallel shell pipelines
 
 ```sh
-> printf '%s\n' 'first' 'second' 'third' | rew x '{seq}. Hello {upper}!'
-1. Hello FIRST!
-2. Hello SECOND!
-3. Hello THIRD!
+> printf '%s\n' 'first' 'second' 'third' | rew x '{seq}. {upper | sed s/[AEIO]/_/g}!'
+1. F_RST!
+2. S_C_ND!
+3. TH_RD!
 ```

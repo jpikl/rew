@@ -14,6 +14,7 @@ rew lower [OPTIONS]
 
 <dt><code>-h, --help</code></dt>
 <dd>
+
 Print help (see a summary with '-h')
 </dd>
 </dl>
@@ -27,6 +28,6 @@ See [rew reference](rew.md#global-options) for list of additional global options
 Convert characters to lowercase
 
 ```sh
-> echo 'Hello World!' | rew lower
+> echo 'Hello WORLD!' | rew lower
 hello world!
 ```

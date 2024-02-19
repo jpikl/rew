@@ -20,3 +20,4 @@ for arg in "" --all-features; do
 done
 
 run cargo test --quiet --all-features --all-targets
+run cargo xtask docs

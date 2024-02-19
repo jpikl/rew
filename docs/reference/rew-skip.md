@@ -13,6 +13,7 @@ rew skip [OPTIONS] <COUNT>
 <dl>
 <dt><code>&lt;COUNT&gt;</code></dt>
 <dd>
+
 Number of lines to skip
 </dd>
 </dl>
@@ -23,6 +24,7 @@ Number of lines to skip
 
 <dt><code>-h, --help</code></dt>
 <dd>
+
 Print help (see a summary with '-h')
 </dd>
 </dl>

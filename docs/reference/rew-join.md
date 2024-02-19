@@ -13,6 +13,7 @@ rew join [OPTIONS] <SEPARATOR>
 <dl>
 <dt><code>&lt;SEPARATOR&gt;</code></dt>
 <dd>
+
 Separator
 </dd>
 </dl>
@@ -23,11 +24,13 @@ Separator
 
 <dt><code>-t, --trailing</code></dt>
 <dd>
+
 Print trailing separator at the end
 </dd>
 
 <dt><code>-h, --help</code></dt>
 <dd>
+
 Print help (see a summary with '-h')
 </dd>
 </dl>

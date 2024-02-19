@@ -13,6 +13,7 @@ rew stream [OPTIONS] [VALUES]...
 <dl>
 <dt><code>[VALUES]...</code></dt>
 <dd>
+
 Values to print
 </dd>
 </dl>
@@ -23,6 +24,7 @@ Values to print
 
 <dt><code>-h, --help</code></dt>
 <dd>
+
 Print help (see a summary with '-h')
 </dd>
 </dl>

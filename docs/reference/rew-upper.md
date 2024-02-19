@@ -14,6 +14,7 @@ rew upper [OPTIONS]
 
 <dt><code>-h, --help</code></dt>
 <dd>
+
 Print help (see a summary with '-h')
 </dd>
 </dl>

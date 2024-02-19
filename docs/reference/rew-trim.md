@@ -16,16 +16,19 @@ rew trim [OPTIONS]
 
 <dt><code>-s, --start</code></dt>
 <dd>
+
 Trim the beginning
 </dd>
 
 <dt><code>-e, --end</code></dt>
 <dd>
+
 Trim the end
 </dd>
 
 <dt><code>-h, --help</code></dt>
 <dd>
+
 Print help (see a summary with '-h')
 </dd>
 </dl>

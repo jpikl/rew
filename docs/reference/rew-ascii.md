@@ -14,11 +14,13 @@ rew ascii [OPTIONS]
 
 <dt><code>-d, --delete</code></dt>
 <dd>
+
 Delete non-ASCII characters instead of converting them
 </dd>
 
 <dt><code>-h, --help</code></dt>
 <dd>
+
 Print help (see a summary with '-h')
 </dd>
 </dl>

@@ -77,11 +77,13 @@ Generate lines, ignore standard input.
 
 <dt><code>-h, --help</code></dt>
 <dd>
+
 Print help (see a summary with '-h')
 </dd>
 
 <dt><code>-V, --version</code></dt>
 <dd>
+
 Print version
 </dd>
 </dl>
@@ -92,6 +94,7 @@ Print version
 
 <dt><code>-0, --null</code></dt>
 <dd>
+
 Line delimiter is NUL, not newline
 
 Can be also set using `REW_NULL` environment variable.
@@ -99,6 +102,7 @@ Can be also set using `REW_NULL` environment variable.
 
 <dt><code>--buf-mode &lt;MODE&gt;</code></dt>
 <dd>
+
 Output buffering mode
 
 Possible values:
@@ -111,6 +115,7 @@ Can be also set using `REW_BUF_MODE` environment variable.
 
 <dt><code>--buf-size &lt;BYTES&gt;</code></dt>
 <dd>
+
 Size of a buffer used for IO operations.
 
 Smaller values will reduce memory consumption but could negatively affect througput.

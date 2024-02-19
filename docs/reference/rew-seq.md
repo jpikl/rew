@@ -13,6 +13,7 @@ rew seq [OPTIONS] [FROM..[TO]]
 <dl>
 <dt><code>[FROM..[TO]]</code></dt>
 <dd>
+
 Sequence range.
 
 Both `FROM` and `TO` are integers.
@@ -29,6 +30,7 @@ Default value: `1..`
 
 <dt><code>-s, --step &lt;STEP&gt;</code></dt>
 <dd>
+
 Increment between numbers in sequence.
 
 Default value: `1` (for increasing sequence), `-1` (for decreasing sequence)
@@ -36,6 +38,7 @@ Default value: `1` (for increasing sequence), `-1` (for decreasing sequence)
 
 <dt><code>-h, --help</code></dt>
 <dd>
+
 Print help (see a summary with '-h')
 </dd>
 </dl>

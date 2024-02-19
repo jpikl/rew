@@ -13,6 +13,7 @@ rew loop [OPTIONS] [COUNT]
 <dl>
 <dt><code>[COUNT]</code></dt>
 <dd>
+
 How many times do the repetition (default: forever)
 </dd>
 </dl>
@@ -23,6 +24,7 @@ How many times do the repetition (default: forever)
 
 <dt><code>-h, --help</code></dt>
 <dd>
+
 Print help (see a summary with '-h')
 </dd>
 </dl>

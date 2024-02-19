@@ -234,6 +234,7 @@ fn write_opt_arg(writer: &mut impl Write, arg: &OptionalArg<'_>) -> Result<()> {
 
 fn write_arg(writer: &mut impl Write, arg: &BaseArg<'_>) -> Result<()> {
     writeln!(writer, "<dd>")?;
+    writeln!(writer)?; // MD markup in the first line after <dd> is not processed. Also, the space before looks better.
     writeln!(writer, "{}", arg.description()?)?;
 
     if let Some(possible_values) = arg.possible_values().non_empty() {

@@ -51,14 +51,14 @@ pub const META: Meta = command_meta! {
             output: &["Hello first!", "Hello second!", "Hello third!"],
         },
         "Expression with commands to process input line": {
-            args: &["Hello {upper}!"],
+            args: &["Hello {upper | sed s/[AEIO]/_/g}!"],
             input: &["first", "second", "third"],
-            output: &["Hello FIRST!", "Hello SECOND!", "Hello THIRD!"],
+            output: &["Hello F_RST!", "Hello S_C_ND!", "Hello TH_RD!"],
         },
         "Multiple expressions run as parallel shell pipelines": {
-            args: &["{seq}. Hello {upper}!"],
+            args: &["{seq}. {upper | sed s/[AEIO]/_/g}!"],
             input: &["first", "second", "third"],
-            output: &["1. Hello FIRST!", "2. Hello SECOND!", "3. Hello THIRD!"],
+            output: &["1. F_RST!", "2. S_C_ND!", "3. TH_RD!"],
         },
     ],
 };

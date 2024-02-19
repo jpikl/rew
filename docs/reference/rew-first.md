@@ -13,6 +13,7 @@ rew first [OPTIONS] [COUNT]
 <dl>
 <dt><code>[COUNT]</code></dt>
 <dd>
+
 Number of lines to print
 
 Default value: `1`
@@ -25,6 +26,7 @@ Default value: `1`
 
 <dt><code>-h, --help</code></dt>
 <dd>
+
 Print help (see a summary with '-h')
 </dd>
 </dl>
