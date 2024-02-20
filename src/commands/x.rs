@@ -16,6 +16,8 @@ use crate::pattern::Item;
 use crate::pattern::Pattern;
 use crate::pattern::SimpleItem;
 use crate::pattern::SimplePattern;
+use anyhow::anyhow;
+use anyhow::Context as AnyhowContext;
 use anyhow::Result;
 use bstr::ByteVec;
 use clap::builder::OsStr;
@@ -32,6 +34,7 @@ use std::process::Command;
 use std::process::Stdio;
 use std::thread;
 use std::thread::JoinHandle;
+use std::time::Duration;
 use which::which;
 
 #[cfg(target_family = "windows")]
@@ -113,13 +116,8 @@ fn eval_simple_pattern(context: &Context, pattern: &SimplePattern) -> Result<()>
     Ok(())
 }
 
-enum EvalItem {
-    Constant(String),
-    Reader(LineReader<ChildStdout>),
-}
-
 fn eval_pattern(context: &Context, pattern: &Pattern, shell: Option<&str>) -> Result<()> {
-    let mut command_builder = CommandBuilder::new(context, shell);
+    let mut builder = CommandBuilder::new(context, shell);
     let mut children = Vec::new();
     let mut items = Vec::new();
     let mut stdins = Vec::new();
@@ -129,45 +127,47 @@ fn eval_pattern(context: &Context, pattern: &Pattern, shell: Option<&str>) -> Re
         match &item {
             Item::Constant(value) => items.push(EvalItem::Constant(value.clone())),
             Item::Expression(ref expression) => {
-                let (stdin, mut new_children, stdout) =
-                    command_builder.build_expression(expression)?;
+                let pipeline = builder.build_expression(expression)?;
 
-                children.append(&mut new_children);
-                items.push(EvalItem::Reader(context.line_reader_from(stdout)));
+                for child in pipeline.children {
+                    children.push(child);
+                }
 
-                if stdin.is_some() {
-                    stdins.push(stdin);
+                items.push(EvalItem::Reader(
+                    pipeline
+                        .stdout
+                        .map(|stdout| context.line_reader_from(stdout)),
+                ));
+
+                if pipeline.stdin.is_some() {
+                    stdins.push(pipeline.stdin);
                 }
             }
         }
     }
 
-    // "reader" thread which distributes main process stdin to all child processes.
+    // "reader" thread which forwards main process stdin to every child process.
     let thread_context = context.clone();
     let thread: JoinHandle<Result<()>> = thread::spawn(move || {
         if stdins.iter().all(Option::is_none) {
-            return Ok(()); // None of child proceses use stdin.
+            return Ok(()); // None of the child proceses use stdin.
         }
 
         let mut reader = thread_context.chunk_reader();
 
         while let Some(chunk) = reader.read_chunk()? {
             for stdin in &mut stdins {
-                if let Some(reader) = stdin {
-                    if let Err(err) = reader.write_all(chunk) {
-                        if err.kind() == std::io::ErrorKind::BrokenPipe {
-                            // Do not end the whole thread just because one child process ended.
-                            // Keep writing data to the other child processes which are still running.
-                            stdin.take();
-                        } else {
-                            return Err(err.into());
-                        }
+                if let Some(writer) = stdin {
+                    if !writer.write_all(chunk)? {
+                        // Could not write to child process stdin because it ended.
+                        // Do not end the whole thread yet, keep writing to the other running child processes.
+                        stdin.take();
                     }
                 }
             }
 
             if stdins.iter().all(Option::is_none) {
-                break; // All child stdins are closed.
+                break; // Stdin of every child process was closed.
             }
         }
 
@@ -177,7 +177,7 @@ fn eval_pattern(context: &Context, pattern: &Pattern, shell: Option<&str>) -> Re
     let mut writer = context.writer();
     let mut buffer = context.uninit_buf();
 
-    // Compose output lines from child processes stdout.
+    // Combine output from stdout of every child process.
     'outer: loop {
         for item in &mut items {
             match item {
@@ -195,11 +195,26 @@ fn eval_pattern(context: &Context, pattern: &Pattern, shell: Option<&str>) -> Re
         buffer.clear();
     }
 
+    let mut all_finished = true;
+
     // Make sure all child processes are terminated.
-    // This will cause the "reader" thread to end by detecting "broken pipes".
-    for mut child in children {
-        if child.try_wait()?.is_none() {
-            child.kill()?;
+    // This will cause the "reader" thread to end by detecting "broken pipe" errors everywhere.
+    for child in &mut children {
+        if !child.try_wait()? {
+            all_finished = false;
+        }
+    }
+
+    if !all_finished {
+        // Give the remaining child processes some extra time to finish.
+        // Needed especialy when running `stdbuf` with some non-existent program as its argument.
+        thread::sleep(Duration::from_millis(10));
+
+        // Just kill the ones which did not terminate on their own.
+        for child in &mut children {
+            if !child.try_wait()? {
+                child.kill()?;
+            }
         }
     }
 
@@ -215,8 +230,166 @@ fn eval_pattern(context: &Context, pattern: &Pattern, shell: Option<&str>) -> Re
     // There is no way how to interrupt it, so we just let the thread die alongside the main process.
     // Reimplementing this with async Rust is probably not worth the effort, because:
     // 1. It only happens during interactive usage when stdin is TTY.
-    // 2. And all process pipelines must contain at least one process which does not open stdin.
+    // 2. And all process pipelines must contain at least one process which does not read from stdin.
     Ok(())
+}
+
+enum EvalItem {
+    Constant(String),
+    Reader(Eval<LineReader<ChildStdout>>),
+}
+
+struct Eval<T> {
+    inner: T,
+    context: EvalContext,
+}
+
+impl<T> Eval<T> {
+    fn map<R>(self, map: impl FnOnce(T) -> R) -> Eval<R> {
+        Eval {
+            inner: map(self.inner),
+            context: self.context,
+        }
+    }
+
+    fn clone_as<R>(&self, inner: R) -> Eval<R> {
+        Eval {
+            inner,
+            context: self.context.clone(),
+        }
+    }
+}
+
+#[derive(Clone)]
+struct EvalContext {
+    raw_command: Option<String>,
+    raw_expr: Option<String>,
+}
+
+impl EvalContext {
+    fn from_command(command: &Command) -> Self {
+        Self {
+            raw_command: Some(format!("{command:?}")),
+            raw_expr: None,
+        }
+    }
+
+    fn from_expr(expr: &Expression) -> Self {
+        Self {
+            raw_command: None,
+            raw_expr: Some(expr.raw_value.clone()),
+        }
+    }
+
+    fn merge(&mut self, other: &EvalContext) {
+        if other.raw_command.is_some() {
+            self.raw_command = other.raw_command.clone();
+        }
+        if other.raw_expr.is_some() {
+            self.raw_expr = other.raw_expr.clone();
+        }
+    }
+
+    fn apply(&self, err: impl Into<anyhow::Error>, message: &str) -> anyhow::Error {
+        let mut err = err.into();
+
+        if let Some(raw_command) = &self.raw_command {
+            err = err.context(anyhow!("{message} command {}", raw_command));
+        }
+        if let Some(raw_expr) = &self.raw_expr {
+            err = err.context(anyhow!("{message} expression {}", raw_expr));
+        }
+
+        err
+    }
+}
+
+trait WithEvalContext<T> {
+    fn with_eval_context(self, context: &EvalContext, message: &str) -> Result<T>;
+}
+
+impl<T, E: Into<anyhow::Error>> WithEvalContext<T> for std::result::Result<T, E> {
+    fn with_eval_context(self, context: &EvalContext, message: &str) -> Result<T> {
+        self.map_err(|err| context.apply(err, message))
+    }
+}
+
+trait SpawnWithContext {
+    fn spawn_with_context(&mut self) -> Result<Eval<Child>>;
+}
+
+impl SpawnWithContext for Command {
+    fn spawn_with_context(&mut self) -> Result<Eval<Child>> {
+        let context = EvalContext::from_command(self);
+        let inner = self
+            .spawn()
+            .with_eval_context(&context, "could not spawn process for")?;
+        Ok(Eval { inner, context })
+    }
+}
+
+struct EvalPipeline {
+    stdin: Option<Eval<ChildStdin>>,
+    stdout: Eval<ChildStdout>,
+    children: Vec<Eval<Child>>,
+}
+
+impl EvalPipeline {
+    fn merge_context(&mut self, context: &EvalContext) {
+        if let Some(stdin) = &mut self.stdin {
+            stdin.context.merge(context);
+        }
+
+        for child in &mut self.children {
+            child.context.merge(context);
+        }
+
+        self.stdout.context.merge(context);
+    }
+}
+
+impl Eval<ChildStdin> {
+    fn write_all(&mut self, buf: &[u8]) -> Result<bool> {
+        match self.inner.write_all(buf) {
+            Ok(()) => Ok(true),
+            Err(err) if err.kind() == std::io::ErrorKind::BrokenPipe => Ok(false),
+            Err(err) => Err(self.context.apply(err, "could not write to")),
+        }
+    }
+}
+
+impl Eval<LineReader<ChildStdout>> {
+    fn read_line(&mut self) -> Result<Option<&[u8]>> {
+        self.inner
+            .read_line()
+            .with_eval_context(&self.context, "could not read from")
+    }
+}
+
+impl Eval<Child> {
+    fn take_stdin(&mut self) -> Option<Eval<ChildStdin>> {
+        self.inner.stdin.take().map(|stdin| self.clone_as(stdin))
+    }
+
+    fn take_stdout(&mut self) -> Option<Eval<ChildStdout>> {
+        self.inner.stdout.take().map(|stdout| self.clone_as(stdout))
+    }
+
+    fn try_wait(&mut self) -> Result<bool> {
+        let result = match self.inner.try_wait() {
+            Ok(None) => Ok(false),
+            Ok(Some(status)) if status.success() => Ok(true),
+            Ok(Some(status)) => Err(anyhow!("process exited with code {}", status)),
+            Err(err) => Err(err.into()),
+        };
+        result.with_eval_context(&self.context, "could not evaluate")
+    }
+
+    fn kill(&mut self) -> Result<()> {
+        self.inner
+            .kill()
+            .with_eval_context(&self.context, "could not kill")
+    }
 }
 
 struct CommandBuilder<'a> {
@@ -234,21 +407,23 @@ impl<'a> CommandBuilder<'a> {
         }
     }
 
-    fn build_expression(
-        &mut self,
-        expr: &Expression,
-    ) -> Result<(Option<ChildStdin>, Vec<Child>, ChildStdout)> {
-        match &expr.value {
+    fn build_expression(&mut self, expr: &Expression) -> Result<EvalPipeline> {
+        let context = EvalContext::from_expr(expr);
+
+        let result = match &expr.value {
             ExpressionValue::RawShell(command) => self.build_raw_shell(command, expr.no_stdin),
             ExpressionValue::Pipeline(commands) => self.build_pipeline(commands, expr.no_stdin),
-        }
+        };
+
+        result
+            .with_eval_context(&context, "could not initialize")
+            .map(|mut pipeline| {
+                pipeline.merge_context(&context);
+                pipeline
+            })
     }
 
-    fn build_raw_shell(
-        &self,
-        sh_command: &str,
-        no_stdin: bool,
-    ) -> Result<(Option<ChildStdin>, Vec<Child>, ChildStdout)> {
+    fn build_raw_shell(&self, sh_command: &str, no_stdin: bool) -> Result<EvalPipeline> {
         let shell = self.shell.unwrap_or(DEFAULT_SHELL);
         let mut command = Command::new(shell);
 
@@ -267,71 +442,80 @@ impl<'a> CommandBuilder<'a> {
             command.stdin(Stdio::piped());
         }
 
-        let mut child = command.spawn()?;
-        let stdin = child.stdin.take();
+        let mut child = command.spawn_with_context()?;
 
+        let stdin = child.take_stdin();
         let stdout = child
-            .stdout
-            .take()
-            .expect("Could not get ChildStdout from raw shell");
+            .take_stdout()
+            .expect("raw shell child process should have stdout");
 
-        Ok((stdin, vec![child], stdout))
+        Ok(EvalPipeline {
+            stdin,
+            stdout,
+            children: vec![child],
+        })
     }
 
     fn build_pipeline(
         &mut self,
         commands: &[pattern::Command],
         mut no_stdin: bool,
-    ) -> Result<(Option<ChildStdin>, Vec<Child>, ChildStdout)> {
+    ) -> Result<EvalPipeline> {
         let mut children = Vec::new();
         let mut stdin = None;
-        let mut stdout = None;
+        let mut stdout: Option<Eval<ChildStdout>> = None;
 
         for params in commands {
-            let (mut command, group) = self.build(params)?;
+            let (mut command, group) = self.build_command(params)?;
 
             if group == Group::Generators {
                 command.stdin(Stdio::null());
                 no_stdin = true;
             } else if let Some(stdout) = stdout {
-                command.stdin(Stdio::from(stdout));
+                command.stdin(Stdio::from(stdout.inner));
             } else {
                 command.stdin(Stdio::piped());
             }
 
             command.stdout(Stdio::piped());
-            let mut child = command.spawn()?;
+
+            let mut child = command.spawn_with_context()?;
 
             if no_stdin {
                 stdin = None;
             } else if stdin.is_none() {
-                stdin = child.stdin.take(); // The first process in pipeline
+                stdin = child.take_stdin(); // The first process in pipeline
             }
 
-            stdout = child.stdout.take();
+            stdout = child.take_stdout();
             children.push(child);
         }
 
         if stdout.is_none() {
-            let mut child = self
-                .build_default_internal()?
+            let mut command = self.default_internal_command()?;
+
+            let mut child = command
                 .stdin(Stdio::piped())
                 .stdout(Stdio::piped())
-                .spawn()?;
+                .spawn_with_context()?;
 
-            stdin = child.stdin.take();
-            stdout = child.stdout.take();
+            stdin = child.take_stdin();
+            stdout = child.take_stdout();
         }
 
         let stdin = stdin.take();
         let stdout = stdout
             .take()
-            .expect("Could not get ChildStdout from pipeline");
+            .expect("pipeline child process should have stdout");
 
-        Ok((stdin, children, stdout))
+        Ok(EvalPipeline {
+            stdin,
+            stdout,
+            children,
+        })
     }
 
-    fn build(&mut self, params: &pattern::Command) -> Result<(Command, Group)> {
+    fn build_command(&mut self, params: &pattern::Command) -> Result<(Command, Group)> {
         let pattern::Command {
             name,
             args,
@@ -340,23 +524,23 @@ impl<'a> CommandBuilder<'a> {
 
         if !external {
             if let Some(meta) = get_meta(name) {
-                let command = self.build_internal(Some(name), args)?;
+                let command = self.build_internal_command(Some(name), args)?;
                 return Ok((command, meta.group));
             }
             if name == env!("CARGO_PKG_NAME") {
                 if let Some((name, args)) = args.split_first() {
                     if let Some(meta) = get_meta(name) {
-                        let command = self.build_internal(Some(name), args)?;
+                        let command = self.build_internal_command(Some(name), args)?;
                         return Ok((command, meta.group));
                     }
                 }
-                let command = self.build_internal(None, args)?;
+                let command = self.build_internal_command(None, args)?;
                 return Ok((command, Group::Transformers));
             }
         }
 
         if self.context.buf_mode().is_line() {
-            if let Ok(stdbuf) = self.stdbuf() {
+            if let Ok(stdbuf) = self.stdbuf_path() {
                 let mut command = Command::new(stdbuf);
                 command.arg("-oL"); // Output line buffering
                 command.arg(name);
@@ -370,8 +554,9 @@ impl<'a> CommandBuilder<'a> {
         Ok((command, Group::Transformers))
     }
 
-    fn build_internal(&self, name: Option<&str>, args: &[String]) -> Result<Command> {
-        let mut command = Command::new(current_exe()?);
+    fn build_internal_command(&self, name: Option<&str>, args: &[String]) -> Result<Command> {
+        let bin = current_exe().context("could not detect current executable")?;
+        let mut command = Command::new(bin);
 
         command.env(ENV_NULL, self.context.separator().is_null().to_string());
         command.env(ENV_BUF_MODE, self.context.buf_mode().to_string());
@@ -385,11 +570,11 @@ impl<'a> CommandBuilder<'a> {
         Ok(command)
     }
 
-    fn build_default_internal(&self) -> Result<Command> {
-        self.build_internal(Some(cat::META.name), &[])
+    fn default_internal_command(&self) -> Result<Command> {
+        self.build_internal_command(Some(cat::META.name), &[])
     }
 
-    fn stdbuf(&mut self) -> &which::Result<PathBuf> {
+    fn stdbuf_path(&mut self) -> &which::Result<PathBuf> {
         self.stdbuf_path.get_or_insert_with(|| which("stdbuf"))
     }
 }

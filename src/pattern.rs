@@ -84,6 +84,7 @@ pub enum SimpleItem {
 pub struct Expression {
     pub no_stdin: bool,
     pub value: ExpressionValue,
+    pub raw_value: String,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -117,6 +118,7 @@ impl Pattern {
                 Item::Expression(Expression {
                     no_stdin: _,
                     value: ExpressionValue::Pipeline(commands),
+                    raw_value: _,
                 }) if commands.is_empty() => SimpleItem::Expression,
                 Item::Expression(_) => return None,
             };
@@ -187,6 +189,7 @@ pub struct Parser<'a> {
     input: String,
     iterator: Peekable<Fuse<Chars<'a>>>,
     position: usize,
+    offset: usize,
     escape: char,
 }
 
@@ -196,6 +199,7 @@ impl Parser<'_> {
             input: input.into(),
             iterator: input.chars().fuse().peekable(),
             position: 0,
+            offset: 0,
             escape,
         }
     }
@@ -235,6 +239,7 @@ impl Parser<'_> {
 
     fn parse_expression(&mut self) -> Result<Expression> {
         let start_position = self.position;
+        let start_offset = self.offset;
 
         self.consume(EXPR_START);
 
@@ -250,7 +255,11 @@ impl Parser<'_> {
         };
 
         if self.try_consume(EXPR_END) {
-            Ok(Expression { no_stdin, value })
+            Ok(Expression {
+                no_stdin,
+                value,
+                raw_value: self.input[start_offset..self.offset].into(),
+            })
         } else {
             Err(self.err_at(ErrorKind::MissingExprEnd, start_position))
         }
@@ -400,6 +409,7 @@ impl Parser<'_> {
 
     fn next(&mut self) -> Option<char> {
         self.iterator.next().map(|char| {
+            self.offset += char.len_utf8();
             self.position += 1;
             char
         })
@@ -590,6 +600,19 @@ mod tests {
             kind,
         };
         assert_eq!(error, expected_error);
+    }
+
+    #[rstest]
+    #[case(0, "{n1}")]
+    #[case(1, "{n2 a21}")]
+    #[case(3, "{n3 a31 a32}")]
+    fn raw_expr(#[case] position: usize, #[case] value: &str) {
+        let pattern = assert_ok!(Pattern::parse("{n1}{n2 a21}_{n3 a31 a32}", '%'));
+
+        match pattern.items().get(position) {
+            Some(Item::Expression(expr)) => assert_eq!(expr.raw_value, value),
+            _ => panic!("no expression at position {position}"),
+        }
     }
 
     #[test]

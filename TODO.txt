@@ -1,4 +1,5 @@
-- Better error reporting from `rew x` process failures.
+- Refactor and split `x.rs` into multiple files.
+- Better error/cause visualization in output.
 - Finish user guide (performance, caveats, global opts propagation in `rew x`, forward compatibility, versioning).
 - Setup CI (clippy, format, test, coverage).
 - Setup CI (gh-pages, release).
