@@ -49,20 +49,90 @@ pub const META: Meta = command_meta! {
     args: Args,
     run: run,
     examples: command_examples! [
-        "Empty expression is replaced by input line": {
-            args: &["Hello {}!"],
+        "Empty expression `{}` will be replaced by each input line.": {
+            args: &["Hello {}"],
             input: &["first", "second", "third"],
-            output: &["Hello first!", "Hello second!", "Hello third!"],
+            output: &["Hello first", "Hello second", "Hello third"],
         },
-        "Expression with commands to process input line": {
-            args: &["Hello {upper | sed s/[AEIO]/_/g}!"],
+        "Expressions can call other `rew` commands to process the input.\n\
+         \n\
+         Here, we call the `rew upper` command which converts text to uppercase.": {
+            args: &["Hello {upper}"],
             input: &["first", "second", "third"],
-            output: &["Hello F_RST!", "Hello S_C_ND!", "Hello TH_RD!"],
+            output: &["Hello FIRST", "Hello SECOND", "Hello THIRD"],
         },
-        "Multiple expressions run as parallel shell pipelines": {
-            args: &["{seq}. {upper | sed s/[AEIO]/_/g}!"],
+        "Expressions can also call any external command.\n\
+         \n\
+         Here, we remove all `aeiou` characters from text using `tr`.": {
+            args: &["Hello {tr -d aeiou}"],
             input: &["first", "second", "third"],
-            output: &["1. F_RST!", "2. S_C_ND!", "3. TH_RD!"],
+            output: &["Hello frst", "Hello scnd", "Hello thrd"],
+        },
+        "Multiple commands can be joined into a pipeline.": {
+            args: &["Hello {tr -d aeiou | upper}"],
+            input: &["first", "second", "third"],
+            output: &["Hello FRST", "Hello SCND", "Hello THRD"],
+        },
+        "Multiple expressions are run in parallel and their output is combined. \
+         The excution runs until one of the expressions no longer produces any output.": {
+            args: &["{seq}. {tr -d aeiou | upper}"],
+            input: &["first", "second", "third"],
+            output: &["1. FRST", "2. SCND", "3. THRD"],
+        },
+        "Arguments containing whitepaces must be wrapped in single `''` or double quotes `\"\"`.\n\
+         \n\
+         Here, we replace `aeiou` characters with space `' '`.": {
+            args: &["Hello {tr aeiou ' ' | upper}"],
+            input: &["first", "second", "third"],
+            output: &["Hello F RST", "Hello S C ND", "Hello TH RD"],
+        },
+        "The `!` marker denotes an external command.\n\
+         \n\
+         Here, we call the standard `seq` command instead of the built-in `rew seq`.": {
+           args: &["{!seq 1 3}. {}"],
+           input: &["first", "second", "third"],
+           output: &["1. first", "2. second", "3. third"],
+       },
+       "The `#` marker makes the rest of the expression to be interpreted by the current shell.\n\
+        \n\
+        For example, the following expression is equivalent to `{sh -c 'echo a; echo b; echo c'}`": {
+            args: &["{# echo a; echo b; echo c}. {}"],
+            input: &["first", "second", "third"],
+            output: &["a. first", "b. second", "c. third"],
+        },
+        "A specific shell for `{# ...}` can be set using the `-s, --shel` option or the `SHELL` environment variable.": {
+            args: &["-s", "bash", "{# for((i=0;i<3;i++)); do echo $i; done}. {}"],
+            input: &["first", "second", "third"],
+            output: &["0. first", "1. second", "2. third"],
+        },
+       "The `:` marker is a hint that an expression does not consume stdin. \
+        Without it, the overall execution might get stuck forever due to blocked IO calls.\n\
+        \n\
+        Only external commands need `:` to be explicitely specified.\n\
+        For built-in commands, `:` is detected automatically.": {
+            args: &["{seq 1..3} {: !seq 1 3} {:# echo 1; echo 2; echo 3}"],
+            input: &[],
+            output: &["1 1 1", "2 2 2", "3 3 3"],
+        },
+        "Backslash `\\` can be used to escape special characters": {
+            args: &["\\{ \"{}\": {seq} \\}"],
+            input: &["first", "second", "third"],
+            output: &["{ \"first\": 1 }", "{ \"second\": 2 }", "{ \"third\": 3 }"],
+        },
+        "A custom escape character can be set using the `-e, --escape` option.": {
+            args: &["-e%", "%{ \"{}\": {seq} %}"],
+            input: &["first", "second", "third"],
+            output: &["{ \"first\": 1 }", "{ \"second\": 2 }", "{ \"third\": 3 }"],
+        },
+        "Certain special characters like `|` needs to be escaped only within a specific context.": {
+            args: &["| {echo \"|\"} {echo \\|}"],
+            input: &[],
+            output: &["| | |"],
+        },
+        "Escape character can be also used to produce line feed `\\n`, carriage return `\\r` or tab `\\t`.": {
+            args: &["{seq}:\\n\\t{}"],
+            input: &["first", "second", "third"],
+            output: &["1:\n\tfirst", "2:\n\tsecond", "3:\n\tthird"],
         },
     ],
 };
@@ -72,9 +142,10 @@ pub const META: Meta = command_meta! {
 struct Args {
     /// Output pattern(s).
     ///
-    /// Describes how each output line is constructed from the input.
+    /// A pattern describes how to transform each input line into output.
+    /// Multiple patterns are joined into single one using space character `' '`.
     ///
-    /// Multiple patterns are joined together using a space character.
+    /// See examples (`--examples` option) for more details.
     #[arg(required = true)]
     pattern: Vec<String>,
 

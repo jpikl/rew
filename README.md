@@ -117,6 +117,8 @@ For example, let's use `sed` instead of `rew replace`:
 $ find -type f | rew x 'mv {} out/{base}.{ext | lower | sed s/eg/g/}' | sh
 ```
 
+More examples can be found in [rew x command reference](https://jpikl.github.io/rew/reference/rew-x.html#examples) or by calling `rew x --examples`.
+
 Have fun using rew!
 
 <!-- ANCHOR_END: showcase -->

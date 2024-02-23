@@ -1,6 +1,10 @@
+- Fix char alignment in 32KB blocks processed by ascii/lower/upper.
+- Make `--help` and `--version` global commands.
+- Addd `examples` subcommand and `--examples` option (calls external pager).
 - Refactor and split `x.rs` into multiple files.
 - Finish user guide (performance, caveats, global opts propagation in `rew x`, forward compatibility, versioning).
 - Setup CI (clippy, format, test, coverage).
-- Setup CI (gh-pages, release).
+- Setup CI (gh-pages on different path /rew-ng).
+- Setup CI (release).
 - Setup man generator.
 - Add TODOs for command replacement of old rew filters.
