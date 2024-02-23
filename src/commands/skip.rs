@@ -13,12 +13,12 @@ pub const META: Meta = command_meta! {
     args: Args,
     run: run,
     examples: command_examples! [
-        "Skip the first line": {
+        "Skip the first line.": {
             args: &["1"],
             input: &["first", "second", "third"],
             output: &["second", "third"],
         },
-        "Skip the first two lines": {
+        "Skip the first two lines.": {
             args: &["2"],
             input: &["first", "second", "third"],
             output: &["third"],

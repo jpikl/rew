@@ -35,17 +35,27 @@ See [rew reference](rew.md#global-options) for list of additional global options
 
 ## Examples
 
-Skip the first line
+Skip the first line.
 
 ```sh
-$ printf '%s\n' 'first' 'second' 'third' | rew skip 1
+$ echo 'first' > input
+$ echo 'second' >> input
+$ echo 'third' >> input
+
+$ rew skip 1 < input
+
 second
 third
 ```
 
-Skip the first two lines
+Skip the first two lines.
 
 ```sh
-$ printf '%s\n' 'first' 'second' 'third' | rew skip 2
+$ echo 'first' > input
+$ echo 'second' >> input
+$ echo 'third' >> input
+
+$ rew skip 2 < input
+
 third
 ```

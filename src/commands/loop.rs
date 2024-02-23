@@ -13,7 +13,7 @@ pub const META: Meta = command_meta! {
     args: Args,
     run: run,
     examples: command_examples! [
-        "Repeat all input two times": {
+        "Repeat all input two times.": {
             args: &["2"],
             input: &["first", "second"],
             output: &["first", "second", "first", "second"],

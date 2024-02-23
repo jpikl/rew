@@ -14,12 +14,12 @@ pub const META: Meta = command_meta! {
     args: Args,
     run: run,
     examples: command_examples! [
-        "Convert input to ASCII":  {
+        "Convert input to ASCII.":  {
             args: &[],
             input: &["Æneid", "étude", "🦀rocks!"],
             output: &["AEneid", "etude", "crab rocks!"],
         },
-        "Delete non-ASCII characters from input": {
+        "Delete non-ASCII characters from input.": {
             args: &["-d"],
             input: &["Æneid", "étude", "🦀rocks!"],
             output: &["neid", "tude", "rocks!"],

@@ -25,9 +25,12 @@ See [rew reference](rew.md#global-options) for list of additional global options
 
 ## Examples
 
-Convert characters to lowercase
+Convert characters to lowercase.
 
 ```sh
-$ echo 'Hello WORLD!' | rew lower
+$ echo 'Hello WORLD!' > input
+
+$ rew lower < input
+
 hello world!
 ```

@@ -12,7 +12,7 @@ pub const META: Meta = command_meta! {
     args: Args,
     run: run,
     examples: command_examples! [
-        "Print arguments as lines": {
+        "Print arguments as lines.": {
             args: &["first", "second", "third"],
             input: &[],
             output: &["first", "second", "third"],

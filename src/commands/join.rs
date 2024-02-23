@@ -12,12 +12,12 @@ pub const META: Meta = command_meta! {
     args: Args,
     run: run,
     examples: command_examples![
-        "Join lines using comma": {
+        "Join lines using comma.": {
             args: &[","],
             input: &["first", "second", "third"],
             output: &["first,second,third"],
         },
-        "Join lines using comma (include trailing comma)": {
+        "Join lines using comma (include trailing comma).": {
             args: &["-t", ","],
             input: &["first", "second", "third"],
             output: &["first,second,third,"],

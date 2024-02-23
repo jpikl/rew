@@ -25,9 +25,12 @@ See [rew reference](rew.md#global-options) for list of additional global options
 
 ## Examples
 
-Convert characters to uppercase
+Convert characters to uppercase.
 
 ```sh
-$ echo 'Hello World!' | rew upper
+$ echo 'Hello World!' > input
+
+$ rew upper < input
+
 HELLO WORLD!
 ```

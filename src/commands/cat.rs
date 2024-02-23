@@ -12,7 +12,7 @@ pub const META: Meta = command_meta! {
     args: Args,
     run: run,
     examples: command_examples! [
-        "Copy input to output": {
+        "Copy input to output.": {
             args: &[],
             input: &["first", "second", "third"],
             output: &["first", "second", "third"],

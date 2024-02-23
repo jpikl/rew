@@ -37,17 +37,27 @@ See [rew reference](rew.md#global-options) for list of additional global options
 
 ## Examples
 
-Print the first line
+Print the first line.
 
 ```sh
-$ printf '%s\n' 'first' 'second' 'third' | rew first
+$ echo 'first' > input
+$ echo 'second' >> input
+$ echo 'third' >> input
+
+$ rew first < input
+
 first
 ```
 
-Print the first two lines
+Print the first two lines.
 
 ```sh
-$ printf '%s\n' 'first' 'second' 'third' | rew first 2
+$ echo 'first' > input
+$ echo 'second' >> input
+$ echo 'third' >> input
+
+$ rew first 2 < input
+
 first
 second
 ```

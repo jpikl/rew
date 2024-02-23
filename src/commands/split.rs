@@ -12,17 +12,17 @@ pub const META: Meta = command_meta! {
     args: Args,
     run: run,
     examples: command_examples! [
-        "Split input into lines on comma": {
+        "Split input into lines on comma.": {
             args: &[","],
             input: &["first,second,third"],
             output: &["first", "second", "third"],
         },
-        "Split input into lines on comma (process trailing comma)": {
+        "Split input into lines on comma (process trailing comma).": {
             args: &[","],
             input: &["first,second,third,"],
             output: &["first", "second", "third", ""],
         },
-        "Split input into lines on comma (ignore trailing comma)": {
+        "Split input into lines on comma (ignore trailing comma).": {
             args: &["-t", ","],
             input: &["first,second,third,"],
             output: &["first", "second", "third"],

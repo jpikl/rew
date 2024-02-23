@@ -37,17 +37,27 @@ See [rew reference](rew.md#global-options) for list of additional global options
 
 ## Examples
 
-Print the last line
+Print the last line.
 
 ```sh
-$ printf '%s\n' 'first' 'second' 'third' | rew last
+$ echo 'first' > input
+$ echo 'second' >> input
+$ echo 'third' >> input
+
+$ rew last < input
+
 third
 ```
 
-Print the last two lines
+Print the last two lines.
 
 ```sh
-$ printf '%s\n' 'first' 'second' 'third' | rew last 2
+$ echo 'first' > input
+$ echo 'second' >> input
+$ echo 'third' >> input
+
+$ rew last 2 < input
+
 second
 third
 ```

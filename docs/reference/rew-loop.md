@@ -35,10 +35,14 @@ See [rew reference](rew.md#global-options) for list of additional global options
 
 ## Examples
 
-Repeat all input two times
+Repeat all input two times.
 
 ```sh
-$ printf '%s\n' 'first' 'second' | rew loop 2
+$ echo 'first' > input
+$ echo 'second' >> input
+
+$ rew loop 2 < input
+
 first
 second
 first

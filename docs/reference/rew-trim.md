@@ -39,23 +39,32 @@ See [rew reference](rew.md#global-options) for list of additional global options
 
 ## Examples
 
-Trim whitespaces from both sides of lines
+Trim whitespaces from both sides each line.
 
 ```sh
-$ echo '  Hello World!  ' | rew trim
+$ echo '  Hello World!  ' > input
+
+$ rew trim < input
+
 Hello World!
 ```
 
-Trim whitespaces from start of lines
+Trim whitespaces from start of each line.
 
 ```sh
-$ echo '  Hello World!  ' | rew trim -s
+$ echo '  Hello World!  ' > input
+
+$ rew trim -s < input
+
 Hello World!  
 ```
 
-Trim whitespaces from end of lines
+Trim whitespaces from end of each line.
 
 ```sh
-$ echo '  Hello World!  ' | rew trim -e
+$ echo '  Hello World!  ' > input
+
+$ rew trim -e < input
+
   Hello World!
 ```

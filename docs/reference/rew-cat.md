@@ -41,10 +41,15 @@ See [rew reference](rew.md#global-options) for list of additional global options
 
 ## Examples
 
-Copy input to output
+Copy input to output.
 
 ```sh
-$ printf '%s\n' 'first' 'second' 'third' | rew cat
+$ echo 'first' > input
+$ echo 'second' >> input
+$ echo 'third' >> input
+
+$ rew cat < input
+
 first
 second
 third

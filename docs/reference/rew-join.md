@@ -41,16 +41,26 @@ See [rew reference](rew.md#global-options) for list of additional global options
 
 ## Examples
 
-Join lines using comma
+Join lines using comma.
 
 ```sh
-$ printf '%s\n' 'first' 'second' 'third' | rew join ,
+$ echo 'first' > input
+$ echo 'second' >> input
+$ echo 'third' >> input
+
+$ rew join , < input
+
 first,second,third
 ```
 
-Join lines using comma (include trailing comma)
+Join lines using comma (include trailing comma).
 
 ```sh
-$ printf '%s\n' 'first' 'second' 'third' | rew join -t ,
+$ echo 'first' > input
+$ echo 'second' >> input
+$ echo 'third' >> input
+
+$ rew join -t , < input
+
 first,second,third,
 ```

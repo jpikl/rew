@@ -31,19 +31,29 @@ See [rew reference](rew.md#global-options) for list of additional global options
 
 ## Examples
 
-Convert input to ASCII
+Convert input to ASCII.
 
 ```sh
-$ printf '%s\n' 'Æneid' 'étude' '🦀rocks!' | rew ascii
+$ echo 'Æneid' > input
+$ echo 'étude' >> input
+$ echo '🦀rocks!' >> input
+
+$ rew ascii < input
+
 AEneid
 etude
 crab rocks!
 ```
 
-Delete non-ASCII characters from input
+Delete non-ASCII characters from input.
 
 ```sh
-$ printf '%s\n' 'Æneid' 'étude' '🦀rocks!' | rew ascii -d
+$ echo 'Æneid' > input
+$ echo 'étude' >> input
+$ echo '🦀rocks!' >> input
+
+$ rew ascii -d < input
+
 neid
 tude
 rocks!

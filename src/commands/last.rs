@@ -15,12 +15,12 @@ pub const META: Meta = command_meta! {
     args: Args,
     run: run,
     examples: command_examples! [
-        "Print the last line": {
+        "Print the last line.": {
             args: &[],
             input: &["first", "second", "third"],
             output: &["third"],
         },
-        "Print the last two lines": {
+        "Print the last two lines.": {
             args: &["2"],
             input: &["first", "second", "third"],
             output: &["second", "third"],

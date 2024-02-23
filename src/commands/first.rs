@@ -12,12 +12,12 @@ pub const META: Meta = command_meta! {
     args: Args,
     run: run,
     examples: command_examples![
-        "Print the first line": {
+        "Print the first line.": {
             args: &[],
             input: &["first", "second", "third"],
             output: &["first"],
         },
-        "Print the first two lines": {
+        "Print the first two lines.": {
             args: &["2"],
             input: &["first", "second", "third"],
             output: &["first", "second"],
