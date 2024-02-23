@@ -7,14 +7,31 @@ use clap::Command;
 use color_print::cformat;
 use std::env;
 
-pub fn build(commands: &[&'static command::Meta]) -> Command {
-    let mut app = command!().subcommand_required(true);
+const REFERENCE_URL: &str = "https://jpikl.github.io/rew/reference";
 
-    for command in commands {
-        app = app.subcommand((command.build)());
+pub fn build(metas: &[&'static command::Meta]) -> Command {
+    let mut app = command!().subcommand_required(true);
+    let app_name = app.get_name().to_string();
+
+    app = app.after_help(get_after_help(&app_name, None));
+
+    for meta in metas {
+        let command = (meta.build)().after_help(get_after_help(&app_name, Some(meta.name)));
+        app = app.subcommand(command);
     }
 
     GlobalArgs::augment_args(app.next_help_heading("Global options"))
+}
+
+fn get_after_help(app: &str, cmd: Option<&str>) -> String {
+    let file_stem = if let Some(cmd) = cmd {
+        format!("{app}-{cmd}")
+    } else {
+        app.to_owned()
+    };
+    cformat!(
+        "Visit <bold>{REFERENCE_URL}/{file_stem}.html</> for a complete reference and examples."
+    )
 }
 
 pub fn get_prefix(app: &Command, spawned_by: Option<&str>) -> String {

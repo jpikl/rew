@@ -1,4 +1,3 @@
-- Docs URL in --help
 - Refactor and split `x.rs` into multiple files.
 - Finish user guide (performance, caveats, global opts propagation in `rew x`, forward compatibility, versioning).
 - Setup CI (clippy, format, test, coverage).
