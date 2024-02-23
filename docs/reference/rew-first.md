@@ -40,14 +40,14 @@ See [rew reference](rew.md#global-options) for list of additional global options
 Print the first line
 
 ```sh
-> printf '%s\n' 'first' 'second' 'third' | rew first
+$ printf '%s\n' 'first' 'second' 'third' | rew first
 first
 ```
 
 Print the first two lines
 
 ```sh
-> printf '%s\n' 'first' 'second' 'third' | rew first 2
+$ printf '%s\n' 'first' 'second' 'third' | rew first 2
 first
 second
 ```

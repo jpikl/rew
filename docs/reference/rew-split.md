@@ -44,7 +44,7 @@ See [rew reference](rew.md#global-options) for list of additional global options
 Split input into lines on comma
 
 ```sh
-> echo 'first,second,third' | rew split ,
+$ echo 'first,second,third' | rew split ,
 first
 second
 third
@@ -53,7 +53,7 @@ third
 Split input into lines on comma (process trailing comma)
 
 ```sh
-> echo 'first,second,third,' | rew split ,
+$ echo 'first,second,third,' | rew split ,
 first
 second
 third
@@ -63,7 +63,7 @@ third
 Split input into lines on comma (ignore trailing comma)
 
 ```sh
-> echo 'first,second,third,' | rew split -t ,
+$ echo 'first,second,third,' | rew split -t ,
 first
 second
 third

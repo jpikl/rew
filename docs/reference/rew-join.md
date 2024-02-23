@@ -44,13 +44,13 @@ See [rew reference](rew.md#global-options) for list of additional global options
 Join lines using comma
 
 ```sh
-> printf '%s\n' 'first' 'second' 'third' | rew join ,
+$ printf '%s\n' 'first' 'second' 'third' | rew join ,
 first,second,third
 ```
 
 Join lines using comma (include trailing comma)
 
 ```sh
-> printf '%s\n' 'first' 'second' 'third' | rew join -t ,
+$ printf '%s\n' 'first' 'second' 'third' | rew join -t ,
 first,second,third,
 ```

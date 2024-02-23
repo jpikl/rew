@@ -38,7 +38,7 @@ See [rew reference](rew.md#global-options) for list of additional global options
 Print arguments as lines
 
 ```sh
-> rew stream first second third
+$ rew stream first second third
 first
 second
 third

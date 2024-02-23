@@ -34,7 +34,7 @@ See [rew reference](rew.md#global-options) for list of additional global options
 Convert input to ASCII
 
 ```sh
-> printf '%s\n' 'Æneid' 'étude' '🦀rocks!' | rew ascii
+$ printf '%s\n' 'Æneid' 'étude' '🦀rocks!' | rew ascii
 AEneid
 etude
 crab rocks!
@@ -43,7 +43,7 @@ crab rocks!
 Delete non-ASCII characters from input
 
 ```sh
-> printf '%s\n' 'Æneid' 'étude' '🦀rocks!' | rew ascii -d
+$ printf '%s\n' 'Æneid' 'étude' '🦀rocks!' | rew ascii -d
 neid
 tude
 rocks!

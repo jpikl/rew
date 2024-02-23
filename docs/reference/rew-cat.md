@@ -44,7 +44,7 @@ See [rew reference](rew.md#global-options) for list of additional global options
 Copy input to output
 
 ```sh
-> printf '%s\n' 'first' 'second' 'third' | rew cat
+$ printf '%s\n' 'first' 'second' 'third' | rew cat
 first
 second
 third

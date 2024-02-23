@@ -60,7 +60,7 @@ See [rew reference](rew.md#global-options) for list of additional global options
 Empty expression is replaced by input line
 
 ```sh
-> printf '%s\n' 'first' 'second' 'third' | rew x 'Hello {}!'
+$ printf '%s\n' 'first' 'second' 'third' | rew x 'Hello {}!'
 Hello first!
 Hello second!
 Hello third!
@@ -69,7 +69,7 @@ Hello third!
 Expression with commands to process input line
 
 ```sh
-> printf '%s\n' 'first' 'second' 'third' | rew x 'Hello {upper | sed s/[AEIO]/_/g}!'
+$ printf '%s\n' 'first' 'second' 'third' | rew x 'Hello {upper | sed s/[AEIO]/_/g}!'
 Hello F_RST!
 Hello S_C_ND!
 Hello TH_RD!
@@ -78,7 +78,7 @@ Hello TH_RD!
 Multiple expressions run as parallel shell pipelines
 
 ```sh
-> printf '%s\n' 'first' 'second' 'third' | rew x '{seq}. {upper | sed s/[AEIO]/_/g}!'
+$ printf '%s\n' 'first' 'second' 'third' | rew x '{seq}. {upper | sed s/[AEIO]/_/g}!'
 1. F_RST!
 2. S_C_ND!
 3. TH_RD!

@@ -38,7 +38,7 @@ See [rew reference](rew.md#global-options) for list of additional global options
 Skip the first line
 
 ```sh
-> printf '%s\n' 'first' 'second' 'third' | rew skip 1
+$ printf '%s\n' 'first' 'second' 'third' | rew skip 1
 second
 third
 ```
@@ -46,6 +46,6 @@ third
 Skip the first two lines
 
 ```sh
-> printf '%s\n' 'first' 'second' 'third' | rew skip 2
+$ printf '%s\n' 'first' 'second' 'third' | rew skip 2
 third
 ```

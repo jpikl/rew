@@ -269,7 +269,7 @@ fn write_example(writer: &mut impl Write, command: &Adapter<'_>, example: &Examp
     writeln!(writer, "{}", example.name)?;
     writeln!(writer)?;
     writeln!(writer, "```sh")?;
-    write!(writer, "> ")?;
+    write!(writer, "$ ")?;
 
     if !example.input.is_empty() {
         if example.input.len() == 1 {

@@ -28,6 +28,6 @@ See [rew reference](rew.md#global-options) for list of additional global options
 Convert characters to uppercase
 
 ```sh
-> echo 'Hello World!' | rew upper
+$ echo 'Hello World!' | rew upper
 HELLO WORLD!
 ```
