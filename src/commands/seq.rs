@@ -4,7 +4,7 @@ use crate::command::Meta;
 use crate::command_examples;
 use crate::command_meta;
 use crate::range::StartRange;
-use anyhow::anyhow;
+use anyhow::format_err;
 use anyhow::Result;
 
 pub const META: Meta = command_meta! {
@@ -89,7 +89,7 @@ fn run(context: &Context, args: &Args) -> Result<()> {
                 if let Some(new_value) = value.checked_add(step) {
                     value = new_value;
                 } else {
-                    return Err(anyhow!("number sequence reached interger limit"));
+                    return Err(format_err!("number sequence reached interger limit"));
                 }
             }
         }

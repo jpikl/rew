@@ -1,5 +1,5 @@
+use color_print::cformat;
 use derive_more::Display;
-use owo_colors::OwoColorize;
 use std::fmt::Debug;
 use std::fmt::Formatter;
 use std::iter::Fuse;
@@ -52,15 +52,17 @@ pub enum ErrorKind {
 impl Display for Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let padding = " ".repeat(self.position);
-        writeln!(
-            f,
-            "pattern syntax error at position {}",
-            self.position.yellow()
-        )?;
-        writeln!(f)?;
-        writeln!(f, "{}", self.input)?;
-        writeln!(f, "{}{}", padding, "^".red().bold())?;
-        writeln!(f, "{}{}", padding, self.kind.red().bold())
+        let message = cformat!(
+            "pattern syntax error at position <yellow>{}</>\n\
+             \n\
+             {}\n\
+             {padding}<red>^</>\n\
+             {padding}<red,bold>{}\n",
+            self.position,
+            self.input,
+            self.kind
+        );
+        f.write_str(&message)
     }
 }
 
@@ -622,11 +624,10 @@ mod tests {
             position: 3,
             kind: ErrorKind::MissingExprStart,
         };
-        let expected_result = format!(
-            "pattern syntax error at position {}\n\nabc}}\n   {}\n   {}\n",
-            3.yellow(),
-            '^'.red().bold(),
-            "missing opening {".red().bold()
+        let expected_result = cformat!(
+            "pattern syntax error at position <yellow>3</>\n\n\
+            abc}}\n   <red>^</>\n   <red,bold>missing opening {}\n",
+            '{'
         );
         assert_eq!(error.to_string(), expected_result);
     }

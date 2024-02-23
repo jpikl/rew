@@ -1,9 +1,14 @@
+use clap::crate_name;
 use clap::Args;
 use clap::ValueEnum;
 use derive_more::Display;
 use derive_more::IsVariant;
+use std::env;
+use std::env::current_exe;
 use std::io::stdout;
 use std::io::IsTerminal;
+use std::io::Result;
+use std::path::PathBuf;
 
 // Optimal value for max IO throughput, according to https://www.evanjones.ca/read-write-buffer-size.html
 // Also confirmed by some custom benchmarks.
@@ -13,6 +18,19 @@ const DEFAULT_BUF_SIZE: usize = 32 * 1024;
 pub const ENV_NULL: &str = "REW_NULL";
 pub const ENV_BUF_MODE: &str = "REW_BUF_MODE";
 pub const ENV_BUF_SIZE: &str = "REW_BUF_SIZE";
+pub const ENV_SPAWNED_BY: &str = "REW_SPAWNED_BY";
+
+pub fn get_bin_name() -> String {
+    env::args()
+        .next()
+        .unwrap_or_else(|| crate_name!().to_owned())
+}
+
+pub fn get_bin_path() -> Result<PathBuf> {
+    env::args()
+        .next()
+        .map_or_else(current_exe, |bin_name| Ok(bin_name.into()))
+}
 
 #[derive(Clone, Copy, ValueEnum, Display, Debug, IsVariant, PartialEq, Eq)]
 pub enum BufMode {

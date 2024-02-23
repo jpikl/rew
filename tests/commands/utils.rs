@@ -37,7 +37,7 @@ macro_rules! command_test_case {
             $crate::utils::with_timeout(|| {
                 $crate::utils::assert_command($name, &[$($arg,)*], $stdin)
                     .failure()
-                    .stderr($stderr);
+                    .stderr($crate::utils::expand_err($name, $stderr));
             });
         }
     };
@@ -58,7 +58,7 @@ macro_rules! command_test_case {
             $crate::utils::with_timeout(|| {
                 $crate::utils::assert_shell($template, $name, $stdin)
                     .failure()
-                    .stderr($stderr);
+                    .stderr($crate::utils::expand_err($name, $stderr));
             });
         }
     };
@@ -74,19 +74,29 @@ pub fn assert_command(name: &str, args: &[&str], stdin: impl Into<Vec<u8>>) -> A
 }
 
 pub fn assert_shell(template: &str, cmd: &str, stdin: impl Into<Vec<u8>>) -> Assert {
-    let bin = process::Command::cargo_bin(crate_name!()).unwrap();
-    let bin_path = bin.get_program().to_string_lossy();
-
+    let bin = get_bin();
     let sh = env::var_os("SHELL").unwrap_or("sh".into());
     let sh_cmd = template
-        .replace("%bin%", &bin_path)
-        .replace("%cmd%", &format!("{bin_path} {cmd}"));
+        .replace("%bin%", &bin)
+        .replace("%cmd%", &format!("{bin} {cmd}"));
 
     Command::new(sh)
         .arg("-c")
         .arg(sh_cmd)
         .write_stdin(stdin)
         .assert()
+}
+
+pub fn expand_err(cmd: &str, message: &str) -> String {
+    format!("{} {cmd}: error: {message}", get_bin())
+}
+
+fn get_bin() -> String {
+    process::Command::cargo_bin(crate_name!())
+        .unwrap()
+        .get_program()
+        .to_string_lossy()
+        .to_string()
 }
 
 // Inspired by `ntest::timeout`

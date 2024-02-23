@@ -1,4 +1,4 @@
-use anyhow::anyhow;
+use anyhow::format_err;
 use anyhow::Result;
 use clap::builder::PossibleValue;
 use clap::builder::Str;
@@ -74,7 +74,7 @@ impl<'a> Adapter<'a> {
     pub fn short_description(&self) -> Result<&StyledStr> {
         self.inner
             .get_about()
-            .ok_or_else(|| anyhow!("Command '{}' does not have description", self.full_name()))
+            .ok_or_else(|| format_err!("command '{}' does not have description", self.full_name()))
     }
 
     pub fn synopsis_args(&'a self) -> Vec<SynopsisArg<'a>> {
@@ -295,7 +295,7 @@ impl<'a> BaseArg<'a> {
 
         long_help
             .or(short_help)
-            .ok_or_else(|| anyhow!("Argument '{}' does not have description", self.0.get_id()))
+            .ok_or_else(|| format_err!("argument '{}' does not have description", self.0.get_id()))
     }
 
     pub fn possible_values(&self) -> impl Iterator<Item = Value> {
@@ -347,7 +347,7 @@ impl Value {
 
     pub fn description(&self) -> Result<&StyledStr> {
         self.0.get_help().ok_or_else(|| {
-            anyhow!(
+            format_err!(
                 "Possible value '{}' does not have description",
                 self.0.get_name()
             )

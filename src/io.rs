@@ -1,4 +1,4 @@
-use anyhow::anyhow;
+use anyhow::format_err;
 use anyhow::Result;
 use bstr::ByteSlice;
 use derive_more::IsVariant;
@@ -143,7 +143,7 @@ impl<R: Read> LineReader<R> {
             }
 
             // Input line could not fit into the whole buffer
-            return Err(anyhow!(
+            return Err(format_err!(
                 "cannot fetch line longer than '{}' bytes",
                 self.buf.len()
             ));

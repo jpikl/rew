@@ -1,7 +1,9 @@
 use super::get_meta;
+use crate::args::get_bin_path;
 use crate::args::ENV_BUF_MODE;
 use crate::args::ENV_BUF_SIZE;
 use crate::args::ENV_NULL;
+use crate::args::ENV_SPAWNED_BY;
 use crate::command::Context;
 use crate::command::Group;
 use crate::command::Meta;
@@ -16,13 +18,12 @@ use crate::pattern::Item;
 use crate::pattern::Pattern;
 use crate::pattern::SimpleItem;
 use crate::pattern::SimplePattern;
-use anyhow::anyhow;
 use anyhow::Context as AnyhowContext;
+use anyhow::Error;
 use anyhow::Result;
 use bstr::ByteVec;
 use clap::builder::OsStr;
-use std::env;
-use std::env::current_exe;
+use color_print::cformat;
 use std::io::Write;
 use std::panic::resume_unwind;
 use std::path::Path;
@@ -294,10 +295,10 @@ impl EvalContext {
         let mut err = err.into();
 
         if let Some(raw_command) = &self.raw_command {
-            err = err.context(anyhow!("{message} command {}", raw_command));
+            err = err.context(cformat!("{message} command <yellow>{raw_command}"));
         }
         if let Some(raw_expr) = &self.raw_expr {
-            err = err.context(anyhow!("{message} expression {}", raw_expr));
+            err = err.context(cformat!("{message} expression <yellow>{raw_expr}"));
         }
 
         err
@@ -379,10 +380,13 @@ impl Eval<Child> {
         let result = match self.inner.try_wait() {
             Ok(None) => Ok(false),
             Ok(Some(status)) if status.success() => Ok(true),
-            Ok(Some(status)) => Err(anyhow!("process exited with code {}", status)),
+            Ok(Some(status)) => Err(Error::msg(cformat!(
+                "child process exited with code <red>{}",
+                status.code().unwrap_or_default(),
+            ))),
             Err(err) => Err(err.into()),
         };
-        result.with_eval_context(&self.context, "could not evaluate")
+        result.with_eval_context(&self.context, "failed execution of")
     }
 
     fn kill(&mut self) -> Result<()> {
@@ -555,12 +559,16 @@ impl<'a> CommandBuilder<'a> {
     }
 
     fn build_internal_command(&self, name: Option<&str>, args: &[String]) -> Result<Command> {
-        let bin = current_exe().context("could not detect current executable")?;
-        let mut command = Command::new(bin);
+        let bin_path = get_bin_path().context("could not detect current executable")?;
+        let mut command = Command::new(&bin_path);
 
         command.env(ENV_NULL, self.context.separator().is_null().to_string());
         command.env(ENV_BUF_MODE, self.context.buf_mode().to_string());
         command.env(ENV_BUF_SIZE, self.context.buf_size().to_string());
+        command.env(
+            ENV_SPAWNED_BY,
+            format!("{} {}", bin_path.to_string_lossy(), META.name),
+        );
 
         if let Some(name) = name {
             command.arg(name);

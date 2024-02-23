@@ -1,33 +1,38 @@
-use anyhow::Error;
-use anyhow::Result;
-use rew::app::build_app;
-use rew::app::handle_error;
+use rew::app;
 use rew::commands::get_meta;
 use rew::commands::METAS;
+use rew::error::Reporter;
+use std::process::ExitCode;
 
-fn main() {
-    handle_error(run().or_else(ignore_broken_pipe));
-}
+fn main() -> ExitCode {
+    let app = app::build(&METAS);
+    let reporter = Reporter::new(&app);
 
-fn run() -> Result<()> {
-    let app = build_app(&METAS);
+    let matches = match app.try_get_matches() {
+        Ok(matches) => matches,
+        Err(error) => {
+            reporter.print_args_error(&error);
+            return ExitCode::from(2);
+        }
+    };
 
-    if let Some((name, matches)) = app.get_matches().subcommand() {
-        if let Some(meta) = get_meta(name) {
-            return (meta.run)(matches);
+    let (cmd_name, cmd_matches) = matches.subcommand().expect("command not matched");
+    let cmd = get_meta(cmd_name).expect("command not found");
+
+    match (cmd.run)(cmd_matches) {
+        Ok(()) => ExitCode::from(0),
+        Err(error) if is_broken_pipe(&error) => ExitCode::from(0),
+        Err(error) => {
+            reporter.print_run_error(&error);
+            ExitCode::from(1)
         }
     }
-
-    unreachable!("clap should handle missing or invalid command");
 }
 
-fn ignore_broken_pipe(error: Error) -> Result<()> {
-    for cause in error.chain() {
-        if let Some(io_error) = cause.downcast_ref::<std::io::Error>() {
-            if io_error.kind() == std::io::ErrorKind::BrokenPipe {
-                return Ok(());
-            }
-        }
-    }
-    Err(error)
+fn is_broken_pipe(error: &anyhow::Error) -> bool {
+    error.chain().any(|cause| {
+        cause
+            .downcast_ref::<std::io::Error>()
+            .is_some_and(|io_err| io_err.kind() == std::io::ErrorKind::BrokenPipe)
+    })
 }

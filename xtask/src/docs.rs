@@ -3,7 +3,7 @@ use crate::command::BaseArg;
 use crate::command::NonEmpty;
 use crate::command::OptionalArg;
 use crate::command::PositionalArg;
-use anyhow::anyhow;
+use anyhow::format_err;
 use anyhow::Result;
 use rew::command::Example;
 use std::fs::File;
@@ -25,7 +25,7 @@ pub fn generate_summary(command: &Adapter<'_>, path: &Path) -> Result<()> {
     let start_pos = match content.find(start_marker) {
         Some(pos) => pos + start_marker.len(),
         None => {
-            return Err(anyhow!(
+            return Err(format_err!(
                 "'{}' did not contain '{}' marker",
                 path.to_string_lossy(),
                 start_marker
@@ -34,7 +34,7 @@ pub fn generate_summary(command: &Adapter<'_>, path: &Path) -> Result<()> {
     };
 
     let Some(end_pos) = content.find(end_marker) else {
-        return Err(anyhow!(
+        return Err(format_err!(
             "'{}' did not contain '{}' marker",
             path.to_string_lossy(),
             end_marker

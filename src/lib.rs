@@ -7,6 +7,8 @@ pub mod command;
 #[doc(hidden)]
 pub mod commands;
 #[doc(hidden)]
+pub mod error;
+#[doc(hidden)]
 pub mod io;
 #[doc(hidden)]
 pub mod pattern;
