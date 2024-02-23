@@ -274,6 +274,10 @@ impl Parser<'_> {
             match char {
                 EXPR_START => return Err(self.err(ErrorKind::UnexpectedExprStart)),
                 EXPR_END => break,
+                char if char == self.escape => {
+                    let is_escapable = |char| matches!(char, EXPR_START | EXPR_END);
+                    command.push(self.parse_escape_sequence(is_escapable));
+                }
                 _ => command.push(self.consume(char)),
             }
         }
@@ -567,6 +571,14 @@ mod tests {
     #[case("{\"a%{b\"}", "{`a%{b`}")] // No
     #[case("{\"a%}b\"}", "{`a%}b`}")] // No
     #[case("{\"a%xb\"}", "{`a%xb`}")] // No
+    // Escaping - Raw shell
+    #[case("{#a% b}", "{#`a% b`}")] // No
+    #[case("{#a%'b}", "{#`a%'b`}")] // No
+    #[case("{#a%\"b}", "{#`a%\"b`}")] // No
+    #[case("{#a%|b}", "{#`a%|b`}")] // No
+    #[case("{#a%{b}", "{#`a{b`}")] // Yes
+    #[case("{#a%}b}", "{#`a}b`}")] // Yes
+    #[case("{#a%xb}", "{#`a%xb`}")] // No
     // Consecutive quoted joined args
     #[case("{a'b'\"c\"}", "{`abc`}")]
     #[case("{a\"c\"'b'}", "{`acb`}")]
