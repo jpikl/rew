@@ -269,32 +269,36 @@ fn write_example(writer: &mut impl Write, command: &Adapter<'_>, example: &Examp
     writeln!(writer, "{}", example.name)?;
     writeln!(writer)?;
     writeln!(writer, "```sh")?;
-    write!(writer, "$ ")?;
 
     if !example.input.is_empty() {
-        if example.input.len() == 1 {
-            write!(writer, "echo '{}'", example.input[0])?;
-        } else {
-            write!(writer, "printf '%s\\n'")?;
+        let mut input = example.input.iter();
 
-            for line in example.input {
-                write!(writer, " '{line}'")?;
-            }
+        if let Some(line) = input.next() {
+            writeln!(writer, "$ echo '{line}' > input")?;
         }
 
-        write!(writer, " | ")?;
+        for line in input {
+            writeln!(writer, "$ echo '{line}' >> input")?;
+        }
+
+        writeln!(writer)?;
     }
 
-    write!(writer, "{}", command.full_name())?;
+    write!(writer, "$ {}", command.full_name())?;
 
     for arg in example.args {
-        if arg.contains(' ') || arg.contains('|') {
+        if arg.contains(' ') || arg.contains('|') || arg.contains('\\') {
             write!(writer, " '{arg}'")?;
         } else {
             write!(writer, " {arg}")?;
         }
     }
 
+    if !example.input.is_empty() {
+        write!(writer, " < input")?;
+    }
+
+    writeln!(writer)?;
     writeln!(writer)?;
     writeln!(writer, "{}", example.output.join("\n"))?;
     writeln!(writer, "```")?;
