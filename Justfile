@@ -65,7 +65,7 @@ coverage-preview:
     xdg-open tarpaulin-report.html
 
 # Set up development environment
-[confirm("This might break your environment!\nRun `just --show setup` first to chech what it does.\nContinue? [y/n]:")]
+[confirm("This might break your environment!\nRun `just --show setup` first to check what it does.\nContinue? [y/n]:")]
 setup:
     rustup self update
     rustup install stable
