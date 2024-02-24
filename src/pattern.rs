@@ -3,7 +3,6 @@ use derive_more::Display;
 use std::fmt::Debug;
 use std::fmt::Formatter;
 use std::iter::Fuse;
-use std::iter::Iterator;
 use std::iter::Peekable;
 use std::str::Chars;
 

@@ -123,6 +123,13 @@ Have fun using rew!
 
 <!-- ANCHOR_END: showcase -->
 
+## Development
+
+We use [just](https://github.com/casey/just) to run development tasks.
+Make sure it's installed on your system.
+
+Run `just` without arguments to show available recipes.
+
 ## License
 
 **rew** source and documentation are released under the [MIT License](LICENSE.md).

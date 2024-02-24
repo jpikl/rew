@@ -1,5 +1,0 @@
-[alias]
-coverage = "tarpaulin --engine llvm --force-clean --exclude-files 'tests/*'"
-coverage-html = "coverage --out html"
-fuzz-pattern = "fuzz run --jobs 4 pattern"
-xtask = "run --package xtask --"
