@@ -5,13 +5,13 @@ Compose parallel shell pipelines using a pattern
 ## Usage
 
 ```
-rew x [OPTIONS] <PATTERN>...
+rew x [OPTIONS] [PATTERN]...
 ```
 
 ## Arguments
 
 <dl>
-<dt><code>&lt;PATTERN&gt;...</code></dt>
+<dt><code>[PATTERN]...</code></dt>
 <dd>
 
 Output pattern(s).
@@ -42,6 +42,12 @@ Shell used to evaluate `{# ...}` expressions.
 Default value: `cmd` on Windows, `sh` everywhere else.
 
 Can be also set using `SHELL` environment variable.
+</dd>
+
+<dt><code>--examples</code></dt>
+<dd>
+
+Print examples of the command usage
 </dd>
 
 <dt><code>-h, --help</code></dt>
@@ -179,7 +185,7 @@ b. second
 c. third
 ```
 
-A specific shell for `{# ...}` can be set using the `-s, --shel` option or the `SHELL` environment variable.
+A specific shell for `{# ...}` can be set using the `-s, --shell` option or the `SHELL` environment variable.
 
 ```sh
 $ echo 'first' > input
@@ -195,8 +201,7 @@ $ rew x -s bash '{# for((i=0;i<3;i++)); do echo $i; done}. {}' < input
 
 The `:` marker is a hint that an expression does not consume stdin. Without it, the overall execution might get stuck forever due to blocked IO calls.
 
-Only external commands need `:` to be explicitely specified.
-For built-in commands, `:` is detected automatically.
+Only external commands need `:` to be explicitely specified. For built-in commands, `:` is detected automatically.
 
 ```sh
 $ rew x '{seq 1..3} {: !seq 1 3} {:# echo 1; echo 2; echo 3}'

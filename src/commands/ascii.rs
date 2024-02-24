@@ -1,8 +1,8 @@
 use crate::command::Context;
 use crate::command::Group;
 use crate::command::Meta;
-use crate::command_examples;
 use crate::command_meta;
+use crate::examples;
 use anyhow::Result;
 use bstr::ByteSlice;
 use bstr::ByteVec;
@@ -13,7 +13,7 @@ pub const META: Meta = command_meta! {
     group: Group::Mappers,
     args: Args,
     run: run,
-    examples: command_examples! [
+    examples: examples! [
         "Convert input to ASCII.":  {
             args: &[],
             input: &["Æneid", "étude", "🦀rocks!"],

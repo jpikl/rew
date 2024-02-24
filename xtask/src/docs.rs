@@ -5,7 +5,7 @@ use crate::command::OptionalArg;
 use crate::command::PositionalArg;
 use anyhow::format_err;
 use anyhow::Result;
-use rew::command::Example;
+use rew::examples::Example;
 use std::fs::File;
 use std::io::Read;
 use std::io::Write;

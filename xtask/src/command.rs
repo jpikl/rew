@@ -6,10 +6,10 @@ use clap::builder::StyledStr;
 use clap::builder::ValueRange;
 use clap::Arg;
 use clap::Command;
-use rew::command::Example;
 use rew::command::Group;
 use rew::command::Meta;
 use rew::commands::get_meta;
+use rew::examples::Example;
 use std::borrow::Cow;
 use std::iter::Peekable;
 

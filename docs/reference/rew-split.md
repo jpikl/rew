@@ -5,13 +5,13 @@ Split input into lines using a separator
 ## Usage
 
 ```
-rew split [OPTIONS] <SEPARATOR>
+rew split [OPTIONS] [SEPARATOR]
 ```
 
 ## Arguments
 
 <dl>
-<dt><code>&lt;SEPARATOR&gt;</code></dt>
+<dt><code>[SEPARATOR]</code></dt>
 <dd>
 
 Separator (single byte character)
@@ -26,6 +26,12 @@ Separator (single byte character)
 <dd>
 
 Ignore trailing separator at the end of input
+</dd>
+
+<dt><code>--examples</code></dt>
+<dd>
+
+Print examples of the command usage
 </dd>
 
 <dt><code>-h, --help</code></dt>

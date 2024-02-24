@@ -26,6 +26,12 @@ Trim the beginning
 Trim the end
 </dd>
 
+<dt><code>--examples</code></dt>
+<dd>
+
+Print examples of the command usage
+</dd>
+
 <dt><code>-h, --help</code></dt>
 <dd>
 

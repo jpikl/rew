@@ -1,6 +1,9 @@
+- Replace color-print by actual raw ASCII escape sequences from constants.
 - Fix char alignment in 32KB blocks processed by ascii/lower/upper.
-- Make `--help` and `--version` global commands.
-- Addd `examples` subcommand and `--examples` option (calls external pager).
+- Format `--examples` output.
+- Add paging for `--examples` output.
+- Fix `--examples` order in generated docs.
+- Better shell specific examples for `rew x`.
 - Refactor and split `x.rs` into multiple files.
 - Finish user guide (performance, caveats, global opts propagation in `rew x`, forward compatibility, versioning).
 - Setup CI (clippy, format, test, coverage).

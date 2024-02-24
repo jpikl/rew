@@ -35,6 +35,12 @@ Default value: `1` (for increasing sequence), `-1` (for decreasing sequence)
 
 <dl>
 
+<dt><code>--examples</code></dt>
+<dd>
+
+Print examples of the command usage
+</dd>
+
 <dt><code>-h, --help</code></dt>
 <dd>
 

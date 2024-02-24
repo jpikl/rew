@@ -1,9 +1,11 @@
 use color_print::cformat;
 use derive_more::Display;
+use std::fmt;
 use std::fmt::Debug;
 use std::fmt::Formatter;
 use std::iter::Fuse;
 use std::iter::Peekable;
+use std::result;
 use std::str::Chars;
 
 const EXPR_START: char = '{';
@@ -21,7 +23,7 @@ const ESCAPED_LF: char = 'n';
 const ESCAPED_CR: char = 'r';
 const ESCAPED_TAB: char = 't';
 
-pub type Result<T> = std::result::Result<T, Error>;
+pub type Result<T> = result::Result<T, Error>;
 
 #[derive(Debug, derive_more::Error, PartialEq)]
 pub struct Error {
@@ -49,7 +51,7 @@ pub enum ErrorKind {
 }
 
 impl Display for Error {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, fmt: &mut Formatter<'_>) -> fmt::Result {
         let padding = " ".repeat(self.position);
         let message = cformat!(
             "pattern syntax error at position <yellow>{}</>\n\
@@ -61,7 +63,7 @@ impl Display for Error {
             self.input,
             self.kind
         );
-        f.write_str(&message)
+        fmt.write_str(&message)
     }
 }
 
@@ -137,35 +139,35 @@ impl SimplePattern {
 }
 
 impl Display for Pattern {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, fmt: &mut Formatter<'_>) -> fmt::Result {
         for item in self.items() {
-            write!(f, "{item}")?;
+            write!(fmt, "{item}")?;
         }
         Ok(())
     }
 }
 
 impl Display for Expression {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{{")?;
+    fn fmt(&self, fmt: &mut Formatter<'_>) -> fmt::Result {
+        write!(fmt, "{{")?;
         if self.no_stdin {
-            write!(f, ":")?;
+            write!(fmt, ":")?;
         }
-        write!(f, "{}", self.value)?;
-        write!(f, "}}")
+        write!(fmt, "{}", self.value)?;
+        write!(fmt, "}}")
     }
 }
 
 impl Display for ExpressionValue {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, fmt: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Self::RawShell(command) => write!(f, "#`{command}`"),
+            Self::RawShell(command) => write!(fmt, "#`{command}`"),
             Self::Pipeline(commands) => {
                 for (i, command) in commands.iter().enumerate() {
                     if i > 0 {
-                        write!(f, "|")?;
+                        write!(fmt, "|")?;
                     }
-                    write!(f, "{command}")?;
+                    write!(fmt, "{command}")?;
                 }
                 Ok(())
             }
@@ -174,13 +176,13 @@ impl Display for ExpressionValue {
 }
 
 impl Display for Command {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, fmt: &mut Formatter<'_>) -> fmt::Result {
         if self.external {
-            write!(f, "!")?;
+            write!(fmt, "!")?;
         }
-        write!(f, "`{}`", self.name)?;
+        write!(fmt, "`{}`", self.name)?;
         for arg in &self.args {
-            write!(f, " `{arg}`")?;
+            write!(fmt, " `{arg}`")?;
         }
         Ok(())
     }

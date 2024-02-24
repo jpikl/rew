@@ -1,8 +1,8 @@
 use crate::command::Context;
 use crate::command::Group;
 use crate::command::Meta;
-use crate::command_examples;
 use crate::command_meta;
+use crate::examples;
 use crate::range::StartRange;
 use anyhow::format_err;
 use anyhow::Result;
@@ -12,7 +12,7 @@ pub const META: Meta = command_meta! {
     group: Group::Generators,
     args: Args,
     run: run,
-    examples: command_examples! [
+    examples: examples! [
         "Print numbers from 1 to 3.": {
             args: &["1..3"],
             input: &[],

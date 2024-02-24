@@ -1,8 +1,8 @@
 use crate::command::Context;
 use crate::command::Group;
 use crate::command::Meta;
-use crate::command_examples;
 use crate::command_meta;
+use crate::examples;
 use anyhow::Result;
 use std::io::copy;
 use std::io::Read;
@@ -12,7 +12,7 @@ pub const META: Meta = command_meta! {
     group: Group::Transformers,
     args: Args,
     run: run,
-    examples: command_examples! [
+    examples: examples! [
         "Repeat all input two times.": {
             args: &["2"],
             input: &["first", "second"],

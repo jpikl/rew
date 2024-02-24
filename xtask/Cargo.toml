@@ -7,4 +7,4 @@ publish = false
 [dependencies]
 anyhow = { workspace = true }
 clap = { workspace = true, features = ["cargo", "derive"] }
-rew = { path = "..", features = ["docs"] }
+rew = { path = ".." }

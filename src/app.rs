@@ -16,7 +16,9 @@ pub fn build(metas: &[&'static command::Meta]) -> Command {
     app = app.after_help(get_after_help(&app_name, None));
 
     for meta in metas {
-        let command = (meta.build)().after_help(get_after_help(&app_name, Some(meta.name)));
+        let command = meta
+            .build()
+            .after_help(get_after_help(&app_name, Some(meta.name)));
         app = app.subcommand(command);
     }
 

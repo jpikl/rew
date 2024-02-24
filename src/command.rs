@@ -1,5 +1,6 @@
 use crate::args::BufMode;
 use crate::args::GlobalArgs;
+use crate::examples::Example;
 use crate::io::ChunkReader;
 use crate::io::LineReader;
 use crate::io::Separator;
@@ -7,11 +8,36 @@ use crate::io::Writer;
 use anyhow::Result;
 use clap::ArgMatches;
 use clap::Command;
+use std::fmt;
+use std::fmt::Display;
+use std::fmt::Formatter;
 use std::io::stdin;
 use std::io::stdout;
 use std::io::Read;
 use std::io::StdinLock;
 use std::io::StdoutLock;
+
+pub struct Meta {
+    pub name: &'static str,
+    pub group: Group,
+    pub build: fn(meta: &Meta) -> Command,
+    pub run: fn(meta: &Meta, &ArgMatches) -> Result<()>,
+    pub examples: fn() -> Vec<Example>,
+}
+
+impl Meta {
+    pub fn build(&self) -> Command {
+        (self.build)(self)
+    }
+
+    pub fn run(&self, matches: &ArgMatches) -> Result<()> {
+        (self.run)(self, matches)
+    }
+
+    pub fn examples(&self) -> Vec<Example> {
+        (self.examples)()
+    }
+}
 
 #[macro_export]
 macro_rules! command_meta {
@@ -19,50 +45,30 @@ macro_rules! command_meta {
         $crate::command::Meta {
             name: $name,
             group: $group,
-            build: || -> clap::Command {
-                use clap::Args as ClapArgs;
-                $args::augment_args(clap::Command::new($name))
+            build: |meta| -> clap::Command {
+                use clap::Args as _;
+
+                let mut command = clap::Command::new(meta.name);
+                command = $args::augment_args(command);
+                command = $crate::examples::augment_args(command);
+                command
             },
-            run: |matches| -> anyhow::Result<()> {
+            run: |meta, matches| -> anyhow::Result<()> {
                 use clap::FromArgMatches;
+
+                if $crate::examples::is_set(&matches) {
+                    return $crate::examples::print(&meta.name, &meta.examples());
+                }
+
                 let global_args = $crate::args::GlobalArgs::from_arg_matches(matches)?;
                 let context = $crate::command::Context::from(global_args);
                 let args = $args::from_arg_matches(matches)?;
+
                 $run(&context, &args)
             },
             examples: $examples,
         }
     };
-}
-
-#[macro_export]
-#[cfg(feature = "docs")]
-macro_rules! command_examples {
-    ($($name:literal: { args: $args:expr, input: $input:expr, output: $output:expr, }),*,) => {
-        || vec![$($crate::command::Example { name: $name, args: $args, input: $input, output: $output }),*]
-    };
-    () => {
-        Vec::new
-    };
-}
-
-#[macro_export]
-#[cfg(not(feature = "docs"))]
-macro_rules! command_examples {
-    ($($name:literal: { args: $args:expr, input: $input:expr, output: $output:expr, }),*,) => {
-        Vec::new
-    };
-    () => {
-        Vec::new
-    };
-}
-
-pub struct Meta {
-    pub name: &'static str,
-    pub group: Group,
-    pub build: fn() -> Command,
-    pub run: fn(&ArgMatches) -> Result<()>,
-    pub examples: fn() -> Vec<Example>,
 }
 
 #[derive(Default, Clone, Copy, PartialEq)]
@@ -76,14 +82,12 @@ pub enum Group {
     Generators,
 }
 
-#[cfg(feature = "docs")]
-impl std::fmt::Display for Group {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.name())
+impl Display for Group {
+    fn fmt(&self, fmt: &mut Formatter<'_>) -> fmt::Result {
+        write!(fmt, "{}", self.name())
     }
 }
 
-#[cfg(feature = "docs")]
 impl Group {
     pub fn name(&self) -> &'static str {
         match self {
@@ -117,13 +121,6 @@ impl Group {
             Self::Generators,
         ]
     }
-}
-
-pub struct Example {
-    pub name: &'static str,
-    pub args: &'static [&'static str],
-    pub input: &'static [&'static str],
-    pub output: &'static [&'static str],
 }
 
 #[derive(Clone)]

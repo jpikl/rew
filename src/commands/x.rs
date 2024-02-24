@@ -7,9 +7,9 @@ use crate::args::ENV_SPAWNED_BY;
 use crate::command::Context;
 use crate::command::Group;
 use crate::command::Meta;
-use crate::command_examples;
 use crate::command_meta;
 use crate::commands::cat;
+use crate::examples;
 use crate::io::LineReader;
 use crate::pattern;
 use crate::pattern::Expression;
@@ -24,6 +24,7 @@ use anyhow::Result;
 use bstr::ByteVec;
 use clap::builder::OsStr;
 use color_print::cformat;
+use std::io;
 use std::io::Write;
 use std::panic::resume_unwind;
 use std::path::Path;
@@ -33,6 +34,7 @@ use std::process::ChildStdin;
 use std::process::ChildStdout;
 use std::process::Command;
 use std::process::Stdio;
+use std::result;
 use std::thread;
 use std::thread::JoinHandle;
 use std::time::Duration;
@@ -48,21 +50,19 @@ pub const META: Meta = command_meta! {
     group: Group::Transformers,
     args: Args,
     run: run,
-    examples: command_examples! [
+    examples: examples! [
         "Empty expression `{}` will be replaced by each input line.": {
             args: &["Hello {}"],
             input: &["first", "second", "third"],
             output: &["Hello first", "Hello second", "Hello third"],
         },
-        "Expressions can call other `rew` commands to process the input.\n\
-         \n\
+        "Expressions can call other `rew` commands to process the input.\n\n\
          Here, we call the `rew upper` command which converts text to uppercase.": {
             args: &["Hello {upper}"],
             input: &["first", "second", "third"],
             output: &["Hello FIRST", "Hello SECOND", "Hello THIRD"],
         },
-        "Expressions can also call any external command.\n\
-         \n\
+        "Expressions can also call any external command.\n\n\
          Here, we remove all `aeiou` characters from text using `tr`.": {
             args: &["Hello {tr -d aeiou}"],
             input: &["first", "second", "third"],
@@ -79,36 +79,32 @@ pub const META: Meta = command_meta! {
             input: &["first", "second", "third"],
             output: &["1. FRST", "2. SCND", "3. THRD"],
         },
-        "Arguments containing whitepaces must be wrapped in single `''` or double quotes `\"\"`.\n\
-         \n\
+        "Arguments containing whitepaces must be wrapped in single `''` or double quotes `\"\"`.\n\n\
          Here, we replace `aeiou` characters with space `' '`.": {
             args: &["Hello {tr aeiou ' ' | upper}"],
             input: &["first", "second", "third"],
             output: &["Hello F RST", "Hello S C ND", "Hello TH RD"],
         },
-        "The `!` marker denotes an external command.\n\
-         \n\
+        "The `!` marker denotes an external command.\n\n\
          Here, we call the standard `seq` command instead of the built-in `rew seq`.": {
            args: &["{!seq 1 3}. {}"],
            input: &["first", "second", "third"],
            output: &["1. first", "2. second", "3. third"],
        },
-       "The `#` marker makes the rest of the expression to be interpreted by the current shell.\n\
-        \n\
+       "The `#` marker makes the rest of the expression to be interpreted by the current shell.\n\n\
         For example, the following expression is equivalent to `{sh -c 'echo a; echo b; echo c'}`": {
             args: &["{# echo a; echo b; echo c}. {}"],
             input: &["first", "second", "third"],
             output: &["a. first", "b. second", "c. third"],
         },
-        "A specific shell for `{# ...}` can be set using the `-s, --shel` option or the `SHELL` environment variable.": {
+        "A specific shell for `{# ...}` can be set using the `-s, --shell` option or the `SHELL` environment variable.": {
             args: &["-s", "bash", "{# for((i=0;i<3;i++)); do echo $i; done}. {}"],
             input: &["first", "second", "third"],
             output: &["0. first", "1. second", "2. third"],
         },
        "The `:` marker is a hint that an expression does not consume stdin. \
-        Without it, the overall execution might get stuck forever due to blocked IO calls.\n\
-        \n\
-        Only external commands need `:` to be explicitely specified.\n\
+        Without it, the overall execution might get stuck forever due to blocked IO calls.\n\n\
+        Only external commands need `:` to be explicitely specified. \
         For built-in commands, `:` is detected automatically.": {
             args: &["{seq 1..3} {: !seq 1 3} {:# echo 1; echo 2; echo 3}"],
             input: &[],
@@ -380,7 +376,7 @@ trait WithEvalContext<T> {
     fn with_eval_context(self, context: &EvalContext, message: &str) -> Result<T>;
 }
 
-impl<T, E: Into<anyhow::Error>> WithEvalContext<T> for std::result::Result<T, E> {
+impl<T, E: Into<anyhow::Error>> WithEvalContext<T> for result::Result<T, E> {
     fn with_eval_context(self, context: &EvalContext, message: &str) -> Result<T> {
         self.map_err(|err| context.apply(err, message))
     }
@@ -424,7 +420,7 @@ impl Eval<ChildStdin> {
     fn write_all(&mut self, buf: &[u8]) -> Result<bool> {
         match self.inner.write_all(buf) {
             Ok(()) => Ok(true),
-            Err(err) if err.kind() == std::io::ErrorKind::BrokenPipe => Ok(false),
+            Err(err) if err.kind() == io::ErrorKind::BrokenPipe => Ok(false),
             Err(err) => Err(self.context.apply(err, "could not write to")),
         }
     }

@@ -18,6 +18,12 @@ rew ascii [OPTIONS]
 Delete non-ASCII characters instead of converting them
 </dd>
 
+<dt><code>--examples</code></dt>
+<dd>
+
+Print examples of the command usage
+</dd>
+
 <dt><code>-h, --help</code></dt>
 <dd>
 

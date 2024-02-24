@@ -1,8 +1,8 @@
 use crate::command::Context;
 use crate::command::Group;
 use crate::command::Meta;
-use crate::command_examples;
 use crate::command_meta;
+use crate::examples;
 use anyhow::Result;
 use memchr::memchr;
 use std::io::copy;
@@ -12,7 +12,7 @@ pub const META: Meta = command_meta! {
     group: Group::Filters,
     args: Args,
     run: run,
-    examples: command_examples! [
+    examples: examples! [
         "Skip the first line.": {
             args: &["1"],
             input: &["first", "second", "third"],

@@ -5,13 +5,13 @@ Join input lines using a separator
 ## Usage
 
 ```
-rew join [OPTIONS] <SEPARATOR>
+rew join [OPTIONS] [SEPARATOR]
 ```
 
 ## Arguments
 
 <dl>
-<dt><code>&lt;SEPARATOR&gt;</code></dt>
+<dt><code>[SEPARATOR]</code></dt>
 <dd>
 
 Separator
@@ -26,6 +26,12 @@ Separator
 <dd>
 
 Print trailing separator at the end
+</dd>
+
+<dt><code>--examples</code></dt>
+<dd>
+
+Print examples of the command usage
 </dd>
 
 <dt><code>-h, --help</code></dt>

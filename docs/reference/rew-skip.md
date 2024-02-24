@@ -5,13 +5,13 @@ Skip first N input lines, output the rest
 ## Usage
 
 ```
-rew skip [OPTIONS] <COUNT>
+rew skip [OPTIONS] [COUNT]
 ```
 
 ## Arguments
 
 <dl>
-<dt><code>&lt;COUNT&gt;</code></dt>
+<dt><code>[COUNT]</code></dt>
 <dd>
 
 Number of lines to skip
@@ -21,6 +21,12 @@ Number of lines to skip
 ## Options
 
 <dl>
+
+<dt><code>--examples</code></dt>
+<dd>
+
+Print examples of the command usage
+</dd>
 
 <dt><code>-h, --help</code></dt>
 <dd>

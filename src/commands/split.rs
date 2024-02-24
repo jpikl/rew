@@ -1,17 +1,18 @@
 use crate::command::Context;
 use crate::command::Group;
 use crate::command::Meta;
-use crate::command_examples;
 use crate::command_meta;
+use crate::examples;
 use anyhow::Result;
 use memchr::memchr;
+use std::result;
 
 pub const META: Meta = command_meta! {
     name: "split",
     group: Group::Transformers,
     args: Args,
     run: run,
-    examples: command_examples! [
+    examples: examples! [
         "Split input into lines on comma.": {
             args: &[","],
             input: &["first,second,third"],
@@ -88,7 +89,7 @@ fn run(context: &Context, args: &Args) -> Result<()> {
     Ok(())
 }
 
-fn parse_separator(string: &str) -> std::result::Result<u8, &'static str> {
+fn parse_separator(string: &str) -> result::Result<u8, &'static str> {
     if string.chars().count() != 1 {
         Err("value must be a single character")
     } else if string.len() != 1 {
