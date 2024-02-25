@@ -1,0 +1,7 @@
+{
+  "recommendations": [
+    "tamasfe.even-better-toml",
+    "skellock.just",
+    "rust-lang.rust-analyzer"
+  ]
+}
