@@ -1,4 +1,3 @@
-- Replace color-print by actual raw ASCII escape sequences from constants.
 - Fix char alignment in 32KB blocks processed by ascii/lower/upper.
 - Format `--examples` output.
 - Add paging for `--examples` output.

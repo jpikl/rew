@@ -4,6 +4,9 @@ use crate::args::ENV_BUF_MODE;
 use crate::args::ENV_BUF_SIZE;
 use crate::args::ENV_NULL;
 use crate::args::ENV_SPAWNED_BY;
+use crate::colors::RED;
+use crate::colors::RESET;
+use crate::colors::YELLOW;
 use crate::command::Context;
 use crate::command::Group;
 use crate::command::Meta;
@@ -23,7 +26,6 @@ use anyhow::Error;
 use anyhow::Result;
 use bstr::ByteVec;
 use clap::builder::OsStr;
-use color_print::cformat;
 use std::io;
 use std::io::Write;
 use std::panic::resume_unwind;
@@ -362,10 +364,10 @@ impl EvalContext {
         let mut err = err.into();
 
         if let Some(raw_command) = &self.raw_command {
-            err = err.context(cformat!("{message} command <yellow>{raw_command}"));
+            err = err.context(format!("{message} command {YELLOW}{raw_command}{RESET}"));
         }
         if let Some(raw_expr) = &self.raw_expr {
-            err = err.context(cformat!("{message} expression <yellow>{raw_expr}"));
+            err = err.context(format!("{message} expression {YELLOW}{raw_expr}{RESET}"));
         }
 
         err
@@ -447,8 +449,8 @@ impl Eval<Child> {
         let result = match self.inner.try_wait() {
             Ok(None) => Ok(false),
             Ok(Some(status)) if status.success() => Ok(true),
-            Ok(Some(status)) => Err(Error::msg(cformat!(
-                "child process exited with code <red>{}",
+            Ok(Some(status)) => Err(Error::msg(format!(
+                "child process exited with code {RED}{}{RESET}",
                 status.code().unwrap_or_default(),
             ))),
             Err(err) => Err(err.into()),

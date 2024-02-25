@@ -1,4 +1,6 @@
-use color_print::cformat;
+use crate::colors::BOLD_RED;
+use crate::colors::RESET;
+use crate::colors::YELLOW;
 use derive_more::Display;
 use std::fmt;
 use std::fmt::Debug;
@@ -52,18 +54,18 @@ pub enum ErrorKind {
 
 impl Display for Error {
     fn fmt(&self, fmt: &mut Formatter<'_>) -> fmt::Result {
+        writeln!(
+            fmt,
+            "pattern syntax error at position {YELLOW}{}{RESET}",
+            self.position
+        )?;
+
+        writeln!(fmt)?;
+        writeln!(fmt, "{}", self.input)?;
+
         let padding = " ".repeat(self.position);
-        let message = cformat!(
-            "pattern syntax error at position <yellow>{}</>\n\
-             \n\
-             {}\n\
-             {padding}<red>^</>\n\
-             {padding}<red,bold>{}\n",
-            self.position,
-            self.input,
-            self.kind
-        );
-        fmt.write_str(&message)
+        writeln!(fmt, "{padding}{BOLD_RED}^{RESET}")?;
+        writeln!(fmt, "{padding}{BOLD_RED}{}{RESET}", self.kind)
     }
 }
 
@@ -637,10 +639,12 @@ mod tests {
             position: 3,
             kind: ErrorKind::MissingExprStart,
         };
-        let expected_result = cformat!(
-            "pattern syntax error at position <yellow>3</>\n\n\
-            abc}}\n   <red>^</>\n   <red,bold>missing opening {}\n",
-            '{'
+        let expected_result = format!(
+            "pattern syntax error at position {YELLOW}3{RESET}\n\
+             \n\
+             abc}}\n   \
+             {BOLD_RED}^{RESET}\n   \
+             {BOLD_RED}missing opening {{{RESET}\n",
         );
         assert_eq!(error.to_string(), expected_result);
     }

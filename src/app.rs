@@ -1,10 +1,11 @@
 use crate::args::get_bin_name;
 use crate::args::GlobalArgs;
+use crate::colors::BOLD;
+use crate::colors::RESET;
 use crate::command;
 use clap::command;
 use clap::Args;
 use clap::Command;
-use color_print::cformat;
 use std::env;
 
 const REFERENCE_URL: &str = "https://jpikl.github.io/rew/reference";
@@ -31,8 +32,8 @@ fn get_after_help(app: &str, cmd: Option<&str>) -> String {
     } else {
         app.to_owned()
     };
-    cformat!(
-        "Visit <bold>{REFERENCE_URL}/{file_stem}.html</> for a complete reference and examples."
+    format!(
+        "Visit {BOLD}{REFERENCE_URL}/{file_stem}.html{RESET} for a complete reference and examples."
     )
 }
 
@@ -49,8 +50,8 @@ pub fn get_prefix(app: &Command, spawned_by: Option<&str>) -> String {
         .unwrap_or(bin_name);
 
     if let Some(spawned_by) = spawned_by {
-        cformat!("<bold>{prefix}</> (spawned by '<bold>{spawned_by}</>')")
+        format!("{BOLD}{prefix}{RESET} (spawned by '{BOLD}{spawned_by}{RESET}')")
     } else {
-        cformat!("<bold>{prefix}</>")
+        format!("{BOLD}{prefix}{RESET}")
     }
 }

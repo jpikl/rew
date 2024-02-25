@@ -1,13 +1,14 @@
 use crate::app::get_prefix;
 use crate::args::ENV_SPAWNED_BY;
+use crate::colors::BOLD_RED;
+use crate::colors::RESET;
 use anstream::eprintln;
 use clap::error::ErrorKind;
 use clap::Command;
-use color_print::cstr;
 use std::env;
 
-const ARGS_ERROR: &str = cstr!("<red,bold>invalid usage:");
-const RUN_ERROR: &str = cstr!("<red,bold>error:");
+const ARGS_ERROR: &str = "invalid usage";
+const RUN_ERROR: &str = "error";
 
 pub struct Reporter {
     spawned_by: Option<String>,
@@ -30,16 +31,16 @@ impl Reporter {
         if self.spawned_by.is_some() {
             // Be brief when spawned by another process
             let message = error.kind().as_str().unwrap_or("unknown error");
-            eprintln!("{}: {ARGS_ERROR} {message}", self.prefix);
+            eprintln!("{}: {BOLD_RED}{ARGS_ERROR}:{RESET} {message}", self.prefix);
         } else {
             let message = error.render().ansi().to_string();
-            let message = message.replacen("error:", ARGS_ERROR, 1);
+            let message = message.replacen("error", ARGS_ERROR, 1);
             eprint!("{}: {message}", self.prefix);
         };
     }
 
     pub fn print_run_error(&self, error: &anyhow::Error) {
-        eprintln!("{}: {RUN_ERROR} {error}", self.prefix);
+        eprintln!("{}: {BOLD_RED}{RUN_ERROR}:{RESET} {error}", self.prefix);
 
         for cause in error.chain().skip(1) {
             eprintln!("{}: └─> {cause}", self.prefix);

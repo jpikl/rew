@@ -29,7 +29,6 @@ clap = { workspace = true, features = [
     "string",
     "wrap_help",
 ] }
-color-print = "0.3.5"
 derive_more = { version = "1.0.0-beta.6", features = [
     "display",
     "error",
