@@ -11,8 +11,13 @@ fn main() -> ExitCode {
 
     let matches = match app.try_get_matches() {
         Ok(matches) => matches,
+        // Only `--help` and `--version` produce exit code 0.
+        Err(error) if error.exit_code() == 0 => {
+            reporter.print_help(&error);
+            return ExitCode::from(0);
+        }
         Err(error) => {
-            reporter.print_args_error(&error);
+            reporter.print_invalid_usage(&error);
             return ExitCode::from(2);
         }
     };
@@ -22,9 +27,10 @@ fn main() -> ExitCode {
 
     match cmd.run(cmd_matches) {
         Ok(()) => ExitCode::from(0),
+        // Ignore broken pipe, this is common behavior for coreutils commands.
         Err(error) if is_broken_pipe(&error) => ExitCode::from(0),
         Err(error) => {
-            reporter.print_run_error(&error);
+            reporter.print_error(&error);
             ExitCode::from(1)
         }
     }

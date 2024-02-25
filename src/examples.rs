@@ -1,3 +1,4 @@
+use anstream::stdout;
 use anyhow::Result;
 use bstr::ByteSlice;
 use clap::crate_name;
@@ -57,7 +58,7 @@ pub fn is_set(matches: &ArgMatches) -> bool {
 }
 
 pub fn print(command: &str, examples: &[Example]) -> Result<()> {
-    let mut stdout = anstream::stdout().lock();
+    let mut stdout = stdout().lock();
 
     for example in examples {
         print_example(&mut stdout, command, example)?;

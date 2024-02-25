@@ -42,6 +42,10 @@ install: build
     mkdir -p ~/.local/bin/
     cp target/release/rew ~/.local/bin/
 
+# Run rew with args
+run +ARGS:
+    cargo run -- {{ARGS}}
+
 # Run fuzzer
 fuzz:
     cargo +nightly fuzz run --jobs {{num_cpus()}} pattern

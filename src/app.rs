@@ -20,6 +20,7 @@ pub fn build(metas: &[&'static command::Meta]) -> Command {
         let command = meta
             .build()
             .after_help(get_after_help(&app_name, Some(meta.name)));
+
         app = app.subcommand(command);
     }
 
