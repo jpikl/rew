@@ -68,6 +68,11 @@ coverage-preview:
     just coverage html
     xdg-open tarpaulin-report.html
 
+# Clean generated files
+clean:
+    cargo clean
+    rm -rf book tarpaulin-report.html
+
 # Set up development environment
 [confirm("This might break your environment!\nRun `just --show setup` first to check what it does.\nContinue? [y/n]:")]
 setup:
