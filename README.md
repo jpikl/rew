@@ -125,8 +125,7 @@ Have fun using rew!
 
 ## Development
 
-We use [just](https://github.com/casey/just) to run development tasks.
-Make sure it's installed on your system.
+The project uses [just](https://github.com/casey/just) to run development tasks.
 
 Run `just` without arguments to show available recipes.
 
