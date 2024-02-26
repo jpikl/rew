@@ -45,25 +45,33 @@ See [rew reference](rew.md#global-options) for list of additional global options
 
 Print the first line.
 
+```
+first
+second
+third
+```
+
 ```sh
-$ echo 'first' > input
-$ echo 'second' >> input
-$ echo 'third' >> input
+rew first
+```
 
-$ rew first < input
-
+```
 first
 ```
 
 Print the first two lines.
 
+```
+first
+second
+third
+```
+
 ```sh
-$ echo 'first' > input
-$ echo 'second' >> input
-$ echo 'third' >> input
+rew first 2
+```
 
-$ rew first 2 < input
-
+```
 first
 second
 ```

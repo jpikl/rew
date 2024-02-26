@@ -1,6 +1,7 @@
 use crate::app::get_prefix;
 use crate::args::ENV_SPAWNED_BY;
-use crate::colors::write_help;
+use crate::colors::Colorizer;
+use crate::colors::BOLD;
 use crate::colors::BOLD_RED;
 use crate::colors::RESET;
 use anstream::eprintln;
@@ -23,9 +24,17 @@ impl Reporter {
 
     pub fn print_help(&self, error: &clap::Error) {
         let mut stdout = stdout().lock();
-        let help = error.render();
+        let help = error.render().ansi().to_string();
 
-        if let Err(error) = write_help(&mut stdout, &help).context("could not write to stdout") {
+        let colorizer = Colorizer {
+            quote_char: '`',
+            quote_color: BOLD,
+        };
+
+        if let Err(error) = colorizer
+            .write(&mut stdout, help)
+            .context("could not write to stdout")
+        {
             self.print_error(&error);
         }
     }

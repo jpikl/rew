@@ -43,25 +43,33 @@ See [rew reference](rew.md#global-options) for list of additional global options
 
 Skip the first line.
 
+```
+first
+second
+third
+```
+
 ```sh
-$ echo 'first' > input
-$ echo 'second' >> input
-$ echo 'third' >> input
+rew skip 1
+```
 
-$ rew skip 1 < input
-
+```
 second
 third
 ```
 
 Skip the first two lines.
 
+```
+first
+second
+third
+```
+
 ```sh
-$ echo 'first' > input
-$ echo 'second' >> input
-$ echo 'third' >> input
+rew skip 2
+```
 
-$ rew skip 2 < input
-
+```
 third
 ```

@@ -45,25 +45,33 @@ See [rew reference](rew.md#global-options) for list of additional global options
 
 Print the last line.
 
+```
+first
+second
+third
+```
+
 ```sh
-$ echo 'first' > input
-$ echo 'second' >> input
-$ echo 'third' >> input
+rew last
+```
 
-$ rew last < input
-
+```
 third
 ```
 
 Print the last two lines.
 
+```
+first
+second
+third
+```
+
 ```sh
-$ echo 'first' > input
-$ echo 'second' >> input
-$ echo 'third' >> input
+rew last 2
+```
 
-$ rew last 2 < input
-
+```
 second
 third
 ```

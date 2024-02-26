@@ -47,30 +47,42 @@ See [rew reference](rew.md#global-options) for list of additional global options
 
 Trim whitespaces from both sides each line.
 
+```
+  Hello World!  
+```
+
 ```sh
-$ echo '  Hello World!  ' > input
+rew trim
+```
 
-$ rew trim < input
-
+```
 Hello World!
 ```
 
 Trim whitespaces from start of each line.
 
+```
+  Hello World!  
+```
+
 ```sh
-$ echo '  Hello World!  ' > input
+rew trim -s
+```
 
-$ rew trim -s < input
-
+```
 Hello World!  
 ```
 
 Trim whitespaces from end of each line.
 
+```
+  Hello World!  
+```
+
 ```sh
-$ echo '  Hello World!  ' > input
+rew trim -e
+```
 
-$ rew trim -e < input
-
+```
   Hello World!
 ```

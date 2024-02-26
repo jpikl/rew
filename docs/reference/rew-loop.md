@@ -43,12 +43,16 @@ See [rew reference](rew.md#global-options) for list of additional global options
 
 Repeat all input two times.
 
+```
+first
+second
+```
+
 ```sh
-$ echo 'first' > input
-$ echo 'second' >> input
+rew loop 2
+```
 
-$ rew loop 2 < input
-
+```
 first
 second
 first

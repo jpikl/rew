@@ -49,13 +49,17 @@ See [rew reference](rew.md#global-options) for list of additional global options
 
 Copy input to output.
 
+```
+first
+second
+third
+```
+
 ```sh
-$ echo 'first' > input
-$ echo 'second' >> input
-$ echo 'third' >> input
+rew cat
+```
 
-$ rew cat < input
-
+```
 first
 second
 third

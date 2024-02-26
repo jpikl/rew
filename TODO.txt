@@ -1,5 +1,7 @@
 - Fix char alignment in 32KB blocks processed by ascii/lower/upper.
-- Format `--examples` output.
+- Highlight spaces in `rew trim` examples + add more input lines in the example.
+- Add stdin/command/stdout labels in generated docs.
+- Wrap lines for `--examples` output.
 - Add paging for `--examples` output.
 - Fix `--examples` order in generated docs.
 - Better shell specific examples for `rew x`.

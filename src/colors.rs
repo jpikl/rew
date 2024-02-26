@@ -1,30 +1,35 @@
 // See https://misc.flogisoft.com/bash/tip_colors_and_formatting
 
-use clap::builder::StyledStr;
 use std::io;
 use std::io::Write;
 
 pub const RESET: &str = "\x1b[0m";
 
 pub const RED: &str = "\x1b[31m";
+pub const GREEN: &str = "\x1b[32m";
 pub const YELLOW: &str = "\x1b[33m";
 
 pub const BOLD: &str = "\x1b[1m";
 pub const BOLD_RED: &str = "\x1b[1;31m";
 
-pub fn write_help(writer: &mut impl Write, help: &StyledStr) -> io::Result<()> {
-    let mut is_code = false;
+pub struct Colorizer {
+    pub quote_char: char,
+    pub quote_color: &'static str,
+}
 
-    // Colorize text between `...` quotes as bold
-    for part in help.ansi().to_string().split('`') {
-        if is_code {
-            write!(writer, "{BOLD}{part}{RESET}")?;
-        } else {
-            writer.write_all(part.as_bytes())?;
+impl Colorizer {
+    pub fn write(&self, writer: &mut impl Write, input: impl AsRef<str>) -> io::Result<()> {
+        let mut inside = false;
+
+        for part in input.as_ref().split(self.quote_char) {
+            if inside {
+                write!(writer, "{}{part}{RESET}", self.quote_color)?;
+            } else {
+                writer.write_all(part.as_bytes())?;
+            }
+            inside = !inside;
         }
 
-        is_code = !is_code;
+        Ok(())
     }
-
-    Ok(())
 }

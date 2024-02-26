@@ -39,13 +39,17 @@ See [rew reference](rew.md#global-options) for list of additional global options
 
 Convert input to ASCII.
 
+```
+Æneid
+étude
+🦀rocks!
+```
+
 ```sh
-$ echo 'Æneid' > input
-$ echo 'étude' >> input
-$ echo '🦀rocks!' >> input
+rew ascii
+```
 
-$ rew ascii < input
-
+```
 AEneid
 etude
 crab rocks!
@@ -53,13 +57,17 @@ crab rocks!
 
 Delete non-ASCII characters from input.
 
+```
+Æneid
+étude
+🦀rocks!
+```
+
 ```sh
-$ echo 'Æneid' > input
-$ echo 'étude' >> input
-$ echo '🦀rocks!' >> input
+rew ascii -d
+```
 
-$ rew ascii -d < input
-
+```
 neid
 tude
 rocks!

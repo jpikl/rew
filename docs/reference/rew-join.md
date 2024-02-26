@@ -49,24 +49,32 @@ See [rew reference](rew.md#global-options) for list of additional global options
 
 Join lines using comma.
 
+```
+first
+second
+third
+```
+
 ```sh
-$ echo 'first' > input
-$ echo 'second' >> input
-$ echo 'third' >> input
+rew join ,
+```
 
-$ rew join , < input
-
+```
 first,second,third
 ```
 
 Join lines using comma (include trailing comma).
 
+```
+first
+second
+third
+```
+
 ```sh
-$ echo 'first' > input
-$ echo 'second' >> input
-$ echo 'third' >> input
+rew join -t ,
+```
 
-$ rew join -t , < input
-
+```
 first,second,third,
 ```

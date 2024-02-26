@@ -268,39 +268,42 @@ fn write_example(writer: &mut impl Write, command: &Adapter<'_>, example: &Examp
     writeln!(writer)?;
     writeln!(writer, "{}", example.name)?;
     writeln!(writer)?;
-    writeln!(writer, "```sh")?;
 
     if !example.input.is_empty() {
-        let mut input = example.input.iter();
+        writeln!(writer, "```")?;
 
-        if let Some(line) = input.next() {
-            writeln!(writer, "$ echo '{line}' > input")?;
+        for line in example.input {
+            writeln!(writer, "{line}")?;
         }
 
-        for line in input {
-            writeln!(writer, "$ echo '{line}' >> input")?;
-        }
-
+        writeln!(writer, "```")?;
         writeln!(writer)?;
     }
 
-    write!(writer, "$ {}", command.full_name())?;
+    writeln!(writer, "```sh")?;
+    write!(writer, "{}", command.full_name())?;
 
     for arg in example.args {
         if arg.contains(' ') || arg.contains('|') || arg.contains('\\') {
-            write!(writer, " '{arg}'")?;
+            write!(writer, " '{}'", arg.replace('\'', "\""))?;
         } else {
-            write!(writer, " {arg}")?;
+            write!(writer, " {}", arg.replace('\'', "\""))?;
         }
     }
 
-    if !example.input.is_empty() {
-        write!(writer, " < input")?;
+    writeln!(writer)?;
+    writeln!(writer, "```")?;
+
+    if !example.output.is_empty() {
+        writeln!(writer)?;
+        writeln!(writer, "```")?;
+
+        for line in example.output {
+            writeln!(writer, "{line}")?;
+        }
+
+        writeln!(writer, "```")?;
     }
 
-    writeln!(writer)?;
-    writeln!(writer)?;
-    writeln!(writer, "{}", example.output.join("\n"))?;
-    writeln!(writer, "```")?;
     Ok(())
 }

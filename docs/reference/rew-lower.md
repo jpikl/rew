@@ -33,10 +33,14 @@ See [rew reference](rew.md#global-options) for list of additional global options
 
 Convert characters to lowercase.
 
+```
+Hello WORLD!
+```
+
 ```sh
-$ echo 'Hello WORLD!' > input
+rew lower
+```
 
-$ rew lower < input
-
+```
 hello world!
 ```

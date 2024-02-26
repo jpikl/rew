@@ -49,11 +49,15 @@ See [rew reference](rew.md#global-options) for list of additional global options
 
 Split input into lines on comma.
 
+```
+first,second,third
+```
+
 ```sh
-$ echo 'first,second,third' > input
+rew split ,
+```
 
-$ rew split , < input
-
+```
 first
 second
 third
@@ -61,11 +65,15 @@ third
 
 Split input into lines on comma (process trailing comma).
 
+```
+first,second,third,
+```
+
 ```sh
-$ echo 'first,second,third,' > input
+rew split ,
+```
 
-$ rew split , < input
-
+```
 first
 second
 third
@@ -74,11 +82,15 @@ third
 
 Split input into lines on comma (ignore trailing comma).
 
+```
+first,second,third,
+```
+
 ```sh
-$ echo 'first,second,third,' > input
+rew split -t ,
+```
 
-$ rew split -t , < input
-
+```
 first
 second
 third

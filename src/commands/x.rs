@@ -53,7 +53,7 @@ pub const META: Meta = command_meta! {
     args: Args,
     run: run,
     examples: examples! [
-        "Empty expression `{}` will be replaced by each input line.": {
+        "Empty expression `{}` is replaced by input line.": {
             args: &["Hello {}"],
             input: &["first", "second", "third"],
             output: &["Hello first", "Hello second", "Hello third"],
@@ -130,7 +130,7 @@ pub const META: Meta = command_meta! {
         "Escape character can be also used to produce line feed `\\n`, carriage return `\\r` or tab `\\t`.": {
             args: &["{seq}:\\n\\t{}"],
             input: &["first", "second", "third"],
-            output: &["1:\n\tfirst", "2:\n\tsecond", "3:\n\tthird"],
+            output: &["1:", "\tfirst", "2:", "\tsecond", "3:", "\tthird"],
         },
     ],
 };

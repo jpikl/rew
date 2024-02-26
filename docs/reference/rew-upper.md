@@ -33,10 +33,14 @@ See [rew reference](rew.md#global-options) for list of additional global options
 
 Convert characters to uppercase.
 
+```
+Hello World!
+```
+
 ```sh
-$ echo 'Hello World!' > input
+rew upper
+```
 
-$ rew upper < input
-
+```
 HELLO WORLD!
 ```

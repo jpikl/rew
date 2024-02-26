@@ -1,12 +1,16 @@
+use crate::colors::Colorizer;
+use crate::colors::GREEN;
+use crate::colors::RESET;
+use crate::colors::YELLOW;
 use anstream::stdout;
 use anyhow::Result;
-use bstr::ByteSlice;
 use clap::crate_name;
 use clap::Arg;
 use clap::ArgAction;
 use clap::ArgMatches;
 use clap::Command;
 use std::io::Write;
+use unicode_width::UnicodeWidthStr;
 
 pub struct Example {
     pub name: &'static str,
@@ -61,69 +65,158 @@ pub fn print(command: &str, examples: &[Example]) -> Result<()> {
     let mut stdout = stdout().lock();
 
     for example in examples {
-        print_example(&mut stdout, command, example)?;
+        write_example(&mut stdout, command, example)?;
     }
 
     Ok(())
 }
 
-fn print_example(writer: &mut impl Write, command: &str, example: &Example) -> Result<()> {
-    writeln!(writer)?;
-    writeln!(writer, "{}", example.name)?;
+fn write_example(writer: &mut impl Write, subcmd: &str, example: &Example) -> Result<()> {
     writeln!(writer)?;
 
-    let mut buffer = Vec::new();
-    print_code(&mut buffer, command, example)?;
-    buffer = buffer.replace("\t", "    ");
+    let name_colorizer = Colorizer {
+        quote_char: '`',
+        quote_color: YELLOW,
+    };
 
-    let code = String::from_utf8_lossy(&buffer);
-    let width = code
-        .lines()
-        .fold(0, |max_len, line| max_len.max(line.chars().count()));
+    name_colorizer.write(writer, example.name)?;
 
-    writeln!(writer, " ╭{}╮", "─".repeat(width))?;
+    writeln!(writer)?;
+    writeln!(writer)?;
 
-    for line in code.lines() {
-        let padding = " ".repeat(width - line.chars().count());
-        writeln!(writer, " │{line}{padding}│")?;
+    let input = normalize_lines(example.input);
+    let output = normalize_lines(example.output);
+
+    let cmd_name = crate_name!();
+    let cmd_args = normalize_command_args(subcmd, example.args);
+
+    let mut width = 40;
+    width = width.max(lines_width(&input));
+    width = width.max(lines_width(&output));
+    width = width.max(command_width(cmd_name, &cmd_args));
+
+    // https://en.wikipedia.org/wiki/Box-drawing_character
+
+    if input.is_empty() {
+        write_horizontal_line(writer, '╭', '╮', width, Some("command"))?;
+    } else {
+        write_horizontal_line(writer, '╭', '╮', width, Some("stdin"))?;
+
+        for line in &input {
+            write_text_line(writer, width, line)?;
+        }
+
+        write_horizontal_line(writer, '├', '┤', width, Some("command"))?;
     }
 
-    writeln!(writer, " ╰{}╯", "─".repeat(width))?;
+    write_command_line(writer, width, cmd_name, &cmd_args)?;
 
+    if !output.is_empty() {
+        write_horizontal_line(writer, '├', '┤', width, Some("stdout"))?;
+
+        for line in &output {
+            write_text_line(writer, width, line)?;
+        }
+    }
+
+    write_horizontal_line(writer, '╰', '╯', width, None)
+}
+
+fn write_horizontal_line(
+    writer: &mut impl Write,
+    start: char,
+    end: char,
+    width: usize,
+    title: Option<&str>,
+) -> Result<()> {
+    write!(writer, " {GREEN}{start}")?;
+
+    let remainder = if let Some(title) = title {
+        write!(writer, "─[{title}]")?;
+        width - title.width() - 3
+    } else {
+        width
+    };
+
+    writer.write_all("─".repeat(remainder).as_bytes())?;
+    writeln!(writer, "{end}{RESET}")?;
     Ok(())
 }
 
-fn print_code(writer: &mut impl Write, command: &str, example: &Example) -> Result<()> {
-    if !example.input.is_empty() {
-        let mut input = example.input.iter();
+fn write_text_line(writer: &mut impl Write, width: usize, text: &str) -> Result<()> {
+    let padding = " ".repeat(width - text.width());
+    writeln!(writer, " {GREEN}│{RESET}{text}{padding}{GREEN}│{RESET}")?;
+    Ok(())
+}
 
-        if let Some(line) = input.next() {
-            writeln!(writer, "$ echo '{line}' > input")?;
-        }
+fn write_command_line(
+    writer: &mut impl Write,
+    width: usize,
+    name: &str,
+    args: &[String],
+) -> Result<()> {
+    write!(writer, " {GREEN}│{RESET}{name}")?;
 
-        for line in input {
-            writeln!(writer, "$ echo '{line}' >> input")?;
-        }
-
-        writeln!(writer)?;
-    }
-
-    write!(writer, "$ {} {command}", crate_name!())?;
-
-    for arg in example.args {
-        if arg.contains(' ') || arg.contains('|') || arg.contains('\\') {
-            write!(writer, " '{arg}'")?;
+    for arg in args {
+        if is_quoted(arg) {
+            write!(writer, " {YELLOW}{arg}{RESET}")?;
         } else {
             write!(writer, " {arg}")?;
         }
     }
 
-    if !example.input.is_empty() {
-        write!(writer, " < input")?;
+    let padding = " ".repeat(width - command_width(name, args));
+    writeln!(writer, "{padding}{GREEN}│{RESET}")?;
+    Ok(())
+}
+
+fn normalize_command_args(subcmd: &str, subcmd_args: &[&str]) -> Vec<String> {
+    let mut args = Vec::new();
+    args.push(subcmd.to_owned());
+
+    for arg in subcmd_args {
+        let arg = arg.replace('\'', "\"");
+
+        if arg.contains(' ') || arg.contains('|') || arg.contains('\\') {
+            args.push(format!("'{arg}'"));
+        } else {
+            args.push(arg);
+        }
     }
 
-    writeln!(writer)?;
-    writeln!(writer)?;
-    writeln!(writer, "{}", example.output.join("\n"))?;
-    Ok(())
+    args
+}
+
+fn normalize_lines(lines: &[&str]) -> Vec<String> {
+    lines
+        .iter()
+        .map(|line| line.replace('\t', "   "))
+        .collect::<Vec<_>>()
+}
+
+fn command_width(name: &str, args: &[String]) -> usize {
+    let mut width = name.width();
+
+    for arg in args {
+        width += arg.width() + 1;
+    }
+
+    width
+}
+
+fn lines_width(lines: &[String]) -> usize {
+    let mut width = 0;
+
+    for line in lines {
+        width = width.max(line.width());
+    }
+
+    width
+}
+
+fn is_quoted(value: &str) -> bool {
+    value.starts_with('\'')
+        || value.starts_with('"')
+        || value.ends_with('\'')
+        || value.ends_with('"')
 }

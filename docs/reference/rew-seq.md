@@ -57,8 +57,10 @@ See [rew reference](rew.md#global-options) for list of additional global options
 Print numbers from 1 to 3.
 
 ```sh
-$ rew seq 1..3
+rew seq 1..3
+```
 
+```
 1
 2
 3
@@ -67,8 +69,10 @@ $ rew seq 1..3
 Print numbers from 1 to 5 with step 2.
 
 ```sh
-$ rew seq 1..5 2
+rew seq 1..5 2
+```
 
+```
 1
 3
 5
@@ -77,8 +81,10 @@ $ rew seq 1..5 2
 Print numbers from 1 to -1.
 
 ```sh
-$ rew seq 1..-1
+rew seq 1..-1
+```
 
+```
 1
 0
 -1
@@ -87,8 +93,10 @@ $ rew seq 1..-1
 Print numbers from 1 to -3 with step -2.
 
 ```sh
-$ rew seq 1..-3 -2
+rew seq 1..-3 -2
+```
 
+```
 1
 -1
 -3
