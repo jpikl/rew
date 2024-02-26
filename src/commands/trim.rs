@@ -14,18 +14,18 @@ pub const META: Meta = command_meta! {
     examples: examples! [
         "Trim whitespaces from both sides each line.": {
             args: &[],
-            input: &["  Hello World!  "],
-            output: &["Hello World!"],
+            input: &["  spaces around  ", "  spaces before", "spaces after   "],
+            output: &["spaces around", "spaces before", "spaces after"],
         },
         "Trim whitespaces from start of each line.": {
             args: &["-s"],
-            input: &["  Hello World!  "],
-            output: &["Hello World!  "],
+            input: &["  spaces around  ", "  spaces before", "spaces after   "],
+            output: &["spaces around  ", "spaces before", "spaces after   "],
         },
         "Trim whitespaces from end of each line.": {
             args: &["-e"],
-            input: &["  Hello World!  "],
-            output: &["  Hello World!"],
+            input: &["  spaces around  ", "  spaces before", "spaces after   "],
+            output: &["  spaces around", "  spaces before", "spaces after"],
         },
     ],
 };

@@ -33,14 +33,25 @@ See [rew reference](rew.md#global-options) for list of additional global options
 
 Convert characters to uppercase.
 
-```
-Hello World!
-```
-
 ```sh
 rew upper
 ```
 
-```
-HELLO WORLD!
-```
+<div class="example-io">
+<div class="example-io-stream">
+<small><b>stdin:</b></small>
+<ul>
+<li><code>hello world</code></li>
+<li><code>Hello World</code></li>
+<li><code>HELLO WORLD</code></li>
+</ul>
+</div>
+<div class="example-io-stream">
+<small><b>stdout:</b></small>
+<ul>
+<li><code>HELLO WORLD</code></li>
+<li><code>HELLO WORLD</code></li>
+<li><code>HELLO WORLD</code></li>
+</ul>
+</div>
+</div>

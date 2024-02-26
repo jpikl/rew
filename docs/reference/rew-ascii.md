@@ -39,36 +39,50 @@ See [rew reference](rew.md#global-options) for list of additional global options
 
 Convert input to ASCII.
 
-```
-Æneid
-étude
-🦀rocks!
-```
-
 ```sh
 rew ascii
 ```
 
-```
-AEneid
-etude
-crab rocks!
-```
+<div class="example-io">
+<div class="example-io-stream">
+<small><b>stdin:</b></small>
+<ul>
+<li><code>Æneid</code></li>
+<li><code>étude</code></li>
+<li><code>🦀rocks!</code></li>
+</ul>
+</div>
+<div class="example-io-stream">
+<small><b>stdout:</b></small>
+<ul>
+<li><code>AEneid</code></li>
+<li><code>etude</code></li>
+<li><code>crab rocks!</code></li>
+</ul>
+</div>
+</div>
 
 Delete non-ASCII characters from input.
-
-```
-Æneid
-étude
-🦀rocks!
-```
 
 ```sh
 rew ascii -d
 ```
 
-```
-neid
-tude
-rocks!
-```
+<div class="example-io">
+<div class="example-io-stream">
+<small><b>stdin:</b></small>
+<ul>
+<li><code>Æneid</code></li>
+<li><code>étude</code></li>
+<li><code>🦀rocks!</code></li>
+</ul>
+</div>
+<div class="example-io-stream">
+<small><b>stdout:</b></small>
+<ul>
+<li><code>neid</code></li>
+<li><code>tude</code></li>
+<li><code>rocks!</code></li>
+</ul>
+</div>
+</div>

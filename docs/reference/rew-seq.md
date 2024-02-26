@@ -60,11 +60,16 @@ Print numbers from 1 to 3.
 rew seq 1..3
 ```
 
-```
-1
-2
-3
-```
+<div class="example-io">
+<div class="example-io-stream">
+<small><b>stdout:</b></small>
+<ul>
+<li><code>1</code></li>
+<li><code>2</code></li>
+<li><code>3</code></li>
+</ul>
+</div>
+</div>
 
 Print numbers from 1 to 5 with step 2.
 
@@ -72,11 +77,16 @@ Print numbers from 1 to 5 with step 2.
 rew seq 1..5 2
 ```
 
-```
-1
-3
-5
-```
+<div class="example-io">
+<div class="example-io-stream">
+<small><b>stdout:</b></small>
+<ul>
+<li><code>1</code></li>
+<li><code>3</code></li>
+<li><code>5</code></li>
+</ul>
+</div>
+</div>
 
 Print numbers from 1 to -1.
 
@@ -84,11 +94,16 @@ Print numbers from 1 to -1.
 rew seq 1..-1
 ```
 
-```
-1
-0
--1
-```
+<div class="example-io">
+<div class="example-io-stream">
+<small><b>stdout:</b></small>
+<ul>
+<li><code>1</code></li>
+<li><code>0</code></li>
+<li><code>-1</code></li>
+</ul>
+</div>
+</div>
 
 Print numbers from 1 to -3 with step -2.
 
@@ -96,8 +111,13 @@ Print numbers from 1 to -3 with step -2.
 rew seq 1..-3 -2
 ```
 
-```
-1
--1
--3
-```
+<div class="example-io">
+<div class="example-io-stream">
+<small><b>stdout:</b></small>
+<ul>
+<li><code>1</code></li>
+<li><code>-1</code></li>
+<li><code>-3</code></li>
+</ul>
+</div>
+</div>

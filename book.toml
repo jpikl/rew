@@ -8,3 +8,4 @@ src = "docs"
 [output.html]
 git-repository-url = "https://github.com/jpikl/rew"
 git-repository-icon = "fa-github"
+additional-css = ["docs/custom.css"]

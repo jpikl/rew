@@ -65,7 +65,7 @@ pub const META: Meta = command_meta! {
             output: &["Hello FIRST", "Hello SECOND", "Hello THIRD"],
         },
         "Expressions can also call any external command.\n\n\
-         Here, we remove all `aeiou` characters from text using `tr`.": {
+         Let's remove all `aeiou` characters from text using `tr`.": {
             args: &["Hello {tr -d aeiou}"],
             input: &["first", "second", "third"],
             output: &["Hello frst", "Hello scnd", "Hello thrd"],
@@ -88,7 +88,7 @@ pub const META: Meta = command_meta! {
             output: &["Hello F RST", "Hello S C ND", "Hello TH RD"],
         },
         "The `!` marker denotes an external command.\n\n\
-         Here, we call the standard `seq` command instead of the built-in `rew seq`.": {
+        Let's call the standard `seq` command instead of the built-in `rew seq`.": {
            args: &["{!seq 1 3}. {}"],
            input: &["first", "second", "third"],
            output: &["1. first", "2. second", "3. third"],

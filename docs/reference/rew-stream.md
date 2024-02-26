@@ -47,8 +47,13 @@ Print arguments as lines.
 rew stream first second third
 ```
 
-```
-first
-second
-third
-```
+<div class="example-io">
+<div class="example-io-stream">
+<small><b>stdout:</b></small>
+<ul>
+<li><code>first</code></li>
+<li><code>second</code></li>
+<li><code>third</code></li>
+</ul>
+</div>
+</div>

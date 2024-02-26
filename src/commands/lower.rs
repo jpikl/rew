@@ -14,8 +14,8 @@ pub const META: Meta = command_meta! {
     examples: examples! [
         "Convert characters to lowercase.": {
             args: &[],
-            input: &["Hello WORLD!"],
-            output: &["hello world!"],
+            input: &["hello world", "Hello World", "HELLO WORLD"],
+            output: &["hello world", "hello world", "hello world"],
         },
     ],
 };

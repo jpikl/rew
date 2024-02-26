@@ -45,33 +45,47 @@ See [rew reference](rew.md#global-options) for list of additional global options
 
 Print the first line.
 
-```
-first
-second
-third
-```
-
 ```sh
 rew first
 ```
 
-```
-first
-```
+<div class="example-io">
+<div class="example-io-stream">
+<small><b>stdin:</b></small>
+<ul>
+<li><code>first</code></li>
+<li><code>second</code></li>
+<li><code>third</code></li>
+</ul>
+</div>
+<div class="example-io-stream">
+<small><b>stdout:</b></small>
+<ul>
+<li><code>first</code></li>
+</ul>
+</div>
+</div>
 
 Print the first two lines.
-
-```
-first
-second
-third
-```
 
 ```sh
 rew first 2
 ```
 
-```
-first
-second
-```
+<div class="example-io">
+<div class="example-io-stream">
+<small><b>stdin:</b></small>
+<ul>
+<li><code>first</code></li>
+<li><code>second</code></li>
+<li><code>third</code></li>
+</ul>
+</div>
+<div class="example-io-stream">
+<small><b>stdout:</b></small>
+<ul>
+<li><code>first</code></li>
+<li><code>second</code></li>
+</ul>
+</div>
+</div>

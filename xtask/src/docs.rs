@@ -269,41 +269,55 @@ fn write_example(writer: &mut impl Write, command: &Adapter<'_>, example: &Examp
     writeln!(writer, "{}", example.name)?;
     writeln!(writer)?;
 
-    if !example.input.is_empty() {
-        writeln!(writer, "```")?;
-
-        for line in example.input {
-            writeln!(writer, "{line}")?;
-        }
-
-        writeln!(writer, "```")?;
-        writeln!(writer)?;
-    }
-
     writeln!(writer, "```sh")?;
     write!(writer, "{}", command.full_name())?;
 
     for arg in example.args {
+        let arg = arg.replace('\'', "\"");
+
         if arg.contains(' ') || arg.contains('|') || arg.contains('\\') {
-            write!(writer, " '{}'", arg.replace('\'', "\""))?;
+            write!(writer, " '{arg}'")?;
         } else {
-            write!(writer, " {}", arg.replace('\'', "\""))?;
+            write!(writer, " {arg}")?;
         }
     }
 
     writeln!(writer)?;
     writeln!(writer, "```")?;
 
-    if !example.output.is_empty() {
+    if !example.input.is_empty() || !example.output.is_empty() {
         writeln!(writer)?;
-        writeln!(writer, "```")?;
+        writeln!(writer, "<div class=\"example-io\">")?;
 
-        for line in example.output {
-            writeln!(writer, "{line}")?;
+        if !example.input.is_empty() {
+            write_example_io(writer, "stdin", example.input)?;
         }
 
-        writeln!(writer, "```")?;
+        if !example.output.is_empty() {
+            write_example_io(writer, "stdout", example.output)?;
+        }
+
+        writeln!(writer, "</div>")?;
     }
 
+    Ok(())
+}
+
+fn write_example_io(writer: &mut impl Write, title: &str, lines: &[&str]) -> Result<()> {
+    writeln!(writer, "<div class=\"example-io-stream\">")?;
+    writeln!(writer, "<small><b>{title}:</b></small>")?;
+    writeln!(writer, "<ul>")?;
+
+    for line in lines {
+        let line = line
+            .replace(' ', "\u{a0}") // Unbreakable spaces to prevent trimming by mdbook html renderer.
+            .replace('\t', "\u{a0}\u{a0}\u{a0}\u{a0}");
+
+        // <code> because mdbook html renderer cannot render empty `` (which we need for empty IO lines).
+        writeln!(writer, "<li><code>{line}</code></li>")?;
+    }
+
+    writeln!(writer, "</ul>")?;
+    writeln!(writer, "</div>")?;
     Ok(())
 }

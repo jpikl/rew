@@ -43,33 +43,47 @@ See [rew reference](rew.md#global-options) for list of additional global options
 
 Skip the first line.
 
-```
-first
-second
-third
-```
-
 ```sh
 rew skip 1
 ```
 
-```
-second
-third
-```
+<div class="example-io">
+<div class="example-io-stream">
+<small><b>stdin:</b></small>
+<ul>
+<li><code>first</code></li>
+<li><code>second</code></li>
+<li><code>third</code></li>
+</ul>
+</div>
+<div class="example-io-stream">
+<small><b>stdout:</b></small>
+<ul>
+<li><code>second</code></li>
+<li><code>third</code></li>
+</ul>
+</div>
+</div>
 
 Skip the first two lines.
-
-```
-first
-second
-third
-```
 
 ```sh
 rew skip 2
 ```
 
-```
-third
-```
+<div class="example-io">
+<div class="example-io-stream">
+<small><b>stdin:</b></small>
+<ul>
+<li><code>first</code></li>
+<li><code>second</code></li>
+<li><code>third</code></li>
+</ul>
+</div>
+<div class="example-io-stream">
+<small><b>stdout:</b></small>
+<ul>
+<li><code>third</code></li>
+</ul>
+</div>
+</div>

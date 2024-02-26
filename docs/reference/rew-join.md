@@ -49,32 +49,46 @@ See [rew reference](rew.md#global-options) for list of additional global options
 
 Join lines using comma.
 
-```
-first
-second
-third
-```
-
 ```sh
 rew join ,
 ```
 
-```
-first,second,third
-```
+<div class="example-io">
+<div class="example-io-stream">
+<small><b>stdin:</b></small>
+<ul>
+<li><code>first</code></li>
+<li><code>second</code></li>
+<li><code>third</code></li>
+</ul>
+</div>
+<div class="example-io-stream">
+<small><b>stdout:</b></small>
+<ul>
+<li><code>first,second,third</code></li>
+</ul>
+</div>
+</div>
 
 Join lines using comma (include trailing comma).
-
-```
-first
-second
-third
-```
 
 ```sh
 rew join -t ,
 ```
 
-```
-first,second,third,
-```
+<div class="example-io">
+<div class="example-io-stream">
+<small><b>stdin:</b></small>
+<ul>
+<li><code>first</code></li>
+<li><code>second</code></li>
+<li><code>third</code></li>
+</ul>
+</div>
+<div class="example-io-stream">
+<small><b>stdout:</b></small>
+<ul>
+<li><code>first,second,third,</code></li>
+</ul>
+</div>
+</div>
