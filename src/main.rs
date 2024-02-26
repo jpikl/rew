@@ -6,7 +6,7 @@ use std::io;
 use std::process::ExitCode;
 
 fn main() -> ExitCode {
-    let app = app::build(&METAS);
+    let app = app::build(METAS);
     let reporter = Reporter::new(&app);
 
     let matches = match app.try_get_matches() {

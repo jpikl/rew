@@ -15,7 +15,7 @@ mod trim;
 mod upper;
 mod x;
 
-pub const METAS: [&Meta; 14] = [
+pub const METAS: &[&Meta] = &[
     &ascii::META,
     &cat::META,
     &first::META,

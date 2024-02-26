@@ -42,11 +42,11 @@ impl<'a> Adapter<'a> {
         self.meta().map(|sc| sc.group).unwrap_or_default()
     }
 
-    pub fn examples(&self) -> impl Iterator<Item = Example> {
+    pub fn examples(&self) -> impl Iterator<Item = &Example> {
         self.meta()
-            .map(|meta| (meta.examples)())
+            .map(|meta| meta.examples)
             .unwrap_or_default()
-            .into_iter()
+            .iter()
     }
 
     pub fn name(&self) -> &str {

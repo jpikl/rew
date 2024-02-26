@@ -22,7 +22,7 @@ pub struct Meta {
     pub group: Group,
     pub build: fn(meta: &Meta) -> Command,
     pub run: fn(meta: &Meta, &ArgMatches) -> Result<()>,
-    pub examples: fn() -> Vec<Example>,
+    pub examples: &'static [Example],
 }
 
 impl Meta {
@@ -32,10 +32,6 @@ impl Meta {
 
     pub fn run(&self, matches: &ArgMatches) -> Result<()> {
         (self.run)(self, matches)
-    }
-
-    pub fn examples(&self) -> Vec<Example> {
-        (self.examples)()
     }
 }
 
@@ -57,7 +53,7 @@ macro_rules! command_meta {
                 use clap::FromArgMatches;
 
                 if $crate::examples::is_set(&matches) {
-                    return $crate::examples::print(&meta.name, &meta.examples());
+                    return $crate::examples::print(&meta.name, meta.examples);
                 }
 
                 let global_args = $crate::args::GlobalArgs::from_arg_matches(matches)?;

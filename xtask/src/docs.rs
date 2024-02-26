@@ -185,7 +185,7 @@ fn write_reference(writer: &mut impl Write, command: &Adapter<'_>) -> Result<()>
         writeln!(writer, "## Examples")?;
 
         for example in examples {
-            write_example(writer, command, &example)?;
+            write_example(writer, command, example)?;
         }
     }
 

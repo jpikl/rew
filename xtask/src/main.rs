@@ -39,7 +39,7 @@ fn main() -> anyhow::Result<()> {
 
     let cli = Cli::parse();
 
-    let mut app = app::build(&METAS);
+    let mut app = app::build(METAS);
     app.build();
 
     match cli.task {

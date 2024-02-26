@@ -22,10 +22,10 @@ pub struct Example {
 #[macro_export]
 macro_rules! examples {
     ($($name:literal: { args: $args:expr, input: $input:expr, output: $output:expr, }),*,) => {
-        || vec![$($crate::examples::Example { name: $name, args: $args, input: $input, output: $output }),*]
+        &[$($crate::examples::Example { name: $name, args: $args, input: $input, output: $output }),*]
     };
     () => {
-        Vec::new
+        &[]
     };
 }
 
