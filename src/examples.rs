@@ -1,8 +1,12 @@
 use crate::colors::Colorizer;
 use crate::colors::GREEN;
+use crate::colors::RED;
 use crate::colors::RESET;
 use crate::colors::YELLOW;
+use crate::pager;
 use anstream::stdout;
+use anyhow::format_err;
+use anyhow::Context;
 use anyhow::Result;
 use clap::crate_name;
 use clap::Arg;
@@ -11,6 +15,8 @@ use clap::ArgMatches;
 use clap::Command;
 use std::io;
 use std::io::Write;
+use std::panic::resume_unwind;
+use std::thread;
 use unicode_width::UnicodeWidthStr;
 
 pub struct Example {
@@ -62,13 +68,31 @@ pub fn is_arg_set(matches: &ArgMatches) -> bool {
     matches.get_flag(ARG)
 }
 
-pub fn print(command: &str, examples: &[Example]) -> Result<()> {
-    let mut stdout = stdout().lock();
+pub fn print(command: &'static str, examples: &'static [Example]) -> Result<()> {
+    if let Some(mut pager) = pager::open().context("could not start pager process")? {
+        let mut stdin = pager.stdin.take().expect("could not get pager stdin");
 
-    for example in examples {
-        write_example(&mut stdout, command, example)?;
+        let thread = thread::spawn(move || {
+            write(&mut stdin, command, examples).context("could not write to pager stdin")
+        });
+
+        let status = pager.wait().context("could not wait for pager to finish")?;
+        if !status.success() {
+            let code = status.code().unwrap_or_default();
+            let err = format_err!("pager exited with code {RED}{code}{RESET}");
+            return Err(err);
+        }
+
+        thread.join().map_err(resume_unwind)?.map(Into::into)
+    } else {
+        write(&mut stdout().lock(), command, examples)
     }
+}
 
+fn write(writer: &mut impl Write, subcmd: &str, examples: &[Example]) -> Result<()> {
+    for example in examples {
+        write_example(writer, subcmd, example)?;
+    }
     Ok(())
 }
 

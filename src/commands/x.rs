@@ -290,10 +290,7 @@ fn eval_pattern(context: &Context, pattern: &Pattern, shell: Option<&str>) -> Re
 
     // Try to wait for the "reader" thread to finish (non-blockingly).
     if thread.is_finished() {
-        return match thread.join() {
-            Ok(res) => res,
-            Err(err) => resume_unwind(err),
-        };
+        thread.join().map_err(resume_unwind)??;
     }
 
     // At this moment, the "reader" thread is blocked on read from stdin.

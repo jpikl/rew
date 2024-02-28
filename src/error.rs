@@ -4,6 +4,7 @@ use crate::colors::Colorizer;
 use crate::colors::BOLD;
 use crate::colors::BOLD_RED;
 use crate::colors::RESET;
+use anstream::eprint;
 use anstream::eprintln;
 use anstream::stdout;
 use anyhow::Context;

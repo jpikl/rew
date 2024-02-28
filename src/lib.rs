@@ -15,6 +15,8 @@ pub mod examples;
 #[doc(hidden)]
 pub mod io;
 #[doc(hidden)]
+pub mod pager;
+#[doc(hidden)]
 pub mod pattern;
 #[doc(hidden)]
 pub mod range;
