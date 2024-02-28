@@ -1,5 +1,7 @@
 - Fix char alignment in 32KB blocks processed by ascii/lower/upper.
-- Better code layout with whitespace highlight for `--examples`.
+- Try running stdbuf for the whole `rew x`? Respawn `rew x` if it uses external commands.
+- Add `rew prefix` command and use it to prefix stderr of `rew x` child processes?
+- Add `REW_PREFIX` env var to enforce stderr prefix over detecting it from argv[0]?
 - Wrap lines for `--examples` output.
 - Add paging for `--examples` output.
 - Fix `--examples` order in generated docs.

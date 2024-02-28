@@ -52,7 +52,7 @@ macro_rules! command_meta {
             run: |meta, matches| -> anyhow::Result<()> {
                 use clap::FromArgMatches;
 
-                if $crate::examples::is_set(&matches) {
+                if $crate::examples::is_arg_set(&matches) {
                     return $crate::examples::print(&meta.name, meta.examples);
                 }
 

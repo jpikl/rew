@@ -43,7 +43,7 @@ install: build
     cp target/release/rew ~/.local/bin/
 
 # Run rew with args
-run +ARGS:
+run *ARGS:
     cargo run -- {{ARGS}}
 
 # Run fuzzer

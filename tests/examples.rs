@@ -5,7 +5,7 @@ use assert_cmd::Command;
 fn examples() {
     for meta in rew::commands::METAS {
         for example in meta.examples {
-            println!("[{}] {}", meta.name, example.name);
+            println!("[{}] {}", meta.name, example.text);
 
             Command::cargo_bin(crate_name!())
                 .unwrap()

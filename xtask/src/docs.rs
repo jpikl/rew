@@ -266,7 +266,7 @@ fn write_arg(writer: &mut impl Write, arg: &BaseArg<'_>) -> Result<()> {
 
 fn write_example(writer: &mut impl Write, command: &Adapter<'_>, example: &Example) -> Result<()> {
     writeln!(writer)?;
-    writeln!(writer, "{}", example.name)?;
+    writeln!(writer, "{}", example.text)?;
     writeln!(writer)?;
 
     writeln!(writer, "```sh")?;
