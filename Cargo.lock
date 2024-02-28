@@ -517,6 +517,7 @@ dependencies = [
  "itoap",
  "memchr",
  "rstest",
+ "terminal_size",
  "unicode-width",
  "which",
 ]

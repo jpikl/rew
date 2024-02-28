@@ -4,6 +4,7 @@ use crate::colors::RED;
 use crate::colors::RESET;
 use crate::colors::YELLOW;
 use crate::pager;
+use anstream::adapter::strip_str;
 use anstream::stdout;
 use anyhow::format_err;
 use anyhow::Context;
@@ -17,6 +18,8 @@ use std::io;
 use std::io::Write;
 use std::panic::resume_unwind;
 use std::thread;
+use terminal_size::terminal_size;
+use terminal_size::Width;
 use unicode_width::UnicodeWidthStr;
 
 pub struct Example {
@@ -89,28 +92,48 @@ pub fn print(command: &'static str, examples: &'static [Example]) -> Result<()> 
     }
 }
 
-fn write(writer: &mut impl Write, subcmd: &str, examples: &[Example]) -> Result<()> {
+fn write(writer: &mut impl Write, command: &str, examples: &[Example]) -> Result<()> {
+    let term_width = terminal_size()
+        .map_or(80, |(Width(width), _)| usize::from(width))
+        .min(80);
+
     for example in examples {
-        write_example(writer, subcmd, example)?;
+        writeln!(writer)?;
+        write_text(writer, example.text, term_width)?;
+        writeln!(writer)?;
+        write_command(writer, command, example.args)?;
+        write_io(writer, example.input, example.output)?;
     }
+
     Ok(())
 }
 
-fn write_example(writer: &mut impl Write, subcmd: &str, example: &Example) -> io::Result<()> {
-    writeln!(writer)?;
-
+fn write_text(writer: &mut impl Write, text: &str, term_width: usize) -> io::Result<()> {
     let colorizer = Colorizer {
         quote_char: '`',
         quote_color: YELLOW,
     };
 
-    colorizer.write(writer, example.text)?;
+    for line in colorizer.to_string(text)?.split('\n') {
+        let mut available_width = term_width;
 
-    writeln!(writer)?;
-    writeln!(writer)?;
+        for word in line.split(' ') {
+            // De-colorized width
+            let word_width = strip_str(word).fold(0, |width, str| width + str.width()) + 1;
 
-    write_command(writer, subcmd, example.args)?;
-    write_io(writer, example.input, example.output)
+            if word_width > available_width {
+                available_width = term_width;
+                write!(writer, "\n{word} ")?;
+            } else {
+                available_width -= word_width;
+                write!(writer, "{word} ")?;
+            }
+        }
+
+        writeln!(writer)?;
+    }
+
+    Ok(())
 }
 
 fn write_command(writer: &mut impl Write, subcmd: &str, args: &[&str]) -> io::Result<()> {

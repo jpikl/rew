@@ -2,6 +2,7 @@
 
 use std::io;
 use std::io::Write;
+use std::str;
 
 pub const RESET: &str = "\x1b[0m";
 
@@ -31,5 +32,11 @@ impl Colorizer {
         }
 
         Ok(())
+    }
+
+    pub fn to_string(&self, input: impl AsRef<str>) -> io::Result<String> {
+        let mut buffer = Vec::new();
+        self.write(&mut buffer, input)?;
+        Ok(String::from_utf8(buffer).expect("could not convert colorized text to utf-8"))
     }
 }
