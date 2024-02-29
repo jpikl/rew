@@ -120,17 +120,24 @@ impl Pattern {
         for item in self.items() {
             let simple_item = match item {
                 Item::Constant(value) => SimpleItem::Constant(value.clone()),
-                Item::Expression(Expression {
-                    no_stdin: _,
-                    value: ExpressionValue::Pipeline(commands),
-                    raw_value: _,
-                }) if commands.is_empty() => SimpleItem::Expression,
-                Item::Expression(_) => return None,
+                Item::Expression(expr) => match &expr.value {
+                    ExpressionValue::Pipeline(commands) if commands.is_empty() => {
+                        SimpleItem::Expression
+                    }
+                    _ => return None, // One or more commands or raw shell
+                },
             };
             simple_items.push(simple_item);
         }
 
         Some(SimplePattern(simple_items))
+    }
+
+    pub fn any_expression(&self, test: fn(&Expression) -> bool) -> bool {
+        self.items().iter().any(|item| match item {
+            Item::Constant(_) => false,
+            Item::Expression(expression) => test(expression),
+        })
     }
 }
 

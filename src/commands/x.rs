@@ -4,6 +4,7 @@ use crate::args::ENV_BUF_MODE;
 use crate::args::ENV_BUF_SIZE;
 use crate::args::ENV_NULL;
 use crate::args::ENV_SPAWNED_BY;
+use crate::args::ENV_STDBUF;
 use crate::colors::RED;
 use crate::colors::RESET;
 use crate::colors::YELLOW;
@@ -26,11 +27,12 @@ use anyhow::Error;
 use anyhow::Result;
 use bstr::ByteVec;
 use clap::builder::OsStr;
+use clap::crate_name;
+use std::env;
 use std::io;
 use std::io::Write;
 use std::panic::resume_unwind;
 use std::path::Path;
-use std::path::PathBuf;
 use std::process::Child;
 use std::process::ChildStdin;
 use std::process::ChildStdout;
@@ -162,11 +164,64 @@ fn run(context: &Context, args: &Args) -> Result<()> {
     let raw_pattern = args.pattern.join(" ");
     let pattern = Pattern::parse(&raw_pattern, args.escape)?;
 
+    // If there are any external commands for which we need to enforce line buffering...
+    // Restart self under `stdbuf -oL ...`
+    if should_restart_with_stdbuf(context, &pattern) {
+        try_restart_with_stdbuf()?;
+    }
+
     if let Some(pattern) = pattern.try_simplify() {
         return eval_simple_pattern(context, &pattern);
     }
 
     eval_pattern(context, &pattern, args.shell.as_deref())
+}
+
+fn should_restart_with_stdbuf(context: &Context, pattern: &Pattern) -> bool {
+    context.buf_mode().is_line() // Only for when line buffering is required.
+       && env::var_os(ENV_STDBUF).is_none() // Prevent spawn recursion!
+       && pattern.any_expression(has_external_command) // Is there a command that needs stdbuf?
+}
+
+fn has_external_command(expr: &Expression) -> bool {
+    match &expr.value {
+        ExpressionValue::Pipeline(commands) => commands.iter().any(is_external_command),
+        ExpressionValue::RawShell(_) => true,
+    }
+}
+
+fn is_external_command(command: &pattern::Command) -> bool {
+    command.external || (get_meta(&command.name).is_none() && command.name != crate_name!())
+}
+
+fn try_restart_with_stdbuf() -> Result<()> {
+    if let Ok(stdbuf_path) = which("stdbuf") {
+        let mut command = Command::new(stdbuf_path);
+        command.env(ENV_STDBUF, "true"); // Prevent spawn recursion!
+        command.arg("-oL"); // Output line buffering.
+        command.args(env::args_os());
+
+        #[cfg(target_family = "unix")]
+        {
+            use std::os::unix::process::CommandExt;
+            let err = Error::from(command.exec());
+            return Err(err.context("unable to exec self under stdbuf"));
+        }
+        #[cfg(not(target_family = "unix"))]
+        {
+            let exit_code = command
+                .spawn()
+                .context("unable spawn self under stdbuf")?
+                .wait()
+                .context("unable spawn self under stdbuf")?
+                .code()
+                .unwrap_or_default();
+
+            process::exit(exit_code);
+        }
+    }
+
+    Ok(())
 }
 
 fn eval_simple_pattern(context: &Context, pattern: &SimplePattern) -> Result<()> {
@@ -465,16 +520,11 @@ impl Eval<Child> {
 struct CommandBuilder<'a> {
     context: &'a Context,
     shell: Option<&'a str>,
-    stdbuf_path: Option<which::Result<PathBuf>>,
 }
 
 impl<'a> CommandBuilder<'a> {
     fn new(context: &'a Context, shell: Option<&'a str>) -> Self {
-        Self {
-            context,
-            shell,
-            stdbuf_path: None,
-        }
+        Self { context, shell }
     }
 
     fn build_expression(&mut self, expr: &Expression) -> Result<EvalPipeline> {
@@ -597,24 +647,16 @@ impl<'a> CommandBuilder<'a> {
                 let command = self.build_internal_command(Some(name), args)?;
                 return Ok((command, meta.group));
             }
-            if name == env!("CARGO_PKG_NAME") {
+
+            if name == crate_name!() {
                 if let Some((name, args)) = args.split_first() {
                     if let Some(meta) = get_meta(name) {
                         let command = self.build_internal_command(Some(name), args)?;
                         return Ok((command, meta.group));
                     }
                 }
-                let command = self.build_internal_command(None, args)?;
-                return Ok((command, Group::Transformers));
-            }
-        }
 
-        if self.context.buf_mode().is_line() {
-            if let Ok(stdbuf) = self.stdbuf_path() {
-                let mut command = Command::new(stdbuf);
-                command.arg("-oL"); // Output line buffering
-                command.arg(name);
-                command.args(args);
+                let command = self.build_internal_command(None, args)?;
                 return Ok((command, Group::Transformers));
             }
         }
@@ -646,9 +688,5 @@ impl<'a> CommandBuilder<'a> {
 
     fn default_internal_command(&self) -> Result<Command> {
         self.build_internal_command(Some(cat::META.name), &[])
-    }
-
-    fn stdbuf_path(&mut self) -> &which::Result<PathBuf> {
-        self.stdbuf_path.get_or_insert_with(|| which("stdbuf"))
     }
 }

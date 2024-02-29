@@ -19,6 +19,7 @@ pub const ENV_NULL: &str = "REW_NULL";
 pub const ENV_BUF_MODE: &str = "REW_BUF_MODE";
 pub const ENV_BUF_SIZE: &str = "REW_BUF_SIZE";
 pub const ENV_SPAWNED_BY: &str = "REW_SPAWNED_BY";
+pub const ENV_STDBUF: &str = "REW_STDBUF";
 
 pub fn get_bin_name() -> String {
     env::args()
