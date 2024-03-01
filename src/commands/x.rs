@@ -217,7 +217,7 @@ fn try_restart_with_stdbuf() -> Result<()> {
                 .code()
                 .unwrap_or_default();
 
-            process::exit(exit_code);
+            std::process::exit(exit_code);
         }
     }
 
