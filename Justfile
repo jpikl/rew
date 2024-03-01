@@ -14,8 +14,8 @@ dev-docs:
     wait
 
 # Format code
-format:
-    cargo +nightly fmt --all
+format *ARGS:
+    cargo +nightly fmt --all {{ARGS}}
 
 # Run clippy
 clippy:
@@ -33,18 +33,22 @@ test:
 docs:
     cargo run --package xtask -- docs
 
-# Build with release profile
-build:
-    cargo build --release
+# Build
+build *ARGS:
+    cargo build {{ARGS}}
 
-# Build and install to ~/.local/bin/
-install: build
+# Install release build to ~/.local/bin/
+install: (build "--release")
     mkdir -p ~/.local/bin/
     cp target/release/rew ~/.local/bin/
 
-# Run rew with args
+# Run `rew` with args
 run *ARGS:
     cargo run -- {{ARGS}}
+
+# Run `rew x` with a pattern
+x PATTERN:
+    cargo run -- x "{{PATTERN}}"
 
 # Run fuzzer
 fuzz:
@@ -71,7 +75,7 @@ coverage-preview:
 # Clean generated files
 clean:
     cargo clean
-    rm -rf book tarpaulin-report.html
+    rm -rf book cobertura.xml tarpaulin-report.html
 
 # Set up development environment
 [confirm("This might break your environment!\nRun `just --show setup` first to check what it does.\nContinue? [y/n]:")]

@@ -5,7 +5,6 @@
 - Better shell specific examples for `rew x`.
 - Refactor and split `x.rs` into multiple files.
 - Finish user guide (performance, caveats, global opts propagation in `rew x`, forward compatibility, versioning).
-- Setup CI (clippy, format, test, coverage).
 - Setup CI (gh-pages on different path /rew-ng).
 - Setup CI (release).
 - Setup man generator.

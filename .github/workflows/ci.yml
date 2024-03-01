@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches-ignore: [stable-docs, gh-pages]
+  pull_request:
+    branches-ignore: [stable-docs, gh-pages]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  format:
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Install toolchain
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rustfmt
+
+      - name: Install just
+        uses: taiki-e/install-action@just
+
+      - name: Check format
+        run: just format --check
+
+  build:
+    name: Build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Install toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Install just
+        uses: taiki-e/install-action@just
+
+      - name: Run build
+        run: just build
+
+      - name: Run clippy
+        run: just clippy
+
+      - name: Run tests
+        run: just test
+
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Install toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install tarpaulin
+        uses: taiki-e/install-action@cargo-tarpaulin
+
+      - name: Install just
+        uses: taiki-e/install-action@just
+
+      - name: Run coverage
+        run: just coverage xml
+
+      - name: Upload coverage
+        if: ${{ github.event_name == 'push' }}
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./cobertura.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+          verbose: true
