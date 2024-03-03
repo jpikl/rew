@@ -2,8 +2,8 @@
 @default:
     just --list --unsorted
 
-# Development workflow (format, clippy, test, docs)
-dev: format clippy test docs
+# Development workflow (format, build, clippy, test, docs)
+dev: format build clippy test docs
 
 # Docs development workflow
 dev-docs:
@@ -29,16 +29,17 @@ clippy:
 test:
     cargo test --package rew --tests --quiet
 
+# Build
+build:
+    cargo build --workspace --exclude fuzz
+
 # Generate docs
 docs:
     cargo run --package xtask -- docs
 
-# Build
-build *ARGS:
-    cargo build {{ARGS}}
-
 # Install release build to ~/.local/bin/
-install: (build "--release")
+install:
+    cargo build --release
     mkdir -p ~/.local/bin/
     cp target/release/rew ~/.local/bin/
 
@@ -58,8 +59,8 @@ fuzz:
 coverage format:
     cargo tarpaulin \
         --packages rew \
+        --tests \
         --engine llvm \
-        --force-clean \
         --exclude-files 'tests/*' \
         --exclude-files 'fuzz/*' \
         --exclude-files 'xtask/*' \
@@ -88,4 +89,4 @@ setup:
     else \
         cargo binstall cargo-binstall; \
     fi
-    cargo binstall mdbook cargo-watch cargo-tarpaulin cargo-fuzz
+    cargo binstall mdbook coreutils cargo-watch cargo-tarpaulin cargo-fuzz

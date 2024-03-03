@@ -3,11 +3,13 @@ use assert_cmd::crate_name;
 use assert_cmd::prelude::*;
 use assert_cmd::Command;
 use std::env;
+use std::fmt::Write;
 use std::process;
 use std::sync::mpsc;
 use std::sync::mpsc::RecvTimeoutError;
 use std::thread;
 use std::time::Duration;
+use which::which;
 
 #[macro_export]
 macro_rules! command_test {
@@ -75,12 +77,41 @@ pub fn assert_command(name: &str, args: &[&str], stdin: impl Into<Vec<u8>>) -> A
 
 pub fn assert_shell(template: &str, cmd: &str, stdin: impl Into<Vec<u8>>) -> Assert {
     let bin = get_bin();
-    let sh = env::var_os("SHELL").unwrap_or("sh".into());
-    let sh_cmd = template
+
+    let mut sh_cmd = template
         .replace("%bin%", &bin)
         .replace("%cmd%", &format!("{bin} {cmd}"));
 
-    Command::new(sh)
+    // These will be "polyfilled" by uutils coreutils
+    let coreutils_all = ["seq", "md5sum", "head", "tail", "wc"];
+
+    let coreutils_used = coreutils_all
+        .iter()
+        .filter(|util| template.contains(*util))
+        .collect::<Vec<_>>();
+
+    if !coreutils_used.is_empty() {
+        if let Ok(coreutils) = which("coreutils") {
+            if let Some(coreutils) = coreutils.to_str() {
+                let aliases = coreutils_used
+                    .iter()
+                    .fold(String::new(), |mut output, util| {
+                        write!(output, "{util}() {{ {coreutils} {util} \"$@\"; }}; ").unwrap();
+                        output
+                    });
+
+                sh_cmd = format!("{aliases}{sh_cmd}");
+            } else {
+                eprintln!("Could not convert uutils coreutils path {coreutils:?} to UTF-8, falling back to GNU coreutils!");
+                eprintln!("Test results might not be reproducible on non-Linux OS!");
+            }
+        } else {
+            eprintln!("Could not find uutils coreutils binary, falling back to GNU coreutils!");
+            eprintln!("Test results might not be reproducible on non-Linux OS!");
+        }
+    }
+
+    Command::new("bash")
         .arg("-c")
         .arg(sh_cmd)
         .write_stdin(stdin)

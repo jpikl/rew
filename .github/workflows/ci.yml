@@ -18,13 +18,15 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v2
 
-      - name: Install toolchain
+      - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@nightly
         with:
           components: rustfmt
 
-      - name: Install just
-        uses: taiki-e/install-action@just
+      - name: Install development tools
+        uses: taiki-e/install-action@v2
+        with:
+          tool: just
 
       - name: Check format
         run: just format --check
@@ -42,13 +44,15 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v2
 
-      - name: Install toolchain
+      - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
 
-      - name: Install just
-        uses: taiki-e/install-action@just
+      - name: Install development tools
+        uses: taiki-e/install-action@v2
+        with:
+          tool: just,coreutils
 
       - name: Run build
         run: just build
@@ -66,14 +70,13 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v2
 
-      - name: Install toolchain
+      - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install tarpaulin
-        uses: taiki-e/install-action@cargo-tarpaulin
-
-      - name: Install just
-        uses: taiki-e/install-action@just
+      - name: Install development tools
+        uses: taiki-e/install-action@v2
+        with:
+          tool: just,coreutils,cargo-tarpaulin
 
       - name: Run coverage
         run: just coverage xml
