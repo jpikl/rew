@@ -112,7 +112,13 @@ impl<R: Read> CharChunkReader<R> {
             if let (None, remainder) = decode_last_utf8(&self.buf[..self.end]) {
                 // The new non-utf-8 remainder will be processed the next read
                 self.start = self.end - remainder;
-                return Ok(Some(&mut self.buf[..self.start]));
+                if self.start > 0 {
+                    return Ok(Some(&mut self.buf[..self.start]));
+                }
+                return Err(format_err!(
+                    "could not fetch utf-8 character longer than '{}' bytes",
+                    self.buf.len()
+                ));
             }
         }
 
@@ -196,7 +202,7 @@ impl<R: Read> LineReader<R> {
 
             // Input line could not fit into the whole buffer
             return Err(format_err!(
-                "cannot fetch line longer than '{}' bytes",
+                "could not fetch line longer than '{}' bytes",
                 self.buf.len()
             ));
         }

@@ -22,10 +22,16 @@ Process data as lines.
 Will normalize newlines to LF as a side-effect.
 </dd>
 
-<dt><code>-c, --chunks</code></dt>
+<dt><code>-c, --chars</code></dt>
 <dd>
 
-Process data as chunks
+Process data as character chunks
+</dd>
+
+<dt><code>-b, --bytes</code></dt>
+<dd>
+
+Process data as byte chunks
 </dd>
 
 <dt><code>--examples</code></dt>

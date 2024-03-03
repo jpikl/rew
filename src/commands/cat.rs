@@ -28,12 +28,16 @@ struct Args {
     /// Process data as lines.
     ///
     /// Will normalize newlines to LF as a side-effect.
-    #[arg(short, long, conflicts_with = "chunks")]
+    #[arg(short, long, conflicts_with_all = ["chars", "bytes"])]
     lines: bool,
 
-    /// Process data as chunks.
-    #[arg(short, long, conflicts_with = "lines")]
-    chunks: bool,
+    /// Process data as character chunks.
+    #[arg(short, long, conflicts_with_all = ["lines", "bytes"])]
+    chars: bool,
+
+    /// Process data as byte chunks.
+    #[arg(short, long, conflicts_with_all = ["lines", "chars"])]
+    bytes: bool,
 }
 
 fn run(context: &Context, args: &Args) -> Result<()> {
@@ -44,7 +48,14 @@ fn run(context: &Context, args: &Args) -> Result<()> {
         while let Some(line) = reader.read_line()? {
             writer.write_line(line)?;
         }
-    } else if args.chunks {
+    } else if args.chars {
+        let mut reader = context.char_chunk_reader();
+        let mut writer = context.writer();
+
+        while let Some(chunk) = reader.read_chunk()? {
+            writer.write(chunk)?;
+        }
+    } else if args.bytes {
         let mut reader = context.byte_chunk_reader();
         let mut writer = context.writer();
 
