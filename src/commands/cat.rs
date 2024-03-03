@@ -45,7 +45,7 @@ fn run(context: &Context, args: &Args) -> Result<()> {
             writer.write_line(line)?;
         }
     } else if args.chunks {
-        let mut reader = context.chunk_reader();
+        let mut reader = context.byte_chunk_reader();
         let mut writer = context.writer();
 
         while let Some(chunk) = reader.read_chunk()? {

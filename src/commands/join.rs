@@ -37,7 +37,7 @@ struct Args {
 }
 
 fn run(context: &Context, args: &Args) -> Result<()> {
-    let mut reader = context.chunk_reader();
+    let mut reader = context.byte_chunk_reader();
     let mut writer = context.writer();
 
     let output_separator = args.separator.as_bytes();

@@ -25,7 +25,7 @@ pub const META: Meta = command_meta! {
 struct Args;
 
 fn run(context: &Context, _args: &Args) -> Result<()> {
-    let mut reader = context.chunk_reader();
+    let mut reader = context.char_chunk_reader();
     let mut writer = context.writer();
     let mut buffer = context.uninit_buf();
 

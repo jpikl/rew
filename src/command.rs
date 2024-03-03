@@ -1,7 +1,8 @@
 use crate::args::BufMode;
 use crate::args::GlobalArgs;
 use crate::examples::Example;
-use crate::io::ChunkReader;
+use crate::io::ByteChunkReader;
+use crate::io::CharChunkReader;
 use crate::io::LineReader;
 use crate::io::Separator;
 use crate::io::Writer;
@@ -134,8 +135,12 @@ impl Context {
         stdin().lock()
     }
 
-    pub fn chunk_reader(&self) -> ChunkReader<StdinLock<'_>> {
-        ChunkReader::new(self.raw_reader(), self.buf_size())
+    pub fn byte_chunk_reader(&self) -> ByteChunkReader<StdinLock<'_>> {
+        ByteChunkReader::new(self.raw_reader(), self.buf_size())
+    }
+
+    pub fn char_chunk_reader(&self) -> CharChunkReader<StdinLock<'_>> {
+        CharChunkReader::new(self.raw_reader(), self.buf_size())
     }
 
     pub fn line_reader(&self) -> LineReader<StdinLock<'_>> {

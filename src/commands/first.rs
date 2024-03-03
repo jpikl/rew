@@ -40,7 +40,7 @@ fn run(context: &Context, args: &Args) -> Result<()> {
         return Ok(());
     }
 
-    let mut reader = context.chunk_reader();
+    let mut reader = context.byte_chunk_reader();
     let mut writer = context.writer();
     let separator = context.separator().as_byte();
 

@@ -278,7 +278,7 @@ fn eval_pattern(context: &Context, pattern: &Pattern, shell: Option<&str>) -> Re
             return Ok(()); // None of the child proceses use stdin.
         }
 
-        let mut reader = thread_context.chunk_reader();
+        let mut reader = thread_context.byte_chunk_reader();
 
         while let Some(chunk) = reader.read_chunk()? {
             for stdin in &mut stdins {

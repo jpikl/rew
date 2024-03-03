@@ -1,5 +1,6 @@
 use anyhow::format_err;
 use anyhow::Result;
+use bstr::decode_last_utf8;
 use bstr::ByteSlice;
 use derive_more::IsVariant;
 use memchr::memchr;
@@ -47,12 +48,12 @@ fn trim_null(mut line: &[u8]) -> &[u8] {
     line
 }
 
-pub struct ChunkReader<R> {
+pub struct ByteChunkReader<R> {
     inner: R,
     buf: Vec<u8>,
 }
 
-impl<R: Read> ChunkReader<R> {
+impl<R: Read> ByteChunkReader<R> {
     pub fn new(inner: R, buf_size: usize) -> Self {
         Self {
             inner,
@@ -74,13 +75,64 @@ impl<R: Read> ChunkReader<R> {
     }
 }
 
+pub struct CharChunkReader<R> {
+    inner: R,
+    buf: Vec<u8>,
+    start: usize, // Start offset of unprocessed buf area
+    end: usize,   // End offset of unprocessed buf area
+}
+
+impl<R: Read> CharChunkReader<R> {
+    pub fn new(inner: R, buf_size: usize) -> Self {
+        Self {
+            inner,
+            buf: vec![0; buf_size],
+            start: 0,
+            end: 0,
+        }
+    }
+
+    pub fn get_mut(&mut self) -> &mut R {
+        &mut self.inner
+    }
+
+    pub fn read_chunk(&mut self) -> Result<Option<&mut [u8]>> {
+        if self.start > 0 {
+            // Shift unprocessed remainder to the beginning
+            self.buf.copy_within(self.start..self.end, 0);
+            self.end -= self.start;
+            self.start = 0;
+        };
+
+        // Read new data after the previous remainder
+        let len = self.inner.read(&mut self.buf[self.end..])?;
+        if len > 0 {
+            self.end += len;
+
+            if let (None, remainder) = decode_last_utf8(&self.buf[..self.end]) {
+                // The new non-utf-8 remainder will be processed the next read
+                self.start = self.end - remainder;
+                return Ok(Some(&mut self.buf[..self.start]));
+            }
+        }
+
+        if self.end > 0 {
+            let remainder = &mut self.buf[..self.end];
+            self.end = 0;
+            return Ok(Some(remainder));
+        }
+
+        Ok(None)
+    }
+}
+
 pub struct LineReader<R> {
     inner: R,
     separator: u8,
     trim: fn(&[u8]) -> &[u8],
     buf: Vec<u8>,
-    start: usize,
-    end: usize,
+    start: usize, // Start offset of unprocessed buf area
+    end: usize,   // End offset of unprocessed buf area
 }
 
 impl<R: Read> LineReader<R> {
@@ -191,5 +243,55 @@ impl<W: Write> Writer<W> {
             copy(reader, &mut self.inner.get_mut())?;
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bstr::B;
+    use claims::assert_err;
+    use claims::assert_ok;
+    use claims::assert_ok_eq;
+    use claims::assert_some_eq;
+    use rstest::rstest;
+
+    #[test]
+    fn read_byte_chunks() {
+        let input = B("abcdefghijkl");
+        let mut reader = ByteChunkReader::new(input, 8);
+        assert_some_eq!(assert_ok!(reader.read_chunk()), B("abcdefgh"));
+        assert_some_eq!(assert_ok!(reader.read_chunk()), B("ijkl"));
+        assert_ok_eq!(reader.read_chunk(), None);
+    }
+
+    #[test]
+    fn read_char_chunks() {
+        let input = B("aábácádáeáfá");
+        let input = &input[..(input.len() - 1)]; // Make the last byte invalid utf-8
+        let mut reader = CharChunkReader::new(input, 8);
+        assert_some_eq!(assert_ok!(reader.read_chunk()), B("aábác")); // 7B
+        assert_some_eq!(assert_ok!(reader.read_chunk()), B("ádáeá")); // 8B
+        assert_some_eq!(assert_ok!(reader.read_chunk()), B("f")); // 1B
+        assert_some_eq!(assert_ok!(reader.read_chunk()), &B("á")[0..1]); // 1B
+        assert_ok_eq!(reader.read_chunk(), None);
+    }
+
+    #[rstest]
+    #[case::lf("abcd\nefgh\nijkl", Separator::Newline)]
+    #[case::crlf("abcd\r\nefgh\r\nijkl", Separator::Newline)]
+    #[case::null("abcd\0efgh\0ijkl", Separator::Null)]
+    fn read_lines(#[case] input: &str, #[case] separator: Separator) {
+        let mut reader = LineReader::new(B(input), separator, 8);
+        assert_ok_eq!(reader.read_line(), Some(B("abcd")));
+        assert_ok_eq!(reader.read_line(), Some(B("efgh")));
+        assert_ok_eq!(reader.read_line(), Some(B("ijkl")));
+        assert_ok_eq!(reader.read_line(), None);
+    }
+
+    #[test]
+    fn read_lines_err() {
+        let mut reader = LineReader::new(B("abcdefgh"), Separator::Newline, 8);
+        assert_err!(reader.read_line());
     }
 }
