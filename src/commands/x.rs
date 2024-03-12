@@ -4,7 +4,6 @@ use crate::args::ENV_BUF_MODE;
 use crate::args::ENV_BUF_SIZE;
 use crate::args::ENV_NULL;
 use crate::args::ENV_SPAWNED_BY;
-use crate::args::ENV_STDBUF;
 use crate::colors::RED;
 use crate::colors::RESET;
 use crate::colors::YELLOW;
@@ -22,6 +21,7 @@ use crate::pattern::Item;
 use crate::pattern::Pattern;
 use crate::pattern::SimpleItem;
 use crate::pattern::SimplePattern;
+use crate::stdbuf::StdBuf;
 use anyhow::Context as AnyhowContext;
 use anyhow::Error;
 use anyhow::Result;
@@ -42,7 +42,6 @@ use std::result;
 use std::thread;
 use std::thread::JoinHandle;
 use std::time::Duration;
-use which::which;
 
 #[cfg(target_family = "windows")]
 const DEFAULT_SHELL: &str = "cmd";
@@ -164,64 +163,11 @@ fn run(context: &Context, args: &Args) -> Result<()> {
     let raw_pattern = args.pattern.join(" ");
     let pattern = Pattern::parse(&raw_pattern, args.escape)?;
 
-    // If there are any external commands for which we need to enforce line buffering...
-    // Restart self under `stdbuf -oL ...`
-    if should_restart_with_stdbuf(context, &pattern) {
-        try_restart_with_stdbuf()?;
-    }
-
     if let Some(pattern) = pattern.try_simplify() {
         return eval_simple_pattern(context, &pattern);
     }
 
     eval_pattern(context, &pattern, args.shell.as_deref())
-}
-
-fn should_restart_with_stdbuf(context: &Context, pattern: &Pattern) -> bool {
-    context.buf_mode().is_line() // Only for when line buffering is required.
-       && env::var_os(ENV_STDBUF).is_none() // Prevent spawn recursion!
-       && pattern.any_expression(has_external_command) // Is there a command that needs stdbuf?
-}
-
-fn has_external_command(expr: &Expression) -> bool {
-    match &expr.value {
-        ExpressionValue::Pipeline(commands) => commands.iter().any(is_external_command),
-        ExpressionValue::RawShell(_) => true,
-    }
-}
-
-fn is_external_command(command: &pattern::Command) -> bool {
-    command.external || (get_meta(&command.name).is_none() && command.name != crate_name!())
-}
-
-fn try_restart_with_stdbuf() -> Result<()> {
-    if let Ok(stdbuf_path) = which("stdbuf") {
-        let mut command = Command::new(stdbuf_path);
-        command.env(ENV_STDBUF, "true"); // Prevent spawn recursion!
-        command.arg("-oL"); // Output line buffering.
-        command.args(env::args_os());
-
-        #[cfg(target_family = "unix")]
-        {
-            use std::os::unix::process::CommandExt;
-            let err = Error::from(command.exec());
-            return Err(err.context("unable to exec self under stdbuf"));
-        }
-        #[cfg(not(target_family = "unix"))]
-        {
-            let exit_code = command
-                .spawn()
-                .context("unable spawn self under stdbuf")?
-                .wait()
-                .context("unable spawn self under stdbuf")?
-                .code()
-                .unwrap_or_default();
-
-            std::process::exit(exit_code);
-        }
-    }
-
-    Ok(())
 }
 
 fn eval_simple_pattern(context: &Context, pattern: &SimplePattern) -> Result<()> {
@@ -332,8 +278,8 @@ fn eval_pattern(context: &Context, pattern: &Pattern, shell: Option<&str>) -> Re
 
     if !all_finished {
         // Give the remaining child processes some extra time to finish.
-        // Needed especialy when running `stdbuf` with some non-existent program as its argument.
-        thread::sleep(Duration::from_millis(10));
+        // Needed especialy in case program exists with error on Windows.
+        thread::sleep(Duration::from_millis(100));
 
         // Just kill the ones which did not terminate on their own.
         for child in &mut children {
@@ -520,11 +466,16 @@ impl Eval<Child> {
 struct CommandBuilder<'a> {
     context: &'a Context,
     shell: Option<&'a str>,
+    stdbuf: StdBuf,
 }
 
 impl<'a> CommandBuilder<'a> {
     fn new(context: &'a Context, shell: Option<&'a str>) -> Self {
-        Self { context, shell }
+        Self {
+            context,
+            shell,
+            stdbuf: StdBuf::default(),
+        }
     }
 
     fn build_expression(&mut self, expr: &Expression) -> Result<EvalPipeline> {
@@ -663,6 +614,12 @@ impl<'a> CommandBuilder<'a> {
 
         let mut command = Command::new(name);
         command.args(args);
+
+        if self.context.buf_mode().is_line() {
+            command.envs(self.stdbuf.line_buf_envs()); // libc based programs
+            command.env("PYTHONUNBUFFERED", "1"); // Python programs
+        }
+
         Ok((command, Group::Transformers))
     }
 

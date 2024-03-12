@@ -132,13 +132,6 @@ impl Pattern {
 
         Some(SimplePattern(simple_items))
     }
-
-    pub fn any_expression(&self, test: fn(&Expression) -> bool) -> bool {
-        self.items().iter().any(|item| match item {
-            Item::Constant(_) => false,
-            Item::Expression(expression) => test(expression),
-        })
-    }
 }
 
 impl SimplePattern {
