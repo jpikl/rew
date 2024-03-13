@@ -13,6 +13,24 @@ dev-docs:
     trap 'kill $(jobs -pr)' EXIT
     wait
 
+# Run `rew` with args
+run *ARGS:
+    cargo run -- {{ARGS}}
+
+# Run `rew x` with a pattern
+x PATTERN:
+    cargo run -- x "{{PATTERN}}"
+
+# Build
+build:
+    cargo build --workspace --exclude fuzz
+
+# Install release build to ~/.local/bin/
+install:
+    cargo build --release
+    mkdir -p ~/.local/bin/
+    cp target/release/rew ~/.local/bin/
+
 # Format code
 format *ARGS:
     cargo +nightly fmt --all {{ARGS}}
@@ -27,29 +45,11 @@ clippy:
 
 # Run tests
 test:
-    cargo test --package rew --tests --quiet
-
-# Build
-build:
-    cargo build --workspace --exclude fuzz
+    cargo nextest run --status-level leak
 
 # Generate docs
 docs:
     cargo run --package xtask -- docs
-
-# Install release build to ~/.local/bin/
-install:
-    cargo build --release
-    mkdir -p ~/.local/bin/
-    cp target/release/rew ~/.local/bin/
-
-# Run `rew` with args
-run *ARGS:
-    cargo run -- {{ARGS}}
-
-# Run `rew x` with a pattern
-x PATTERN:
-    cargo run -- x "{{PATTERN}}"
 
 # Run fuzzer
 fuzz:
@@ -58,15 +58,11 @@ fuzz:
 # Generate code coverage
 coverage format:
     cargo tarpaulin \
-        --packages rew \
-        --tests \
         --engine llvm \
         --exclude-files 'tests/*' \
         --exclude-files 'fuzz/*' \
         --exclude-files 'xtask/*' \
-        --out {{format}} \
-        -- \
-        --quiet
+        --out {{format}}
 
 # Preview code coverage as HTML
 coverage-preview:
@@ -89,4 +85,4 @@ setup:
     else \
         cargo binstall cargo-binstall; \
     fi
-    cargo binstall mdbook coreutils cargo-watch cargo-tarpaulin cargo-fuzz
+    cargo binstall cargo-fuzz cargo-nextest cargo-tarpaulin cargo-watch coreutils mdbook

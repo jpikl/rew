@@ -52,7 +52,7 @@ jobs:
       - name: Install development tools
         uses: taiki-e/install-action@v2
         with:
-          tool: just,coreutils
+          tool: just,coreutils,nextest
 
       - name: Run build
         run: just build

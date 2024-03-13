@@ -1,3 +1,9 @@
+- Fix Windows CI: create symlinks/copies `coreutils` -> `<util>` for each `<util>` + add on PATH.
+  Do this using some task run before `just test`.
+  Before each integration test, set PATH env var for each `Command`
+    set PATH=%PATH%;C:\your\path\here\
+    export PATH=$PATH:/your/path/here
+  Use $PROJECT/coreutils path + add it to .gitignore
 - Add `rew prefix` command and use it to prefix stderr of `rew x` child processes?
 - Add `REW_PREFIX` env var to enforce stderr prefix over detecting it from argv[0]?
 - Fix `--examples` order in generated docs.
