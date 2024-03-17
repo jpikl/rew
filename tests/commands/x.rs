@@ -27,7 +27,7 @@ command_test!("x", {
     multipattern: [ cmd "x" "{}" "{trim}" assert "a\n bc " => "x a a\nx  bc  bc\n" ],
     shell_none: [ cmd "x_{# sed -E 's/^ +//' | tr -d 'b'}_y" assert "" => "" ],
     shell_many: [ cmd "x_{# sed -E 's/^ +//' | tr -d 'b'}_y" assert " a \n  bc  " => "x_a _y\nx_c  _y\n" ],
-    shell_redirect: [ cmd "x_{# sed -E 's/^ +//' | tr -d 'b' >/dev/null}_y" assert " a \n  bc  " => "" ],
+    shell_redirect: [ cmd "x_{# sed -E 's/^ +//' | tr -d 'b' > target/.dummy_output}_y" assert " a \n  bc  " => "" ],
     generator: [ cmd "x_{seq 1..2}_y" assert "" => "x_1_y\nx_2_y\n" ],
     cat_and_generator_none: [ cmd "x_{}_{seq 1..2}_y" assert "" => "" ],
     cat_and_generator_less: [ cmd "x_{}_{seq 1..2}_y" assert "a" => "x_a_1_y\n" ],

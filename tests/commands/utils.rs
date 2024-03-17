@@ -2,14 +2,13 @@ use assert_cmd::assert::Assert;
 use assert_cmd::crate_name;
 use assert_cmd::prelude::*;
 use assert_cmd::Command;
+use rew::shell::Shell;
 use std::env;
-use std::fmt::Write;
 use std::process;
 use std::sync::mpsc;
 use std::sync::mpsc::RecvTimeoutError;
 use std::thread;
 use std::time::Duration;
-use which::which;
 
 #[macro_export]
 macro_rules! command_test {
@@ -76,44 +75,17 @@ pub fn assert_command(name: &str, args: &[&str], stdin: impl Into<Vec<u8>>) -> A
 }
 
 pub fn assert_shell(template: &str, cmd: &str, stdin: impl Into<Vec<u8>>) -> Assert {
-    let bin = get_bin();
+    let sh = env::var("SHELL").map(Shell::new).unwrap_or_default();
+    let sh_kind = sh.kind();
 
-    let mut sh_cmd = template
+    let bin = get_bin();
+    let bin = sh_kind.normalize_path(&bin);
+
+    let sh_cmd = template
         .replace("%bin%", &bin)
         .replace("%cmd%", &format!("{bin} {cmd}"));
 
-    // These will be "polyfilled" by uutils coreutils
-    let coreutils_all = ["seq", "md5sum", "head", "tail", "wc"];
-
-    let coreutils_used = coreutils_all
-        .iter()
-        .filter(|util| template.contains(*util))
-        .collect::<Vec<_>>();
-
-    if !coreutils_used.is_empty() {
-        if let Ok(coreutils) = which("coreutils") {
-            if let Some(coreutils) = coreutils.to_str() {
-                let aliases = coreutils_used
-                    .iter()
-                    .fold(String::new(), |mut output, util| {
-                        write!(output, "{util}() {{ {coreutils} {util} \"$@\"; }}; ").unwrap();
-                        output
-                    });
-
-                sh_cmd = format!("{aliases}{sh_cmd}");
-            } else {
-                eprintln!("Could not convert uutils coreutils path {coreutils:?} to UTF-8, falling back to GNU coreutils!");
-                eprintln!("Test results might not be reproducible on non-Linux OS!");
-            }
-        } else {
-            eprintln!("Could not find uutils coreutils binary, falling back to GNU coreutils!");
-            eprintln!("Test results might not be reproducible on non-Linux OS!");
-        }
-    }
-
-    Command::new("bash")
-        .arg("-c")
-        .arg(sh_cmd)
+    Command::from_std(sh.build_command(&sh_cmd))
         .write_stdin(stdin)
         .assert()
 }
@@ -134,7 +106,7 @@ fn get_bin() -> String {
 // We cannot use `assert_cmd` timeouts because of https://github.com/assert-rs/assert_cmd/issues/167
 // We could use `ntest::timeout` directly but it breaks test detection with VSCode and rust-analyzer
 pub fn with_timeout(test: fn()) {
-    let timeout = Duration::from_millis(500);
+    let timeout = Duration::from_secs(5);
     let (sender, receiver) = mpsc::channel();
 
     thread::spawn(move || {

@@ -21,18 +21,17 @@ use crate::pattern::Item;
 use crate::pattern::Pattern;
 use crate::pattern::SimpleItem;
 use crate::pattern::SimplePattern;
+use crate::shell::Shell;
 use crate::stdbuf::StdBuf;
 use anyhow::Context as AnyhowContext;
 use anyhow::Error;
 use anyhow::Result;
 use bstr::ByteVec;
-use clap::builder::OsStr;
 use clap::crate_name;
 use std::env;
 use std::io;
 use std::io::Write;
 use std::panic::resume_unwind;
-use std::path::Path;
 use std::process::Child;
 use std::process::ChildStdin;
 use std::process::ChildStdout;
@@ -42,11 +41,6 @@ use std::result;
 use std::thread;
 use std::thread::JoinHandle;
 use std::time::Duration;
-
-#[cfg(target_family = "windows")]
-const DEFAULT_SHELL: &str = "cmd";
-#[cfg(not(target_family = "windows"))]
-const DEFAULT_SHELL: &str = "sh";
 
 pub const META: Meta = command_meta! {
     name: "x",
@@ -95,8 +89,8 @@ pub const META: Meta = command_meta! {
            output: &["1. first", "2. second", "3. third"],
        },
        "The `#` marker makes the rest of the expression to be interpreted by the current shell.\n\n\
-        For example, the following expression is equivalent to `{sh -c 'echo a; echo b; echo c'}`": {
-            args: &["{# echo a; echo b; echo c}. {}"],
+        For example, the following expression is equivalent to `{sh -c 'printf \"%s\\n\" a b c'}`": {
+            args: &["{# printf '%s\\n' a b c}. {}"],
             input: &["first", "second", "third"],
             output: &["a. first", "b. second", "c. third"],
         },
@@ -142,7 +136,7 @@ struct Args {
     /// Output pattern(s).
     ///
     /// A pattern describes how to transform each input line into output.
-    /// Multiple patterns are joined into single one using space character `' '`.
+    /// Multiple patterns are joined together, using space `' '` as a delimiter.
     ///
     /// See examples (`--examples` option) for more details.
     #[arg(required = true)]
@@ -465,7 +459,7 @@ impl Eval<Child> {
 
 struct CommandBuilder<'a> {
     context: &'a Context,
-    shell: Option<&'a str>,
+    shell: Shell,
     stdbuf: StdBuf,
 }
 
@@ -473,7 +467,7 @@ impl<'a> CommandBuilder<'a> {
     fn new(context: &'a Context, shell: Option<&'a str>) -> Self {
         Self {
             context,
-            shell,
+            shell: shell.map(Shell::new).unwrap_or_default(),
             stdbuf: StdBuf::default(),
         }
     }
@@ -494,17 +488,8 @@ impl<'a> CommandBuilder<'a> {
             })
     }
 
-    fn build_raw_shell(&self, sh_command: &str, no_stdin: bool) -> Result<EvalPipeline> {
-        let shell = self.shell.unwrap_or(DEFAULT_SHELL);
-        let mut command = Command::new(shell);
-
-        if Path::new(shell).file_stem() == Some(&OsStr::from("cmd")) {
-            command.arg("/c");
-        } else {
-            command.arg("-c");
-        }
-
-        command.arg(sh_command);
+    fn build_raw_shell(&self, shell_command: &str, no_stdin: bool) -> Result<EvalPipeline> {
+        let mut command = self.shell.build_command(shell_command);
         command.stdout(Stdio::piped());
 
         if no_stdin {

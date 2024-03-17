@@ -11,6 +11,6 @@ command_test!("first", {
     buf_exact: [ cmd "--buf-size=8" assert "aaaaaaa\nb\n" => "aaaaaaa\n" ],
     buf_over: [ cmd "--buf-size=8" assert "aaaaaaaa\nb\n" => "aaaaaaaa\n" ],
     buf_over_2: [ cmd "--buf-size=8" assert "aaaaaaaaa\nb\n" => "aaaaaaaaa\n" ],
-    // seq 1 10000 | head -n9999 | md5sum
-    many: [ sh "seq 1 10000 | %cmd% 9999 | md5sum" assert "" => "05fda6bec6aabc94d0fc54380ace8412  -\n" ],
+    // seq 1 10000 | head -n9999 | md5sum -t
+    many: [ sh "seq 1 10000 | %cmd% 9999 | md5sum -t" assert "" => "05fda6bec6aabc94d0fc54380ace8412  -\n" ],
 });

@@ -21,4 +21,6 @@ pub mod pattern;
 #[doc(hidden)]
 pub mod range;
 #[doc(hidden)]
+pub mod shell;
+#[doc(hidden)]
 pub mod stdbuf;

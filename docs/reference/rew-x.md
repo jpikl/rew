@@ -16,7 +16,7 @@ rew x [OPTIONS] [PATTERN]...
 
 Output pattern(s).
 
-A pattern describes how to transform each input line into output. Multiple patterns are joined into single one using space character `' '`.
+A pattern describes how to transform each input line into output. Multiple patterns are joined together, using space `' '` as a delimiter.
 
 See examples (`--examples` option) for more details.
 </dd>
@@ -248,10 +248,10 @@ rew x '{!seq 1 3}. {}'
 
 The `#` marker makes the rest of the expression to be interpreted by the current shell.
 
-For example, the following expression is equivalent to `{sh -c 'echo a; echo b; echo c'}`
+For example, the following expression is equivalent to `{sh -c 'printf "%s\n" a b c'}`
 
 ```sh
-rew x '{# echo a; echo b; echo c}. {}'
+rew x '{# printf "%s\n" a b c}. {}'
 ```
 
 <div class="example-io">

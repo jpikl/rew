@@ -45,7 +45,7 @@ clippy:
 
 # Run tests
 test:
-    cargo nextest run --status-level leak
+    cargo nextest run --status-level leak --no-fail-fast
 
 # Generate docs
 docs:
@@ -85,4 +85,4 @@ setup:
     else \
         cargo binstall cargo-binstall; \
     fi
-    cargo binstall cargo-fuzz cargo-nextest cargo-tarpaulin cargo-watch coreutils mdbook
+    cargo binstall cargo-fuzz cargo-nextest cargo-tarpaulin cargo-watch mdbook

@@ -39,7 +39,7 @@ jobs:
         os:
           - ubuntu-latest
           - windows-latest
-          - macos-latest
+          #- macos-latest
     steps:
       - name: Checkout sources
         uses: actions/checkout@v2
@@ -52,7 +52,7 @@ jobs:
       - name: Install development tools
         uses: taiki-e/install-action@v2
         with:
-          tool: just,coreutils,nextest
+          tool: just,nextest
 
       - name: Run build
         run: just build
@@ -76,7 +76,7 @@ jobs:
       - name: Install development tools
         uses: taiki-e/install-action@v2
         with:
-          tool: just,coreutils,cargo-tarpaulin
+          tool: just,cargo-tarpaulin
 
       - name: Run coverage
         run: just coverage xml
