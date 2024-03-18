@@ -1,3 +1,5 @@
+- Run integration tests using multiple shells.
+- Make `rew x` escape sequences forward compatible (errors for unkown escape sequences).
 - Add `rew prefix` command and use it to prefix stderr of `rew x` child processes?
 - Add `REW_PREFIX` env var to enforce stderr prefix over detecting it from argv[0]?
 - Fix `--examples` order in generated docs.

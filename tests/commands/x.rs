@@ -33,7 +33,8 @@ command_test!("x", {
     cat_and_generator_less: [ cmd "x_{}_{seq 1..2}_y" assert "a" => "x_a_1_y\n" ],
     cat_and_generator_eq: [ cmd "x_{}_{seq 1..2}_y" assert "a\nbc" => "x_a_1_y\nx_bc_2_y\n" ],
     cat_and_generator_more: [ cmd "x_{}_{seq 1..2}_y" assert "a\nbc\ndef" => "x_a_1_y\nx_bc_2_y\n" ],
+    // paste -d ' ' <(seq 1 100000) <(seq 1 100000) | cksum
     // Should not get stuck by pipeline command not reading its stdin
-    cat_and_generator_many: [ sh "seq 1 100000 | %cmd% 'x_{}_{seq 1..100000}_y' | wc -l" assert "" => "100000\n" ],
-    shell_and_generator_many: [ sh "seq 1 100000 | %cmd% 'x_{}_{:# seq 1 100000}_y' | wc -l" assert "" => "100000\n" ],
+    cat_and_generator_many: [ sh "seq 1 100000 | %cmd% {} {seq 1..100000} | cksum" assert "" => "774411998 1177790\n" ],
+    shell_and_generator_many: [ sh "seq 1 100000 | %cmd% {} {:# seq 1 100000} | cksum" assert "" => "774411998 1177790\n" ],
 });

@@ -17,6 +17,6 @@ command_test!("last", {
     buf_exact: [ cmd "--buf-size=8" assert "aaaaaaa\nb\n" => "b\n" ],
     buf_over: [ cmd "--buf-size=8" assert "aaaaaaaa\nb\n" => "b\n" ],
     buf_over_2: [ cmd "--buf-size=8" assert "aaaaaaaaa\nb\n" => "b\n" ],
-    // seq 1 20000 | tail -n10000 | md5sum -t
-    many: [ sh "seq 1 20000 | %cmd% 10000 | md5sum -t" assert "" => "8857ef28723cc4788a8ca7456214fc0c  -\n" ],
+    // seq 1 20000 | tail -n10000 | cksum
+    many: [ sh "seq 1 20000 | %cmd% 10000 | cksum" assert "" => "2899297562 60000\n" ],
 });

@@ -39,7 +39,7 @@ jobs:
         os:
           - ubuntu-latest
           - windows-latest
-          #- macos-latest
+          - macos-latest
     steps:
       - name: Checkout sources
         uses: actions/checkout@v2
