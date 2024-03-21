@@ -413,7 +413,7 @@ impl Parser<'_> {
     }
 
     fn peek(&mut self) -> Option<char> {
-        self.iterator.peek().map(Clone::clone)
+        self.iterator.peek().copied()
     }
 
     fn next(&mut self) -> Option<char> {

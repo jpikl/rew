@@ -73,8 +73,7 @@ fn run(context: &Context, args: &Args) -> Result<()> {
 
     let last_line_terminated = buffers
         .back()
-        .map(|buf| buf.is_terminated_with(separator))
-        .unwrap_or_default();
+        .is_some_and(|buf| buf.is_terminated_with(separator));
 
     if !last_line_terminated {
         total_lines += 1;
