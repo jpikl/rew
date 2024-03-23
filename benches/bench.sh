@@ -70,10 +70,10 @@ escape() {
   echo "$1" | sed 's/"/\\"/g'
 }
 
-RESULTS_DIR=target/benches
-RESULTS_FILE=$RESULTS_DIR/$COMMAND.md
-
 execute() {
+  RESULTS_DIR=target/benches
+  RESULTS_FILE=$RESULTS_DIR/$COMMAND.$NUMBER.md
+
   mkdir -p "$RESULTS_DIR"
   echo >&2
   "$@" --sort mean-time --export-markdown "$RESULTS_FILE" 1>&2
