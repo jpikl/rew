@@ -1,3 +1,7 @@
+# TODO: Change to 'gh-pages' before the next release.
+pages-branch := "gh-pages-dev"
+pages-temp-dir := "/tmp/rew/pages"
+
 # Show available recipes
 @default:
     just --list --unsorted
@@ -5,21 +9,13 @@
 # Development workflow (format, build, clippy, test, docs, shellcheck)
 dev: format build clippy test docs shellcheck
 
-# Docs development workflow
-dev-docs:
-    #!/usr/bin/env -S sh -eux
-    mdbook serve --open &
-    cargo watch --ignore '*.{md,css,sh,txt}' -- just docs &
-    trap 'kill $(jobs -pr)' EXIT
-    wait
-
 # Run `rew` with args
 run *ARGS:
     cargo run -- {{ARGS}}
 
 # Run `rew x` with a pattern
 x PATTERN:
-    cargo run -- x "{{PATTERN}}"
+    cargo run -- x '{{PATTERN}}'
 
 # Build
 build:
@@ -47,22 +43,6 @@ clippy:
 test:
     cargo nextest run --status-level leak --no-fail-fast
 
-# Generate docs
-docs:
-    cargo run --package xtask -- docs
-
-# Run benchmarks
-bench *ARGS:
-    ./benches/run.sh {{ARGS}}
-
-# Run fuzzer
-fuzz:
-    cargo +nightly fuzz run --jobs {{num_cpus()}} pattern
-
-# Run shellcheck on scripts
-shellcheck:
-    shellcheck -xa benches/*.sh benches/commands/*.sh
-
 # Generate code coverage
 coverage format:
     cargo tarpaulin \
@@ -76,6 +56,41 @@ coverage format:
 coverage-preview:
     just coverage html
     xdg-open tarpaulin-report.html
+
+# Run fuzzer
+fuzz:
+    cargo +nightly fuzz run --jobs {{num_cpus()}} pattern
+
+# Run benchmarks
+bench *ARGS:
+    ./benches/run.sh {{ARGS}}
+
+# Generate docs
+docs:
+    cargo run --package xtask -- docs
+
+# Pages development workflow
+pages:
+    #!/usr/bin/env -S sh -eux
+    mdbook serve --open &
+    cargo watch --ignore '*.{md,css,sh,txt}' -- just docs &
+    trap 'kill $(jobs -pr)' EXIT
+    wait
+
+# Build and deploy pages
+pages-deploy:
+    mdbook build
+    rm -rf '{{pages-temp-dir}}'
+    git worktree prune
+    git worktree add '{{pages-temp-dir}}' '{{pages-branch}}'
+    cp -rp pages/* '{{pages-temp-dir}}'
+    (cd '{{pages-temp-dir}}' && git add --all)
+    (cd '{{pages-temp-dir}}' && git commit --amend -m 'Deploy pages')
+    git push --force origin '{{pages-branch}}'
+
+# Run shellcheck on scripts
+shellcheck:
+    shellcheck -xa benches/*.sh benches/commands/*.sh
 
 # Clean generated files
 clean:

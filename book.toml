@@ -5,6 +5,9 @@ authors = ["Jan Pikl"]
 language = "en"
 src = "docs"
 
+[build]
+build-dir = "pages"
+
 [output.html]
 git-repository-url = "https://github.com/jpikl/rew"
 git-repository-icon = "fa-github"

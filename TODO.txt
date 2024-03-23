@@ -10,7 +10,6 @@
 - Add missing unit test to increase code coverage.
 - Prepare changelog for 0.4.0
 - Finish user guide (performance, caveats, global opts propagation in `rew x`, forward compatibility, versioning).
-- Setup CI GitHub pages workflow.
 - Setup CI release workflow.
 - Add here more TODOs for command replacement of old rew filters.
 

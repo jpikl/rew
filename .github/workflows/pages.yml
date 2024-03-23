@@ -1,0 +1,25 @@
+name: Pages
+
+on:
+  workflow_dispatch:
+  push:
+    # TODO: Change 'ng' to 'gh-pages-source' before the next release.
+    # TODO: Also, delete 'stable-docs' branch used for the same purpose before.
+    branches: [ng]
+    paths: ["docs/**", book.toml]
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Install development tools
+        uses: taiki-e/install-action@v2
+        with:
+          tool: just,mdbook
+
+      - name: Deploy pages
+        run: just pages-deploy

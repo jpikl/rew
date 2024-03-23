@@ -1,8 +1,13 @@
+# Output dirs
 /man
-/book
-target
+/pages
+/target
+
+# Coverage output
 tarpaulin-report.html
 cobertura.xml
+
+# Benchmark inputs
 svejk.txt
 rur.txt
 input.txt
