@@ -1,12 +1,19 @@
+0.4
+- Output version in style of `cargo 1.77.0 (3fe68eabf 2024-02-29)`
 - Run integration tests using multiple shells.
-- Make `rew x` escape sequences forward compatible (errors for unkown escape sequences).
-- Add `rew prefix` command and use it to prefix stderr of `rew x` child processes?
-- Add `REW_PREFIX` env var to enforce stderr prefix over detecting it from argv[0]?
-- Fix `--examples` order in generated docs.
+- `rew x --null` example with propagation.
 - Better shell specific examples for `rew x`.
+- Add `rew x --quote` with examples.
+- Fix `--examples` order in generated docs.
+- Make `rew x` escape sequences forward compatible (errors for unkown escape sequences).
+- Add `REW_PREFIX` env var to enforce stderr prefix over detecting it from argv[0]?
 - Refactor and split `x.rs` into multiple files.
+- Add missing unit test to increase code coverage.
+- Prepare changelog for 0.4.0
 - Finish user guide (performance, caveats, global opts propagation in `rew x`, forward compatibility, versioning).
-- Setup CI (gh-pages on different path /rew-ng).
-- Setup CI (release).
+- Setup CI GitHub pages workflow.
+- Setup CI release workflow.
+- Add here more TODOs for command replacement of old rew filters.
+
+1.0
 - Setup man generator.
-- Add TODOs for command replacement of old rew filters.
