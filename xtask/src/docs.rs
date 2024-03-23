@@ -19,8 +19,8 @@ pub fn generate_summary(command: &Adapter<'_>, path: &Path) -> Result<()> {
 
     file.read_to_string(&mut content)?;
 
-    let start_marker = "<!--[GENERATED_CONTENT_START]-->";
-    let end_marker = "<!--[GENERATED_CONTENT_END]-->";
+    let start_marker = "<!--[GENERATED_REFERENCE_START]-->";
+    let end_marker = "<!--[GENERATED_REFERENCE_END]-->";
 
     let start_pos = match content.find(start_marker) {
         Some(pos) => pos + start_marker.len(),

@@ -2,14 +2,14 @@
 @default:
     just --list --unsorted
 
-# Development workflow (format, build, clippy, test, docs)
-dev: format build clippy test docs
+# Development workflow (format, build, clippy, test, docs, shellcheck)
+dev: format build clippy test docs shellcheck
 
 # Docs development workflow
 dev-docs:
     #!/usr/bin/env -S sh -eux
     mdbook serve --open &
-    cargo watch ---ignore docs -- just docs &
+    cargo watch --ignore '*.{md,css,sh,txt}' -- just docs &
     trap 'kill $(jobs -pr)' EXIT
     wait
 
@@ -51,9 +51,17 @@ test:
 docs:
     cargo run --package xtask -- docs
 
+# Run benchmarks
+bench *ARGS:
+    ./benches/run.sh {{ARGS}}
+
 # Run fuzzer
 fuzz:
     cargo +nightly fuzz run --jobs {{num_cpus()}} pattern
+
+# Run shellcheck on scripts
+shellcheck:
+    shellcheck -xa benches/*.sh benches/commands/*.sh
 
 # Generate code coverage
 coverage format:

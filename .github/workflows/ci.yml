@@ -89,3 +89,18 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
           verbose: true
+
+  shellcheck:
+    name: Shellcheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Install development tools
+        uses: taiki-e/install-action@v2
+        with:
+          tool: just
+
+      - name: Run shellcheck
+        run: just shellcheck
