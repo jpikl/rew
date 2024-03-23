@@ -81,6 +81,7 @@ pages:
 pages-deploy:
     mdbook build
     rm -rf '{{pages-temp-dir}}'
+    git fetch origin '{{pages-branch}}'
     git worktree prune
     git worktree add '{{pages-temp-dir}}' '{{pages-branch}}'
     cp -rp pages/* '{{pages-temp-dir}}'
