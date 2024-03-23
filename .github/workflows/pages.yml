@@ -22,4 +22,7 @@ jobs:
           tool: just,mdbook
 
       - name: Deploy pages
-        run: just pages-deploy
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "nobody@example.com"
+          just pages-deploy
