@@ -1,6 +1,5 @@
 0.4
 - Run integration tests using multiple shells.
-- `rew x --null` example with propagation.
 - Better shell specific examples for `rew x`.
 - Add `rew x --quote` with examples.
 - Fix `--examples` order in generated docs.
@@ -14,4 +13,5 @@
 - Add here more TODOs for command replacement of old rew filters.
 
 1.0
+- Add `case` conversion command based on https://docs.rs/heck/latest/heck/
 - Setup man generator.

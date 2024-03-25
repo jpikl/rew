@@ -409,3 +409,24 @@ rew x '{seq}:\n\t{}'
 </ul>
 </div>
 </div>
+
+All global options `-0, --null`, `--buf-size` and `--buf-mode` are propagated to rew subcommands. Do not forget configure NUL separator manually for any external commands.
+
+```sh
+rew x --null '{upper | sed --null-data "s/^.//g"}'
+```
+
+<div class="example-io">
+<div class="example-io-stream">
+<small><b>stdin:</b></small>
+<ul>
+<li><code>aa\0bb\0cc\0</code></li>
+</ul>
+</div>
+<div class="example-io-stream">
+<small><b>stdout:</b></small>
+<ul>
+<li><code>A\0B\0C\0</code></li>
+</ul>
+</div>
+</div>

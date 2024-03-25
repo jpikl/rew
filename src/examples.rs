@@ -29,6 +29,12 @@ pub struct Example {
     pub output: &'static [&'static str],
 }
 
+impl Example {
+    pub fn has_null_arg(&self) -> bool {
+        self.args.iter().any(|arg| *arg == "-0" || *arg == "--null")
+    }
+}
+
 #[macro_export]
 macro_rules! examples {
     ($($text:literal: { args: $args:expr, input: $input:expr, output: $output:expr, }),*,) => {
@@ -102,9 +108,10 @@ fn write(writer: &mut impl Write, command: &str, examples: &[Example]) -> Result
         write_text(writer, example.text, term_width)?;
         writeln!(writer)?;
         write_command(writer, command, example.args)?;
-        write_io(writer, example.input, example.output)?;
+        write_io(writer, example)?;
     }
 
+    writeln!(writer)?;
     Ok(())
 }
 
@@ -163,13 +170,14 @@ fn write_command(writer: &mut impl Write, subcmd: &str, args: &[&str]) -> io::Re
     writeln!(writer, " {GREEN}╰{}╯{RESET}", "─".repeat(width))
 }
 
-fn write_io(writer: &mut impl Write, input: &[&str], output: &[&str]) -> io::Result<()> {
-    if input.is_empty() && output.is_empty() {
+fn write_io(writer: &mut impl Write, example: &Example) -> io::Result<()> {
+    if example.input.is_empty() && example.output.is_empty() {
         return Ok(());
     }
 
-    let input = normalize_lines(input);
-    let output = normalize_lines(output);
+    let null_separator = example.has_null_arg();
+    let input = normalize_lines(example.input, null_separator);
+    let output = normalize_lines(example.output, null_separator);
 
     let input_label = "stdin:";
     let output_label = "stdout:";
@@ -211,11 +219,17 @@ fn write_io_line(writer: &mut impl Write, lines: &[String], index: usize) -> io:
     write!(writer, " ")?;
 
     if let Some(line) = lines.get(index) {
-        write!(writer, "{GREEN}\"{RESET}{line}{GREEN}\"{RESET}{RESET}",)?;
-        writer.write_all(" ".repeat(max_line_width(lines) - line.width()).as_bytes())
-    } else {
-        write!(writer, "{}", " ".repeat(max_line_width(lines) + 2))
+        let line = line.replace("\\0", &format!("{YELLOW}\\0{RESET}"));
+        write!(writer, "{GREEN}\"{RESET}{line}{GREEN}\"{RESET}{RESET}")?;
     }
+
+    let padding = if let Some(line) = lines.get(index) {
+        max_line_width(lines) - line.width()
+    } else {
+        max_line_width(lines) + 2
+    };
+
+    write!(writer, "{}", " ".repeat(padding))
 }
 
 fn normalize_args(args: &[&str]) -> Vec<String> {
@@ -232,11 +246,17 @@ fn normalize_args(args: &[&str]) -> Vec<String> {
         .collect::<Vec<_>>()
 }
 
-fn normalize_lines(lines: &[&str]) -> Vec<String> {
-    lines
+fn normalize_lines(lines: &[&str], null_separator: bool) -> Vec<String> {
+    let lines = lines
         .iter()
         .map(|line| line.replace('\t', "    "))
-        .collect::<Vec<_>>()
+        .collect::<Vec<_>>();
+
+    if null_separator {
+        vec![format!("{}\\0", lines.join("\\0"))]
+    } else {
+        lines
+    }
 }
 
 fn max_line_width(lines: &[String]) -> usize {

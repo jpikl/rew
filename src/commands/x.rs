@@ -127,6 +127,12 @@ pub const META: Meta = command_meta! {
             input: &["first", "second", "third"],
             output: &["1:", "\tfirst", "2:", "\tsecond", "3:", "\tthird"],
         },
+        "All global options `-0, --null`, `--buf-size` and `--buf-mode` are propagated to rew subcommands. \
+         Do not forget configure NUL separator manually for any external commands.": {
+            args: &["--null", "{upper | sed --null-data 's/^.//g'}"],
+            input: &["aa", "bb", "cc"],
+            output: &["A", "B", "C"],
+        },
     ],
 };
 
