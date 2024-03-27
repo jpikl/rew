@@ -76,16 +76,16 @@ jobs:
       - name: Install development tools
         uses: taiki-e/install-action@v2
         with:
-          tool: just,cargo-tarpaulin
+          tool: just,nextest,cargo-llvm-cov
 
-      - name: Run coverage
-        run: just coverage xml
+      - name: Generate coverage
+        run: just coverage-codecov
 
       - name: Upload coverage
         if: ${{ github.event_name == 'push' }}
         uses: codecov/codecov-action@v4
         with:
-          file: ./cobertura.xml
+          file: codecov.json
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
           verbose: true

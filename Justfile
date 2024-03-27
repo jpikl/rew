@@ -1,3 +1,6 @@
+# Nextest common configuration
+export NEXTEST_STATUS_LEVEL := "leak"
+
 # TODO: Change to 'gh-pages' before the next release.
 pages-branch := "gh-pages-dev"
 pages-temp-dir := "/tmp/rew/pages"
@@ -41,21 +44,19 @@ clippy:
 
 # Run tests
 test:
-    cargo nextest run --status-level leak --no-fail-fast
+    cargo nextest run --no-fail-fast
 
-# Generate code coverage
-coverage format:
-    cargo tarpaulin \
-        --engine llvm \
-        --exclude-files 'tests/*' \
-        --exclude-files 'fuzz/*' \
-        --exclude-files 'xtask/*' \
-        --out {{format}}
+# Generate code coverage as HTML (and open it)
+coverage:
+    cargo llvm-cov nextest --json | llvm-cov-pretty --open
 
-# Preview code coverage as HTML
-coverage-preview:
-    just coverage html
-    xdg-open tarpaulin-report.html
+# Generate code coverage as LCOV
+coverage-lcov:
+    cargo llvm-cov nextest --lcov --output-path lcov.info
+
+# Generate code coverage as Codecov JSON
+coverage-codecov:
+    cargo llvm-cov nextest --codecov --output-path codecov.json
 
 # Run fuzzer
 fuzz:
@@ -96,7 +97,7 @@ shellcheck:
 # Clean generated files
 clean:
     cargo clean
-    rm -rf book cobertura.xml tarpaulin-report.html
+    rm -rf book lcov.info codecov.json
 
 # Set up development environment
 [confirm("This might break your environment!\nRun `just --show setup` first to check what it does.\nContinue? [y/n]:")]
@@ -104,9 +105,10 @@ setup:
     rustup self update
     rustup install stable
     rustup install nightly
+    rustup component add llvm-tools
     if [ ! -x "$(command -v cargo-binstall)" ]; then \
         curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash; \
     else \
         cargo binstall cargo-binstall; \
     fi
-    cargo binstall cargo-fuzz cargo-nextest cargo-tarpaulin cargo-watch mdbook
+    cargo binstall cargo-fuzz cargo-llvm-cov cargo-nextest cargo-watch llvm-cov-pretty mdbook

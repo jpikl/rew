@@ -4,8 +4,8 @@
 /target
 
 # Coverage output
-tarpaulin-report.html
-cobertura.xml
+lcov.info
+codecov.json
 
 # Benchmark inputs
 svejk.txt
