@@ -5,10 +5,9 @@ use assert_cmd::Command;
 use rew::shell::Shell;
 use std::env;
 use std::process;
-use std::sync::mpsc;
-use std::sync::mpsc::RecvTimeoutError;
-use std::thread;
 use std::time::Duration;
+
+pub const TIMEOUT: Duration = Duration::from_secs(5);
 
 #[macro_export]
 macro_rules! command_test {
@@ -22,45 +21,41 @@ macro_rules! command_test {
 #[macro_export]
 macro_rules! command_test_case {
     ($ident:ident, $name:literal, cmd $($arg:literal)* assert $stdin:expr => $stdout:expr) => {
-        #[test]
+        #[rstest::rstest]
+        #[timeout($crate::utils::TIMEOUT)]
         fn $ident() {
-            $crate::utils::with_timeout(|| {
-                $crate::utils::assert_command($name, &[$($arg,)*], $stdin)
+            $crate::utils::assert_command($name, &[$($arg,)*], $stdin)
                 .success()
                 .stdout($stdout)
                 .stderr("");
-            });
         }
     };
     ($ident:ident, $name:literal, cmd $($arg:literal)* assert $stdin:expr => err $stderr:expr) => {
-        #[test]
+        #[rstest::rstest]
+        #[timeout($crate::utils::TIMEOUT)]
         fn $ident() {
-            $crate::utils::with_timeout(|| {
-                $crate::utils::assert_command($name, &[$($arg,)*], $stdin)
-                    .failure()
-                    .stderr($crate::utils::expand_err($name, $stderr));
-            });
+            $crate::utils::assert_command($name, &[$($arg,)*], $stdin)
+                .failure()
+                .stderr($crate::utils::expand_err($name, $stderr));
         }
     };
     ($ident:ident, $name:literal, sh $template:literal assert $stdin:expr => $stdout:expr) => {
-        #[test]
+        #[rstest::rstest]
+        #[timeout($crate::utils::TIMEOUT)]
         fn $ident() {
-            $crate::utils::with_timeout(|| {
-              $crate::utils::assert_shell($template, $name, $stdin)
-                    .success()
-                    .stdout($stdout)
-                    .stderr("");
-            });
+            $crate::utils::assert_shell($template, $name, $stdin)
+                .success()
+                .stdout($stdout)
+                .stderr("");
         }
     };
     ($ident:ident, $name:literal, sh $template:literal assert $stdin:expr => err $stderr:expr) => {
-        #[test]
+        #[rstest::rstest]
+        #[timeout($crate::utils::TIMEOUT)]
         fn $ident() {
-            $crate::utils::with_timeout(|| {
-                $crate::utils::assert_shell($template, $name, $stdin)
-                    .failure()
-                    .stderr($crate::utils::expand_err($name, $stderr));
-            });
+            $crate::utils::assert_shell($template, $name, $stdin)
+                .failure()
+                .stderr($crate::utils::expand_err($name, $stderr));
         }
     };
 }
@@ -100,25 +95,4 @@ fn get_bin() -> String {
         .get_program()
         .to_string_lossy()
         .to_string()
-}
-
-// Inspired by `ntest::timeout`
-// We cannot use `assert_cmd` timeouts because of https://github.com/assert-rs/assert_cmd/issues/167
-// We could use `ntest::timeout` directly but it breaks test detection with VSCode and rust-analyzer
-pub fn with_timeout(test: fn()) {
-    let timeout = Duration::from_secs(5);
-    let (sender, receiver) = mpsc::channel();
-
-    thread::spawn(move || {
-        test();
-        sender.send(()).expect("Could send to test receiver");
-    });
-
-    match receiver.recv_timeout(timeout) {
-        Ok(()) => {}
-        Err(RecvTimeoutError::Disconnected) => panic!(""), // Code inside the thread panicked
-        Err(RecvTimeoutError::Timeout) => {
-            panic!("Test run longer then allowed {} ms", timeout.as_millis())
-        }
-    }
 }
