@@ -40,20 +40,43 @@ macro_rules! command_test_case {
         }
     };
     ($ident:ident, $name:literal, sh $template:literal assert $stdin:expr => $stdout:expr) => {
-        #[rstest::rstest]
-        #[timeout($crate::utils::TIMEOUT)]
-        fn $ident() {
-            $crate::utils::assert_shell($template, $name, $stdin)
-                .success()
-                .stdout($stdout)
-                .stderr("");
+        mod $ident {
+            #[rstest::rstest]
+            #[timeout($crate::utils::TIMEOUT)]
+            fn sh() {
+                $crate::utils::assert_shell("sh", $template, $name, $stdin)
+                    .success()
+                    .stdout($stdout)
+                    .stderr("");
+            }
+
+            #[cfg(target_os = "windows")]
+            #[rstest::rstest]
+            #[timeout($crate::utils::TIMEOUT)]
+            fn cmd() {
+                $crate::utils::assert_shell("cmd", $template, $name, $stdin)
+                    .success()
+                    .stdout($stdout)
+                    .stderr("");
+            }
+
+            // We do not test powershell because it normalizes newlines to CRLF which breaks test assertions
         }
     };
     ($ident:ident, $name:literal, sh $template:literal assert $stdin:expr => err $stderr:expr) => {
         #[rstest::rstest]
         #[timeout($crate::utils::TIMEOUT)]
         fn $ident() {
-            $crate::utils::assert_shell($template, $name, $stdin)
+            $crate::utils::assert_shell("sh", $template, $name, $stdin)
+                .failure()
+                .stderr($crate::utils::expand_err($name, $stderr));
+        }
+
+        #[cfg(target_os = "windows")]
+        #[rstest::rstest]
+        #[timeout($crate::utils::TIMEOUT)]
+        fn $ident() {
+            $crate::utils::assert_shell("cmd", $template, $name, $stdin)
                 .failure()
                 .stderr($crate::utils::expand_err($name, $stderr));
         }
@@ -69,8 +92,8 @@ pub fn assert_command(name: &str, args: &[&str], stdin: impl Into<Vec<u8>>) -> A
         .assert()
 }
 
-pub fn assert_shell(template: &str, cmd: &str, stdin: impl Into<Vec<u8>>) -> Assert {
-    let sh = env::var("SHELL").map(Shell::new).unwrap_or_default();
+pub fn assert_shell(sh: &str, template: &str, cmd: &str, stdin: impl Into<Vec<u8>>) -> Assert {
+    let sh = Shell::new(sh);
     let sh_kind = sh.kind();
 
     let bin = get_bin();

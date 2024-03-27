@@ -1,5 +1,4 @@
 0.4
-- Run integration tests using multiple shells.
 - Better shell specific examples for `rew x`.
 - Add `rew x --quote` with examples.
 - Fix `--examples` order in generated docs.
