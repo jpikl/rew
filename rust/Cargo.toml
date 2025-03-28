@@ -1,0 +1,21 @@
+[package]
+name = "rust"
+version = "0.1.0"
+edition = "2021"
+
+
+[dependencies]
+anyhow = "1.0.86"
+bstr = "1.10.0"
+memchr = "2.7.4"
+derive_more = { version = "1.0.0", features = [
+    "display",
+    "error",
+    "is_variant",
+] }
+
+[profile.release]
+codegen-units = 1
+panic = "abort"
+strip = true
+lto = true

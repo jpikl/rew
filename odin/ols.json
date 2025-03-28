@@ -1,0 +1,4 @@
+{
+    "$schema": "https://raw.githubusercontent.com/DanielGavin/ols/master/misc/ols.schema.json",
+    "checker_args": "-vet -strict-style"
+}
