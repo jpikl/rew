@@ -4,6 +4,8 @@ version = "1.0.0"
 edition = "2024"
 
 [dependencies]
+bstr = "1.11.3"
+memchr = "2.7.4"
 
 [profile.release]
 codegen-units = 1
@@ -14,3 +16,7 @@ lto = true
 [lints.clippy]
 all = { level = "deny", priority = -1 }
 pedantic = { level = "deny", priority = -1 }
+
+[dev-dependencies]
+claims = "0.8.0"
+rstest = "0.25.0"
