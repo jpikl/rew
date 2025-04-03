@@ -1,37 +1,27 @@
 mod cli;
+mod commands;
+mod global;
 mod io;
+mod run;
 
-use cli::Args;
 use cli::Command;
 use cli::CommandBuilder;
 use cli::HELP;
 use cli::VERSION;
-use io::LineReader;
+use commands::cat::CAT;
+use global::BUF_MODE;
+use global::BUF_SIZE;
+use global::NULL;
 
 const REW: Command = CommandBuilder::new()
-    .name("linecount")
-    .description("Count lines and bytes in a file")
-    .version("1.0.0")
-    .options(&[HELP.arg, VERSION.arg])
-    .run(run)
+    .name(env!("CARGO_PKG_NAME"))
+    .description(env!("CARGO_PKG_DESCRIPTION"))
+    .version(env!("CARGO_PKG_VERSION"))
+    .options(&[HELP.arg, VERSION.arg, NULL.arg, BUF_SIZE.arg, BUF_MODE.arg])
+    .commands(&[CAT])
     .done();
 
-fn run(_: Args) -> anyhow::Result<()> {
-    let mut reader = LineReader::new(std::io::stdin(), io::Separator::Newline, 32 * 1024);
-    let mut lines = 0;
-    let mut bytes = 0;
-
-    while let Some(line) = reader.read_line()? {
-        lines += 1;
-        bytes += line.len();
-    }
-
-    println!("lines: {lines}");
-    println!("bytes: {bytes}");
-
-    Ok(())
-}
-
 fn main() -> anyhow::Result<()> {
-    REW.run(REW.parse_args()?)
+    let (command, args) = REW.parse_args()?;
+    command.run(args)
 }

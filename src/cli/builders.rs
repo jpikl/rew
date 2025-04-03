@@ -1,8 +1,13 @@
+use super::ARGUMENTS;
+use super::COMMANDS;
+use super::Enum;
+use super::EnumItem;
+use super::OPTIONS;
+use super::ParseOsArg;
 use super::args::Args;
-use super::args::ParseArg;
 use super::args::TypedArg;
 use super::types::Command;
-use super::types::CommandGroup;
+use super::types::Group;
 use super::types::OptArg;
 use super::types::OptKind;
 use super::types::PosArg;
@@ -11,8 +16,9 @@ use std::marker::PhantomData;
 pub struct CommandBuilder {
     name: &'static str,
     description: &'static str,
+    description_ex: &'static [&'static str],
     version: &'static str,
-    group: Option<&'static CommandGroup>,
+    group: &'static Group,
     options: &'static [OptArg],
     positionals: &'static [PosArg],
     commands: &'static [Command],
@@ -24,8 +30,9 @@ impl CommandBuilder {
         Self {
             name: "",
             description: "",
+            description_ex: &[],
             version: "",
-            group: None,
+            group: &COMMANDS,
             options: &[],
             positionals: &[],
             commands: &[],
@@ -43,13 +50,18 @@ impl CommandBuilder {
         self
     }
 
+    pub const fn description_ex(mut self, description_ex: &'static [&'static str]) -> Self {
+        self.description_ex = description_ex;
+        self
+    }
+
     pub const fn version(mut self, version: &'static str) -> Self {
         self.version = version;
         self
     }
 
-    pub const fn group(mut self, group: &'static CommandGroup) -> Self {
-        self.group = Some(group);
+    pub const fn group(mut self, group: &'static Group) -> Self {
+        self.group = group;
         self
     }
 
@@ -77,6 +89,7 @@ impl CommandBuilder {
         Command {
             name: self.name,
             description: self.description,
+            description_ex: self.description_ex,
             version: self.version,
             group: self.group,
             options: self.options,
@@ -88,19 +101,27 @@ impl CommandBuilder {
 }
 
 pub struct FlagBuilder {
+    id: &'static str,
     short: char,
     long: &'static str,
     description: &'static str,
+    description_ex: &'static [&'static str],
+    group: &'static Group,
     environment: Option<&'static str>,
+    enum_items: &'static [EnumItem],
 }
 
 impl FlagBuilder {
-    pub const fn new() -> Self {
+    pub const fn new(id: &'static str) -> Self {
         Self {
+            id,
             short: '\0',
             long: "",
             description: "",
+            description_ex: &[],
+            group: &OPTIONS,
             environment: None,
+            enum_items: &[],
         }
     }
 
@@ -119,6 +140,16 @@ impl FlagBuilder {
         self
     }
 
+    pub const fn description_ex(mut self, description_ex: &'static [&'static str]) -> Self {
+        self.description_ex = description_ex;
+        self
+    }
+
+    pub const fn group(mut self, group: &'static Group) -> Self {
+        self.group = group;
+        self
+    }
+
     pub const fn environment(mut self, environment: &'static str) -> Self {
         self.environment = Some(environment);
         self
@@ -126,33 +157,45 @@ impl FlagBuilder {
 
     pub const fn done(self) -> TypedArg<OptArg, bool> {
         TypedArg::new(OptArg {
+            id: self.id,
             short: self.short,
             long: self.long,
             description: self.description,
+            description_ex: self.description_ex,
+            group: self.group,
             environment: self.environment,
+            enum_items: self.enum_items,
             kind: OptKind::Flag,
         })
     }
 }
 
 pub struct OptBuilder<Type> {
+    id: &'static str,
     short: char,
     long: &'static str,
     value_name: &'static str,
     description: &'static str,
+    description_ex: &'static [&'static str],
+    group: &'static Group,
     environment: Option<&'static str>,
+    enum_items: &'static [EnumItem],
     default: Option<&'static str>,
     _type: PhantomData<Type>,
 }
 
-impl<Type: ParseArg + 'static> OptBuilder<Type> {
-    pub const fn new() -> Self {
+impl<Type: ParseOsArg + 'static> OptBuilder<Type> {
+    pub const fn new(id: &'static str) -> Self {
         Self {
+            id,
             short: '\0',
             long: "",
             value_name: "",
             description: "",
+            description_ex: &[],
+            group: &OPTIONS,
             environment: None,
+            enum_items: &[],
             default: None,
             _type: PhantomData,
         }
@@ -178,6 +221,16 @@ impl<Type: ParseArg + 'static> OptBuilder<Type> {
         self
     }
 
+    pub const fn description_ex(mut self, description_ex: &'static [&'static str]) -> Self {
+        self.description_ex = description_ex;
+        self
+    }
+
+    pub const fn group(mut self, group: &'static Group) -> Self {
+        self.group = group;
+        self
+    }
+
     pub const fn environment(mut self, environment: &'static str) -> Self {
         self.environment = Some(environment);
         self
@@ -190,34 +243,46 @@ impl<Type: ParseArg + 'static> OptBuilder<Type> {
 
     pub const fn done(self) -> TypedArg<OptArg, Type> {
         TypedArg::new(OptArg {
+            id: self.id,
             short: self.short,
             long: self.long,
             description: self.description,
+            description_ex: self.description_ex,
+            group: self.group,
             environment: self.environment,
+            enum_items: self.enum_items,
             kind: OptKind::Value {
                 name: self.value_name,
                 default: self.default,
-                parse: Type::parse_arg,
+                parse: Type::parse_os_arg,
             },
         })
     }
 }
 
 pub struct PosBuilder<Type> {
+    id: &'static str,
     name: &'static str,
     required: bool,
     description: &'static str,
+    description_ex: &'static [&'static str],
+    group: &'static Group,
     environment: Option<&'static str>,
+    enum_items: &'static [EnumItem],
     _type: PhantomData<Type>,
 }
 
-impl<Type: ParseArg + 'static> PosBuilder<Type> {
-    pub const fn new() -> Self {
+impl<Type: ParseOsArg + 'static> PosBuilder<Type> {
+    pub const fn new(id: &'static str) -> Self {
         Self {
+            id,
             name: "",
             required: false,
             description: "",
+            description_ex: &[],
+            group: &ARGUMENTS,
             environment: None,
+            enum_items: &[],
             _type: PhantomData,
         }
     }
@@ -237,6 +302,16 @@ impl<Type: ParseArg + 'static> PosBuilder<Type> {
         self
     }
 
+    pub const fn description_ex(mut self, description_ex: &'static [&'static str]) -> Self {
+        self.description_ex = description_ex;
+        self
+    }
+
+    pub const fn group(mut self, group: &'static Group) -> Self {
+        self.group = group;
+        self
+    }
+
     pub const fn environment(mut self, environment: &'static str) -> Self {
         self.environment = Some(environment);
         self
@@ -244,11 +319,15 @@ impl<Type: ParseArg + 'static> PosBuilder<Type> {
 
     pub const fn done(self) -> TypedArg<PosArg, Type> {
         TypedArg::new(PosArg {
+            id: self.id,
             name: self.name,
             required: self.required,
             description: self.description,
+            description_ex: self.description_ex,
+            group: self.group,
             environment: self.environment,
-            parse: Type::parse_arg,
+            enum_items: self.enum_items,
+            parse: Type::parse_os_arg,
         })
     }
 }

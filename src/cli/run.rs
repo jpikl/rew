@@ -3,13 +3,13 @@ use super::builders::FlagBuilder;
 use super::types::Command;
 use super::types::Flag;
 
-pub const HELP: Flag = FlagBuilder::new()
+pub const HELP: Flag = FlagBuilder::new("help")
     .short('h')
     .long("help")
     .description("Print help (see more with '--help')")
     .done();
 
-pub const VERSION: Flag = FlagBuilder::new()
+pub const VERSION: Flag = FlagBuilder::new("version")
     .short('V')
     .long("version")
     .description("Print version")
