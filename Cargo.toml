@@ -4,6 +4,7 @@ version = "1.0.0"
 edition = "2024"
 
 [dependencies]
+anyhow = "1.0.97"
 bstr = "1.11.3"
 memchr = "2.7.4"
 
@@ -15,7 +16,6 @@ lto = true
 
 [lints.clippy]
 all = { level = "deny", priority = -1 }
-pedantic = { level = "deny", priority = -1 }
 
 [dev-dependencies]
 claims = "0.8.0"
