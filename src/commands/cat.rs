@@ -57,17 +57,19 @@ fn run(args: Args) -> anyhow::Result<()> {
 
     let context = Context::new(&args);
 
-    if bytes {
-        unimplemented!("bytes not implemented yet");
-    } else if chars {
-        unimplemented!("chars not implemented yet");
-    } else {
+    if lines {
         let mut reader = context.line_reader();
 
         while let Some(line) = reader.read_line()? {
             // TODO optimize write
             println!("{}", line.to_str_lossy());
         }
+    } else if chars {
+        unimplemented!("chars not implemented yet");
+    } else if bytes {
+        unimplemented!("bytes not implemented yet");
+    }  else {
+        unimplemented!("default mode implemented yet");
     }
 
     Ok(())
