@@ -18,8 +18,7 @@ const GLOBAL_OPTIONS: Group = Group {
 // Optimal value for max IO throughput, according to https://www.evanjones.ca/read-write-buffer-size.html
 // Also confirmed by some custom benchmarks.
 // Also used internally by the `linereader` library https://github.com/Freaky/rust-linereader.
-const DEFAULT_BUF_SIZE: usize = 32 * 1024;
-const DEFAULT_BUF_SIZE_STR: &str = "32K"; // Keep in sync with DEFAULT_BUF_SIZE
+const DEFAULT_BUF_SIZE: &str = "32K";
 
 pub const NULL: Flag = FlagBuilder::new("null")
     .short('0')
@@ -39,7 +38,7 @@ pub const BUF_SIZE: Opt<ByteSize> = OptBuilder::new("buf-size")
         "Some commands will abort execution if there is an input line above this limit.",
     ])
     .environment("REW_BUF_SIZE")
-    .default(DEFAULT_BUF_SIZE_STR)
+    .default(DEFAULT_BUF_SIZE)
     .group(&GLOBAL_OPTIONS)
     .done();
 
