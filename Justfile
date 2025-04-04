@@ -39,6 +39,10 @@ lint:
 test:
     cargo nextest run --no-fail-fast
 
+# Run mutants
+mutants *ARGS:
+    cargo mutants {{ARGS}}
+
 # Generate code coverage as HTML (and open it)
 coverage:
     cargo llvm-cov nextest --json | llvm-cov-pretty --open
@@ -51,5 +55,6 @@ clean:
 setup:
     cargo binstall --install-path=tools --no-confirm \
         cargo-llvm-cov@0.6.16 \
+        cargo-mutants@25.0.0 \
         cargo-nextest@0.9.93 \
         llvm-cov-pretty@0.1.10

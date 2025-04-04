@@ -1,2 +1,4 @@
 /target/
 /tools/
+/mutants.out/
+/mutants.out.old/
