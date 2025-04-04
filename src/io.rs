@@ -53,7 +53,7 @@ impl Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::BufferFull(len) => {
-                write!(f, "unable to fit input line into buffer ({len}B)")
+                write!(f, "Unable to fit input line into buffer ({len}B)")
             }
             Self::Io(err) => err.fmt(f),
         }
@@ -163,10 +163,29 @@ mod tests {
         assert_ok_eq!(reader.read_line(), None);
     }
 
+    #[rstest]
+    #[case("\n\n", Separator::Newline)]
+    #[case("\r\n\r\n", Separator::Newline)]
+    #[case("\0\0", Separator::Null)]
+    fn read_lines_empty(#[case] input: &str, #[case] separator: Separator) {
+        let mut reader = LineReader::new(B(input), separator, 8);
+        assert_ok_eq!(reader.read_line(), Some(B("")));
+        assert_ok_eq!(reader.read_line(), Some(B("")));
+        assert_ok_eq!(reader.read_line(), None);
+    }
+
+    #[rstest]
+    #[case("", Separator::Newline)]
+    #[case("", Separator::Null)]
+    fn read_lines_none(#[case] input: &str, #[case] separator: Separator) {
+        let mut reader = LineReader::new(B(input), separator, 8);
+        assert_ok_eq!(reader.read_line(), None);
+    }
+
     #[test]
     fn read_lines_err() {
         let mut reader = LineReader::new(B("abcdefgh"), Separator::Newline, 8);
         let err = assert_err!(reader.read_line());
-        assert_eq!(err.to_string(), "unable to fit input line into buffer (8B)");
+        assert_eq!(err.to_string(), "Unable to fit input line into buffer (8B)");
     }
 }
