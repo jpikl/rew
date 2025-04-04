@@ -50,6 +50,7 @@ coverage:
 # Clean generated files
 clean:
     cargo clean
+    rm -rf mutants.out mutants.out.old
 
 # Set up development environment
 setup:
