@@ -136,7 +136,7 @@ default_parse_arg!(f32);
 default_parse_arg!(f64);
 
 pub trait Enum {
-    fn enum_items() -> &'static [EnumItem];
+    const ENUM_ITEMS: &[EnumItem];
 }
 
 pub struct EnumItem {
@@ -148,9 +148,7 @@ pub struct EnumItem {
 macro_rules! impl_enum {
     ($type:path, {$($value:ident: {name: $name:literal, description: [$($description:literal),*,], }),*,}) => {
         impl $crate::cli::Enum for $type {
-            fn enum_items() -> &'static [EnumItem] {
-                &[$( EnumItem {name: $name, description: &[$($description),*]}, )*]
-            }
+            const ENUM_ITEMS: &[EnumItem] = &[$( EnumItem {name: $name, description: &[$($description),*]}, )*];
         }
 
         impl std::fmt::Display for $type {

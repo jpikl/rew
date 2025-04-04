@@ -42,7 +42,7 @@ pub const BUF_SIZE: Opt<ByteSize> = OptBuilder::new("buf-size")
     .group(&GLOBAL_OPTIONS)
     .done();
 
-pub const BUF_MODE: Opt<BufMode> = OptBuilder::new("buf-mode")
+pub const BUF_MODE: Opt<BufMode> = OptBuilder::new_enum("buf-mode")
     .long("buf-mode")
     .description("Output buffering mode.")
     .environment("REW_BUF_MODE")

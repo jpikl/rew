@@ -68,7 +68,7 @@ fn run(args: Args) -> anyhow::Result<()> {
         unimplemented!("chars not implemented yet");
     } else if bytes {
         unimplemented!("bytes not implemented yet");
-    }  else {
+    } else {
         unimplemented!("default mode implemented yet");
     }
 

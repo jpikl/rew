@@ -108,7 +108,6 @@ pub struct FlagBuilder {
     description_ex: &'static [&'static str],
     group: &'static Group,
     environment: Option<&'static str>,
-    enum_items: &'static [EnumItem],
 }
 
 impl FlagBuilder {
@@ -121,7 +120,6 @@ impl FlagBuilder {
             description_ex: &[],
             group: &OPTIONS,
             environment: None,
-            enum_items: &[],
         }
     }
 
@@ -164,13 +162,13 @@ impl FlagBuilder {
             description_ex: self.description_ex,
             group: self.group,
             environment: self.environment,
-            enum_items: self.enum_items,
+            enum_items: &[],
             kind: OptKind::Flag,
         })
     }
 }
 
-pub struct OptBuilder<Type> {
+pub struct OptBuilder<T> {
     id: &'static str,
     short: char,
     long: &'static str,
@@ -181,11 +179,21 @@ pub struct OptBuilder<Type> {
     environment: Option<&'static str>,
     enum_items: &'static [EnumItem],
     default: Option<&'static str>,
-    _type: PhantomData<Type>,
+    _type: PhantomData<T>,
 }
 
-impl<Type: ParseOsArg + 'static> OptBuilder<Type> {
+impl<T: ParseOsArg + Enum + 'static> OptBuilder<T> {
+    pub const fn new_enum(id: &'static str) -> Self {
+        Self::new_with_enum_items(id, T::ENUM_ITEMS)
+    }
+}
+
+impl<T: ParseOsArg + 'static> OptBuilder<T> {
     pub const fn new(id: &'static str) -> Self {
+        Self::new_with_enum_items(id, &[])
+    }
+
+    const fn new_with_enum_items(id: &'static str, enum_items: &'static [EnumItem]) -> Self {
         Self {
             id,
             short: '\0',
@@ -195,7 +203,7 @@ impl<Type: ParseOsArg + 'static> OptBuilder<Type> {
             description_ex: &[],
             group: &OPTIONS,
             environment: None,
-            enum_items: &[],
+            enum_items,
             default: None,
             _type: PhantomData,
         }
@@ -241,7 +249,7 @@ impl<Type: ParseOsArg + 'static> OptBuilder<Type> {
         self
     }
 
-    pub const fn done(self) -> TypedArg<OptArg, Type> {
+    pub const fn done(self) -> TypedArg<OptArg, T> {
         TypedArg::new(OptArg {
             id: self.id,
             short: self.short,
@@ -254,13 +262,13 @@ impl<Type: ParseOsArg + 'static> OptBuilder<Type> {
             kind: OptKind::Value {
                 name: self.value_name,
                 default: self.default,
-                parse: Type::parse_os_arg,
+                parse: T::parse_os_arg,
             },
         })
     }
 }
 
-pub struct PosBuilder<Type> {
+pub struct PosBuilder<T> {
     id: &'static str,
     name: &'static str,
     required: bool,
@@ -269,10 +277,10 @@ pub struct PosBuilder<Type> {
     group: &'static Group,
     environment: Option<&'static str>,
     enum_items: &'static [EnumItem],
-    _type: PhantomData<Type>,
+    _type: PhantomData<T>,
 }
 
-impl<Type: ParseOsArg + 'static> PosBuilder<Type> {
+impl<T: ParseOsArg + 'static> PosBuilder<T> {
     pub const fn new(id: &'static str) -> Self {
         Self {
             id,
@@ -317,7 +325,7 @@ impl<Type: ParseOsArg + 'static> PosBuilder<Type> {
         self
     }
 
-    pub const fn done(self) -> TypedArg<PosArg, Type> {
+    pub const fn done(self) -> TypedArg<PosArg, T> {
         TypedArg::new(PosArg {
             id: self.id,
             name: self.name,
@@ -327,7 +335,7 @@ impl<Type: ParseOsArg + 'static> PosBuilder<Type> {
             group: self.group,
             environment: self.environment,
             enum_items: self.enum_items,
-            parse: Type::parse_os_arg,
+            parse: T::parse_os_arg,
         })
     }
 }
