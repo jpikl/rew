@@ -97,7 +97,7 @@ impl_enum! (BufMode, {
     Line: {
         name: "line",
         description: [
-            "Writes to stdout after a line was processed or when the output buffer is full.",
+            "Writes to stdout after a line is processed or when the output buffer is full.",
             "Enabled by default when stdout is TTY (for interactive usage).",
         ],
     },

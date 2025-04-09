@@ -5,8 +5,6 @@ use std::ffi::OsStr;
 use std::ffi::OsString;
 use std::fmt::Display;
 use std::marker::PhantomData;
-use std::os::unix::ffi::OsStrExt;
-use std::str::FromStr;
 
 pub trait Arg {
     fn id(&self) -> &str;
@@ -47,7 +45,7 @@ impl Args {
         self.values.insert(arg.id().to_owned(), value);
     }
 
-    pub fn get<A: Arg, T: ParseArg + Default + Clone + 'static>(&self, arg: &TypedArg<A, T>) -> T {
+    pub fn get<A: Arg, T: Default + Clone + 'static>(&self, arg: &TypedArg<A, T>) -> T {
         match self.values.get(arg.arg.id()) {
             Some(value) => value
                 .downcast_ref::<T>()
@@ -57,10 +55,7 @@ impl Args {
         }
     }
 
-    pub fn get_owned<A: Arg, T: ParseArg + Default + 'static>(
-        &mut self,
-        arg: &TypedArg<A, T>,
-    ) -> T {
+    pub fn get_owned<A: Arg, T: Default + 'static>(&mut self, arg: &TypedArg<A, T>) -> T {
         match self.values.remove(arg.arg.id()) {
             Some(value) => *value.downcast::<T>().expect("mismatched arg type"),
             None => T::default(),
@@ -70,7 +65,6 @@ impl Args {
 
 pub type ParseArgResult = Result<Box<dyn Any>, String>;
 pub type ParseOsArgFn = fn(Cow<OsStr>) -> ParseArgResult;
-pub type ParseArgFn = fn(Cow<str>) -> ParseArgResult;
 
 pub trait ParseArg {
     fn parse_arg(raw_value: Cow<str>) -> ParseArgResult;
@@ -79,25 +73,6 @@ pub trait ParseArg {
 pub trait ParseOsArg {
     fn parse_os_arg(raw_value: Cow<OsStr>) -> ParseArgResult;
 }
-
-pub trait DefaultParseArg {}
-
-impl DefaultParseArg for bool {}
-impl DefaultParseArg for char {}
-impl DefaultParseArg for i8 {}
-impl DefaultParseArg for i16 {}
-impl DefaultParseArg for i32 {}
-impl DefaultParseArg for i64 {}
-impl DefaultParseArg for i128 {}
-impl DefaultParseArg for isize {}
-impl DefaultParseArg for u8 {}
-impl DefaultParseArg for u16 {}
-impl DefaultParseArg for u32 {}
-impl DefaultParseArg for u64 {}
-impl DefaultParseArg for u128 {}
-impl DefaultParseArg for usize {}
-impl DefaultParseArg for f32 {}
-impl DefaultParseArg for f64 {}
 
 impl ParseOsArg for OsString {
     fn parse_os_arg(raw_value: Cow<OsStr>) -> ParseArgResult {
@@ -129,22 +104,44 @@ impl<A: ParseArg> ParseOsArg for A {
     }
 }
 
-impl<T: FromStr<Err = impl Display> + DefaultParseArg + 'static> ParseArg for T {
-    fn parse_arg(raw_value: Cow<str>) -> ParseArgResult {
-        match raw_value.parse::<T>() {
-            Ok(value) => Ok(Box::new(value)),
-            Err(err) => Err(err.to_string()),
+#[macro_export]
+macro_rules! default_parse_arg {
+    ($type:path) => {
+        impl $crate::cli::ParseArg for $type {
+            fn parse_arg(raw_value: std::borrow::Cow<str>) -> $crate::cli::ParseArgResult {
+                match raw_value.parse::<$type>() {
+                    Ok(value) => Ok(Box::new(value)),
+                    Err(err) => Err(err.to_string()),
+                }
+            }
         }
-    }
+    };
+}
+
+default_parse_arg!(bool);
+default_parse_arg!(char);
+default_parse_arg!(i8);
+default_parse_arg!(i16);
+default_parse_arg!(i32);
+default_parse_arg!(i64);
+default_parse_arg!(i128);
+default_parse_arg!(isize);
+default_parse_arg!(u8);
+default_parse_arg!(u16);
+default_parse_arg!(u32);
+default_parse_arg!(u64);
+default_parse_arg!(u128);
+default_parse_arg!(usize);
+default_parse_arg!(f32);
+default_parse_arg!(f64);
+
+pub trait Enum {
+    fn enum_items() -> &'static [EnumItem];
 }
 
 pub struct EnumItem {
     pub name: &'static str,
     pub description: &'static [&'static str],
-}
-
-pub trait Enum {
-    fn enum_items() -> &'static [EnumItem];
 }
 
 #[macro_export]
