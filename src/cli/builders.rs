@@ -1,4 +1,5 @@
 use super::ARGUMENTS;
+use super::ArgValue;
 use super::COMMANDS;
 use super::Enum;
 use super::EnumItem;
@@ -9,7 +10,7 @@ use super::args::TypedArg;
 use super::types::Command;
 use super::types::Group;
 use super::types::OptArg;
-use super::types::OptKind;
+use super::types::OptArgKind;
 use super::types::PosArg;
 use std::marker::PhantomData;
 
@@ -162,8 +163,7 @@ impl FlagBuilder {
             description_ex: self.description_ex,
             group: self.group,
             environment: self.environment,
-            enum_items: &[],
-            kind: OptKind::Flag,
+            kind: OptArgKind::Flag,
         })
     }
 }
@@ -258,12 +258,12 @@ impl<T: ParseOsArg + 'static> OptBuilder<T> {
             description_ex: self.description_ex,
             group: self.group,
             environment: self.environment,
-            enum_items: self.enum_items,
-            kind: OptKind::Value {
+            kind: OptArgKind::Value(ArgValue {
                 name: self.value_name,
                 default: self.default,
+                enum_items: self.enum_items,
                 parse: T::parse_os_arg,
-            },
+            }),
         })
     }
 }
@@ -277,6 +277,7 @@ pub struct PosBuilder<T> {
     group: &'static Group,
     environment: Option<&'static str>,
     enum_items: &'static [EnumItem],
+    default: Option<&'static str>,
     _type: PhantomData<T>,
 }
 
@@ -291,6 +292,7 @@ impl<T: ParseOsArg + 'static> PosBuilder<T> {
             group: &ARGUMENTS,
             environment: None,
             enum_items: &[],
+            default: None,
             _type: PhantomData,
         }
     }
@@ -325,17 +327,24 @@ impl<T: ParseOsArg + 'static> PosBuilder<T> {
         self
     }
 
+    pub const fn default(mut self, default: &'static str) -> Self {
+        self.default = Some(default);
+        self
+    }
+
     pub const fn done(self) -> TypedArg<PosArg, T> {
         TypedArg::new(PosArg {
             id: self.id,
-            name: self.name,
-            required: self.required,
             description: self.description,
             description_ex: self.description_ex,
             group: self.group,
             environment: self.environment,
-            enum_items: self.enum_items,
-            parse: T::parse_os_arg,
+            value: ArgValue {
+                name: self.name,
+                default: None,
+                enum_items: self.enum_items,
+                parse: T::parse_os_arg,
+            },
         })
     }
 }

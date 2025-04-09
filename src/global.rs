@@ -77,6 +77,7 @@ fn parse_byte_size(value: &str) -> Result<usize, String> {
     }
 }
 
+#[derive(Clone, Copy)]
 pub enum BufMode {
     Line,
     Full,

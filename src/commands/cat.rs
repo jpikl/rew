@@ -9,7 +9,7 @@ use crate::global::BUF_SIZE;
 use crate::global::NULL;
 use crate::run::Context;
 use anyhow::bail;
-use bstr::ByteSlice;
+use std::io::copy;
 
 const LINES: Flag = FlagBuilder::new("lines")
     .short('l')
@@ -59,17 +59,30 @@ fn run(args: Args) -> anyhow::Result<()> {
 
     if lines {
         let mut reader = context.line_reader();
+        let mut writer = context.writer();
 
         while let Some(line) = reader.read_line()? {
-            // TODO optimize write
-            println!("{}", line.to_str_lossy());
+            writer.write_line(line)?;
         }
     } else if chars {
-        unimplemented!("chars not implemented yet");
+        let mut reader = context.char_chunk_reader();
+        let mut writer = context.writer();
+
+        while let Some(chunk) = reader.read_chunk()? {
+            writer.write(chunk)?;
+        }
     } else if bytes {
-        unimplemented!("bytes not implemented yet");
+        let mut reader = context.byte_chunk_reader();
+        let mut writer = context.writer();
+
+        while let Some(chunk) = reader.read_chunk()? {
+            writer.write(chunk)?;
+        }
     } else {
-        unimplemented!("default mode implemented yet");
+        let mut reader = context.raw_reader();
+        let mut writer = context.raw_writer();
+
+        copy(&mut reader, &mut writer)?;
     }
 
     Ok(())

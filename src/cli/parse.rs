@@ -1,7 +1,8 @@
+use super::ArgValue;
 use super::args::Args;
 use super::types::Command;
 use super::types::OptArg;
-use super::types::OptKind;
+use super::types::OptArgKind;
 use anyhow::bail;
 use bstr::B;
 use bstr::ByteSlice;
@@ -40,10 +41,10 @@ impl Command {
 
             if let Some(opt) = opt {
                 match opt.kind {
-                    OptKind::Flag => {
+                    OptArgKind::Flag => {
                         parsed_args.set(opt, Box::new(true));
                     }
-                    OptKind::Value { parse, .. } => {
+                    OptArgKind::Value(ArgValue { parse, .. }) => {
                         if let Some(raw_value) = iter.next() {
                             match parse(raw_value.into()) {
                                 Ok(value) => {

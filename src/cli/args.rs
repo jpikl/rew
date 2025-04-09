@@ -8,6 +8,7 @@ use std::marker::PhantomData;
 
 pub trait Arg {
     fn id(&self) -> &str;
+    fn default_value(&self) -> Option<Box<dyn Any>>;
 }
 
 pub struct TypedArg<A, T> {
@@ -21,6 +22,14 @@ impl<A, T> TypedArg<A, T> {
             arg,
             _type: PhantomData,
         }
+    }
+}
+
+impl<A: Arg, T: Default + 'static> TypedArg<A, T> {
+    fn default_value(&self) -> Box<dyn Any> {
+        self.arg
+            .default_value()
+            .unwrap_or_else(|| Box::new(T::default()))
     }
 }
 
@@ -51,15 +60,19 @@ impl Args {
                 .downcast_ref::<T>()
                 .expect("mismatched arg type")
                 .clone(),
-            None => T::default(),
+            None => *arg
+                .default_value()
+                .downcast::<T>()
+                .expect("mismatched arg type"),
         }
     }
 
     pub fn get_owned<A: Arg, T: Default + 'static>(&mut self, arg: &TypedArg<A, T>) -> T {
-        match self.values.remove(arg.arg.id()) {
-            Some(value) => *value.downcast::<T>().expect("mismatched arg type"),
-            None => T::default(),
-        }
+        let value = match self.values.remove(arg.arg.id()) {
+            Some(value) => value,
+            None => arg.default_value(),
+        };
+        *value.downcast::<T>().expect("mismatched arg type")
     }
 }
 
