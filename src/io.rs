@@ -185,17 +185,14 @@ pub struct Writer<W: Write> {
 }
 
 enum WriterInner<W: Write> {
-    Buffered(BufWriter<BufWriter<W>>),
+    Buffered(BufWriter<W>),
     Unbuffered(W),
 }
 
 impl<W: Write> Writer<W> {
     pub fn buffered(inner: W, separator: u8, buf_size: usize) -> Self {
         Self {
-            inner: WriterInner::Buffered(BufWriter::with_capacity(
-                buf_size,
-                BufWriter::with_capacity(buf_size, inner),
-            )),
+            inner: WriterInner::Buffered(BufWriter::with_capacity(buf_size, inner)),
             separator,
         }
     }
@@ -216,7 +213,7 @@ impl<W: Write> Writer<W> {
 
     fn get_ref(&self) -> &W {
         match &self.inner {
-            WriterInner::Buffered(inner) => inner.get_ref().get_ref(),
+            WriterInner::Buffered(inner) => inner.get_ref(),
             WriterInner::Unbuffered(inner) => inner,
         }
     }
