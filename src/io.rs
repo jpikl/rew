@@ -207,6 +207,20 @@ impl<W: Write> Writer<W> {
         }
     }
 
+    fn flush(&mut self) -> std::io::Result<()> {
+        match &mut self.inner {
+            WriterInner::Buffered(inner) => inner.flush(),
+            WriterInner::Unbuffered(inner) => inner.flush(),
+        }
+    }
+
+    fn get_ref(&self) -> &W {
+        match &self.inner {
+            WriterInner::Buffered(inner) => inner.get_ref().get_ref(),
+            WriterInner::Unbuffered(inner) => inner,
+        }
+    }
+
     pub fn write_line(&mut self, line: &[u8]) -> std::io::Result<()> {
         self.write(line)?;
         self.write_separator()
@@ -280,43 +294,100 @@ mod tests {
         assert_eq!(CharChunker::find_chunk(input), (len, consumed));
     }
 
+    // ByteChunkReader should completely ignore UTF-8 character bundaries.
+    // The test data mimics exactly the unit test for CharChunkReader.
     #[rstest]
-    #[case(LineReader::lines)]
-    #[case(LineReader::records)]
-    fn read_lines_none<'a>(#[case] construct: fn(&'a [u8], Vec<u8>) -> LineReader<&'a [u8]>) {
-        let mut reader = construct(B(""), vec![0; 8]);
+    #[case(b"", &[])]
+    // Valid byte sequence + Incomplete 3 byte character
+    #[case(b"abcd\xf0\x92\x80", &[B(b"abcd\xf0\x92\x80")])]
+    #[case(b"abcde\xf0\x92\x80", &[B(b"abcde\xf0\x92\x80")])]
+    #[case(b"abcdef\xf0\x92\x80", &[B(b"abcdef\xf0\x92"), B(b"\x80")])]
+    // Valid byte sequence + Incomplete 3 byte character + Valid byte
+    #[case(b"abc\xf0\x92\x80e", &[B(b"abc\xf0\x92\x80e")])]
+    #[case(b"abcd\xf0\x92\x80e", &[B(b"abcd\xf0\x92\x80e")])]
+    #[case(b"abcde\xf0\x92\x80e", &[B(b"abcde\xf0\x92\x80"), B("e")])]
+    // Valid byte sequence + Complete 4 byte character
+    #[case(b"abc\xf0\x92\x80\x80", &[B(b"abc\xf0\x92\x80\x80")])]
+    #[case(b"abcd\xf0\x92\x80\x80", &[B(b"abcd\xf0\x92\x80\x80")])]
+    #[case(b"abcde\xf0\x92\x80\x80", &[B(b"abcde\xf0\x92\x80"), B(b"\x80")])]
+    // Invalid byte sequence + Incomplete 3 byte character
+    #[case(b"\x80\x80\x80\x80\xf0\x92\x80", &[B(b"\x80\x80\x80\x80\xf0\x92\x80")])]
+    #[case(b"\x80\x80\x80\x80\x80\xf0\x92\x80", &[B(b"\x80\x80\x80\x80\x80\xf0\x92\x80")])]
+    #[case(b"\x80\x80\x80\x80\x80\x80\xf0\x92\x80", &[B(b"\x80\x80\x80\x80\x80\x80\xf0\x92"), B(b"\x80")])]
+    // Invalid byte sequence + Complete 4 byte character
+    #[case(b"\x80\x80\x80\xf0\x92\x80\x80", &[B(b"\x80\x80\x80\xf0\x92\x80\x80")])]
+    #[case(b"\x80\x80\x80\x80\xf0\x92\x80\x80", &[B(b"\x80\x80\x80\x80\xf0\x92\x80\x80")])]
+    #[case(b"\x80\x80\x80\x80\x80\xf0\x92\x80\x80", &[B(b"\x80\x80\x80\x80\x80\xf0\x92\x80"), B(b"\x80")])]
+    fn byte_chunk_reader(#[case] input: &[u8], #[case] output: &[&[u8]]) {
+        let mut reader = ByteChunkReader::new(input, vec![0; 8]);
+        for output_item in output {
+            assert_some_eq!(assert_ok!(reader.read_chunk()), B(output_item));
+        }
+        assert_ok_eq!(reader.read_chunk(), None);
+    }
+
+    // CharChunkReader should respect UTF-8 character boundaries
+    // It should never split input in the middle of a valid UTF-8 character.
+    #[rstest]
+    #[case(b"", &[])]
+    // Valid byte sequence + Incomplete 3 byte character
+    #[case(b"abcd\xf0\x92\x80", &[B(b"abcd"), B(b"\xf0\x92\x80")])]
+    #[case(b"abcde\xf0\x92\x80", &[B(b"abcde"), B(b"\xf0\x92\x80")])]
+    #[case(b"abcdef\xf0\x92\x80", &[B(b"abcdef"), B(b"\xf0\x92\x80")])]
+    // Valid byte sequence + Incomplete 3 byte character + Valid byte
+    #[case(b"abc\xf0\x92\x80e", &[B(b"abc\xf0\x92\x80e")])]
+    #[case(b"abcd\xf0\x92\x80e", &[B(b"abcd\xf0\x92\x80e")])]
+    #[case(b"abcde\xf0\x92\x80e", &[B(b"abcde"), B(b"\xf0\x92\x80e")])]
+    // Valid byte sequence + Complete 4 byte character
+    #[case(b"abc\xf0\x92\x80\x80", &[B(b"abc\xf0\x92\x80\x80")])]
+    #[case(b"abcd\xf0\x92\x80\x80", &[B(b"abcd\xf0\x92\x80\x80")])]
+    #[case(b"abcde\xf0\x92\x80\x80", &[B(b"abcde"), B(b"\xf0\x92\x80\x80")])] // Must not split the 4 byte character!
+    // Invalid byte sequence + Incomplete 3 byte character
+    #[case(b"\x80\x80\x80\x80\xf0\x92\x80", &[B(b"\x80\x80\x80\x80"), B(b"\xf0\x92\x80")])]
+    #[case(b"\x80\x80\x80\x80\x80\xf0\x92\x80", &[B(b"\x80\x80\x80\x80\x80"), B(b"\xf0\x92\x80")])]
+    #[case(b"\x80\x80\x80\x80\x80\x80\xf0\x92\x80", &[B(b"\x80\x80\x80\x80\x80\x80"), B(b"\xf0\x92\x80")])]
+    // Invalid byte sequence + Complete 4 byte character
+    #[case(b"\x80\x80\x80\xf0\x92\x80\x80", &[B(b"\x80\x80\x80\xf0\x92\x80\x80")])]
+    #[case(b"\x80\x80\x80\x80\xf0\x92\x80\x80", &[B(b"\x80\x80\x80\x80\xf0\x92\x80\x80")])]
+    #[case(b"\x80\x80\x80\x80\x80\xf0\x92\x80\x80", &[B(b"\x80\x80\x80\x80\x80"), B(b"\xf0\x92\x80\x80")])] // Must not split the 4 byte character!
+    fn char_chunk_reader(#[case] input: &[u8], #[case] output: &[&[u8]]) {
+        let mut reader = CharChunkReader::new(input, vec![0; 8]);
+        for output_item in output {
+            assert_some_eq!(assert_ok!(reader.read_chunk()), B(output_item));
+        }
+        assert_ok_eq!(reader.read_chunk(), None);
+    }
+
+    #[test]
+    fn char_chunk_reader_err() {
+        let mut reader = CharChunkReader::new(B(b"\xf0\x92\x80\x80"), vec![0; 3]);
+        let err = assert_err!(reader.read_chunk());
+        assert_eq!(err.to_string(), "Unable to fit input data into buffer (3B)");
+    }
+
+    #[rstest]
+    #[case("", &[], LineReader::lines)]
+    #[case("", &[], LineReader::records)]
+    #[case("\n\n", &["", ""], LineReader::lines)]
+    #[case("\n\r\n", &["", ""], LineReader::lines)]
+    #[case("\r\n\n", &["", ""], LineReader::lines)]
+    #[case("\r\n\r\n", &["", ""], LineReader::lines)]
+    #[case("\0\0", &["", ""], LineReader::records)]
+    #[case("abcd\nefgh\nijkl", &["abcd", "efgh", "ijkl"], LineReader::lines)]
+    #[case("abcd\nefgh\nijkl\n", &["abcd", "efgh", "ijkl"], LineReader::lines)]
+    #[case("abcd\r\nefgh\r\nijkl\r\n", &["abcd", "efgh", "ijkl"], LineReader::lines)]
+    #[case("abcd\0efgh\0ijkl", &["abcd", "efgh", "ijkl"], LineReader::records)]
+    #[case("abcd\0efgh\0ijkl\0", &["abcd", "efgh", "ijkl"], LineReader::records)]
+    fn line_reader<'a>(
+        #[case] input: &'a str,
+        #[case] output: &'a [&'a str],
+        #[case] construct: fn(&'a [u8], Vec<u8>) -> LineReader<&'a [u8]>,
+    ) {
+        let mut reader = construct(B(input), vec![0; 8]);
+        for output_item in output {
+            assert_some_eq!(assert_ok!(reader.read_line()), B(output_item));
+        }
         assert_ok_eq!(reader.read_line(), None);
-    }
-
-    #[rstest]
-    #[case("\n\n", LineReader::lines)]
-    #[case("\n\r\n", LineReader::lines)]
-    #[case("\r\n\n", LineReader::lines)]
-    #[case("\r\n\r\n", LineReader::lines)]
-    #[case("\0\0", LineReader::records)]
-    fn read_lines_empty<'a>(
-        #[case] input: &'a str,
-        #[case] construct: fn(&'a [u8], Vec<u8>) -> LineReader<&'a [u8]>,
-    ) {
-        let mut reader = construct(B(input), vec![0; 8]);
-        assert_some_eq!(assert_ok!(reader.read_line()), B(""));
-        assert_some_eq!(assert_ok!(reader.read_line()), B(""));
-        assert_none!(assert_ok!(reader.read_line()));
-    }
-
-    #[rstest]
-    #[case("abcd\nefgh\nijkl", LineReader::lines)]
-    #[case("abcd\r\nefgh\r\nijkl", LineReader::lines)]
-    #[case("abcd\0efgh\0ijkl", LineReader::records)]
-    fn read_lines<'a>(
-        #[case] input: &'a str,
-        #[case] construct: fn(&'a [u8], Vec<u8>) -> LineReader<&'a [u8]>,
-    ) {
-        let mut reader = construct(B(input), vec![0; 8]);
-        assert_some_eq!(assert_ok!(reader.read_line()), B("abcd"));
-        assert_some_eq!(assert_ok!(reader.read_line()), B("efgh"));
-        assert_some_eq!(assert_ok!(reader.read_line()), B("ijkl"));
-        assert_none!(assert_ok!(reader.read_line()));
     }
 
     #[rstest]
@@ -332,5 +403,18 @@ mod tests {
         let mut reader = construct(B(input), vec![0; 8]);
         let err = assert_err!(reader.read_line());
         assert_eq!(err.to_string(), "Unable to fit input data into buffer (8B)");
+    }
+
+    #[rstest]
+    #[case(Writer::buffered(vec![], b'\n', 8))]
+    #[case(Writer::unbuffered(vec![], b'\n'))]
+    fn write(#[case] mut writer: Writer<Vec<u8>>) {
+        assert_ok!(writer.write_line(B("abcd")));
+        assert_ok!(writer.write_line(B("efgh")));
+        assert_ok!(writer.write(B("ijkl")));
+        assert_ok!(writer.write_separator());
+        assert_ok!(writer.write_all_from(&mut B("mnop")));
+        assert_ok!(writer.flush());
+        assert_eq!(writer.get_ref(), B("abcd\nefgh\nijkl\nmnop"));
     }
 }
