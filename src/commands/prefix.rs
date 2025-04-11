@@ -34,17 +34,17 @@ pub const PREFIX: Command = CommandBuilder::new()
 
 fn run(mut args: Args) -> anyhow::Result<()> {
     let delete = args.get(&DELETE);
-    let value = into_bytes(args.get_owned(&VALUE));
-
+    let prefix = into_bytes(args.get_owned(&VALUE));
     let context = Context::new(&args);
+
     let mut reader = context.line_reader();
     let mut writer = context.writer();
 
     while let Some(line) = reader.read_line()? {
         if delete {
-            writer.write_line(line.strip_prefix(value.as_slice()).unwrap_or(line))?;
+            writer.write_line(line.strip_prefix(prefix.as_slice()).unwrap_or(line))?;
         } else {
-            writer.write(&value)?;
+            writer.write(&prefix)?;
             writer.write(line)?;
             writer.write_separator()?;
         }

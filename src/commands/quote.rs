@@ -55,8 +55,8 @@ fn run(mut args: Args) -> anyhow::Result<()> {
     let escape = into_bytes(args.get_owned(&ESCAPE));
     let no_escape = args.get(&NO_ESCAPE) || escape.is_empty();
     let quote = if double { b'"' } else { b'\'' };
-
     let context = Context::new(&args);
+
     let mut reader = context.line_reader();
     let mut writer = context.writer();
 

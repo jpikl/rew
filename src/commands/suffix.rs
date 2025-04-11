@@ -34,18 +34,18 @@ pub const SUFFIX: Command = CommandBuilder::new()
 
 fn run(mut args: Args) -> anyhow::Result<()> {
     let delete = args.get(&DELETE);
-    let value = into_bytes(args.get_owned(&VALUE));
-
+    let suffix = into_bytes(args.get_owned(&VALUE));
     let context = Context::new(&args);
+
     let mut reader = context.line_reader();
     let mut writer = context.writer();
 
     while let Some(line) = reader.read_line()? {
         if delete {
-            writer.write_line(line.strip_suffix(value.as_slice()).unwrap_or(line))?;
+            writer.write_line(line.strip_suffix(suffix.as_slice()).unwrap_or(line))?;
         } else {
             writer.write(line)?;
-            writer.write(&value)?;
+            writer.write(&suffix)?;
             writer.write_separator()?;
         }
     }
