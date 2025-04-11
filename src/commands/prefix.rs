@@ -10,8 +10,7 @@ use crate::global::BUF_MODE;
 use crate::global::BUF_SIZE;
 use crate::global::NULL;
 use crate::run::Context;
-use crate::utils::into_bytes;
-use std::ffi::OsString;
+use bstr::BString;
 
 const DELETE: Flag = FlagBuilder::new("delete")
     .short('d')
@@ -19,7 +18,7 @@ const DELETE: Flag = FlagBuilder::new("delete")
     .description("Delete existing prefix intead.")
     .done();
 
-const VALUE: Pos<OsString> = PosBuilder::new("value")
+const VALUE: Pos<BString> = PosBuilder::new("value")
     .name("VALUE")
     .description("Prefix value.")
     .done();
@@ -34,7 +33,8 @@ pub const PREFIX: Command = CommandBuilder::new()
 
 fn run(mut args: Args) -> anyhow::Result<()> {
     let delete = args.get(&DELETE);
-    let prefix = into_bytes(args.get_owned(&VALUE));
+    let prefix = args.get_owned(&VALUE);
+    let prefix = prefix.as_slice();
     let context = Context::new(&args);
 
     let mut reader = context.line_reader();
@@ -42,9 +42,9 @@ fn run(mut args: Args) -> anyhow::Result<()> {
 
     while let Some(line) = reader.read_line()? {
         if delete {
-            writer.write_line(line.strip_prefix(prefix.as_slice()).unwrap_or(line))?;
+            writer.write_line(line.strip_prefix(prefix).unwrap_or(line))?;
         } else {
-            writer.write(&prefix)?;
+            writer.write(prefix)?;
             writer.write(line)?;
             writer.write_separator()?;
         }

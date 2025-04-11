@@ -1,3 +1,4 @@
+use bstr::BString;
 use std::any::Any;
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -92,15 +93,18 @@ pub trait ParseOsArg {
     fn parse_os_arg(raw_value: Cow<OsStr>) -> ParseArgResult;
 }
 
-impl ParseOsArg for OsString {
+impl ParseOsArg for BString {
     fn parse_os_arg(raw_value: Cow<OsStr>) -> ParseArgResult {
-        Ok(Box::new(raw_value.into_owned()))
-    }
-}
+        #[cfg(target_family = "unix")]
+        let bytes = {
+            use std::os::unix::ffi::OsStringExt;
+            raw_value.into_owned().into_vec()
+        };
 
-impl ParseArg for String {
-    fn parse_arg(raw_value: Cow<str>) -> ParseArgResult {
-        Ok(Box::new(raw_value.into_owned()))
+        #[cfg(not(target_family = "unix"))]
+        let bytes = raw_value.to_string_lossy().into_owned().into_bytes();
+
+        Ok(Box::new(BString::from(bytes)))
     }
 }
 

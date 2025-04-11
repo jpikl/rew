@@ -3,7 +3,6 @@ mod commands;
 mod global;
 mod io;
 mod run;
-mod utils;
 
 use cli::Command;
 use cli::CommandBuilder;

@@ -10,8 +10,7 @@ use crate::global::BUF_MODE;
 use crate::global::BUF_SIZE;
 use crate::global::NULL;
 use crate::run::Context;
-use crate::utils::into_bytes;
-use std::ffi::OsString;
+use bstr::BString;
 
 const DELETE: Flag = FlagBuilder::new("delete")
     .short('d')
@@ -19,7 +18,7 @@ const DELETE: Flag = FlagBuilder::new("delete")
     .description("Delete existing suffix intead.")
     .done();
 
-const VALUE: Pos<OsString> = PosBuilder::new("value")
+const VALUE: Pos<BString> = PosBuilder::new("value")
     .name("VALUE")
     .description("Suffix value.")
     .done();
@@ -34,7 +33,8 @@ pub const SUFFIX: Command = CommandBuilder::new()
 
 fn run(mut args: Args) -> anyhow::Result<()> {
     let delete = args.get(&DELETE);
-    let suffix = into_bytes(args.get_owned(&VALUE));
+    let suffix = args.get_owned(&VALUE);
+    let suffix = suffix.as_slice();
     let context = Context::new(&args);
 
     let mut reader = context.line_reader();
@@ -42,10 +42,10 @@ fn run(mut args: Args) -> anyhow::Result<()> {
 
     while let Some(line) = reader.read_line()? {
         if delete {
-            writer.write_line(line.strip_suffix(suffix.as_slice()).unwrap_or(line))?;
+            writer.write_line(line.strip_suffix(suffix).unwrap_or(line))?;
         } else {
             writer.write(line)?;
-            writer.write(&suffix)?;
+            writer.write(suffix)?;
             writer.write_separator()?;
         }
     }

@@ -10,9 +10,8 @@ use crate::global::BUF_MODE;
 use crate::global::BUF_SIZE;
 use crate::global::NULL;
 use crate::run::Context;
-use crate::utils::into_bytes;
+use bstr::BString;
 use memchr::memchr;
-use std::ffi::OsString;
 
 const DOUBLE: Flag = FlagBuilder::new("double")
     .short('d')
@@ -20,7 +19,7 @@ const DOUBLE: Flag = FlagBuilder::new("double")
     .description("Use double quotes instead of single.")
     .done();
 
-const ESCAPE: Opt<OsString> = OptBuilder::new("escape")
+const ESCAPE: Opt<BString> = OptBuilder::new("escape")
     .short('e')
     .long("escape")
     .value_name("CHAR")
@@ -52,7 +51,7 @@ pub const QUOTE: Command = CommandBuilder::new()
 
 fn run(mut args: Args) -> anyhow::Result<()> {
     let double = args.get(&DOUBLE);
-    let escape = into_bytes(args.get_owned(&ESCAPE));
+    let escape = args.get_owned(&ESCAPE);
     let no_escape = args.get(&NO_ESCAPE) || escape.is_empty();
     let quote = if double { b'"' } else { b'\'' };
     let context = Context::new(&args);
