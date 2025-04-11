@@ -51,6 +51,10 @@ impl Args {
         }
     }
 
+    pub fn has<A: Arg>(&mut self, arg: &A) -> bool {
+        self.values.contains_key(arg.id())
+    }
+
     pub fn set<A: Arg>(&mut self, arg: &A, value: Box<dyn Any>) {
         self.values.insert(arg.id().to_owned(), value);
     }

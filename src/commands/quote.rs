@@ -10,6 +10,7 @@ use crate::global::BUF_MODE;
 use crate::global::BUF_SIZE;
 use crate::global::NULL;
 use crate::run::Context;
+use crate::utils::into_bytes;
 use memchr::memchr;
 use std::ffi::OsString;
 
@@ -82,16 +83,4 @@ fn run(mut args: Args) -> anyhow::Result<()> {
     }
 
     Ok(())
-}
-
-fn into_bytes(value: OsString) -> Vec<u8> {
-    #[cfg(target_family = "unix")]
-    {
-        use std::os::unix::ffi::OsStringExt;
-        value.into_vec()
-    }
-    #[cfg(not(target_family = "unix"))]
-    {
-        value.to_string_lossy().into_owned().into_bytes()
-    }
 }

@@ -6,6 +6,7 @@ use super::types::OptArgKind;
 use anyhow::bail;
 use bstr::B;
 use bstr::ByteSlice;
+use std::borrow::Cow;
 use std::ffi::OsString;
 use std::os::unix::ffi::OsStrExt;
 
@@ -22,7 +23,7 @@ impl Command {
         let mut iter = args.into_iter().skip(1);
         let mut parsed_args = Args::new();
 
-        while let Some(arg) = iter.next() {
+        'next_arg: while let Some(arg) = iter.next() {
             let opt = if let Some(opt_name) = arg.as_bytes().strip_prefix(B("--")) {
                 if let Some(opt) = current_cmd.find_long_opt(opt_name) {
                     Some(opt)
@@ -64,7 +65,21 @@ impl Command {
             } else if !current_cmd.commands.is_empty() {
                 bail!("Unkown command {}", arg.to_string_lossy());
             } else {
-                unimplemented!("handle positional arguments");
+                for pos in current_cmd.positionals {
+                    if parsed_args.has(pos) {
+                        continue;
+                    }
+                    match (pos.value.parse)(Cow::Owned(arg)) {
+                        Ok(value) => {
+                            parsed_args.set(pos, value);
+                            continue 'next_arg;
+                        }
+                        Err(err) => {
+                            bail!("Invalid argument {} value: {}", pos, err)
+                        }
+                    }
+                }
+                bail!("Unexpected argument: {:?}", arg);
             }
         }
 
