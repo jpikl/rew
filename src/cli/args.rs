@@ -39,6 +39,7 @@ impl<A: Display, T> Display for TypedArg<A, T> {
     }
 }
 
+#[derive(Debug)]
 pub struct Args {
     values: HashMap<String, Box<dyn Any>>,
 }
