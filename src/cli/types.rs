@@ -42,6 +42,7 @@ pub struct PosArg {
     pub group: &'static Group,
     pub environment: Option<&'static str>,
     pub value: ArgValue,
+    pub required: bool,
 }
 
 pub struct ArgValue {
@@ -81,6 +82,12 @@ impl ArgValue {
     }
 }
 
+impl Display for Command {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.name)
+    }
+}
+
 impl Display for OptArg {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if let Some(short) = self.short {
@@ -102,6 +109,7 @@ impl Display for PosArg {
     }
 }
 
+#[derive(PartialEq)]
 pub struct Group {
     pub name: &'static str,
     pub description: &'static str,
@@ -121,6 +129,140 @@ pub const ARGUMENTS: Group = Group {
     name: "Arguments",
     description: "",
 };
+
+pub trait CommandItem {
+    fn group(&self) -> &Group;
+    fn usage(&self) -> String;
+    fn description(&self) -> &str;
+    fn description_ex(&self) -> &[&str];
+    fn enum_items(&self) -> &[EnumItem];
+    fn default(&self) -> Option<&str>;
+    fn environment(&self) -> Option<&str>;
+}
+
+impl Command {
+    pub fn usage_params(&self) -> String {
+        let mut usage = String::new();
+
+        if !self.options.is_empty() {
+            usage.push_str(" [OPTIONS]");
+        }
+
+        for positional in self.positionals {
+            usage.push(' ');
+            usage.push_str(&positional.usage());
+        }
+
+        if !self.commands.is_empty() {
+            usage.push_str(" <COMMAND>");
+        }
+
+        usage
+    }
+}
+
+impl CommandItem for Command {
+    fn group(&self) -> &Group {
+        self.group
+    }
+
+    fn usage(&self) -> String {
+        self.name.to_string()
+    }
+
+    fn description(&self) -> &str {
+        self.description
+    }
+
+    fn description_ex(&self) -> &[&str] {
+        self.description_ex
+    }
+
+    fn enum_items(&self) -> &[EnumItem] {
+        &[]
+    }
+
+    fn default(&self) -> Option<&str> {
+        None
+    }
+
+    fn environment(&self) -> Option<&str> {
+        None
+    }
+}
+
+impl CommandItem for OptArg {
+    fn group(&self) -> &Group {
+        self.group
+    }
+
+    fn usage(&self) -> String {
+        match &self.kind {
+            OptArgKind::Flag => self.to_string(),
+            OptArgKind::Value(value) => format!("{self} <{}>", value.name),
+        }
+    }
+
+    fn description(&self) -> &str {
+        self.description
+    }
+
+    fn description_ex(&self) -> &[&str] {
+        self.description_ex
+    }
+
+    fn enum_items(&self) -> &[EnumItem] {
+        match &self.kind {
+            OptArgKind::Flag => &[],
+            OptArgKind::Value(value) => value.enum_items,
+        }
+    }
+
+    fn default(&self) -> Option<&str> {
+        match &self.kind {
+            OptArgKind::Flag => None,
+            OptArgKind::Value(value) => value.default,
+        }
+    }
+
+    fn environment(&self) -> Option<&str> {
+        self.environment
+    }
+}
+
+impl CommandItem for PosArg {
+    fn group(&self) -> &Group {
+        self.group
+    }
+
+    fn usage(&self) -> String {
+        if self.required {
+            format!("<{self}>")
+        } else {
+            format!("[{self}]")
+        }
+    }
+
+    fn description(&self) -> &str {
+        self.description
+    }
+
+    fn description_ex(&self) -> &[&str] {
+        self.description_ex
+    }
+
+    fn enum_items(&self) -> &[EnumItem] {
+        self.value.enum_items
+    }
+
+    fn default(&self) -> Option<&str> {
+        self.value.default
+    }
+
+    fn environment(&self) -> Option<&str> {
+        self.environment
+    }
+}
 
 pub type Flag = TypedArg<OptArg, bool>;
 pub type Opt<T> = TypedArg<OptArg, T>;

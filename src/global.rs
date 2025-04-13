@@ -38,6 +38,7 @@ pub const BUF_SIZE: Opt<ByteSize> = OptBuilder::new("buf-size")
         "Some commands will abort execution if there is an input line above this limit.",
     ])
     .environment("REW_BUF_SIZE")
+    .value_name("SIZE")
     .default(DEFAULT_BUF_SIZE)
     .group(&GLOBAL_OPTIONS)
     .done();
@@ -46,6 +47,7 @@ pub const BUF_MODE: Opt<BufMode> = OptBuilder::new_enum("buf-mode")
     .long("buf-mode")
     .description("Output buffering mode.")
     .environment("REW_BUF_MODE")
+    .value_name("MODE")
     .group(&GLOBAL_OPTIONS)
     .done();
 

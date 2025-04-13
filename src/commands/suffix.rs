@@ -21,6 +21,7 @@ const DELETE: Flag = FlagBuilder::new("delete")
 const VALUE: Pos<BString> = PosBuilder::new("value")
     .name("VALUE")
     .description("Suffix value.")
+    .required()
     .done();
 
 pub const SUFFIX: Command = CommandBuilder::new()

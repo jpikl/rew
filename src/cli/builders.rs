@@ -198,7 +198,7 @@ impl<T: ParseOsArg + 'static> OptBuilder<T> {
             id,
             short: None,
             long: None,
-            value_name: "",
+            value_name: "VALUE",
             description: "",
             description_ex: &[],
             group: &OPTIONS,
@@ -285,7 +285,7 @@ impl<T: ParseOsArg + 'static> PosBuilder<T> {
     pub const fn new(id: &'static str) -> Self {
         Self {
             id,
-            name: "",
+            name: "VALUE",
             required: false,
             description: "",
             description_ex: &[],
@@ -302,8 +302,8 @@ impl<T: ParseOsArg + 'static> PosBuilder<T> {
         self
     }
 
-    pub const fn required(mut self, required: bool) -> Self {
-        self.required = required;
+    pub const fn required(mut self) -> Self {
+        self.required = true;
         self
     }
 
@@ -339,6 +339,7 @@ impl<T: ParseOsArg + 'static> PosBuilder<T> {
             description_ex: self.description_ex,
             group: self.group,
             environment: self.environment,
+            required: self.required,
             value: ArgValue {
                 name: self.name,
                 default: None,

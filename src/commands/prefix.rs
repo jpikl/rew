@@ -21,6 +21,7 @@ const DELETE: Flag = FlagBuilder::new("delete")
 const VALUE: Pos<BString> = PosBuilder::new("value")
     .name("VALUE")
     .description("Prefix value.")
+    .required()
     .done();
 
 pub const PREFIX: Command = CommandBuilder::new()
