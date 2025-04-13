@@ -15,18 +15,70 @@ pub const VERSION: Flag = FlagBuilder::new("version")
     .description("Print version")
     .done();
 
+pub struct Runner<'a> {
+    pub binary: String,
+    pub command: &'a Command,
+    pub parents: Vec<&'a Command>,
+    pub args: Args,
+}
+
+impl Runner<'_> {
+    pub fn run(self) -> anyhow::Result<()> {
+        if self.args.get(&HELP) {
+            self.print_help();
+            return Ok(());
+        }
+
+        if self.args.get(&VERSION) {
+            self.print_version();
+            return Ok(());
+        }
+
+        (self.command.run)(self.args)
+    }
+
+    fn print_help(&self) {
+        println!("{}", self.command.description);
+
+        for description in self.command.description_ex {
+            println!("{description}");
+        }
+
+        println!();
+        println!("Usage: {}{}", self.binary, self.command.usage_params());
+    }
+
+    fn print_version(&self) {
+        for command in &self.parents {
+            print!("{} ", command.name);
+        }
+
+        print!("{}", self.command.name);
+
+        if let Some(version) = self.command.version {
+            print!(" {version}");
+        }
+
+        println!();
+    }
+}
+
 impl Command {
-    pub fn run(&self, args: Args) -> anyhow::Result<()> {
-        if args.get(&HELP) {
-            println!("{}", self.description);
-            return Ok(());
+    fn usage_params(&self) -> String {
+        let mut usage = String::new();
+
+        if !self.options.is_empty() {
+            usage.push_str(" [OPTIONS]");
         }
 
-        if args.get(&VERSION) {
-            println!("{}", self.version);
-            return Ok(());
+        if !self.positionals.is_empty() {
+            usage.push_str(" [ARGUMENTS]");
         }
 
-        (self.run)(args)
+        if !self.commands.is_empty() {
+            usage.push_str(" <COMMAND>");
+        }
+
+        usage
     }
 }

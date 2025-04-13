@@ -3,7 +3,6 @@ use std::any::Any;
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::ffi::OsStr;
-use std::ffi::OsString;
 use std::fmt::Display;
 use std::marker::PhantomData;
 

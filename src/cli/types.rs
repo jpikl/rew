@@ -11,7 +11,7 @@ pub struct Command {
     pub name: &'static str,
     pub description: &'static str,
     pub description_ex: &'static [&'static str],
-    pub version: &'static str,
+    pub version: Option<&'static str>,
     pub group: &'static Group,
     pub options: &'static [OptArg],
     pub positionals: &'static [PosArg],
@@ -21,8 +21,8 @@ pub struct Command {
 
 pub struct OptArg {
     pub id: &'static str,
-    pub short: char,
-    pub long: &'static str,
+    pub short: Option<char>,
+    pub long: Option<&'static str>,
     pub description: &'static str,
     pub description_ex: &'static [&'static str],
     pub group: &'static Group,
@@ -83,14 +83,14 @@ impl ArgValue {
 
 impl Display for OptArg {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if self.short != '\0' {
-            write!(f, "-{}", self.short)?;
+        if let Some(short) = self.short {
+            write!(f, "-{}", short)?;
         }
-        if self.short != '\0' && !self.long.is_empty() {
+        if self.short.is_some() && self.long.is_some() {
             write!(f, ", ")?;
         }
-        if !self.long.is_empty() {
-            write!(f, "--{}", self.long)?;
+        if let Some(long) = self.long {
+            write!(f, "--{}", long)?;
         }
         Ok(())
     }

@@ -18,7 +18,7 @@ pub struct CommandBuilder {
     name: &'static str,
     description: &'static str,
     description_ex: &'static [&'static str],
-    version: &'static str,
+    version: Option<&'static str>,
     group: &'static Group,
     options: &'static [OptArg],
     positionals: &'static [PosArg],
@@ -32,7 +32,7 @@ impl CommandBuilder {
             name: "",
             description: "",
             description_ex: &[],
-            version: "",
+            version: None,
             group: &COMMANDS,
             options: &[],
             positionals: &[],
@@ -57,7 +57,7 @@ impl CommandBuilder {
     }
 
     pub const fn version(mut self, version: &'static str) -> Self {
-        self.version = version;
+        self.version = Some(version);
         self
     }
 
@@ -103,8 +103,8 @@ impl CommandBuilder {
 
 pub struct FlagBuilder {
     id: &'static str,
-    short: char,
-    long: &'static str,
+    short: Option<char>,
+    long: Option<&'static str>,
     description: &'static str,
     description_ex: &'static [&'static str],
     group: &'static Group,
@@ -115,8 +115,8 @@ impl FlagBuilder {
     pub const fn new(id: &'static str) -> Self {
         Self {
             id,
-            short: '\0',
-            long: "",
+            short: None,
+            long: None,
             description: "",
             description_ex: &[],
             group: &OPTIONS,
@@ -125,12 +125,12 @@ impl FlagBuilder {
     }
 
     pub const fn short(mut self, short: char) -> Self {
-        self.short = short;
+        self.short = Some(short);
         self
     }
 
     pub const fn long(mut self, long: &'static str) -> Self {
-        self.long = long;
+        self.long = Some(long);
         self
     }
 
@@ -170,8 +170,8 @@ impl FlagBuilder {
 
 pub struct OptBuilder<T> {
     id: &'static str,
-    short: char,
-    long: &'static str,
+    short: Option<char>,
+    long: Option<&'static str>,
     value_name: &'static str,
     description: &'static str,
     description_ex: &'static [&'static str],
@@ -196,8 +196,8 @@ impl<T: ParseOsArg + 'static> OptBuilder<T> {
     const fn new_with_enum_items(id: &'static str, enum_items: &'static [EnumItem]) -> Self {
         Self {
             id,
-            short: '\0',
-            long: "",
+            short: None,
+            long: None,
             value_name: "",
             description: "",
             description_ex: &[],
@@ -210,12 +210,12 @@ impl<T: ParseOsArg + 'static> OptBuilder<T> {
     }
 
     pub const fn short(mut self, short: char) -> Self {
-        self.short = short;
+        self.short = Some(short);
         self
     }
 
     pub const fn long(mut self, long: &'static str) -> Self {
-        self.long = long;
+        self.long = Some(long);
         self
     }
 

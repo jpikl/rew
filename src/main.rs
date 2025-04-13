@@ -25,6 +25,5 @@ const REW: Command = CommandBuilder::new()
     .done();
 
 fn main() -> anyhow::Result<()> {
-    let (command, args) = REW.parse_args()?;
-    command.run(args)
+    REW.parse_args()?.run()
 }

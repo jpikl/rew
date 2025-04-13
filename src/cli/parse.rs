@@ -1,4 +1,5 @@
 use super::ArgValue;
+use super::Runner;
 use super::args::Args;
 use super::types::Command;
 use super::types::OptArg;
@@ -11,27 +12,33 @@ use std::ffi::OsString;
 use std::os::unix::ffi::OsStrExt;
 
 impl Command {
-    pub fn parse_args(&self) -> anyhow::Result<(&Command, Args)> {
+    pub fn parse_args(&self) -> anyhow::Result<Runner> {
         self.parse_args_from(std::env::args_os())
     }
 
     pub fn parse_args_from<T: IntoIterator<Item = OsString>>(
         &self,
         args: T,
-    ) -> anyhow::Result<(&Command, Args)> {
-        let mut current_cmd = self;
-        let mut iter = args.into_iter().skip(1);
-        let mut parsed_args = Args::new();
+    ) -> anyhow::Result<Runner> {
+        let mut parent_commands = Vec::new();
+        let mut current_command = self;
+        let mut arg_iter = args.into_iter();
+        let mut arg_values = Args::new();
+        let mut binary = arg_iter
+            .next()
+            .unwrap_or_default()
+            .to_string_lossy()
+            .to_string();
 
-        'next_arg: while let Some(arg) = iter.next() {
+        'next_arg: while let Some(arg) = arg_iter.next() {
             let opt = if let Some(opt_name) = arg.as_bytes().strip_prefix(B("--")) {
-                if let Some(opt) = current_cmd.find_long_opt(opt_name) {
+                if let Some(opt) = current_command.find_long_opt(opt_name) {
                     Some(opt)
                 } else {
                     bail!("Unknown option: --{}", opt_name.to_str_lossy());
                 }
             } else if let Some(opt_name) = arg.as_bytes().strip_prefix(B("-")) {
-                if let Some(opt) = current_cmd.find_short_opt(opt_name[0] as char) {
+                if let Some(opt) = current_command.find_short_opt(opt_name[0] as char) {
                     Some(opt)
                 } else {
                     bail!("Unknown option: -{}", opt_name.to_str_lossy());
@@ -43,13 +50,13 @@ impl Command {
             if let Some(opt) = opt {
                 match opt.kind {
                     OptArgKind::Flag => {
-                        parsed_args.set(opt, Box::new(true));
+                        arg_values.set(opt, Box::new(true));
                     }
                     OptArgKind::Value(ArgValue { parse, .. }) => {
-                        if let Some(raw_value) = iter.next() {
+                        if let Some(raw_value) = arg_iter.next() {
                             match parse(raw_value.into()) {
                                 Ok(value) => {
-                                    parsed_args.set(opt, value);
+                                    arg_values.set(opt, value);
                                 }
                                 Err(err) => {
                                     bail!("Invalid option {opt} value: {err}");
@@ -60,18 +67,21 @@ impl Command {
                         }
                     }
                 }
-            } else if let Some(cmd) = self.find_command(arg.as_bytes()) {
-                current_cmd = cmd;
-            } else if !current_cmd.commands.is_empty() {
+            } else if let Some(command) = self.find_command(arg.as_bytes()) {
+                parent_commands.push(current_command);
+                current_command = command;
+                binary.push(' ');
+                binary.push_str(command.name);
+            } else if !current_command.commands.is_empty() {
                 bail!("Unkown command {}", arg.to_string_lossy());
             } else {
-                for pos in current_cmd.positionals {
-                    if parsed_args.has(pos) {
+                for pos in current_command.positionals {
+                    if arg_values.has(pos) {
                         continue;
                     }
                     match (pos.value.parse)(Cow::Owned(arg)) {
                         Ok(value) => {
-                            parsed_args.set(pos, value);
+                            arg_values.set(pos, value);
                             continue 'next_arg;
                         }
                         Err(err) => {
@@ -83,15 +93,22 @@ impl Command {
             }
         }
 
-        Ok((current_cmd, parsed_args))
+        Ok(Runner {
+            binary,
+            command: current_command,
+            parents: parent_commands,
+            args: arg_values,
+        })
     }
 
     fn find_short_opt(&self, name: char) -> Option<&OptArg> {
-        self.options.iter().find(|opt| opt.short == name)
+        self.options.iter().find(|opt| opt.short == Some(name))
     }
 
     fn find_long_opt(&self, name: &[u8]) -> Option<&OptArg> {
-        self.options.iter().find(|opt| opt.long.as_bytes() == name)
+        self.options
+            .iter()
+            .find(|opt| opt.long.map(|long| long.as_bytes()) == Some(name))
     }
 
     fn find_command(&self, name: &[u8]) -> Option<&Command> {
