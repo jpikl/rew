@@ -1,5 +1,5 @@
+use bstr::ByteSlice;
 use bstr::decode_last_utf8;
-use memchr::memchr;
 use std::fmt::Display;
 use std::fmt::Formatter;
 use std::io::BufWriter;
@@ -38,7 +38,7 @@ pub struct CharChunker;
 
 impl Chunker for LineChunker {
     fn find_chunk(slice: &[u8]) -> (usize, usize) {
-        match memchr(b'\n', slice) {
+        match slice.find_byte(b'\n') {
             Some(pos) => {
                 if pos > 0 && slice[pos - 1] == b'\r' {
                     (pos - 1, pos + 1)
@@ -53,7 +53,7 @@ impl Chunker for LineChunker {
 
 impl Chunker for RecordChunker {
     fn find_chunk(slice: &[u8]) -> (usize, usize) {
-        match memchr(b'\0', slice) {
+        match slice.find_byte(b'\0') {
             Some(pos) => (pos, pos + 1),
             None => (0, 0),
         }

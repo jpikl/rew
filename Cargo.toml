@@ -14,7 +14,6 @@ edition = "2024"
 [dependencies]
 anyhow = "1.0.97"
 bstr = "1.11.3"
-memchr = "2.7.4"
 
 [profile.release]
 codegen-units = 1

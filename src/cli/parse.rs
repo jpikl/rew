@@ -8,6 +8,8 @@ use anyhow::bail;
 use bstr::B;
 use bstr::BString;
 use bstr::ByteSlice;
+use std::borrow::Cow;
+use std::ffi::OsStr;
 use std::ffi::OsString;
 
 fn os_to_bstring(str: OsString) -> BString {
@@ -21,6 +23,39 @@ fn os_to_bstring(str: OsString) -> BString {
     let bytes = str.to_string_lossy().into_owned().into_bytes();
 
     bytes.into()
+}
+
+fn split_os_str(value: &OsStr, separator: u8) -> Option<(Cow<'_, OsStr>, Cow<'_, OsStr>)> {
+    #[cfg(target_family = "unix")]
+    {
+        use std::os::unix::ffi::OsStrExt;
+
+        value
+            .as_bytes()
+            .split_once_str(&[separator])
+            .map(|(left, right)| {
+                (
+                    OsStr::from_bytes(left).into(),
+                    OsStr::from_bytes(right).into(),
+                )
+            })
+    }
+    #[cfg(target_family = "windows")]
+    {
+        use std::os::windows::ffi::OsStrExt;
+
+        value
+            .encode_wide()
+            .position(|ch| ch == separator as u16)
+            .map(|separator_index| {
+                let chars: Vec<u16> = value.encode_wide().collect();
+                let (left, right) = chars.split_at(separator_index);
+                (
+                    OsString::from_wide(Vec::from(left)).into(),
+                    OsString::from_wide(Vec::from(right)).into(),
+                )
+            })
+    }
 }
 
 impl Command {

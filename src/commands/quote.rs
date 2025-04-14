@@ -11,7 +11,7 @@ use crate::global::BUF_SIZE;
 use crate::global::NULL;
 use crate::run::Context;
 use bstr::BString;
-use memchr::memchr;
+use bstr::ByteSlice;
 
 const DOUBLE: Flag = FlagBuilder::new("double")
     .short('d')
@@ -67,7 +67,7 @@ fn run(mut args: Args) -> anyhow::Result<()> {
         } else {
             let mut start = 0;
 
-            while let Some(pos) = memchr(quote, &line[start..]) {
+            while let Some(pos) = line[start..].find_byte(quote) {
                 writer.write(&line[start..][..pos])?;
                 writer.write(&escape)?;
                 writer.write(&[quote])?;
