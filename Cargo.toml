@@ -13,7 +13,7 @@ edition = "2024"
 
 [dependencies]
 anyhow = "1.0.97"
-bstr = "1.11.3"
+bstr = { version = "1.11.3", features = ["std"], default-features = false }
 
 [profile.release]
 codegen-units = 1
