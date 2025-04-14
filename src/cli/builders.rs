@@ -4,7 +4,7 @@ use super::COMMANDS;
 use super::Enum;
 use super::EnumItem;
 use super::OPTIONS;
-use super::ParseOsArg;
+use super::ParseRawArg;
 use super::args::Args;
 use super::args::TypedArg;
 use super::types::Command;
@@ -182,13 +182,13 @@ pub struct OptBuilder<T> {
     _type: PhantomData<T>,
 }
 
-impl<T: ParseOsArg + Enum + 'static> OptBuilder<T> {
+impl<T: ParseRawArg + Enum + 'static> OptBuilder<T> {
     pub const fn new_enum(id: &'static str) -> Self {
         Self::new_with_enum_items(id, T::ENUM_ITEMS)
     }
 }
 
-impl<T: ParseOsArg + 'static> OptBuilder<T> {
+impl<T: ParseRawArg + 'static> OptBuilder<T> {
     pub const fn new(id: &'static str) -> Self {
         Self::new_with_enum_items(id, &[])
     }
@@ -262,7 +262,7 @@ impl<T: ParseOsArg + 'static> OptBuilder<T> {
                 name: self.value_name,
                 default: self.default,
                 enum_items: self.enum_items,
-                parse: T::parse_os_arg,
+                parse: T::parse_raw_arg,
             }),
         })
     }
@@ -281,7 +281,7 @@ pub struct PosBuilder<T> {
     _type: PhantomData<T>,
 }
 
-impl<T: ParseOsArg + 'static> PosBuilder<T> {
+impl<T: ParseRawArg + 'static> PosBuilder<T> {
     pub const fn new(id: &'static str) -> Self {
         Self {
             id,
@@ -344,7 +344,7 @@ impl<T: ParseOsArg + 'static> PosBuilder<T> {
                 name: self.name,
                 default: None,
                 enum_items: self.enum_items,
-                parse: T::parse_os_arg,
+                parse: T::parse_raw_arg,
             },
         })
     }

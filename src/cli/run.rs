@@ -6,6 +6,7 @@ use super::args::Args;
 use super::builders::FlagBuilder;
 use super::types::Command;
 use super::types::Flag;
+use anyhow::bail;
 
 pub const HELP: Flag = FlagBuilder::new("help")
     .short('h')
@@ -36,6 +37,16 @@ impl Runner<'_> {
         if self.args.get(&VERSION) {
             self.print_version();
             return Ok(());
+        }
+
+        if !self.command.commands.is_empty() {
+            bail!("Missing command");
+        }
+
+        for pos in self.command.positionals {
+            if pos.required && !self.args.has(pos) {
+                bail!("Missing required argument {pos}");
+            }
         }
 
         (self.command.run)(self.args)

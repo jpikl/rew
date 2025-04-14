@@ -1,8 +1,9 @@
+use bstr::BStr;
 use bstr::BString;
+use bstr::ByteSlice;
 use std::any::Any;
 use std::borrow::Cow;
 use std::collections::HashMap;
-use std::ffi::OsStr;
 use std::fmt::Display;
 use std::marker::PhantomData;
 
@@ -51,7 +52,7 @@ impl Args {
         }
     }
 
-    pub fn has<A: Arg>(&mut self, arg: &A) -> bool {
+    pub fn has<A: Arg>(&self, arg: &A) -> bool {
         self.values.contains_key(arg.id())
     }
 
@@ -82,41 +83,32 @@ impl Args {
 }
 
 pub type ParseArgResult = Result<Box<dyn Any>, String>;
-pub type ParseOsArgFn = fn(Cow<OsStr>) -> ParseArgResult;
+pub type ParseRawArgFn = fn(Cow<BStr>) -> ParseArgResult;
 
 pub trait ParseArg {
     fn parse_arg(raw_value: Cow<str>) -> ParseArgResult;
 }
 
-pub trait ParseOsArg {
-    fn parse_os_arg(raw_value: Cow<OsStr>) -> ParseArgResult;
+pub trait ParseRawArg {
+    fn parse_raw_arg(raw_value: Cow<BStr>) -> ParseArgResult;
 }
 
-impl ParseOsArg for BString {
-    fn parse_os_arg(raw_value: Cow<OsStr>) -> ParseArgResult {
-        #[cfg(target_family = "unix")]
-        let bytes = {
-            use std::os::unix::ffi::OsStringExt;
-            raw_value.into_owned().into_vec()
-        };
-
-        #[cfg(not(target_family = "unix"))]
-        let bytes = raw_value.to_string_lossy().into_owned().into_bytes();
-
-        Ok(Box::new(BString::from(bytes)))
+impl ParseRawArg for BString {
+    fn parse_raw_arg(raw_value: Cow<BStr>) -> ParseArgResult {
+        Ok(Box::new(raw_value.into_owned()))
     }
 }
 
-impl<A: ParseArg> ParseOsArg for A {
-    fn parse_os_arg(raw_value: Cow<OsStr>) -> ParseArgResult {
+impl<A: ParseArg> ParseRawArg for A {
+    fn parse_raw_arg(raw_value: Cow<BStr>) -> ParseArgResult {
         match raw_value {
             Cow::Borrowed(raw_value) => {
-                if let Some(value) = raw_value.to_str() {
+                if let Ok(value) = raw_value.to_str() {
                     return A::parse_arg(Cow::Borrowed(value));
                 }
             }
             Cow::Owned(raw_value) => {
-                if let Ok(value) = raw_value.into_string() {
+                if let Ok(value) = raw_value.try_into() {
                     return A::parse_arg(Cow::Owned(value));
                 }
             }
