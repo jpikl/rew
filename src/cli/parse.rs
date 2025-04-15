@@ -58,7 +58,7 @@ impl Command {
                                 }
                             }
                         } else {
-                            bail!("Unknown option: --{}", opt_name.to_string_lossy());
+                            bail!("Unknown option --{}", opt_name.to_string_lossy());
                         }
                     }
 
@@ -85,7 +85,7 @@ impl Command {
                             }
                         }
                     } else {
-                        bail!("Unknown option: --{}", opt_name.to_string_lossy());
+                        bail!("Unknown option --{}", opt_name.to_string_lossy());
                     }
                 }
 
@@ -95,7 +95,7 @@ impl Command {
 
                         for (invalid, opt_char_chunk) in opt_chars.utf8_chunks() {
                             if !invalid.as_os_str().is_empty() {
-                                bail!("Unknown option: -{}", invalid.as_os_str().to_string_lossy());
+                                bail!("Unknown option -{}", invalid.as_os_str().to_string_lossy());
                             }
 
                             for opt_char in opt_char_chunk.chars() {
@@ -130,7 +130,7 @@ impl Command {
                                         }
                                     }
                                 } else {
-                                    bail!("Unknown option: -{opt_char}");
+                                    bail!("Unknown option -{opt_char}");
                                 }
                             }
                         }
@@ -167,7 +167,7 @@ impl Command {
                 }
             }
 
-            bail!("Unexpected argument: {:?}", arg);
+            bail!("Unexpected argument: {}", arg.to_string_lossy());
         }
 
         Ok(Runner {
@@ -192,5 +192,113 @@ impl Command {
         self.commands
             .iter()
             .find(|cmd| OsStr::new(cmd.name) == name)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::cli::Command;
+    use crate::cli::CommandBuilder;
+    use crate::cli::Flag;
+    use crate::cli::FlagBuilder;
+    use crate::cli::Opt;
+    use crate::cli::OptBuilder;
+    use crate::cli::Pos;
+    use crate::cli::PosBuilder;
+    use claims::*;
+    use rstest::rstest;
+    use std::ffi::OsString;
+
+    const FLAG: Flag = FlagBuilder::new("flag").short('f').long("flag").done();
+    const OPT: Opt<i32> = OptBuilder::new("opt").short('o').long("option").done();
+    const POS: Pos<String> = PosBuilder::new("pos").name("pos").done();
+    const SUB_COMMAND: Command = CommandBuilder::new().name("sub").done();
+
+    #[test]
+    fn command() {
+        let command = CommandBuilder::new().done();
+        let runner = assert_ok!(command.parse_args_from(make_args(&[])));
+
+        assert_eq!(runner.binary, "bin");
+        assert_eq!(runner.command, &command);
+        assert_eq!(runner.parents, Vec::<&Command>::new());
+    }
+
+    #[test]
+    fn sub_command() {
+        let command = CommandBuilder::new().commands(&[SUB_COMMAND]).done();
+        let runner = assert_ok!(command.parse_args_from(make_args(&["sub"])));
+
+        assert_eq!(runner.binary, "bin sub");
+        assert_eq!(runner.command, &SUB_COMMAND);
+        assert_eq!(runner.parents, &[&command]);
+    }
+
+    #[rstest]
+    #[case(&[], false, 0, "")]
+    // Separate flag/option/positional
+    #[case(&["-f"], true, 0, "")]
+    #[case(&["--flag"], true, 0, "")]
+    #[case(&["-o123"], false, 123, "")]
+    #[case(&["-o", "123"], false, 123, "")]
+    #[case(&["--option", "123"], false, 123, "")]
+    #[case(&["--option=123"], false, 123, "")]
+    #[case(&["abc"], false, 0, "abc")]
+    #[case(&["-"], false, 0, "-")]
+    // Skip option parsing after --
+    #[case(&["--", "-f"], false, 0, "-f")]
+    #[case(&["--", "--flag"], false, 0, "--flag")]
+    #[case(&["--", "-o"], false, 0, "-o")]
+    #[case(&["--", "-o123"], false, 0, "-o123")]
+    #[case(&["--", "--option"], false, 0, "--option")]
+    #[case(&["--", "--option=123"], false, 0, "--option=123")]
+    #[case(&["--", "abc"], false, 0, "abc")]
+    // Combinations
+    #[case(&["-ffo123", "abc"], true, 123, "abc")]
+    #[case(&["-ffo", "123", "abc"], true, 123, "abc")]
+    #[case(&["--flag", "--option", "123", "abc"], true, 123, "abc")]
+    #[case(&["-ffo123", "-o456", "abc"], true, 456, "abc")]
+    fn command_args(
+        #[case] args: &[&str],
+        #[case] flag: bool,
+        #[case] opt: i32,
+        #[case] pos: &str,
+    ) {
+        let command = CommandBuilder::new()
+            .options(&[FLAG.arg, OPT.arg])
+            .positionals(&[POS.arg])
+            .done();
+
+        let runner = assert_ok!(command.parse_args_from(make_args(args)));
+        assert_eq!(runner.args.get(&FLAG), flag);
+        assert_eq!(runner.args.get(&OPT), opt);
+        assert_eq!(runner.args.get(&POS), pos);
+    }
+
+    #[rstest]
+    #[case(&["--flag=value"], "Unexpected value for option -f, --flag")]
+    #[case(&["-o"], "Missing value for option -o, --option")]
+    #[case(&["-o", "x"], "Invalid value for option -o, --option: invalid digit found in string")]
+    #[case(&["--option"], "Missing value for option -o, --option")]
+    #[case(&["--option", "x"], "Invalid value for option -o, --option: invalid digit found in string")]
+    #[case(&["--option=x"], "Invalid value for option -o, --option: invalid digit found in string")]
+    #[case(&["-x"], "Unknown option -x")]
+    #[case(&["--xtra"], "Unknown option --xtra")]
+    #[case(&["--xtra=x"], "Unknown option --xtra")]
+    #[case(&["abc", "def"], "Unexpected argument: def")]
+    fn command_args_err(#[case] args: &[&str], #[case] err_msg: &str) {
+        let command = CommandBuilder::new()
+            .options(&[FLAG.arg, OPT.arg])
+            .positionals(&[POS.arg])
+            .done();
+
+        let err = assert_err!(command.parse_args_from(make_args(args)));
+        assert_eq!(err.to_string(), err_msg);
+    }
+
+    fn make_args(args: &[&str]) -> Vec<OsString> {
+        let mut args: Vec<OsString> = args.iter().map(OsString::from).collect();
+        args.insert(0, "bin".into());
+        args
     }
 }

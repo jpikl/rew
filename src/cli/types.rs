@@ -7,6 +7,7 @@ use std::any::Any;
 use std::ffi::OsStr;
 use std::fmt::Display;
 
+#[derive(Debug, PartialEq)]
 pub struct Command {
     pub name: &'static str,
     pub description: &'static str,
@@ -19,6 +20,7 @@ pub struct Command {
     pub run: fn(Args) -> anyhow::Result<()>,
 }
 
+#[derive(Debug, PartialEq)]
 pub struct OptArg {
     pub id: &'static str,
     pub short: Option<char>,
@@ -30,11 +32,13 @@ pub struct OptArg {
     pub kind: OptArgKind,
 }
 
+#[derive(Debug, PartialEq)]
 pub enum OptArgKind {
     Flag,
     Value(ArgValue),
 }
 
+#[derive(Debug, PartialEq)]
 pub struct PosArg {
     pub id: &'static str,
     pub description: &'static str,
@@ -45,6 +49,7 @@ pub struct PosArg {
     pub required: bool,
 }
 
+#[derive(Debug, PartialEq)]
 pub struct ArgValue {
     pub name: &'static str,
     pub default: Option<&'static str>,
@@ -109,7 +114,7 @@ impl Display for PosArg {
     }
 }
 
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct Group {
     pub name: &'static str,
     pub description: &'static str,

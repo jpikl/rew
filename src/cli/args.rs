@@ -166,6 +166,7 @@ pub trait Enum {
     const ENUM_ITEMS: &[EnumItem];
 }
 
+#[derive(Debug, PartialEq)]
 pub struct EnumItem {
     pub name: &'static str,
     pub description: &'static [&'static str],

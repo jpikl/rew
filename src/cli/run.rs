@@ -20,6 +20,7 @@ pub const VERSION: Flag = FlagBuilder::new("version")
     .description("Print version")
     .done();
 
+#[derive(Debug)]
 pub struct Runner<'a> {
     pub binary: String,
     pub command: &'a Command,
