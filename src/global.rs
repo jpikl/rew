@@ -7,6 +7,7 @@ use crate::cli::OptBuilder;
 use crate::cli::ParseArg;
 use crate::cli::ParseArgResult;
 use crate::impl_enum;
+use crate::utils::ByteSize;
 use std::borrow::Cow;
 use std::io::IsTerminal;
 
@@ -50,34 +51,6 @@ pub const BUF_MODE: Opt<BufMode> = OptBuilder::new_enum("buf-mode")
     .value_name("MODE")
     .group(&GLOBAL_OPTIONS)
     .done();
-
-#[derive(Default, Clone)]
-pub struct ByteSize(pub usize);
-
-impl ParseArg for ByteSize {
-    fn parse_arg(raw_value: Cow<str>) -> ParseArgResult {
-        match parse_byte_size(raw_value.as_ref()) {
-            Ok(size) => Ok(Box::new(ByteSize(size))),
-            Err(err) => Err(err),
-        }
-    }
-}
-
-fn parse_byte_size(value: &str) -> Result<usize, String> {
-    let (value, multiplier) = if let Some(value) = value.strip_suffix("G") {
-        (value, 1024 * 1024 * 1024)
-    } else if let Some(value) = value.strip_suffix("M") {
-        (value, 1024 * 1024)
-    } else if let Some(value) = value.strip_suffix("K") {
-        (value, 1024)
-    } else {
-        (value, 1)
-    };
-    match value.trim_end().parse::<usize>() {
-        Ok(value) => Ok(value * multiplier),
-        Err(err) => Err(err.to_string()),
-    }
-}
 
 #[derive(Clone, Copy)]
 pub enum BufMode {
