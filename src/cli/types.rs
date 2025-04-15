@@ -117,22 +117,22 @@ impl Display for PosArg {
 #[derive(Debug, PartialEq)]
 pub struct Group {
     pub name: &'static str,
-    pub description: &'static str,
+    pub description: Option<&'static str>,
 }
 
 pub const COMMANDS: Group = Group {
     name: "Commands",
-    description: "",
+    description: None,
 };
 
 pub const OPTIONS: Group = Group {
     name: "Options",
-    description: "",
+    description: None,
 };
 
 pub const ARGUMENTS: Group = Group {
     name: "Arguments",
-    description: "",
+    description: None,
 };
 
 pub trait CommandItem {

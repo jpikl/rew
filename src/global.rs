@@ -12,7 +12,7 @@ use std::io::IsTerminal;
 
 const GLOBAL_OPTIONS: Group = Group {
     name: "Global options",
-    description: "Options shared by all commands.",
+    description: Some("Options shared by all commands."),
 };
 
 // Optimal value for max IO throughput, according to https://www.evanjones.ca/read-write-buffer-size.html

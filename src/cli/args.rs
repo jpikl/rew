@@ -2,6 +2,7 @@ use bstr::BString;
 use std::any::Any;
 use std::borrow::Cow;
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::ffi::OsStr;
 use std::ffi::OsString;
 use std::fmt::Display;
@@ -43,12 +44,14 @@ impl<A: Display, T> Display for TypedArg<A, T> {
 #[derive(Debug)]
 pub struct Args {
     values: HashMap<String, Box<dyn Any>>,
+    long: HashSet<String>,
 }
 
 impl Args {
     pub fn new() -> Self {
         Self {
             values: HashMap::new(),
+            long: HashSet::new(),
         }
     }
 
@@ -58,6 +61,15 @@ impl Args {
 
     pub fn set<A: Arg>(&mut self, arg: &A, value: Box<dyn Any>) {
         self.values.insert(arg.id().to_owned(), value);
+    }
+
+    pub fn set_long<A: Arg>(&mut self, arg: &A, value: Box<dyn Any>) {
+        self.values.insert(arg.id().to_owned(), value);
+        self.long.insert(arg.id().to_owned());
+    }
+
+    pub fn is_long<A: Arg, T: Default + Clone + 'static>(&self, arg: &TypedArg<A, T>) -> bool {
+        self.long.contains(arg.arg.id())
     }
 
     pub fn get<A: Arg, T: Default + Clone + 'static>(&self, arg: &TypedArg<A, T>) -> T {

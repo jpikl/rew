@@ -48,7 +48,7 @@ impl Command {
                                 OptArgKind::Value(ArgValue { parse, .. }) => {
                                     match parse(opt_value.into()) {
                                         Ok(value) => {
-                                            arg_values.set(opt, value);
+                                            arg_values.set_long(opt, value);
                                             continue 'next_arg;
                                         }
                                         Err(err) => {
@@ -65,14 +65,14 @@ impl Command {
                     if let Some(opt) = current_command.find_long_opt(opt_name) {
                         match opt.kind {
                             OptArgKind::Flag => {
-                                arg_values.set(opt, Box::new(true));
+                                arg_values.set_long(opt, Box::new(true));
                                 continue 'next_arg;
                             }
                             OptArgKind::Value(ArgValue { parse, .. }) => {
                                 if let Some(opt_value) = arg_iter.next() {
                                     match parse(opt_value.into()) {
                                         Ok(value) => {
-                                            arg_values.set(opt, value);
+                                            arg_values.set_long(opt, value);
                                             continue 'next_arg;
                                         }
                                         Err(err) => {
