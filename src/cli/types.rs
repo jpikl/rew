@@ -1,9 +1,8 @@
 use super::EnumItem;
 use super::args::Arg;
 use super::args::Args;
-use super::args::ParseRawArgFn;
+use super::args::ParseOsArgFn;
 use super::args::TypedArg;
-use bstr::ByteSlice;
 use std::any::Any;
 use std::ffi::OsStr;
 use std::fmt::Display;
@@ -50,7 +49,7 @@ pub struct ArgValue {
     pub name: &'static str,
     pub default: Option<&'static str>,
     pub enum_items: &'static [EnumItem],
-    pub parse: ParseRawArgFn,
+    pub parse: ParseOsArgFn,
 }
 
 impl Arg for OptArg {
@@ -78,9 +77,8 @@ impl Arg for PosArg {
 
 impl ArgValue {
     pub fn default(&self) -> Option<Box<dyn Any>> {
-        self.default.map(|value| {
-            (self.parse)(value.as_bytes().as_bstr().into()).expect("unparsable default value")
-        })
+        self.default
+            .map(|value| (self.parse)(OsStr::new(value).into()).expect("unparsable default value"))
     }
 }
 

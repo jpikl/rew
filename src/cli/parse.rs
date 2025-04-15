@@ -5,58 +5,10 @@ use super::types::Command;
 use super::types::OptArg;
 use super::types::OptArgKind;
 use anyhow::bail;
-use bstr::B;
-use bstr::BString;
-use bstr::ByteSlice;
+use os_str_bytes::OsStrBytesExt;
 use std::borrow::Cow;
 use std::ffi::OsStr;
 use std::ffi::OsString;
-
-fn os_to_bstring(str: OsString) -> BString {
-    #[cfg(target_family = "unix")]
-    let bytes = {
-        use std::os::unix::ffi::OsStringExt;
-        str.into_vec()
-    };
-
-    #[cfg(not(target_family = "unix"))]
-    let bytes = str.to_string_lossy().into_owned().into_bytes();
-
-    bytes.into()
-}
-
-fn split_os_str(value: &OsStr, separator: u8) -> Option<(Cow<'_, OsStr>, Cow<'_, OsStr>)> {
-    #[cfg(target_family = "unix")]
-    {
-        use std::os::unix::ffi::OsStrExt;
-
-        value
-            .as_bytes()
-            .split_once_str(&[separator])
-            .map(|(left, right)| {
-                (
-                    OsStr::from_bytes(left).into(),
-                    OsStr::from_bytes(right).into(),
-                )
-            })
-    }
-    #[cfg(target_family = "windows")]
-    {
-        use std::os::windows::ffi::OsStrExt;
-
-        value
-            .encode_wide()
-            .position(|ch| ch == separator as u16)
-            .map(|separator_index| {
-                let chars: Vec<u16> = value.encode_wide().collect();
-                let (left, right) = chars.split_at(separator_index);
-                (
-                    OsString::from_wide(Vec::from(left)).into(),
-                    OsString::from_wide(Vec::from(right)).into(),
-                )
-            })
-    }
-}
 
 impl Command {
     pub fn parse_args(&self) -> anyhow::Result<Runner> {
@@ -80,23 +32,21 @@ impl Command {
             .to_string();
 
         'next_arg: while let Some(arg) = arg_iter.next() {
-            let arg = os_to_bstring(arg);
-
             if allow_options {
-                if let Some(opt_name) = arg.strip_prefix(B("--")) {
+                if let Some(opt_name) = arg.strip_prefix("--") {
                     if opt_name.is_empty() {
                         allow_options = false;
                         continue 'next_arg;
                     }
 
-                    if let Some((opt_name, opt_value)) = opt_name.split_once_str("=") {
+                    if let Some((opt_name, opt_value)) = opt_name.split_once("=") {
                         if let Some(opt) = current_command.find_long_opt(opt_name) {
                             match opt.kind {
                                 OptArgKind::Flag => {
                                     bail!("Unexpected value for option {opt}");
                                 }
                                 OptArgKind::Value(ArgValue { parse, .. }) => {
-                                    match parse(opt_value.as_bstr().into()) {
+                                    match parse(opt_value.into()) {
                                         Ok(value) => {
                                             arg_values.set(opt, value);
                                             continue 'next_arg;
@@ -108,7 +58,7 @@ impl Command {
                                 }
                             }
                         } else {
-                            bail!("Unknown option: --{}", opt_name.to_str_lossy());
+                            bail!("Unknown option: --{}", opt_name.to_string_lossy());
                         }
                     }
 
@@ -120,7 +70,7 @@ impl Command {
                             }
                             OptArgKind::Value(ArgValue { parse, .. }) => {
                                 if let Some(opt_value) = arg_iter.next() {
-                                    match parse(os_to_bstring(opt_value).into()) {
+                                    match parse(opt_value.into()) {
                                         Ok(value) => {
                                             arg_values.set(opt, value);
                                             continue 'next_arg;
@@ -135,43 +85,53 @@ impl Command {
                             }
                         }
                     } else {
-                        bail!("Unknown option: --{}", opt_name.to_str_lossy());
+                        bail!("Unknown option: --{}", opt_name.to_string_lossy());
                     }
                 }
 
-                if let Some(opt_chars) = arg.strip_prefix(B("-")) {
+                if let Some(opt_chars) = arg.strip_prefix("-") {
                     if !opt_chars.is_empty() {
-                        let mut opt_chars = opt_chars.chars();
+                        let mut value_pos = 0;
 
-                        while let Some(opt_char) = opt_chars.next() {
-                            if let Some(opt) = current_command.find_short_opt(opt_char) {
-                                match opt.kind {
-                                    OptArgKind::Flag => {
-                                        arg_values.set(opt, Box::new(true));
-                                    }
-                                    OptArgKind::Value(ArgValue { parse, .. }) => {
-                                        let mut opt_value = opt_chars.clone().collect::<BString>();
+                        for (invalid, opt_char_chunk) in opt_chars.utf8_chunks() {
+                            if !invalid.as_os_str().is_empty() {
+                                bail!("Unknown option: -{}", invalid.as_os_str().to_string_lossy());
+                            }
 
-                                        if opt_value.is_empty() {
-                                            opt_value = match arg_iter.next() {
-                                                Some(opt_value) => os_to_bstring(opt_value),
-                                                None => bail!("Missing value for option {opt}"),
+                            for opt_char in opt_char_chunk.chars() {
+                                value_pos += opt_char.len_utf8();
+
+                                if let Some(opt) = current_command.find_short_opt(opt_char) {
+                                    match opt.kind {
+                                        OptArgKind::Flag => {
+                                            arg_values.set(opt, Box::new(true));
+                                        }
+                                        OptArgKind::Value(ArgValue { parse, .. }) => {
+                                            let (_, opt_value) = opt_chars.split_at(value_pos);
+
+                                            let opt_value: Cow<OsStr> = if opt_value.is_empty() {
+                                                match arg_iter.next() {
+                                                    Some(opt_value) => opt_value.into(),
+                                                    None => bail!("Missing value for option {opt}"),
+                                                }
+                                            } else {
+                                                opt_value.into()
                                             };
-                                        }
 
-                                        match parse(opt_value.into()) {
-                                            Ok(value) => {
-                                                arg_values.set(opt, value);
-                                                continue 'next_arg;
-                                            }
-                                            Err(err) => {
-                                                bail!("Invalid value for option {opt}: {err}");
+                                            match parse(opt_value) {
+                                                Ok(value) => {
+                                                    arg_values.set(opt, value);
+                                                    continue 'next_arg;
+                                                }
+                                                Err(err) => {
+                                                    bail!("Invalid value for option {opt}: {err}");
+                                                }
                                             }
                                         }
                                     }
+                                } else {
+                                    bail!("Unknown option: -{opt_char}");
                                 }
-                            } else {
-                                bail!("Unknown option: -{opt_char}");
                             }
                         }
 
@@ -180,7 +140,7 @@ impl Command {
                 }
             }
 
-            if let Some(command) = self.find_command(arg.as_bytes()) {
+            if let Some(command) = self.find_command(&arg) {
                 parent_commands.push(current_command);
                 current_command = command;
                 binary.push(' ');
@@ -189,7 +149,7 @@ impl Command {
             }
 
             if !current_command.commands.is_empty() {
-                bail!("Unkown command {arg}");
+                bail!("Unkown command {}", arg.to_string_lossy());
             }
 
             'next_pos: for pos in current_command.positionals {
@@ -222,13 +182,15 @@ impl Command {
         self.options.iter().find(|opt| opt.short == Some(name))
     }
 
-    fn find_long_opt(&self, name: &[u8]) -> Option<&OptArg> {
+    fn find_long_opt(&self, name: &OsStr) -> Option<&OptArg> {
         self.options
             .iter()
-            .find(|opt| opt.long.map(|long| long.as_bytes()) == Some(name))
+            .find(|opt| opt.long.map(OsStr::new) == Some(name))
     }
 
-    fn find_command(&self, name: &[u8]) -> Option<&Command> {
-        self.commands.iter().find(|cmd| cmd.name.as_bytes() == name)
+    fn find_command(&self, name: &OsStr) -> Option<&Command> {
+        self.commands
+            .iter()
+            .find(|cmd| OsStr::new(cmd.name) == name)
     }
 }

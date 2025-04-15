@@ -1,9 +1,9 @@
-use bstr::BStr;
 use bstr::BString;
-use bstr::ByteSlice;
 use std::any::Any;
 use std::borrow::Cow;
 use std::collections::HashMap;
+use std::ffi::OsStr;
+use std::ffi::OsString;
 use std::fmt::Display;
 use std::marker::PhantomData;
 
@@ -83,33 +83,47 @@ impl Args {
 }
 
 pub type ParseArgResult = Result<Box<dyn Any>, String>;
-pub type ParseRawArgFn = fn(Cow<BStr>) -> ParseArgResult;
+pub type ParseOsArgFn = fn(Cow<OsStr>) -> ParseArgResult;
 
 pub trait ParseArg {
     fn parse_arg(raw_value: Cow<str>) -> ParseArgResult;
 }
 
-pub trait ParseRawArg {
-    fn parse_raw_arg(raw_value: Cow<BStr>) -> ParseArgResult;
+pub trait ParseOsArg {
+    fn parse_raw_arg(raw_value: Cow<OsStr>) -> ParseArgResult;
 }
 
-impl ParseRawArg for BString {
-    fn parse_raw_arg(raw_value: Cow<BStr>) -> ParseArgResult {
+impl ParseOsArg for OsString {
+    fn parse_raw_arg(raw_value: Cow<OsStr>) -> ParseArgResult {
         Ok(Box::new(raw_value.into_owned()))
     }
 }
 
-impl<A: ParseArg> ParseRawArg for A {
-    fn parse_raw_arg(raw_value: Cow<BStr>) -> ParseArgResult {
+impl ParseOsArg for BString {
+    fn parse_raw_arg(raw_value: Cow<OsStr>) -> ParseArgResult {
+        Ok(Box::new(BString::new(
+            raw_value.into_owned().into_encoded_bytes(),
+        )))
+    }
+}
+
+impl ParseArg for String {
+    fn parse_arg(raw_value: Cow<str>) -> ParseArgResult {
+        Ok(Box::new(raw_value.into_owned()))
+    }
+}
+
+impl<A: ParseArg> ParseOsArg for A {
+    fn parse_raw_arg(raw_value: Cow<OsStr>) -> ParseArgResult {
         match raw_value {
             Cow::Borrowed(raw_value) => {
-                if let Ok(value) = raw_value.to_str() {
-                    return A::parse_arg(Cow::Borrowed(value));
+                if let Some(value) = raw_value.to_str() {
+                    return A::parse_arg(value.into());
                 }
             }
             Cow::Owned(raw_value) => {
-                if let Ok(value) = raw_value.try_into() {
-                    return A::parse_arg(Cow::Owned(value));
+                if let Ok(value) = raw_value.into_string() {
+                    return A::parse_arg(value.into());
                 }
             }
         }
