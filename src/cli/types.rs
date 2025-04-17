@@ -110,7 +110,11 @@ impl Display for OptArg {
 
 impl Display for PosArg {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.value.name)
+        if self.required {
+            write!(f, "<{}>", self.value.name)
+        } else {
+            write!(f, "[{}]", self.value.name)
+        }
     }
 }
 
@@ -137,7 +141,7 @@ pub const ARGUMENTS: Group = Group {
 
 pub trait CommandItem {
     fn group(&self) -> &Group;
-    fn usage(&self) -> String;
+    fn params(&self) -> Vec<String>;
     fn description(&self) -> &str;
     fn description_ex(&self) -> &[&str];
     fn enum_items(&self) -> &[EnumItem];
@@ -145,34 +149,29 @@ pub trait CommandItem {
     fn environment(&self) -> Option<&str>;
 }
 
-impl Command {
-    pub fn usage_params(&self) -> String {
-        let mut usage = String::new();
-
-        if !self.options.is_empty() {
-            usage.push_str(" [OPTIONS]");
-        }
-
-        for positional in self.positionals {
-            usage.push(' ');
-            usage.push_str(&positional.usage());
-        }
-
-        if !self.subcommands.is_empty() {
-            usage.push_str(" <COMMAND>");
-        }
-
-        usage
-    }
-}
+impl Command {}
 
 impl CommandItem for Command {
     fn group(&self) -> &Group {
         self.group
     }
 
-    fn usage(&self) -> String {
-        self.name.to_string()
+    fn params(&self) -> Vec<String> {
+        let mut params: Vec<String> = Vec::new();
+
+        if !self.options.is_empty() {
+            params.push("[OPTIONS]".into());
+        }
+
+        for positional in self.positionals {
+            params.push(positional.to_string());
+        }
+
+        if !self.subcommands.is_empty() {
+            params.push("<COMMAND>".into());
+        }
+
+        params
     }
 
     fn description(&self) -> &str {
@@ -201,10 +200,10 @@ impl CommandItem for OptArg {
         self.group
     }
 
-    fn usage(&self) -> String {
+    fn params(&self) -> Vec<String> {
         match &self.kind {
-            OptArgKind::Flag => self.to_string(),
-            OptArgKind::Value(value) => format!("{self} <{}>", value.name),
+            OptArgKind::Flag => Vec::new(),
+            OptArgKind::Value(value) => vec![format!("<{}>", value.name)],
         }
     }
 
@@ -240,12 +239,8 @@ impl CommandItem for PosArg {
         self.group
     }
 
-    fn usage(&self) -> String {
-        if self.required {
-            format!("<{self}>")
-        } else {
-            format!("[{self}]")
-        }
+    fn params(&self) -> Vec<String> {
+        Vec::new()
     }
 
     fn description(&self) -> &str {

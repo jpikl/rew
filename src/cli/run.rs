@@ -6,6 +6,7 @@ use super::args::Args;
 use super::builders::FlagBuilder;
 use super::types::Command;
 use super::types::Flag;
+use crate::colors::BOLD;
 use crate::colors::BOLD_RED;
 use crate::colors::RESET;
 use crate::colors::YELLOW;
@@ -110,23 +111,24 @@ impl<'a> Runner<'a> {
         }
 
         writeln!(writer)?;
-        writeln!(
-            writer,
-            "Usage: {}{}",
-            self.binary,
-            self.command.usage_params()
-        )?;
+        write!(writer, "{BOLD}Usage:{RESET} {BOLD}{}{RESET}", self.binary,)?;
+
+        for param in self.command.params() {
+            write!(writer, " {param}")?;
+        }
+
+        writeln!(writer)?;
 
         for (group, commands) in self.command.grouped_commands() {
-            print_item_group(&mut writer, group, &commands, long)?;
+            print_item_group(&mut writer, group, &commands, long, false)?;
         }
 
         for (group, positionals) in self.command.grouped_positionals() {
-            print_item_group(&mut writer, group, &positionals, long)?;
+            print_item_group(&mut writer, group, &positionals, long, true)?;
         }
 
         for (group, options) in self.command.grouped_options() {
-            print_item_group(&mut writer, group, &options, long)?;
+            print_item_group(&mut writer, group, &options, long, true)?;
         }
 
         Ok(())
@@ -168,14 +170,23 @@ impl Command {
     }
 }
 
-fn print_item_group<T: CommandItem>(
+fn get_usage_len<T: CommandItem + Display>(item: &T, with_params: bool) -> usize {
+    let mut len = item.to_string().chars().count();
+    if with_params {
+        len += item.params().join(" ").chars().count();
+    }
+    len
+}
+
+fn print_item_group<T: CommandItem + Display>(
     writer: &mut impl Write,
     group: &Group,
     items: &[&T],
     long: bool,
+    with_params: bool,
 ) -> std::io::Result<()> {
     writeln!(writer)?;
-    writeln!(writer, "{}:", group.name)?;
+    writeln!(writer, "{BOLD}{}{RESET}:", group.name)?;
 
     if long {
         let mut add_newline = false;
@@ -187,7 +198,15 @@ fn print_item_group<T: CommandItem>(
                 add_newline = true;
             }
 
-            writeln!(writer, "  {}", item.usage())?;
+            write!(writer, "  {BOLD}{item}{RESET}")?;
+
+            if with_params {
+                for param in item.params() {
+                    write!(writer, " {param}")?;
+                }
+            }
+
+            writeln!(writer)?;
             writeln!(writer, "          {}", item.description())?;
 
             for description in item.description_ex() {
@@ -200,14 +219,18 @@ fn print_item_group<T: CommandItem>(
 
                 for enum_item in item.enum_items() {
                     if let Some((main_desc, descriptions)) = enum_item.description.split_first() {
-                        writeln!(writer, "          - {}: {main_desc}", enum_item.name)?;
+                        writeln!(
+                            writer,
+                            "          - {BOLD}{}{RESET}: {main_desc}",
+                            enum_item.name
+                        )?;
                         let padding = " ".repeat(enum_item.name.chars().count());
 
                         for description in descriptions {
                             writeln!(writer, "              {padding}{description}",)?;
                         }
                     } else {
-                        writeln!(writer, "          - {}", enum_item.name)?;
+                        writeln!(writer, "          - {BOLD}{}{RESET}", enum_item.name)?;
                     }
                 }
             }
@@ -227,14 +250,25 @@ fn print_item_group<T: CommandItem>(
     } else {
         let width = items
             .iter()
-            .map(|item| item.usage().chars().count())
+            .map(|item| get_usage_len(*item, with_params))
             .max()
             .unwrap_or_default();
 
         for item in items {
-            let usage = item.usage();
-            let padding = " ".repeat(width - usage.len());
-            writeln!(writer, "  {usage}{padding}  {}", item.description())?;
+            write!(writer, "  {BOLD}{item}{RESET}")?;
+
+            if with_params {
+                for param in item.params() {
+                    write!(writer, " {param}")?;
+                }
+            }
+
+            writeln!(
+                writer,
+                "{}  {}",
+                " ".repeat(width - get_usage_len(*item, with_params)),
+                item.description()
+            )?;
         }
     }
 
