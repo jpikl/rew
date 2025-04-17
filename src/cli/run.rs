@@ -141,7 +141,9 @@ impl Command {
 fn get_usage_len<T: CommandItem + Display>(item: &T, with_params: bool) -> usize {
     let mut len = item.to_string().chars().count();
     if with_params {
-        len += item.params().join(" ").chars().count();
+        for param in item.params() {
+            len += param.chars().count() + 1;
+        }
     }
     len
 }
@@ -154,7 +156,7 @@ fn print_item_group<T: CommandItem + Display>(
     with_params: bool,
 ) -> std::io::Result<()> {
     writeln!(writer)?;
-    writeln!(writer, "{BOLD}{}{RESET}:", group.name)?;
+    writeln!(writer, "{BOLD}{}:{RESET}", group.name)?;
 
     if long {
         let mut add_newline = false;
@@ -192,6 +194,7 @@ fn print_item_group<T: CommandItem + Display>(
                             "          - {BOLD}{}{RESET}: {main_desc}",
                             enum_item.name
                         )?;
+
                         let padding = " ".repeat(enum_item.name.chars().count());
 
                         for description in descriptions {
