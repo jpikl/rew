@@ -134,6 +134,11 @@ pub const OPTIONS: Group = Group {
     description: None,
 };
 
+pub const USAGE_OPTIONS: Group = Group {
+    name: "Usage options",
+    description: None,
+};
+
 pub const ARGUMENTS: Group = Group {
     name: "Arguments",
     description: None,

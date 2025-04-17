@@ -20,12 +20,14 @@ pub const HELP: Flag = FlagBuilder::new("help")
     .short('h')
     .long("help")
     .description("Print short help (-h) or detailed help (--help)")
+    .group(&USAGE_OPTIONS)
     .done();
 
 pub const VERSION: Flag = FlagBuilder::new("version")
     .short('V')
     .long("version")
     .description("Print version")
+    .group(&USAGE_OPTIONS)
     .done();
 
 #[derive(Debug)]
