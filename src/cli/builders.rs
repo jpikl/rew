@@ -22,7 +22,7 @@ pub struct CommandBuilder {
     group: &'static Group,
     options: &'static [OptArg],
     positionals: &'static [PosArg],
-    commands: &'static [Command],
+    subcommands: &'static [Command],
     run: fn(Args) -> anyhow::Result<()>,
 }
 
@@ -36,7 +36,7 @@ impl CommandBuilder {
             group: &COMMANDS,
             options: &[],
             positionals: &[],
-            commands: &[],
+            subcommands: &[],
             run: |_| unimplemented!("command not implemented"),
         }
     }
@@ -76,8 +76,8 @@ impl CommandBuilder {
         self
     }
 
-    pub const fn commands(mut self, commands: &'static [Command]) -> Self {
-        self.commands = commands;
+    pub const fn subcommands(mut self, subcommands: &'static [Command]) -> Self {
+        self.subcommands = subcommands;
         self
     }
 
@@ -95,7 +95,7 @@ impl CommandBuilder {
             group: self.group,
             options: self.options,
             positionals: self.positionals,
-            commands: self.commands,
+            subcommands: self.subcommands,
             run: self.run,
         }
     }

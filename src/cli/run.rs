@@ -6,7 +6,11 @@ use super::args::Args;
 use super::builders::FlagBuilder;
 use super::types::Command;
 use super::types::Flag;
-use anyhow::bail;
+use crate::colors::BOLD_RED;
+use crate::colors::RESET;
+use crate::colors::YELLOW;
+use anstream::stdout;
+use std::fmt::Display;
 use std::io::Write;
 
 pub const HELP: Flag = FlagBuilder::new("help")
@@ -22,6 +26,41 @@ pub const VERSION: Flag = FlagBuilder::new("version")
     .done();
 
 #[derive(Debug)]
+pub struct Error<'a> {
+    binary: String,
+    kind: ErrorKind<'a>,
+}
+
+impl std::error::Error for Error<'_> {}
+
+impl Display for Error<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{BOLD_RED}{}{RESET}: {}", self.binary, self.kind)
+    }
+}
+
+#[derive(Debug)]
+pub enum ErrorKind<'a> {
+    MissingArgument(&'a PosArg),
+    MissingSubcommand,
+    RunError(anyhow::Error),
+}
+
+impl Display for ErrorKind<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::MissingArgument(arg) => {
+                write!(f, "Missing argument '{YELLOW}{arg}{RESET}'",)
+            }
+            Self::MissingSubcommand => {
+                write!(f, "Missing subcommand",)
+            }
+            Self::RunError(err) => err.fmt(f),
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct Runner<'a> {
     pub binary: String,
     pub command: &'a Command,
@@ -29,29 +68,36 @@ pub struct Runner<'a> {
     pub args: Args,
 }
 
-impl Runner<'_> {
-    pub fn run(self) -> anyhow::Result<()> {
+impl<'a> Runner<'a> {
+    pub fn run(self) -> Result<(), Error<'a>> {
         if self.args.get(&HELP) {
-            self.print_help(std::io::stdout().lock(), self.args.is_long(&HELP))?;
-            return Ok(());
+            return self
+                .print_help(stdout().lock(), self.args.is_long(&HELP))
+                .map_err(|err| self.err(ErrorKind::RunError(err.into())));
         }
 
         if self.args.get(&VERSION) {
-            self.print_version(std::io::stdout().lock())?;
-            return Ok(());
+            return self
+                .print_version(stdout().lock())
+                .map_err(|err| self.err(ErrorKind::RunError(err.into())));
         }
 
-        if !self.command.commands.is_empty() {
-            bail!("Missing command");
+        if !self.command.subcommands.is_empty() {
+            return Err(self.err(ErrorKind::MissingSubcommand));
         }
 
         for pos in self.command.positionals {
             if pos.required && !self.args.has(pos) {
-                bail!("Missing required argument {pos}");
+                return Err(self.err(ErrorKind::MissingArgument(pos)));
             }
         }
 
-        (self.command.run)(self.args)
+        let binary = self.binary.clone();
+
+        (self.command.run)(self.args).map_err(|err| Error {
+            binary,
+            kind: ErrorKind::RunError(err),
+        })
     }
 
     fn print_help(&self, mut writer: impl Write, long: bool) -> std::io::Result<()> {
@@ -99,6 +145,13 @@ impl Runner<'_> {
 
         writeln!(writer)
     }
+
+    fn err(&self, kind: ErrorKind<'a>) -> Error<'a> {
+        Error {
+            binary: self.binary.clone(),
+            kind,
+        }
+    }
 }
 
 impl Command {
@@ -111,7 +164,7 @@ impl Command {
     }
 
     fn grouped_commands(&self) -> Vec<(&Group, Vec<&Command>)> {
-        group_items(self.commands)
+        group_items(self.subcommands)
     }
 }
 

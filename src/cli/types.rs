@@ -16,7 +16,7 @@ pub struct Command {
     pub group: &'static Group,
     pub options: &'static [OptArg],
     pub positionals: &'static [PosArg],
-    pub commands: &'static [Command],
+    pub subcommands: &'static [Command],
     pub run: fn(Args) -> anyhow::Result<()>,
 }
 
@@ -158,7 +158,7 @@ impl Command {
             usage.push_str(&positional.usage());
         }
 
-        if !self.commands.is_empty() {
+        if !self.subcommands.is_empty() {
             usage.push_str(" <COMMAND>");
         }
 

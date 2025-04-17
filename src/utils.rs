@@ -2,6 +2,7 @@ use crate::cli::ParseArg;
 use crate::cli::ParseArgResult;
 use std::borrow::Cow;
 use std::fmt::Display;
+use std::num::ParseIntError;
 
 #[derive(Default, Clone, Debug)]
 pub struct ByteSize(pub usize);
@@ -10,7 +11,7 @@ impl ParseArg for ByteSize {
     fn parse_arg(raw_value: Cow<str>) -> ParseArgResult {
         match parse_byte_size(raw_value.as_ref()) {
             Ok(size) => Ok(Box::new(ByteSize(size))),
-            Err(err) => Err(err),
+            Err(err) => Err(err.into()),
         }
     }
 }
@@ -34,7 +35,7 @@ impl Display for ByteSize {
     }
 }
 
-fn parse_byte_size(value: &str) -> Result<usize, String> {
+fn parse_byte_size(value: &str) -> Result<usize, ParseIntError> {
     let (value, multiplier) = if let Some(value) = strip_any_suffix(value, &["GiB", "GB", "G"]) {
         (value, 1 << 30)
     } else if let Some(value) = strip_any_suffix(value, &["MiB", "MB", "M"]) {
@@ -46,7 +47,7 @@ fn parse_byte_size(value: &str) -> Result<usize, String> {
     };
     match value.trim_end().parse::<usize>() {
         Ok(value) => Ok(value * multiplier),
-        Err(err) => Err(err.to_string()),
+        Err(err) => Err(err),
     }
 }
 

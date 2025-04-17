@@ -1,3 +1,4 @@
+use anyhow::bail;
 use bstr::BString;
 use std::any::Any;
 use std::borrow::Cow;
@@ -94,7 +95,7 @@ impl Args {
     }
 }
 
-pub type ParseArgResult = Result<Box<dyn Any>, String>;
+pub type ParseArgResult = anyhow::Result<Box<dyn Any>>;
 pub type ParseOsArgFn = fn(Cow<OsStr>) -> ParseArgResult;
 
 pub trait ParseArg {
@@ -139,7 +140,7 @@ impl<A: ParseArg> ParseOsArg for A {
                 }
             }
         }
-        Err("value is not valid UTF-8 string".into())
+        bail!("value is not valid UTF-8 string")
     }
 }
 
@@ -150,7 +151,7 @@ macro_rules! default_parse_arg {
             fn parse_arg(raw_value: std::borrow::Cow<str>) -> $crate::cli::ParseArgResult {
                 match raw_value.parse::<$type>() {
                     Ok(value) => Ok(Box::new(value)),
-                    Err(err) => Err(err.to_string()),
+                    Err(err) => Err(err.into()),
                 }
             }
         }
@@ -203,7 +204,7 @@ macro_rules! impl_enum {
             fn parse_arg(raw_value: Cow<str>) -> ParseArgResult {
                 match raw_value.as_ref() {
                     $($name => Ok(Box::new(Self::$value)),)*
-                    _ => Err(format!("Invalid enum value: {}", raw_value)),
+                    _ => anyhow::bail!("Invalid enum value: {raw_value}"),
                 }
             }
         }

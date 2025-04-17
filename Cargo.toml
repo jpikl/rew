@@ -12,6 +12,7 @@ license = "MIT"
 edition = "2024"
 
 [dependencies]
+anstream = "0.6.18"
 anyhow = "1.0.97"
 bstr = { version = "1.11.3", features = ["std"], default-features = false }
 os_str_bytes = "7.1"

@@ -1,183 +1,302 @@
 use super::ArgValue;
+use super::PosArg;
 use super::Runner;
 use super::args::Args;
 use super::types::Command;
 use super::types::OptArg;
 use super::types::OptArgKind;
-use anyhow::bail;
+use crate::colors::BOLD_RED;
+use crate::colors::RESET;
+use crate::colors::YELLOW;
 use os_str_bytes::OsStrBytesExt;
 use std::borrow::Cow;
 use std::ffi::OsStr;
 use std::ffi::OsString;
+use std::fmt::Display;
+use std::result::Result;
 
-impl Command {
-    pub fn parse_args(&self) -> anyhow::Result<Runner> {
-        self.parse_args_from(std::env::args_os())
+#[derive(Debug)]
+pub struct Error<'a> {
+    binary: String,
+    kind: ErrorKind<'a>,
+}
+
+impl std::error::Error for Error<'_> {}
+
+impl Display for Error<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{BOLD_RED}{}{RESET}: {}", self.binary, self.kind)
+    }
+}
+
+#[derive(Debug)]
+pub enum ErrorKind<'a> {
+    UnkownShortOption(OsString),
+    UnkownLongOption(OsString),
+    UnkownSubcommand(OsString),
+    MissingOptionValue(&'a OptArg),
+    InvalidOptionValue(&'a OptArg, OsString, anyhow::Error),
+    InvalidArgumentValue(&'a PosArg, OsString, anyhow::Error),
+    UnexpectedOptionValue(&'a OptArg, OsString),
+    UnexpectedArgument(OsString),
+}
+
+impl Display for ErrorKind<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::UnkownShortOption(opt) => {
+                write!(
+                    f,
+                    "Unknown option '{YELLOW}-{}{RESET}'",
+                    opt.to_string_lossy()
+                )
+            }
+            Self::UnkownLongOption(opt) => {
+                write!(
+                    f,
+                    "Unknown option '{YELLOW}--{}{RESET}'",
+                    opt.to_string_lossy()
+                )
+            }
+            Self::UnkownSubcommand(cmd) => {
+                write!(
+                    f,
+                    "Unknown subcommand '{YELLOW}{}{RESET}'",
+                    cmd.to_string_lossy()
+                )
+            }
+            Self::MissingOptionValue(opt) => {
+                write!(f, "Missing value for option '{YELLOW}{opt}{RESET}'")
+            }
+            Self::InvalidOptionValue(opt, val, err) => {
+                write!(
+                    f,
+                    "Invalid value '{YELLOW}{}{RESET}' for option '{YELLOW}{opt}{RESET}': {err}",
+                    val.to_string_lossy()
+                )
+            }
+            Self::InvalidArgumentValue(arg, val, err) => {
+                write!(
+                    f,
+                    "Invalid value '{YELLOW}{}{RESET}' for argument '{YELLOW}{arg}{RESET}': {err}",
+                    val.to_string_lossy()
+                )
+            }
+            Self::UnexpectedOptionValue(opt, val) => {
+                write!(
+                    f,
+                    "Unexpected value '{YELLOW}{}{RESET}' for option '{YELLOW}{opt}{RESET}'",
+                    val.to_string_lossy()
+                )
+            }
+            Self::UnexpectedArgument(arg) => {
+                write!(
+                    f,
+                    "Unexpected argument '{YELLOW}{}{RESET}'",
+                    arg.to_string_lossy()
+                )
+            }
+        }
+    }
+}
+
+pub struct Parser<'a, I: Iterator> {
+    command: &'a Command,
+    parents: Vec<&'a Command>,
+    values: Args,
+    binary: String,
+    allow_options: bool,
+    args: I,
+}
+
+impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
+    pub fn new<T: IntoIterator<IntoIter = I>>(command: &'a Command, args: T) -> Self {
+        Self {
+            command,
+            parents: Vec::new(),
+            values: Args::new(),
+            binary: String::new(),
+            allow_options: true,
+            args: args.into_iter(),
+        }
     }
 
-    pub fn parse_args_from<T: IntoIterator<Item = OsString>>(
-        &self,
-        args: T,
-    ) -> anyhow::Result<Runner> {
-        let mut parent_commands = Vec::new();
-        let mut current_command = self;
-        let mut arg_iter = args.into_iter();
-        let mut arg_values = Args::new();
-        let mut allow_options = true;
+    pub fn parse(mut self) -> Result<Runner<'a>, Error<'a>> {
+        if let Some(arg) = self.args.next() {
+            self.binary.push_str(&arg.to_string_lossy());
+        }
 
-        let mut binary = arg_iter
-            .next()
-            .unwrap_or_default()
-            .to_string_lossy()
-            .to_string();
-
-        'next_arg: while let Some(arg) = arg_iter.next() {
-            if allow_options {
-                if let Some(opt_name) = arg.strip_prefix("--") {
-                    if opt_name.is_empty() {
-                        allow_options = false;
-                        continue 'next_arg;
-                    }
-
-                    if let Some((opt_name, opt_value)) = opt_name.split_once("=") {
-                        if let Some(opt) = current_command.find_long_opt(opt_name) {
-                            match opt.kind {
-                                OptArgKind::Flag => {
-                                    bail!("Unexpected value for option {opt}");
-                                }
-                                OptArgKind::Value(ArgValue { parse, .. }) => {
-                                    match parse(opt_value.into()) {
-                                        Ok(value) => {
-                                            arg_values.set_long(opt, value);
-                                            continue 'next_arg;
-                                        }
-                                        Err(err) => {
-                                            bail!("Invalid value for option {opt}: {err}");
-                                        }
-                                    }
-                                }
-                            }
-                        } else {
-                            bail!("Unknown option --{}", opt_name.to_string_lossy());
-                        }
-                    }
-
-                    if let Some(opt) = current_command.find_long_opt(opt_name) {
-                        match opt.kind {
-                            OptArgKind::Flag => {
-                                arg_values.set_long(opt, Box::new(true));
-                                continue 'next_arg;
-                            }
-                            OptArgKind::Value(ArgValue { parse, .. }) => {
-                                if let Some(opt_value) = arg_iter.next() {
-                                    match parse(opt_value.into()) {
-                                        Ok(value) => {
-                                            arg_values.set_long(opt, value);
-                                            continue 'next_arg;
-                                        }
-                                        Err(err) => {
-                                            bail!("Invalid value for option {opt}: {err}");
-                                        }
-                                    }
-                                } else {
-                                    bail!("Missing value for option {opt}");
-                                }
-                            }
-                        }
-                    } else {
-                        bail!("Unknown option --{}", opt_name.to_string_lossy());
-                    }
-                }
-
-                if let Some(opt_chars) = arg.strip_prefix("-") {
-                    if !opt_chars.is_empty() {
-                        let mut value_pos = 0;
-
-                        for (invalid, opt_char_chunk) in opt_chars.utf8_chunks() {
-                            if !invalid.as_os_str().is_empty() {
-                                bail!("Unknown option -{}", invalid.as_os_str().to_string_lossy());
-                            }
-
-                            for opt_char in opt_char_chunk.chars() {
-                                value_pos += opt_char.len_utf8();
-
-                                if let Some(opt) = current_command.find_short_opt(opt_char) {
-                                    match opt.kind {
-                                        OptArgKind::Flag => {
-                                            arg_values.set(opt, Box::new(true));
-                                        }
-                                        OptArgKind::Value(ArgValue { parse, .. }) => {
-                                            let (_, opt_value) = opt_chars.split_at(value_pos);
-
-                                            let opt_value: Cow<OsStr> = if opt_value.is_empty() {
-                                                match arg_iter.next() {
-                                                    Some(opt_value) => opt_value.into(),
-                                                    None => bail!("Missing value for option {opt}"),
-                                                }
-                                            } else {
-                                                opt_value.into()
-                                            };
-
-                                            match parse(opt_value) {
-                                                Ok(value) => {
-                                                    arg_values.set(opt, value);
-                                                    continue 'next_arg;
-                                                }
-                                                Err(err) => {
-                                                    bail!("Invalid value for option {opt}: {err}");
-                                                }
-                                            }
-                                        }
-                                    }
-                                } else {
-                                    bail!("Unknown option -{opt_char}");
-                                }
-                            }
-                        }
-
-                        continue 'next_arg;
-                    }
-                }
-            }
-
-            if let Some(command) = self.find_command(&arg) {
-                parent_commands.push(current_command);
-                current_command = command;
-                binary.push(' ');
-                binary.push_str(command.name);
-                continue 'next_arg;
-            }
-
-            if !current_command.commands.is_empty() {
-                bail!("Unkown command {}", arg.to_string_lossy());
-            }
-
-            'next_pos: for pos in current_command.positionals {
-                if arg_values.has(pos) {
-                    continue 'next_pos;
-                }
-                match (pos.value.parse)(arg.into()) {
-                    Ok(value) => {
-                        arg_values.set(pos, value);
-                        continue 'next_arg;
-                    }
-                    Err(err) => {
-                        bail!("Invalid argument {} value: {}", pos, err)
-                    }
-                }
-            }
-
-            bail!("Unexpected argument: {}", arg.to_string_lossy());
+        while let Some(arg) = self.args.next() {
+            self.parse_arg(arg)?;
         }
 
         Ok(Runner {
-            binary,
-            command: current_command,
-            parents: parent_commands,
-            args: arg_values,
+            binary: self.binary,
+            command: self.command,
+            parents: self.parents,
+            args: self.values,
         })
     }
 
+    fn parse_arg(&mut self, arg: OsString) -> Result<(), Error<'a>> {
+        if self.allow_options {
+            if let Some(name) = arg.strip_prefix("--") {
+                if !name.is_empty() {
+                    return self.parse_long_opt(name);
+                } else {
+                    self.allow_options = false;
+                    return Ok(());
+                }
+            } else if let Some(name) = arg.strip_prefix("-") {
+                if !name.is_empty() {
+                    return self.parse_short_opts(name);
+                }
+            }
+        }
+
+        if !self.command.subcommands.is_empty() {
+            if let Some(subcommand) = self.command.find_subcommand(&arg) {
+                self.enter_subcommand(subcommand);
+                return Ok(());
+            } else {
+                return Err(self.err(ErrorKind::UnkownSubcommand(arg)));
+            }
+        }
+
+        if let Some(pos) = self.command.find_unset_pos(&self.values) {
+            let err_value = arg.clone(); // For possible error
+
+            match (pos.value.parse)(arg.into()) {
+                Ok(value) => {
+                    self.values.set(pos, value);
+                    return Ok(());
+                }
+                Err(err) => {
+                    return Err(self.err(ErrorKind::InvalidArgumentValue(pos, err_value, err)));
+                }
+            }
+        }
+
+        Err(self.err(ErrorKind::UnexpectedArgument(arg)))
+    }
+
+    fn parse_long_opt(&mut self, name: &OsStr) -> Result<(), Error<'a>> {
+        let (name, value) = match name.split_once("=") {
+            Some((name, value)) => (name, Some(value)),
+            None => (name, None),
+        };
+        if let Some(opt) = self.command.find_long_opt(name) {
+            match opt.kind {
+                OptArgKind::Flag => {
+                    if let Some(value) = value {
+                        Err(self.err(ErrorKind::UnexpectedOptionValue(opt, value.into())))
+                    } else {
+                        self.values.set_long(opt, Box::new(true));
+                        Ok(())
+                    }
+                }
+                OptArgKind::Value(ArgValue { parse, .. }) => {
+                    let value = match value {
+                        Some(value) => Some(value.into()),
+                        None => self.args.next().map(Cow::Owned),
+                    };
+
+                    if let Some(value) = value {
+                        let err_value = value.clone(); // For possible error
+
+                        match parse(value) {
+                            Ok(value) => {
+                                self.values.set_long(opt, value);
+                                Ok(())
+                            }
+                            Err(err) => Err(self.err(ErrorKind::InvalidOptionValue(
+                                opt,
+                                err_value.into(),
+                                err,
+                            ))),
+                        }
+                    } else {
+                        Err(self.err(ErrorKind::MissingOptionValue(opt)))
+                    }
+                }
+            }
+        } else {
+            Err(self.err(ErrorKind::UnkownLongOption(name.into())))
+        }
+    }
+
+    fn parse_short_opts(&mut self, name: &OsStr) -> Result<(), Error<'a>> {
+        let mut value_pos = 0;
+
+        for (invalid, chunk) in name.utf8_chunks() {
+            if !invalid.as_os_str().is_empty() {
+                return Err(self.err(ErrorKind::UnkownShortOption(invalid.into())));
+            }
+
+            for char in chunk.chars() {
+                value_pos += char.len_utf8();
+                let (_, value) = name.split_at(value_pos);
+                if self.parse_short_opt(char, value)? {
+                    break;
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    fn parse_short_opt(&mut self, char: char, value: &OsStr) -> Result<bool, Error<'a>> {
+        if let Some(opt) = self.command.find_short_opt(char) {
+            match opt.kind {
+                OptArgKind::Flag => {
+                    self.values.set(opt, Box::new(true));
+                    Ok(false)
+                }
+                OptArgKind::Value(ArgValue { parse, .. }) => {
+                    let value: Cow<OsStr> = if value.is_empty() {
+                        if let Some(value) = self.args.next() {
+                            value.into()
+                        } else {
+                            return Err(self.err(ErrorKind::MissingOptionValue(opt)));
+                        }
+                    } else {
+                        value.into()
+                    };
+
+                    let err_value = value.clone(); // For possible error
+
+                    match parse(value) {
+                        Ok(value) => {
+                            self.values.set(opt, value);
+                            Ok(true)
+                        }
+                        Err(err) => {
+                            Err(self.err(ErrorKind::InvalidOptionValue(opt, err_value.into(), err)))
+                        }
+                    }
+                }
+            }
+        } else {
+            Err(self.err(ErrorKind::UnkownShortOption(char.to_string().into())))
+        }
+    }
+
+    fn enter_subcommand(&mut self, subcommand: &'a Command) {
+        self.parents.push(self.command);
+        self.command = subcommand;
+        self.binary.push(' ');
+        self.binary.push_str(subcommand.name);
+    }
+
+    fn err(&self, kind: ErrorKind<'a>) -> Error<'a> {
+        Error {
+            binary: self.binary.clone(),
+            kind,
+        }
+    }
+}
+
+impl Command {
     fn find_short_opt(&self, name: char) -> Option<&OptArg> {
         self.options.iter().find(|opt| opt.short == Some(name))
     }
@@ -188,15 +307,20 @@ impl Command {
             .find(|opt| opt.long.map(OsStr::new) == Some(name))
     }
 
-    fn find_command(&self, name: &OsStr) -> Option<&Command> {
-        self.commands
+    fn find_subcommand(&self, name: &OsStr) -> Option<&Command> {
+        self.subcommands
             .iter()
             .find(|cmd| OsStr::new(cmd.name) == name)
+    }
+
+    fn find_unset_pos(&self, args: &Args) -> Option<&PosArg> {
+        self.positionals.iter().find(|pos| !args.has(*pos))
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crate::cli::Command;
     use crate::cli::CommandBuilder;
     use crate::cli::Flag;
@@ -205,6 +329,8 @@ mod tests {
     use crate::cli::OptBuilder;
     use crate::cli::Pos;
     use crate::cli::PosBuilder;
+    use anstream::StripStream;
+    use bstr::ByteSlice;
     use claims::*;
     use rstest::rstest;
     use std::ffi::OsString;
@@ -212,12 +338,13 @@ mod tests {
     const FLAG: Flag = FlagBuilder::new("flag").short('f').long("flag").done();
     const OPT: Opt<i32> = OptBuilder::new("opt").short('o').long("option").done();
     const POS: Pos<String> = PosBuilder::new("pos").name("pos").done();
-    const SUB_COMMAND: Command = CommandBuilder::new().name("sub").done();
+    const SUBCOMMAND: Command = CommandBuilder::new().name("sub").done();
 
     #[test]
     fn command() {
         let command = CommandBuilder::new().done();
-        let runner = assert_ok!(command.parse_args_from(make_args(&[])));
+        let parser = Parser::new(&command, make_args(&[]));
+        let runner = assert_ok!(parser.parse());
 
         assert_eq!(runner.binary, "bin");
         assert_eq!(runner.command, &command);
@@ -225,12 +352,13 @@ mod tests {
     }
 
     #[test]
-    fn sub_command() {
-        let command = CommandBuilder::new().commands(&[SUB_COMMAND]).done();
-        let runner = assert_ok!(command.parse_args_from(make_args(&["sub"])));
+    fn subcommand() {
+        let command = CommandBuilder::new().subcommands(&[SUBCOMMAND]).done();
+        let parser = Parser::new(&command, make_args(&["sub"]));
+        let runner = assert_ok!(parser.parse());
 
         assert_eq!(runner.binary, "bin sub");
-        assert_eq!(runner.command, &SUB_COMMAND);
+        assert_eq!(runner.command, &SUBCOMMAND);
         assert_eq!(runner.parents, &[&command]);
     }
 
@@ -269,31 +397,38 @@ mod tests {
             .positionals(&[POS.arg])
             .done();
 
-        let runner = assert_ok!(command.parse_args_from(make_args(args)));
+        let parser = Parser::new(&command, make_args(args));
+        let runner = assert_ok!(parser.parse());
+
         assert_eq!(runner.args.get(&FLAG), flag);
         assert_eq!(runner.args.get(&OPT), opt);
         assert_eq!(runner.args.get(&POS), pos);
     }
 
     #[rstest]
-    #[case(&["--flag=value"], "Unexpected value for option -f, --flag")]
-    #[case(&["-o"], "Missing value for option -o, --option")]
-    #[case(&["-o", "x"], "Invalid value for option -o, --option: invalid digit found in string")]
-    #[case(&["--option"], "Missing value for option -o, --option")]
-    #[case(&["--option", "x"], "Invalid value for option -o, --option: invalid digit found in string")]
-    #[case(&["--option=x"], "Invalid value for option -o, --option: invalid digit found in string")]
-    #[case(&["-x"], "Unknown option -x")]
-    #[case(&["--xtra"], "Unknown option --xtra")]
-    #[case(&["--xtra=x"], "Unknown option --xtra")]
-    #[case(&["abc", "def"], "Unexpected argument: def")]
+    #[case(&["--flag=x"], "bin: Unexpected value 'x' for option '-f, --flag'")]
+    #[case(&["-o"], "bin: Missing value for option '-o, --option'")]
+    #[case(&["-o", "x"], "bin: Invalid value 'x' for option '-o, --option': invalid digit found in string")]
+    #[case(&["--option"], "bin: Missing value for option '-o, --option'")]
+    #[case(&["--option", "x"], "bin: Invalid value 'x' for option '-o, --option': invalid digit found in string")]
+    #[case(&["--option=x"], "bin: Invalid value 'x' for option '-o, --option': invalid digit found in string")]
+    #[case(&["-x"], "bin: Unknown option '-x'")]
+    #[case(&["--xtra"], "bin: Unknown option '--xtra'")]
+    #[case(&["--xtra=x"], "bin: Unknown option '--xtra'")]
+    #[case(&["arg", "x"], "bin: Unexpected argument 'x'")]
     fn command_args_err(#[case] args: &[&str], #[case] err_msg: &str) {
         let command = CommandBuilder::new()
             .options(&[FLAG.arg, OPT.arg])
             .positionals(&[POS.arg])
             .done();
 
-        let err = assert_err!(command.parse_args_from(make_args(args)));
-        assert_eq!(err.to_string(), err_msg);
+        let parser = Parser::new(&command, make_args(args));
+        let err = assert_err!(parser.parse());
+
+        use std::io::Write;
+        let mut output = StripStream::new(Vec::new());
+        assert_ok!(write!(&mut output, "{err}"));
+        assert_eq!(output.into_inner().to_str_lossy(), err_msg);
     }
 
     fn make_args(args: &[&str]) -> Vec<OsString> {
