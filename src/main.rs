@@ -9,6 +9,8 @@ mod utils;
 use anstream::eprintln;
 use cli::Command;
 use cli::CommandBuilder;
+use cli::Error;
+use cli::ErrorCategory;
 use cli::HELP;
 use cli::Parser;
 use cli::VERSION;
@@ -31,21 +33,18 @@ const REW: Command = CommandBuilder::new()
     .done();
 
 fn main() {
-    let parser = Parser::new(&REW, args_os());
+    if let Err(err) = run(&REW) {
+        eprintln!("{err}");
 
-    let runner = match parser.parse() {
-        Ok(runner) => runner,
-        Err(err) => {
-            eprintln!("{err}");
-            exit(2);
-        }
-    };
+        let exit_code = match err.category() {
+            ErrorCategory::InvalidUsage => 2,
+            ErrorCategory::RuntimeError => 1,
+        };
 
-    match runner.run() {
-        Ok(()) => exit(0),
-        Err(err) => {
-            eprintln!("{err}");
-            exit(1)
-        }
+        exit(exit_code)
     }
+}
+
+fn run(command: &Command) -> Result<(), Error<'_>> {
+    Parser::new(command, args_os()).parse()?.run()
 }

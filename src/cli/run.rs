@@ -1,16 +1,18 @@
 use super::CommandItem;
+use super::Error;
+use super::ErrorKind;
 use super::Group;
 use super::OptArg;
 use super::PosArg;
+use super::USAGE_OPTIONS;
 use super::args::Args;
 use super::builders::FlagBuilder;
 use super::types::Command;
 use super::types::Flag;
 use crate::colors::BOLD;
-use crate::colors::BOLD_RED;
 use crate::colors::RESET;
-use crate::colors::YELLOW;
 use anstream::stdout;
+use std::ffi::OsString;
 use std::fmt::Display;
 use std::io::Write;
 
@@ -27,45 +29,9 @@ pub const VERSION: Flag = FlagBuilder::new("version")
     .done();
 
 #[derive(Debug)]
-pub struct Error<'a> {
-    binary: String,
-    kind: ErrorKind<'a>,
-}
-
-impl std::error::Error for Error<'_> {}
-
-impl Display for Error<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{BOLD_RED}{}{RESET}: {}", self.binary, self.kind)
-    }
-}
-
-#[derive(Debug)]
-pub enum ErrorKind<'a> {
-    MissingArgument(&'a PosArg),
-    MissingSubcommand,
-    RunError(anyhow::Error),
-}
-
-impl Display for ErrorKind<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::MissingArgument(arg) => {
-                write!(f, "Missing argument '{YELLOW}{arg}{RESET}'",)
-            }
-            Self::MissingSubcommand => {
-                write!(f, "Missing subcommand",)
-            }
-            Self::RunError(err) => err.fmt(f),
-        }
-    }
-}
-
-#[derive(Debug)]
 pub struct Runner<'a> {
-    pub binary: String,
     pub command: &'a Command,
-    pub parents: Vec<&'a Command>,
+    pub call_chain: Vec<OsString>,
     pub args: Args,
 }
 
@@ -93,10 +59,10 @@ impl<'a> Runner<'a> {
             }
         }
 
-        let binary = self.binary.clone();
+        let call_chain = self.call_chain.clone();
 
         (self.command.run)(self.args).map_err(|err| Error {
-            binary,
+            call_chain,
             kind: ErrorKind::RunError(err),
         })
     }
@@ -111,7 +77,13 @@ impl<'a> Runner<'a> {
         }
 
         writeln!(writer)?;
-        write!(writer, "{BOLD}Usage:{RESET} {BOLD}{}{RESET}", self.binary,)?;
+        write!(writer, "{BOLD}Usage:")?;
+
+        for command in &self.call_chain {
+            write!(writer, " {}", command.to_string_lossy())?;
+        }
+
+        write!(writer, "{RESET}")?;
 
         for param in self.command.params() {
             write!(writer, " {param}")?;
@@ -135,10 +107,6 @@ impl<'a> Runner<'a> {
     }
 
     fn print_version(&self, mut writer: impl Write) -> std::io::Result<()> {
-        for command in &self.parents {
-            write!(writer, "{} ", command.name)?;
-        }
-
         write!(writer, "{}", self.command.name)?;
 
         if let Some(version) = self.command.version {
@@ -150,7 +118,7 @@ impl<'a> Runner<'a> {
 
     fn err(&self, kind: ErrorKind<'a>) -> Error<'a> {
         Error {
-            binary: self.binary.clone(),
+            call_chain: self.call_chain.clone(),
             kind,
         }
     }

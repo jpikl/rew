@@ -1,110 +1,22 @@
 use super::ArgValue;
+use super::Error;
+use super::ErrorKind;
 use super::PosArg;
 use super::Runner;
 use super::args::Args;
 use super::types::Command;
 use super::types::OptArg;
 use super::types::OptArgKind;
-use crate::colors::BOLD_RED;
-use crate::colors::RESET;
-use crate::colors::YELLOW;
 use os_str_bytes::OsStrBytesExt;
 use std::borrow::Cow;
 use std::ffi::OsStr;
 use std::ffi::OsString;
-use std::fmt::Display;
 use std::result::Result;
-
-#[derive(Debug)]
-pub struct Error<'a> {
-    binary: String,
-    kind: ErrorKind<'a>,
-}
-
-impl std::error::Error for Error<'_> {}
-
-impl Display for Error<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{BOLD_RED}{}{RESET}: {}", self.binary, self.kind)
-    }
-}
-
-#[derive(Debug)]
-pub enum ErrorKind<'a> {
-    UnkownShortOption(OsString),
-    UnkownLongOption(OsString),
-    UnkownSubcommand(OsString),
-    MissingOptionValue(&'a OptArg),
-    InvalidOptionValue(&'a OptArg, OsString, anyhow::Error),
-    InvalidArgumentValue(&'a PosArg, OsString, anyhow::Error),
-    UnexpectedOptionValue(&'a OptArg, OsString),
-    UnexpectedArgument(OsString),
-}
-
-impl Display for ErrorKind<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::UnkownShortOption(opt) => {
-                write!(
-                    f,
-                    "Unknown option '{YELLOW}-{}{RESET}'",
-                    opt.to_string_lossy()
-                )
-            }
-            Self::UnkownLongOption(opt) => {
-                write!(
-                    f,
-                    "Unknown option '{YELLOW}--{}{RESET}'",
-                    opt.to_string_lossy()
-                )
-            }
-            Self::UnkownSubcommand(cmd) => {
-                write!(
-                    f,
-                    "Unknown subcommand '{YELLOW}{}{RESET}'",
-                    cmd.to_string_lossy()
-                )
-            }
-            Self::MissingOptionValue(opt) => {
-                write!(f, "Missing value for option '{YELLOW}{opt}{RESET}'")
-            }
-            Self::InvalidOptionValue(opt, val, err) => {
-                write!(
-                    f,
-                    "Invalid value '{YELLOW}{}{RESET}' for option '{YELLOW}{opt}{RESET}': {err}",
-                    val.to_string_lossy()
-                )
-            }
-            Self::InvalidArgumentValue(arg, val, err) => {
-                write!(
-                    f,
-                    "Invalid value '{YELLOW}{}{RESET}' for argument '{YELLOW}{arg}{RESET}': {err}",
-                    val.to_string_lossy()
-                )
-            }
-            Self::UnexpectedOptionValue(opt, val) => {
-                write!(
-                    f,
-                    "Unexpected value '{YELLOW}{}{RESET}' for option '{YELLOW}{opt}{RESET}'",
-                    val.to_string_lossy()
-                )
-            }
-            Self::UnexpectedArgument(arg) => {
-                write!(
-                    f,
-                    "Unexpected argument '{YELLOW}{}{RESET}'",
-                    arg.to_string_lossy()
-                )
-            }
-        }
-    }
-}
 
 pub struct Parser<'a, I: Iterator> {
     command: &'a Command,
-    parents: Vec<&'a Command>,
+    call_chain: Vec<OsString>,
     values: Args,
-    binary: String,
     allow_options: bool,
     args: I,
 }
@@ -113,9 +25,8 @@ impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
     pub fn new<T: IntoIterator<IntoIter = I>>(command: &'a Command, args: T) -> Self {
         Self {
             command,
-            parents: Vec::new(),
+            call_chain: Vec::new(),
             values: Args::new(),
-            binary: String::new(),
             allow_options: true,
             args: args.into_iter(),
         }
@@ -123,7 +34,7 @@ impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
 
     pub fn parse(mut self) -> Result<Runner<'a>, Error<'a>> {
         if let Some(arg) = self.args.next() {
-            self.binary.push_str(&arg.to_string_lossy());
+            self.call_chain.push(arg);
         }
 
         while let Some(arg) = self.args.next() {
@@ -131,9 +42,8 @@ impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
         }
 
         Ok(Runner {
-            binary: self.binary,
             command: self.command,
-            parents: self.parents,
+            call_chain: self.call_chain,
             args: self.values,
         })
     }
@@ -156,7 +66,8 @@ impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
 
         if !self.command.subcommands.is_empty() {
             if let Some(subcommand) = self.command.find_subcommand(&arg) {
-                self.enter_subcommand(subcommand);
+                self.command = subcommand;
+                self.call_chain.push(arg);
                 return Ok(());
             } else {
                 return Err(self.err(ErrorKind::UnkownSubcommand(arg)));
@@ -281,16 +192,9 @@ impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
         }
     }
 
-    fn enter_subcommand(&mut self, subcommand: &'a Command) {
-        self.parents.push(self.command);
-        self.command = subcommand;
-        self.binary.push(' ');
-        self.binary.push_str(subcommand.name);
-    }
-
     fn err(&self, kind: ErrorKind<'a>) -> Error<'a> {
         Error {
-            binary: self.binary.clone(),
+            call_chain: self.call_chain.clone(),
             kind,
         }
     }
@@ -346,9 +250,8 @@ mod tests {
         let parser = Parser::new(&command, make_args(&[]));
         let runner = assert_ok!(parser.parse());
 
-        assert_eq!(runner.binary, "bin");
         assert_eq!(runner.command, &command);
-        assert_eq!(runner.parents, Vec::<&Command>::new());
+        assert_eq!(runner.call_chain, vec![OsString::from("bin")]);
     }
 
     #[test]
@@ -357,9 +260,11 @@ mod tests {
         let parser = Parser::new(&command, make_args(&["sub"]));
         let runner = assert_ok!(parser.parse());
 
-        assert_eq!(runner.binary, "bin sub");
         assert_eq!(runner.command, &SUBCOMMAND);
-        assert_eq!(runner.parents, &[&command]);
+        assert_eq!(
+            runner.call_chain,
+            vec![OsString::from("bin"), OsString::from("sub")]
+        );
     }
 
     #[rstest]
