@@ -1,0 +1,21 @@
+name: Setup project
+
+runs:
+  using: composite
+
+  steps:
+    - name: Install Rust
+      uses: actions-rust-lang/setup-rust-toolchain@9399c7bb15d4c7d47b27263d024f0a4978346ba4 # v1.11.0
+      with:
+        rustflags: # Disable the deufalt `-DWarnings` until we can fix the warnings
+      
+    - name: Install cargo-binstall
+      uses: cargo-bins/cargo-binstall@63aaa5c1932cebabc34eceda9d92a70215dcead6 # v1.12.3
+
+    - name: Install just
+      shell: bash
+      run: cargo binstall just@1.40.0
+
+    - name: Install tools
+      shell: bash
+      run: just setup

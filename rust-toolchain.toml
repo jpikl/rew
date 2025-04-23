@@ -1,4 +1,7 @@
 [toolchain]
 channel = "nightly-2025-04-22"
 profile = "default"
-components = ["rust-src"]
+components = [
+    "rust-src",           # For release builds
+    "llvm-tools-preview", # For code coverage
+]

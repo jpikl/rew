@@ -59,8 +59,8 @@ install target=default_target: (release target)
     cp target/{{target}}/release/{{binary}} {{install_dir}}
 
 # Format code
-format:
-    cargo fmt
+format *args:
+    cargo fmt {{args}}
 
 # Run linter
 lint:
@@ -77,6 +77,10 @@ mutants *args:
 # Generate code coverage as HTML (and open it)
 coverage:
     cargo llvm-cov nextest --json | llvm-cov-pretty --open
+
+# Generate code coverage as Codecov JSON
+coverage-codecov:
+    cargo llvm-cov nextest --codecov --output-path codecov.json
 
 # Clean generated files
 clean:
