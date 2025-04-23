@@ -41,7 +41,7 @@ run *args:
 build:
     cargo build
     @printf "Build output: "
-    @du -h target/release/{{binary}} | awk '{print $2 " (" $1 ")"}'
+    @du -h target/debug/{{binary}} | awk '{print $2 " (" $1 ")"}'
 
 # Build release version
 release target=default_target:
