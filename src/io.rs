@@ -21,11 +21,7 @@ impl Display for Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::BufferFull(len) => {
-                write!(
-                    f,
-                    "Unable to fit input data into buffer ({})",
-                    ByteSize(*len)
-                )
+                write!(f, "Unable to fit input data into buffer ({})", ByteSize(*len))
             }
             Self::Io(err) => err.fmt(f),
         }
@@ -151,11 +147,10 @@ impl<R: Read> ByteChunkReader<R> {
     }
 
     pub fn read_chunk(&mut self) -> std::io::Result<Option<&mut [u8]>> {
-        let len = self.inner.read(&mut self.buf)?;
-        if len > 0 {
-            Ok(Some(&mut self.buf[..len]))
-        } else {
-            Ok(None)
+        match self.inner.read(&mut self.buf) {
+            Ok(0) => Ok(None),
+            Ok(len) => Ok(Some(&mut self.buf[..len])),
+            Err(err) => Err(err),
         }
     }
 }
@@ -364,10 +359,7 @@ mod tests {
     fn char_chunk_reader_err() {
         let mut reader = CharChunkReader::new(B(b"\xf0\x92\x80\x80"), vec![0; 3]);
         let err = assert_err!(reader.read_chunk());
-        assert_eq!(
-            err.to_string(),
-            "Unable to fit input data into buffer (3 B)"
-        );
+        assert_eq!(err.to_string(), "Unable to fit input data into buffer (3 B)");
     }
 
     #[rstest]
@@ -401,16 +393,10 @@ mod tests {
     #[case("abcdefg\r\n", LineReader::lines)]
     #[case("abcdefgh", LineReader::records)]
     #[case("abcdefgh\0", LineReader::records)]
-    fn read_lines_err<'a>(
-        #[case] input: &'a str,
-        #[case] construct: fn(&'a [u8], Vec<u8>) -> LineReader<&'a [u8]>,
-    ) {
+    fn read_lines_err<'a>(#[case] input: &'a str, #[case] construct: fn(&'a [u8], Vec<u8>) -> LineReader<&'a [u8]>) {
         let mut reader = construct(B(input), vec![0; 8]);
         let err = assert_err!(reader.read_line());
-        assert_eq!(
-            err.to_string(),
-            "Unable to fit input data into buffer (8 B)"
-        );
+        assert_eq!(err.to_string(), "Unable to fit input data into buffer (8 B)");
     }
 
     #[rstest]

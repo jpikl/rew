@@ -1,3 +1,4 @@
+use super::CallChain;
 use super::CommandItem;
 use super::Error;
 use super::ErrorKind;
@@ -12,7 +13,6 @@ use super::types::Flag;
 use crate::colors::BOLD;
 use crate::colors::RESET;
 use anstream::stdout;
-use std::ffi::OsString;
 use std::fmt::Display;
 use std::io::Write;
 
@@ -33,12 +33,18 @@ pub const VERSION: Flag = FlagBuilder::new("version")
 #[derive(Debug)]
 pub struct Runner<'a> {
     pub command: &'a Command,
-    pub call_chain: Vec<OsString>,
+    pub call_chain: CallChain,
     pub args: Args,
 }
 
 impl<'a> Runner<'a> {
-    pub fn run(self) -> Result<(), Error<'a>> {
+    pub fn run(self) {
+        if let Err(err) = self.try_run() {
+            err.exit();
+        }
+    }
+
+    pub fn try_run(self) -> Result<(), Error<'a>> {
         if self.args.get(&HELP) {
             return self
                 .print_help(stdout().lock(), self.args.is_long(&HELP))
@@ -61,10 +67,9 @@ impl<'a> Runner<'a> {
             }
         }
 
-        let call_chain = self.call_chain.clone();
-
         (self.command.run)(self.args).map_err(|err| Error {
-            call_chain,
+            command: self.command,
+            call_chain: self.call_chain,
             kind: ErrorKind::RunError(err),
         })
     }
@@ -79,13 +84,7 @@ impl<'a> Runner<'a> {
         }
 
         writeln!(writer)?;
-        write!(writer, "{BOLD}Usage:")?;
-
-        for command in &self.call_chain {
-            write!(writer, " {}", command.to_string_lossy())?;
-        }
-
-        write!(writer, "{RESET}")?;
+        write!(writer, "{BOLD}Usage: {}{RESET}", self.call_chain)?;
 
         for param in self.command.params() {
             write!(writer, " {param}")?;
@@ -118,9 +117,10 @@ impl<'a> Runner<'a> {
         writeln!(writer)
     }
 
-    fn err(&self, kind: ErrorKind<'a>) -> Error<'a> {
+    fn err(self, kind: ErrorKind<'a>) -> Error<'a> {
         Error {
-            call_chain: self.call_chain.clone(),
+            command: self.command,
+            call_chain: self.call_chain,
             kind,
         }
     }
@@ -137,6 +137,10 @@ impl Command {
 
     fn grouped_commands(&self) -> Vec<(&Group, Vec<&Command>)> {
         group_items(self.subcommands)
+    }
+
+    pub fn help_option(&self) -> Option<&OptArg> {
+        self.options.iter().find(|opt| opt.id == HELP.arg.id)
     }
 }
 
@@ -191,11 +195,7 @@ fn print_item_group<T: CommandItem + Display>(
 
                 for enum_item in item.enum_items() {
                     if let Some((main_desc, descriptions)) = enum_item.description.split_first() {
-                        writeln!(
-                            writer,
-                            "          - {BOLD}{}{RESET}: {main_desc}",
-                            enum_item.name
-                        )?;
+                        writeln!(writer, "          - {BOLD}{}{RESET}: {main_desc}", enum_item.name)?;
 
                         let padding = " ".repeat(enum_item.name.chars().count());
 

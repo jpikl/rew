@@ -30,9 +30,7 @@ impl<A, T> TypedArg<A, T> {
 
 impl<A: Arg, T: Default + 'static> TypedArg<A, T> {
     fn default_value(&self) -> Box<dyn Any> {
-        self.arg
-            .default_value()
-            .unwrap_or_else(|| Box::new(T::default()))
+        self.arg.default_value().unwrap_or_else(|| Box::new(T::default()))
     }
 }
 
@@ -75,14 +73,8 @@ impl Args {
 
     pub fn get<A: Arg, T: Default + Clone + 'static>(&self, arg: &TypedArg<A, T>) -> T {
         match self.values.get(arg.arg.id()) {
-            Some(value) => value
-                .downcast_ref::<T>()
-                .expect("mismatched arg type")
-                .clone(),
-            None => *arg
-                .default_value()
-                .downcast::<T>()
-                .expect("mismatched arg type"),
+            Some(value) => value.downcast_ref::<T>().expect("mismatched arg type").clone(),
+            None => *arg.default_value().downcast::<T>().expect("mismatched arg type"),
         }
     }
 
@@ -114,9 +106,7 @@ impl ParseOsArg for OsString {
 
 impl ParseOsArg for BString {
     fn parse_raw_arg(raw_value: Cow<OsStr>) -> ParseArgResult {
-        Ok(Box::new(BString::new(
-            raw_value.into_owned().into_encoded_bytes(),
-        )))
+        Ok(Box::new(BString::new(raw_value.into_owned().into_encoded_bytes())))
     }
 }
 

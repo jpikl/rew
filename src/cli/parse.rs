@@ -1,4 +1,5 @@
 use super::ArgValue;
+use super::CallChain;
 use super::Error;
 use super::ErrorKind;
 use super::PosArg;
@@ -9,6 +10,7 @@ use super::types::OptArg;
 use super::types::OptArgKind;
 use os_str_bytes::OsStrBytesExt;
 use std::borrow::Cow;
+use std::env::args_os;
 use std::ffi::OsStr;
 use std::ffi::OsString;
 use std::result::Result;
@@ -43,7 +45,7 @@ impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
 
         Ok(Runner {
             command: self.command,
-            call_chain: self.call_chain,
+            call_chain: CallChain(self.call_chain),
             args: self.values,
         })
     }
@@ -120,11 +122,7 @@ impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
                                 self.values.set_long(opt, value);
                                 Ok(())
                             }
-                            Err(err) => Err(self.err(ErrorKind::InvalidOptionValue(
-                                opt,
-                                err_value.into(),
-                                err,
-                            ))),
+                            Err(err) => Err(self.err(ErrorKind::InvalidOptionValue(opt, err_value.into(), err))),
                         }
                     } else {
                         Err(self.err(ErrorKind::MissingOptionValue(opt)))
@@ -181,9 +179,7 @@ impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
                             self.values.set(opt, value);
                             Ok(true)
                         }
-                        Err(err) => {
-                            Err(self.err(ErrorKind::InvalidOptionValue(opt, err_value.into(), err)))
-                        }
+                        Err(err) => Err(self.err(ErrorKind::InvalidOptionValue(opt, err_value.into(), err))),
                     }
                 }
             }
@@ -194,27 +190,35 @@ impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
 
     fn err(&self, kind: ErrorKind<'a>) -> Error<'a> {
         Error {
-            call_chain: self.call_chain.clone(),
+            command: self.command,
+            call_chain: CallChain(self.call_chain.clone()),
             kind,
         }
     }
 }
 
 impl Command {
+    pub fn parse_args(&self) -> Runner {
+        match self.try_parse_args() {
+            Ok(runner) => runner,
+            Err(err) => err.exit(),
+        }
+    }
+
+    pub fn try_parse_args(&self) -> Result<Runner, Error> {
+        Parser::new(self, args_os()).parse()
+    }
+
     fn find_short_opt(&self, name: char) -> Option<&OptArg> {
         self.options.iter().find(|opt| opt.short == Some(name))
     }
 
     fn find_long_opt(&self, name: &OsStr) -> Option<&OptArg> {
-        self.options
-            .iter()
-            .find(|opt| opt.long.map(OsStr::new) == Some(name))
+        self.options.iter().find(|opt| opt.long.map(OsStr::new) == Some(name))
     }
 
     fn find_subcommand(&self, name: &OsStr) -> Option<&Command> {
-        self.subcommands
-            .iter()
-            .find(|cmd| OsStr::new(cmd.name) == name)
+        self.subcommands.iter().find(|cmd| OsStr::new(cmd.name) == name)
     }
 
     fn find_unset_pos(&self, args: &Args) -> Option<&PosArg> {
@@ -233,8 +237,6 @@ mod tests {
     use crate::cli::OptBuilder;
     use crate::cli::Pos;
     use crate::cli::PosBuilder;
-    use anstream::StripStream;
-    use bstr::ByteSlice;
     use claims::*;
     use rstest::rstest;
     use std::ffi::OsString;
@@ -251,7 +253,7 @@ mod tests {
         let runner = assert_ok!(parser.parse());
 
         assert_eq!(runner.command, &command);
-        assert_eq!(runner.call_chain, vec![OsString::from("bin")]);
+        assert_eq!(runner.call_chain, CallChain(vec![OsString::from("bin")]));
     }
 
     #[test]
@@ -263,7 +265,7 @@ mod tests {
         assert_eq!(runner.command, &SUBCOMMAND);
         assert_eq!(
             runner.call_chain,
-            vec![OsString::from("bin"), OsString::from("sub")]
+            CallChain(vec![OsString::from("bin"), OsString::from("sub")])
         );
     }
 
@@ -291,12 +293,7 @@ mod tests {
     #[case(&["-ffo", "123", "abc"], true, 123, "abc")]
     #[case(&["--flag", "--option", "123", "abc"], true, 123, "abc")]
     #[case(&["-ffo123", "-o456", "abc"], true, 456, "abc")]
-    fn command_args(
-        #[case] args: &[&str],
-        #[case] flag: bool,
-        #[case] opt: i32,
-        #[case] pos: &str,
-    ) {
+    fn command_args(#[case] args: &[&str], #[case] flag: bool, #[case] opt: i32, #[case] pos: &str) {
         let command = CommandBuilder::new()
             .options(&[FLAG.arg, OPT.arg])
             .positionals(&[POS.arg])
@@ -311,16 +308,16 @@ mod tests {
     }
 
     #[rstest]
-    #[case(&["--flag=x"], "bin: Unexpected value 'x' for option '-f, --flag'")]
-    #[case(&["-o"], "bin: Missing value for option '-o, --option'")]
-    #[case(&["-o", "x"], "bin: Invalid value 'x' for option '-o, --option': invalid digit found in string")]
-    #[case(&["--option"], "bin: Missing value for option '-o, --option'")]
-    #[case(&["--option", "x"], "bin: Invalid value 'x' for option '-o, --option': invalid digit found in string")]
-    #[case(&["--option=x"], "bin: Invalid value 'x' for option '-o, --option': invalid digit found in string")]
-    #[case(&["-x"], "bin: Unknown option '-x'")]
-    #[case(&["--xtra"], "bin: Unknown option '--xtra'")]
-    #[case(&["--xtra=x"], "bin: Unknown option '--xtra'")]
-    #[case(&["arg", "x"], "bin: Unexpected argument 'x'")]
+    #[case(&["--flag=x"], "Unexpected value `x` for option `-f, --flag`")]
+    #[case(&["-o"], "Missing value for option `-o, --option`")]
+    #[case(&["-o", "x"], "Invalid value `x` for option `-o, --option`: invalid digit found in string")]
+    #[case(&["--option"], "Missing value for option `-o, --option`")]
+    #[case(&["--option", "x"], "Invalid value `x` for option `-o, --option`: invalid digit found in string")]
+    #[case(&["--option=x"], "Invalid value `x` for option `-o, --option`: invalid digit found in string")]
+    #[case(&["-x"], "Unknown option `-x`")]
+    #[case(&["--xtra"], "Unknown option `--xtra`")]
+    #[case(&["--xtra=x"], "Unknown option `--xtra`")]
+    #[case(&["arg", "x"], "Unexpected argument `x`")]
     fn command_args_err(#[case] args: &[&str], #[case] err_msg: &str) {
         let command = CommandBuilder::new()
             .options(&[FLAG.arg, OPT.arg])
@@ -329,11 +326,7 @@ mod tests {
 
         let parser = Parser::new(&command, make_args(args));
         let err = assert_err!(parser.parse());
-
-        use std::io::Write;
-        let mut output = StripStream::new(Vec::new());
-        assert_ok!(write!(&mut output, "{err}"));
-        assert_eq!(output.into_inner().to_str_lossy(), err_msg);
+        assert_eq!(err.to_string(), err_msg);
     }
 
     fn make_args(args: &[&str]) -> Vec<OsString> {
