@@ -12,6 +12,7 @@ use super::types::Command;
 use super::types::Flag;
 use crate::colors::BOLD;
 use crate::colors::RESET;
+use crate::colors::StrColorizer;
 use anstream::stdout;
 use std::fmt::Display;
 use std::io::Write;
@@ -19,7 +20,7 @@ use std::io::Write;
 pub const HELP: Flag = FlagBuilder::new("help")
     .short('h')
     .long("help")
-    .description("Print short help (-h) or detailed help (--help)")
+    .description("Print short help `-h` or detailed help `--help`")
     .group(&USAGE_OPTIONS)
     .done();
 
@@ -75,11 +76,11 @@ impl<'a> Runner<'a> {
     }
 
     fn print_help(&self, mut writer: impl Write, long: bool) -> std::io::Result<()> {
-        writeln!(writer, "{}", self.command.description)?;
+        writeln!(writer, "{}", StrColorizer(self.command.description))?;
 
         if long {
             for description in self.command.description_ex {
-                writeln!(writer, "{description}")?;
+                writeln!(writer, "{}", StrColorizer(description))?;
             }
         }
 
@@ -183,10 +184,10 @@ fn print_item_group<T: CommandItem + Display>(
             }
 
             writeln!(writer)?;
-            writeln!(writer, "          {}", item.description())?;
+            writeln!(writer, "          {}", StrColorizer(item.description()))?;
 
             for description in item.description_ex() {
-                writeln!(writer, "          {}", description)?;
+                writeln!(writer, "          {}", StrColorizer(description))?;
             }
 
             if !item.enum_items().is_empty() {
@@ -200,7 +201,7 @@ fn print_item_group<T: CommandItem + Display>(
                         let padding = " ".repeat(enum_item.name.chars().count());
 
                         for description in descriptions {
-                            writeln!(writer, "              {padding}{description}",)?;
+                            writeln!(writer, "              {padding}{}", StrColorizer(description))?;
                         }
                     } else {
                         writeln!(writer, "          - {BOLD}{}{RESET}", enum_item.name)?;

@@ -9,13 +9,14 @@ pub const YELLOW: &str = "\x1b[33m";
 pub const BOLD: &str = "\x1b[1m";
 pub const BOLD_RED: &str = "\x1b[1;31m";
 
+pub struct StrColorizer<'a>(pub &'a str);
 pub struct Colorizer<T>(pub T);
 
-impl<T: Display> Display for Colorizer<T> {
+impl Display for StrColorizer<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut inside = false;
 
-        for part in self.0.to_string().split('`') {
+        for part in self.0.split('`') {
             if inside {
                 write!(f, "'{YELLOW}{part}{RESET}'")?;
             } else {
@@ -25,5 +26,11 @@ impl<T: Display> Display for Colorizer<T> {
         }
 
         Ok(())
+    }
+}
+
+impl<T: Display> Display for Colorizer<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", StrColorizer(self.0.to_string().as_str()))
     }
 }
