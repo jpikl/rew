@@ -10,9 +10,9 @@ use super::args::Args;
 use super::builders::FlagBuilder;
 use super::types::Command;
 use super::types::Flag;
-use crate::colors::BOLD;
-use crate::colors::RESET;
-use crate::colors::StrColorizer;
+use crate::format::BOLD;
+use crate::format::RESET;
+use crate::format::StrColorizer;
 use anstream::stdout;
 use std::fmt::Display;
 use std::io::Write;
@@ -33,7 +33,7 @@ pub const VERSION: Flag = FlagBuilder::new("version")
 
 #[derive(Debug)]
 pub struct Runner<'a> {
-    pub command: &'a Command,
+    pub command: &'a Command<'a>,
     pub call_chain: CallChain,
     pub args: Args,
 }
@@ -49,13 +49,13 @@ impl<'a> Runner<'a> {
         if self.args.get(&HELP) {
             return self
                 .print_help(stdout().lock(), self.args.is_long(&HELP))
-                .map_err(|err| self.err(ErrorKind::RunError(err.into())));
+                .map_err(|err| self.err(ErrorKind::RuntimeError(err.into())));
         }
 
         if self.args.get(&VERSION) {
             return self
                 .print_version(stdout().lock())
-                .map_err(|err| self.err(ErrorKind::RunError(err.into())));
+                .map_err(|err| self.err(ErrorKind::RuntimeError(err.into())));
         }
 
         if !self.command.subcommands.is_empty() {
@@ -71,7 +71,7 @@ impl<'a> Runner<'a> {
         (self.command.run)(self.args).map_err(|err| Error {
             command: self.command,
             call_chain: self.call_chain,
-            kind: ErrorKind::RunError(err),
+            kind: err,
         })
     }
 
@@ -127,7 +127,7 @@ impl<'a> Runner<'a> {
     }
 }
 
-impl Command {
+impl Command<'_> {
     fn grouped_options(&self) -> Vec<(&Group, Vec<&OptArg>)> {
         group_items(self.options)
     }
@@ -241,7 +241,7 @@ fn print_item_group<T: CommandItem + Display>(
                 writer,
                 "{}  {}",
                 " ".repeat(width - get_usage_len(*item, with_params)),
-                item.description()
+                StrColorizer(item.description())
             )?;
         }
     }

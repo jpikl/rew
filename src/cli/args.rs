@@ -165,21 +165,21 @@ default_parse_arg!(usize);
 default_parse_arg!(f32);
 default_parse_arg!(f64);
 
-pub trait Enum {
-    const ENUM_ITEMS: &[EnumItem];
+pub trait Enum<'a> {
+    const ENUM_ITEMS: &'a [EnumItem<'a>];
 }
 
 #[derive(Debug, PartialEq)]
-pub struct EnumItem {
-    pub name: &'static str,
-    pub description: &'static [&'static str],
+pub struct EnumItem<'a> {
+    pub name: &'a str,
+    pub description: &'a [&'a str],
 }
 
 #[macro_export]
 macro_rules! impl_enum {
     ($type:path, {$($value:ident: {name: $name:literal, description: [$($description:literal),*,], }),*,}) => {
-        impl $crate::cli::Enum for $type {
-            const ENUM_ITEMS: &[EnumItem] = &[$( EnumItem {name: $name, description: &[$($description),*]}, )*];
+        impl<'a> $crate::cli::Enum<'a> for $type {
+            const ENUM_ITEMS: &'a [EnumItem<'a>] = &[$( EnumItem {name: $name, description: &[$($description),*]}, )*];
         }
 
         impl std::fmt::Display for $type {

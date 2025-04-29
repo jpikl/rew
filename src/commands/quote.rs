@@ -1,6 +1,7 @@
 use crate::cli::Args;
 use crate::cli::Command;
 use crate::cli::CommandBuilder;
+use crate::cli::ErrorKind;
 use crate::cli::Flag;
 use crate::cli::FlagBuilder;
 use crate::cli::HELP;
@@ -49,7 +50,7 @@ pub const QUOTE: Command = CommandBuilder::new()
     .run(run)
     .done();
 
-fn run(mut args: Args) -> anyhow::Result<()> {
+fn run(mut args: Args) -> Result<(), ErrorKind<'static>> {
     let double = args.get(&DOUBLE);
     let escape = args.get_owned(&ESCAPE);
     let no_escape = args.get(&NO_ESCAPE) || escape.is_empty();

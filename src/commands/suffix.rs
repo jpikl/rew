@@ -1,6 +1,7 @@
 use crate::cli::Args;
 use crate::cli::Command;
 use crate::cli::CommandBuilder;
+use crate::cli::ErrorKind;
 use crate::cli::Flag;
 use crate::cli::FlagBuilder;
 use crate::cli::HELP;
@@ -32,7 +33,7 @@ pub const SUFFIX: Command = CommandBuilder::new()
     .run(run)
     .done();
 
-fn run(mut args: Args) -> anyhow::Result<()> {
+fn run(mut args: Args) -> Result<(), ErrorKind<'static>> {
     let delete = args.get(&DELETE);
     let suffix = args.get_owned(&VALUE);
     let suffix = suffix.as_slice();

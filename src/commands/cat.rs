@@ -1,6 +1,7 @@
 use crate::cli::Args;
 use crate::cli::Command;
 use crate::cli::CommandBuilder;
+use crate::cli::ErrorKind;
 use crate::cli::Flag;
 use crate::cli::FlagBuilder;
 use crate::cli::HELP;
@@ -8,7 +9,6 @@ use crate::global::BUF_MODE;
 use crate::global::BUF_SIZE;
 use crate::global::NULL;
 use crate::run::Context;
-use anyhow::bail;
 use std::io::copy;
 
 const LINES: Flag = FlagBuilder::new("lines")
@@ -46,13 +46,15 @@ pub const CAT: Command = CommandBuilder::new()
     .run(run)
     .done();
 
-fn run(args: Args) -> anyhow::Result<()> {
+fn run(args: Args) -> Result<(), ErrorKind<'static>> {
     let lines = args.get(&LINES);
     let chars = args.get(&CHARS);
     let bytes = args.get(&BYTES);
 
     if (lines as u8 + chars as u8 + bytes as u8) > 1 {
-        bail!("Options {LINES} / {CHARS} / {BYTES} are mutually exclusive.");
+        return Err(ErrorKind::MutuallyExclusiveOptions(&[
+            &LINES.arg, &CHARS.arg, &BYTES.arg,
+        ]));
     }
 
     let context = Context::new(&args);

@@ -15,7 +15,6 @@ edition = "2024"
 anstream = "0.6.18"
 anyhow = "1.0.97"
 bstr = { version = "1.11.3", features = ["std"], default-features = false }
-derive_more = { version = "2.0.1", features = ["std", "display", "error"] }
 os_str_bytes = "7.1"
 
 [profile.release]

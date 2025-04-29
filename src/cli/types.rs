@@ -1,4 +1,5 @@
 use super::EnumItem;
+use super::ErrorKind;
 use super::args::Arg;
 use super::args::Args;
 use super::args::ParseOsArgFn;
@@ -8,56 +9,56 @@ use std::ffi::OsStr;
 use std::fmt::Display;
 
 #[derive(Debug, PartialEq)]
-pub struct Command {
-    pub name: &'static str,
-    pub description: &'static str,
-    pub description_ex: &'static [&'static str],
-    pub version: Option<&'static str>,
-    pub group: &'static Group,
-    pub options: &'static [OptArg],
-    pub positionals: &'static [PosArg],
-    pub subcommands: &'static [Command],
-    pub run: fn(Args) -> anyhow::Result<()>,
+pub struct Command<'a> {
+    pub name: &'a str,
+    pub description: &'a str,
+    pub description_ex: &'a [&'a str],
+    pub version: Option<&'a str>,
+    pub group: &'a Group<'a>,
+    pub options: &'a [OptArg<'a>],
+    pub positionals: &'a [PosArg<'a>],
+    pub subcommands: &'a [Command<'a>],
+    pub run: fn(Args) -> Result<(), ErrorKind<'a>>,
 }
 
 #[derive(Debug, PartialEq)]
-pub struct OptArg {
-    pub id: &'static str,
+pub struct OptArg<'a> {
+    pub id: &'a str,
     pub short: Option<char>,
-    pub long: Option<&'static str>,
-    pub description: &'static str,
-    pub description_ex: &'static [&'static str],
-    pub group: &'static Group,
-    pub environment: Option<&'static str>,
-    pub kind: OptArgKind,
+    pub long: Option<&'a str>,
+    pub description: &'a str,
+    pub description_ex: &'a [&'a str],
+    pub group: &'a Group<'a>,
+    pub environment: Option<&'a str>,
+    pub kind: OptArgKind<'a>,
 }
 
 #[derive(Debug, PartialEq)]
-pub enum OptArgKind {
+pub enum OptArgKind<'a> {
     Flag,
-    Value(ArgValue),
+    Value(ArgValue<'a>),
 }
 
 #[derive(Debug, PartialEq)]
-pub struct PosArg {
-    pub id: &'static str,
-    pub description: &'static str,
-    pub description_ex: &'static [&'static str],
-    pub group: &'static Group,
-    pub environment: Option<&'static str>,
-    pub value: ArgValue,
+pub struct PosArg<'a> {
+    pub id: &'a str,
+    pub description: &'a str,
+    pub description_ex: &'a [&'a str],
+    pub group: &'a Group<'a>,
+    pub environment: Option<&'a str>,
+    pub value: ArgValue<'a>,
     pub required: bool,
 }
 
 #[derive(Debug, PartialEq)]
-pub struct ArgValue {
-    pub name: &'static str,
-    pub default: Option<&'static str>,
-    pub enum_items: &'static [EnumItem],
+pub struct ArgValue<'a> {
+    pub name: &'a str,
+    pub default: Option<&'a str>,
+    pub enum_items: &'a [EnumItem<'a>],
     pub parse: ParseOsArgFn,
 }
 
-impl Arg for OptArg {
+impl Arg for OptArg<'_> {
     fn id(&self) -> &str {
         self.id
     }
@@ -70,7 +71,7 @@ impl Arg for OptArg {
     }
 }
 
-impl Arg for PosArg {
+impl Arg for PosArg<'_> {
     fn id(&self) -> &str {
         self.id
     }
@@ -80,20 +81,20 @@ impl Arg for PosArg {
     }
 }
 
-impl ArgValue {
+impl ArgValue<'_> {
     pub fn default(&self) -> Option<Box<dyn Any>> {
         self.default
             .map(|value| (self.parse)(OsStr::new(value).into()).expect("unparsable default value"))
     }
 }
 
-impl Display for Command {
+impl Display for Command<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.name)
     }
 }
 
-impl Display for OptArg {
+impl Display for OptArg<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if let Some(short) = self.short {
             write!(f, "-{}", short)?;
@@ -108,7 +109,7 @@ impl Display for OptArg {
     }
 }
 
-impl Display for PosArg {
+impl Display for PosArg<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if self.required {
             write!(f, "<{}>", self.value.name)
@@ -119,9 +120,9 @@ impl Display for PosArg {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct Group {
-    pub name: &'static str,
-    pub description: Option<&'static str>,
+pub struct Group<'a> {
+    pub name: &'a str,
+    pub description: Option<&'a str>,
 }
 
 pub const COMMANDS: Group = Group {
@@ -154,9 +155,7 @@ pub trait CommandItem {
     fn environment(&self) -> Option<&str>;
 }
 
-impl Command {}
-
-impl CommandItem for Command {
+impl CommandItem for Command<'_> {
     fn group(&self) -> &Group {
         self.group
     }
@@ -200,7 +199,7 @@ impl CommandItem for Command {
     }
 }
 
-impl CommandItem for OptArg {
+impl CommandItem for OptArg<'_> {
     fn group(&self) -> &Group {
         self.group
     }
@@ -239,7 +238,7 @@ impl CommandItem for OptArg {
     }
 }
 
-impl CommandItem for PosArg {
+impl CommandItem for PosArg<'_> {
     fn group(&self) -> &Group {
         self.group
     }
@@ -269,6 +268,6 @@ impl CommandItem for PosArg {
     }
 }
 
-pub type Flag = TypedArg<OptArg, bool>;
-pub type Opt<T> = TypedArg<OptArg, T>;
-pub type Pos<T> = TypedArg<PosArg, T>;
+pub type Flag<'a> = TypedArg<OptArg<'a>, bool>;
+pub type Opt<'a, T> = TypedArg<OptArg<'a>, T>;
+pub type Pos<'a, T> = TypedArg<PosArg<'a>, T>;

@@ -16,7 +16,7 @@ use std::ffi::OsString;
 use std::result::Result;
 
 pub struct Parser<'a, I: Iterator> {
-    command: &'a Command,
+    command: &'a Command<'a>,
     call_chain: Vec<OsString>,
     values: Args,
     allow_options: bool,
@@ -197,7 +197,7 @@ impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
     }
 }
 
-impl Command {
+impl Command<'_> {
     pub fn parse_args(&self) -> Runner {
         match self.try_parse_args() {
             Ok(runner) => runner,

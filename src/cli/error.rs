@@ -1,16 +1,15 @@
 use super::Command;
 use super::OptArg;
 use super::PosArg;
-use crate::colors::BOLD;
-use crate::colors::BOLD_RED;
-use crate::colors::Colorizer;
-use crate::colors::RED;
-use crate::colors::RESET;
-use crate::colors::YELLOW;
+use crate::format::BOLD;
+use crate::format::BOLD_RED;
+use crate::format::Colorizer;
+use crate::format::RED;
+use crate::format::RESET;
+use crate::format::YELLOW;
 use anstream::eprintln;
-use derive_more::Display;
-use derive_more::Error;
 use std::ffi::OsString;
+use std::fmt::Display;
 use std::process::exit;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -28,22 +27,51 @@ impl std::fmt::Display for CallChain {
     }
 }
 
-#[derive(Debug, Error, Display)]
-#[display("{kind}")]
+#[derive(Debug)]
 pub struct Error<'a> {
-    pub command: &'a Command,
+    pub command: &'a Command<'a>,
     pub call_chain: CallChain,
     pub kind: ErrorKind<'a>,
 }
 
+impl std::error::Error for Error<'_> {}
+
+impl Display for Error<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.kind)
+    }
+}
+
 impl Error<'_> {
-    fn print_prefix(&self) {
-        eprint!("{BOLD}{}:{RESET} ", self.call_chain);
+    pub fn exit(self) -> ! {
+        match self.kind {
+            ErrorKind::RuntimeError(ref err) if is_broken_pipe(err) => {
+                exit(0);
+            }
+            ErrorKind::RuntimeError(ref err) => {
+                self.print_runtime_error(err);
+                exit(1);
+            }
+            ref err => {
+                self.print_invalid_usage(err);
+                exit(2)
+            }
+        }
     }
 
-    fn prin_invalid_usage(&self) {
+    fn print_runtime_error(&self, err: &anyhow::Error) {
         self.print_prefix();
-        eprintln!("{BOLD_RED}Invalid usage:{RESET} {}", Colorizer(&self.kind));
+        eprintln!("{BOLD_RED}Error:{RESET} {err}");
+
+        for cause in err.chain().skip(1) {
+            self.print_prefix();
+            eprintln!("{RED}└─>{RESET} {cause}");
+        }
+    }
+
+    fn print_invalid_usage(&self, err: &ErrorKind) {
+        self.print_prefix();
+        eprintln!("{BOLD_RED}Invalid usage:{RESET} {}", Colorizer(err));
 
         if let Some(help) = self.command.help_option() {
             if let Some(short) = help.short {
@@ -62,32 +90,8 @@ impl Error<'_> {
         }
     }
 
-    fn print_run_error(&self, err: &anyhow::Error) {
-        self.print_prefix();
-        eprintln!("{BOLD_RED}Error:{RESET} {err}");
-
-        for cause in err.chain().skip(1) {
-            self.print_prefix();
-            eprintln!("{RED}└─>{RESET} {cause}");
-        }
-    }
-}
-
-impl Error<'_> {
-    pub fn exit(self) -> ! {
-        match self.kind {
-            ErrorKind::RunError(ref err) if is_broken_pipe(err) => {
-                exit(0);
-            }
-            ErrorKind::RunError(ref err) => {
-                self.print_run_error(err);
-                exit(1);
-            }
-            _ => {
-                self.prin_invalid_usage();
-                exit(2)
-            }
-        }
+    fn print_prefix(&self) {
+        eprint!("{BOLD}{}:{RESET} ", self.call_chain);
     }
 }
 
@@ -100,27 +104,66 @@ fn is_broken_pipe(err: &anyhow::Error) -> bool {
     false
 }
 
-#[derive(Debug, Display)]
+#[derive(Debug)]
 pub enum ErrorKind<'a> {
-    #[display("Unknown option `-{}`", _0.to_string_lossy())]
     UnkownShortOption(OsString),
-    #[display("Unknown option `--{}`", _0.to_string_lossy())]
     UnkownLongOption(OsString),
-    #[display("Unknown subcommand `{}`", _0.to_string_lossy())]
     UnkownSubcommand(OsString),
-    #[display("Missing value for option `{_0}`")]
-    MissingOptionValue(&'a OptArg),
-    #[display("Invalid value `{}` for option `{_0}`: {_2}", _1.to_string_lossy())]
-    InvalidOptionValue(&'a OptArg, OsString, anyhow::Error),
-    #[display("Invalid value `{}` for argument `{_0}`: {_2}", _1.to_string_lossy())]
-    InvalidArgumentValue(&'a PosArg, OsString, anyhow::Error),
-    #[display("Unexpected value `{}` for option `{_0}`", _1.to_string_lossy())]
-    UnexpectedOptionValue(&'a OptArg, OsString),
-    #[display("Unexpected argument `{}`", _0.to_string_lossy())]
+    MissingOptionValue(&'a OptArg<'a>),
+    InvalidOptionValue(&'a OptArg<'a>, OsString, anyhow::Error),
+    InvalidArgumentValue(&'a PosArg<'a>, OsString, anyhow::Error),
+    UnexpectedOptionValue(&'a OptArg<'a>, OsString),
     UnexpectedArgument(OsString),
-    #[display("Missing argument `{_0}`")]
-    MissingArgument(&'a PosArg),
-    #[display("Missing subcommand")]
+    MissingArgument(&'a PosArg<'a>),
     MissingSubcommand,
-    RunError(anyhow::Error),
+    MutuallyExclusiveOptions(&'a [&'a OptArg<'a>]),
+    RuntimeError(anyhow::Error),
+}
+
+impl<E: std::error::Error + Send + Sync + 'static> From<E> for ErrorKind<'_> {
+    fn from(err: E) -> Self {
+        Self::RuntimeError(err.into())
+    }
+}
+
+impl Display for ErrorKind<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::UnkownShortOption(name) => write!(f, "Unknown option `-{}`", name.to_string_lossy()),
+            Self::UnkownLongOption(name) => write!(f, "Unknown option `--{}`", name.to_string_lossy()),
+            Self::UnkownSubcommand(name) => write!(f, "Unknown subcommand `{}`", name.to_string_lossy()),
+            Self::MissingOptionValue(opt) => write!(f, "Missing value for option `{opt}`"),
+            Self::InvalidOptionValue(opt, val, err) => {
+                write!(f, "Invalid value `{}` for option `{opt}`: {err}", val.to_string_lossy())
+            }
+            Self::InvalidArgumentValue(arg, val, err) => write!(
+                f,
+                "Invalid value `{}` for argument `{arg}`: {err}",
+                val.to_string_lossy()
+            ),
+            Self::UnexpectedOptionValue(opt, val) => {
+                write!(f, "Unexpected value `{}` for option `{opt}`", val.to_string_lossy())
+            }
+            Self::UnexpectedArgument(arg) => write!(f, "Unexpected argument `{}`", arg.to_string_lossy()),
+            Self::MissingArgument(arg) => write!(f, "Missing argument `{arg}`"),
+            Self::MissingSubcommand => write!(f, "Missing subcommand"),
+            Self::MutuallyExclusiveOptions(opts) => {
+                write!(f, "Options ")?;
+
+                for (i, opt) in opts.iter().enumerate() {
+                    if i > 0 {
+                        if i < opts.len() - 1 {
+                            write!(f, ", ")?;
+                        } else {
+                            write!(f, " and ")?;
+                        }
+                    }
+                    write!(f, "`{}`", opt)?;
+                }
+
+                write!(f, " are mutualy exclusive")
+            }
+            Self::RuntimeError(err) => err.fmt(f),
+        }
+    }
 }

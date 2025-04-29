@@ -1,6 +1,6 @@
 mod cli;
-mod colors;
 mod commands;
+mod format;
 mod global;
 mod io;
 mod run;
