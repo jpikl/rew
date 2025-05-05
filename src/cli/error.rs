@@ -1,16 +1,21 @@
+use super::COMMAND_PARAM;
 use super::Command;
+use super::CommandItem;
 use super::OptArg;
 use super::PosArg;
-use crate::format::BOLD;
-use crate::format::BOLD_RED;
-use crate::format::Colorizer;
-use crate::format::RED;
-use crate::format::RESET;
-use crate::format::YELLOW;
 use anstream::eprintln;
 use std::ffi::OsString;
 use std::fmt::Display;
 use std::process::exit;
+
+pub const PREFIX_START: &str = "\x1b[1m";
+pub const PREFIX_END: &str = "\x1b[1m";
+
+pub const ERROR_START: &str = "\x1b[1;31m";
+pub const ERROR_END: &str = "\x1b[0m";
+
+pub const QUOTE_START: &str = "'\x1b[1;33m";
+pub const QUOTE_END: &str = "\x1b[0m'";
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct CallChain(pub Vec<OsString>);
@@ -60,38 +65,33 @@ impl Error<'_> {
     }
 
     fn print_runtime_error(&self, err: &anyhow::Error) {
-        self.print_prefix();
-        eprintln!("{BOLD_RED}Error:{RESET} {err}");
+        self.print_error(err);
 
         for cause in err.chain().skip(1) {
-            self.print_prefix();
-            eprintln!("{RED}└─>{RESET} {cause}");
+            eprintln!("Caused by: {cause}");
         }
     }
 
     fn print_invalid_usage(&self, err: &ErrorKind) {
-        self.print_prefix();
-        eprintln!("{BOLD_RED}Invalid usage:{RESET} {}", Colorizer(err));
+        self.print_error(err);
 
         if let Some(help) = self.command.help_option() {
             if let Some(short) = help.short {
-                self.print_prefix();
                 eprintln!(
-                    "For more information, try '{YELLOW}{} -{}{RESET}'.",
+                    "Try {QUOTE_START}{} -{}{QUOTE_END} for more information.",
                     self.call_chain, short
                 );
             } else if let Some(long) = help.long {
-                self.print_prefix();
                 eprintln!(
-                    "For more information, try '{YELLOW}{} --{}{RESET}'.",
+                    "Try {QUOTE_START}{} --{}{QUOTE_END} for more information.",
                     self.call_chain, long
                 );
             }
         }
     }
 
-    fn print_prefix(&self) {
-        eprint!("{BOLD}{}:{RESET} ", self.call_chain);
+    fn print_error(&self, err: &impl Display) {
+        eprintln!("{ERROR_START}{}{ERROR_END}: {err}", self.call_chain);
     }
 }
 
@@ -129,24 +129,52 @@ impl<E: std::error::Error + Send + Sync + 'static> From<E> for ErrorKind<'_> {
 impl Display for ErrorKind<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::UnkownShortOption(name) => write!(f, "Unknown option `-{}`", name.to_string_lossy()),
-            Self::UnkownLongOption(name) => write!(f, "Unknown option `--{}`", name.to_string_lossy()),
-            Self::UnkownSubcommand(name) => write!(f, "Unknown subcommand `{}`", name.to_string_lossy()),
-            Self::MissingOptionValue(opt) => write!(f, "Missing value for option `{opt}`"),
+            Self::UnkownShortOption(name) => {
+                write!(f, "Unknown option {QUOTE_START}-{}{QUOTE_END}", name.to_string_lossy())
+            }
+            Self::UnkownLongOption(name) => {
+                write!(f, "Unknown option {QUOTE_START}--{}{QUOTE_END}", name.to_string_lossy())
+            }
+            Self::UnkownSubcommand(name) => {
+                write!(
+                    f,
+                    "Unknown subcommand {QUOTE_START}{}{QUOTE_END}",
+                    name.to_string_lossy()
+                )
+            }
+            Self::MissingOptionValue(opt) => write!(
+                f,
+                "Option {QUOTE_START}{opt}{QUOTE_END} requires value {QUOTE_START}{}{QUOTE_END}",
+                opt.params().join(" ")
+            ),
             Self::InvalidOptionValue(opt, val, err) => {
-                write!(f, "Invalid value `{}` for option `{opt}`: {err}", val.to_string_lossy())
+                write!(
+                    f,
+                    "Option {QUOTE_START}{opt}{QUOTE_END} got invalid value {QUOTE_START}{}{QUOTE_END}: {err}",
+                    val.to_string_lossy()
+                )
             }
             Self::InvalidArgumentValue(arg, val, err) => write!(
                 f,
-                "Invalid value `{}` for argument `{arg}`: {err}",
+                "Argument {QUOTE_START}{arg}{QUOTE_END} got invalid value {QUOTE_START}{}{QUOTE_END}: {err}",
                 val.to_string_lossy()
             ),
             Self::UnexpectedOptionValue(opt, val) => {
-                write!(f, "Unexpected value `{}` for option `{opt}`", val.to_string_lossy())
+                write!(
+                    f,
+                    "Option {QUOTE_START}{opt}{QUOTE_END} got unexpected value {QUOTE_START}{}{QUOTE_END}",
+                    val.to_string_lossy()
+                )
             }
-            Self::UnexpectedArgument(arg) => write!(f, "Unexpected argument `{}`", arg.to_string_lossy()),
-            Self::MissingArgument(arg) => write!(f, "Missing argument `{arg}`"),
-            Self::MissingSubcommand => write!(f, "Missing subcommand"),
+            Self::UnexpectedArgument(arg) => {
+                write!(
+                    f,
+                    "Unexpected argument {QUOTE_START}{}{QUOTE_END}",
+                    arg.to_string_lossy()
+                )
+            }
+            Self::MissingArgument(arg) => write!(f, "Missing required argument {QUOTE_START}{arg}{QUOTE_END}"),
+            Self::MissingSubcommand => write!(f, "Missing required argument {QUOTE_START}{COMMAND_PARAM}{QUOTE_END}"),
             Self::MutuallyExclusiveOptions(opts) => {
                 write!(f, "Options ")?;
 
@@ -158,7 +186,7 @@ impl Display for ErrorKind<'_> {
                             write!(f, " and ")?;
                         }
                     }
-                    write!(f, "`{}`", opt)?;
+                    write!(f, "{QUOTE_START}{}{QUOTE_END}", opt)?;
                 }
 
                 write!(f, " are mutualy exclusive")

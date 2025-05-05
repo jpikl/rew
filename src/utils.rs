@@ -1,7 +1,10 @@
 use crate::cli::ParseArg;
 use crate::cli::ParseArgResult;
+use anstream::StripStream;
+use bstr::ByteSlice;
 use std::borrow::Cow;
 use std::fmt::Display;
+use std::io::Write;
 use std::num::ParseIntError;
 
 #[derive(Default, Clone, Debug)]
@@ -58,6 +61,12 @@ fn strip_any_suffix<'a>(value: &'a str, suffixes: &[&str]) -> Option<&'a str> {
         }
     }
     None
+}
+
+pub fn strip_colors(value: &str) -> String {
+    let mut writer = StripStream::new(Vec::new());
+    writer.write_all(value.as_bytes()).unwrap();
+    writer.into_inner().to_str_lossy().to_string()
 }
 
 #[cfg(test)]

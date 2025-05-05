@@ -237,6 +237,7 @@ mod tests {
     use crate::cli::OptBuilder;
     use crate::cli::Pos;
     use crate::cli::PosBuilder;
+    use crate::utils::strip_colors;
     use claims::*;
     use rstest::rstest;
     use std::ffi::OsString;
@@ -308,16 +309,16 @@ mod tests {
     }
 
     #[rstest]
-    #[case(&["--flag=x"], "Unexpected value `x` for option `-f, --flag`")]
-    #[case(&["-o"], "Missing value for option `-o, --option`")]
-    #[case(&["-o", "x"], "Invalid value `x` for option `-o, --option`: invalid digit found in string")]
-    #[case(&["--option"], "Missing value for option `-o, --option`")]
-    #[case(&["--option", "x"], "Invalid value `x` for option `-o, --option`: invalid digit found in string")]
-    #[case(&["--option=x"], "Invalid value `x` for option `-o, --option`: invalid digit found in string")]
-    #[case(&["-x"], "Unknown option `-x`")]
-    #[case(&["--xtra"], "Unknown option `--xtra`")]
-    #[case(&["--xtra=x"], "Unknown option `--xtra`")]
-    #[case(&["arg", "x"], "Unexpected argument `x`")]
+    #[case(&["--flag=x"], "Option '-f, --flag' got unexpected value 'x'")]
+    #[case(&["-o"], "Option '-o, --option' requires value '<VALUE>'")]
+    #[case(&["-o", "x"], "Option '-o, --option' got invalid value 'x': invalid digit found in string")]
+    #[case(&["--option"], "Option '-o, --option' requires value '<VALUE>'")]
+    #[case(&["--option", "x"], "Option '-o, --option' got invalid value 'x': invalid digit found in string")]
+    #[case(&["--option=x"], "Option '-o, --option' got invalid value 'x': invalid digit found in string")]
+    #[case(&["-x"], "Unknown option '-x'")]
+    #[case(&["--xtra"], "Unknown option '--xtra'")]
+    #[case(&["--xtra=x"], "Unknown option '--xtra'")]
+    #[case(&["arg", "x"], "Unexpected argument 'x'")]
     fn command_args_err(#[case] args: &[&str], #[case] err_msg: &str) {
         let command = CommandBuilder::new()
             .options(&[FLAG.arg, OPT.arg])
@@ -326,7 +327,7 @@ mod tests {
 
         let parser = Parser::new(&command, make_args(args));
         let err = assert_err!(parser.parse());
-        assert_eq!(err.to_string(), err_msg);
+        assert_eq!(strip_colors(&err.to_string()), err_msg);
     }
 
     fn make_args(args: &[&str]) -> Vec<OsString> {

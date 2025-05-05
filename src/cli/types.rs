@@ -8,6 +8,9 @@ use std::any::Any;
 use std::ffi::OsStr;
 use std::fmt::Display;
 
+pub const OPTIONS_PARAM: &str = "[OPTIONS]";
+pub const COMMAND_PARAM: &str = "<COMMAND>";
+
 #[derive(Debug, PartialEq)]
 pub struct Command<'a> {
     pub name: &'a str,
@@ -164,7 +167,7 @@ impl CommandItem for Command<'_> {
         let mut params: Vec<String> = Vec::new();
 
         if !self.options.is_empty() {
-            params.push("[OPTIONS]".into());
+            params.push(OPTIONS_PARAM.into());
         }
 
         for positional in self.positionals {
@@ -172,7 +175,7 @@ impl CommandItem for Command<'_> {
         }
 
         if !self.subcommands.is_empty() {
-            params.push("<COMMAND>".into());
+            params.push(COMMAND_PARAM.into());
         }
 
         params
