@@ -36,7 +36,7 @@ const NO_ESCAPE: Flag = FlagBuilder::new("no-escape")
 
 pub const QUOTE: Command = CommandBuilder::new()
     .name("quote")
-    .description("Put each input line in quotes.")
+    .description("Put each line in quotes.")
     .description_ex(&["Also escapes quote characters inside."])
     .options(&[
         DOUBLE.arg,
