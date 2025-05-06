@@ -146,6 +146,10 @@ impl<R: Read> ByteChunkReader<R> {
         Self { inner, buf }
     }
 
+    pub fn get_mut(&mut self) -> &mut R {
+        &mut self.inner
+    }
+
     pub fn read_chunk(&mut self) -> std::io::Result<Option<&mut [u8]>> {
         match self.inner.read(&mut self.buf) {
             Ok(0) => Ok(None),
