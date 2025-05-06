@@ -267,12 +267,17 @@ fn print_item_group<T: CommandItem + Display>(
                 }
             }
 
-            writeln!(
-                writer,
-                "{}  {}",
-                " ".repeat(width - get_usage_len(*item, with_params)),
-                Highlighter(item.description())
-            )?;
+            write!(writer, "{}  ", " ".repeat(width - get_usage_len(*item, with_params)),)?;
+
+            if let Some(default) = item.default() {
+                if let Some(description) = item.description().strip_suffix('.') {
+                    writeln!(writer, "{} (default: {}).", Highlighter(description), default)?;
+                } else {
+                    writeln!(writer, "{} (default: {})", Highlighter(item.description()), default)?;
+                }
+            } else {
+                writeln!(writer, "{}", Highlighter(item.description()))?;
+            }
         }
     }
 
