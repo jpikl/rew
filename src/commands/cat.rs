@@ -7,6 +7,7 @@ use crate::cli::FlagBuilder;
 use crate::cli::HELP;
 use crate::global::BUF_MODE;
 use crate::global::BUF_SIZE;
+use crate::global::MAPPER_COMMANDS;
 use crate::global::NULL;
 use crate::run::Context;
 use std::io::copy;
@@ -34,6 +35,7 @@ pub const CAT: Command = CommandBuilder::new()
     .name("cat")
     .description("Copy all input to output.")
     .description_ex(&["Mostly useful for benchmarking raw IO throughput."])
+    .group(&MAPPER_COMMANDS)
     .options(&[
         LINES.arg,
         CHARS.arg,

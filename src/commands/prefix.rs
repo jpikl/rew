@@ -9,6 +9,7 @@ use crate::cli::Pos;
 use crate::cli::PosBuilder;
 use crate::global::BUF_MODE;
 use crate::global::BUF_SIZE;
+use crate::global::MAPPER_COMMANDS;
 use crate::global::NULL;
 use crate::run::Context;
 use bstr::BString;
@@ -28,6 +29,7 @@ const VALUE: Pos<BString> = PosBuilder::new("value")
 pub const PREFIX: Command = CommandBuilder::new()
     .name("prefix")
     .description("Add prefix to each line.")
+    .group(&MAPPER_COMMANDS)
     .options(&[DELETE.arg, HELP.arg, NULL.arg, BUF_SIZE.arg, BUF_MODE.arg])
     .positionals(&[VALUE.arg])
     .run(run)

@@ -343,7 +343,7 @@ impl<'a, T: ParseOsArg + 'a> PosBuilder<'a, T> {
             required: self.required,
             value: ArgValue {
                 name: self.name,
-                default: None,
+                default: self.default,
                 enum_items: self.enum_items,
                 parse: T::parse_raw_arg,
             },

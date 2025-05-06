@@ -9,6 +9,7 @@ use crate::cli::Opt;
 use crate::cli::OptBuilder;
 use crate::global::BUF_MODE;
 use crate::global::BUF_SIZE;
+use crate::global::MAPPER_COMMANDS;
 use crate::global::NULL;
 use crate::run::Context;
 use bstr::BString;
@@ -38,6 +39,7 @@ pub const QUOTE: Command = CommandBuilder::new()
     .name("quote")
     .description("Put each line in quotes.")
     .description_ex(&["Also escapes quote characters inside."])
+    .group(&MAPPER_COMMANDS)
     .options(&[
         DOUBLE.arg,
         ESCAPE.arg,

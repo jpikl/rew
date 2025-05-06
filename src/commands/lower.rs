@@ -5,6 +5,7 @@ use crate::cli::ErrorKind;
 use crate::cli::HELP;
 use crate::global::BUF_MODE;
 use crate::global::BUF_SIZE;
+use crate::global::MAPPER_COMMANDS;
 use crate::global::NULL;
 use crate::run::Context;
 use bstr::ByteSlice;
@@ -12,6 +13,7 @@ use bstr::ByteSlice;
 pub const LOWER: Command = CommandBuilder::new()
     .name("lower")
     .description("Convert characters to lowercase.")
+    .group(&MAPPER_COMMANDS)
     .options(&[HELP.arg, NULL.arg, BUF_SIZE.arg, BUF_MODE.arg])
     .run(run)
     .done();

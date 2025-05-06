@@ -16,6 +16,16 @@ const GLOBAL_OPTIONS: Group = Group {
     description: Some("Options shared by all commands."),
 };
 
+pub const MAPPER_COMMANDS: Group = Group {
+    name: "Mapper commands",
+    description: Some("Commands that transform input lines to output."),
+};
+
+pub const FILTER_COMMANDS: Group = Group {
+    name: "Filter commands",
+    description: Some("Commands that filter input lines to output."),
+};
+
 // Optimal value for max IO throughput, according to https://www.evanjones.ca/read-write-buffer-size.html
 // Also confirmed by some custom benchmarks.
 // Also used internally by the `linereader` library https://github.com/Freaky/rust-linereader.
