@@ -8,9 +8,6 @@ use std::ffi::OsString;
 use std::fmt::Display;
 use std::process::exit;
 
-pub const PREFIX_START: &str = "\x1b[1m";
-pub const PREFIX_END: &str = "\x1b[1m";
-
 pub const ERROR_START: &str = "\x1b[1;31m";
 pub const ERROR_END: &str = "\x1b[0m";
 

@@ -313,16 +313,19 @@ impl<'a, T: ParseOsArg + 'a> PosBuilder<'a, T> {
         self
     }
 
+    #[allow(dead_code)]
     pub const fn description_ex(mut self, description_ex: &'a [&'a str]) -> Self {
         self.description_ex = description_ex;
         self
     }
 
+    #[allow(dead_code)]
     pub const fn group(mut self, group: &'a Group) -> Self {
         self.group = group;
         self
     }
 
+    #[allow(dead_code)]
     pub const fn environment(mut self, environment: &'a str) -> Self {
         self.environment = Some(environment);
         self

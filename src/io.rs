@@ -208,6 +208,7 @@ impl<W: Write> Writer<W> {
         }
     }
 
+    #[cfg(test)]
     fn flush(&mut self) -> std::io::Result<()> {
         match &mut self.inner {
             WriterInner::Buffered(inner) => inner.flush(),
@@ -215,6 +216,7 @@ impl<W: Write> Writer<W> {
         }
     }
 
+    #[cfg(test)]
     fn get_ref(&self) -> &W {
         match &self.inner {
             WriterInner::Buffered(inner) => inner.get_ref(),
