@@ -1,17 +1,17 @@
-use crate::cli::Args;
 use crate::cli::Command;
 use crate::cli::CommandBuilder;
+use crate::cli::Context;
 use crate::cli::ErrorKind;
 use crate::cli::Flag;
 use crate::cli::FlagBuilder;
-use crate::cli::HELP;
 use crate::cli::Opt;
 use crate::cli::OptBuilder;
 use crate::global::BUF_MODE;
 use crate::global::BUF_SIZE;
-use crate::global::MAPPER_COMMANDS;
+use crate::global::HELP;
+use crate::global::MAP_COMMANDS;
 use crate::global::NULL;
-use crate::run::Context;
+use crate::run::ContextExt;
 use bstr::BString;
 use bstr::ByteSlice;
 
@@ -37,9 +37,9 @@ const NO_ESCAPE: Flag = FlagBuilder::new("no-escape")
 
 pub const QUOTE: Command = CommandBuilder::new()
     .name("quote")
-    .description("Put each line in quotes.")
+    .description("Put each line into quotes.")
     .description_ex(&["Also escapes quote characters inside."])
-    .group(&MAPPER_COMMANDS)
+    .group(&MAP_COMMANDS)
     .options(&[
         DOUBLE.arg,
         ESCAPE.arg,
@@ -52,15 +52,14 @@ pub const QUOTE: Command = CommandBuilder::new()
     .run(run)
     .done();
 
-fn run(mut args: Args) -> Result<(), ErrorKind<'static>> {
-    let double = args.get(&DOUBLE);
-    let escape = args.get_owned(&ESCAPE);
-    let no_escape = args.get(&NO_ESCAPE) || escape.is_empty();
+fn run(ctx: &Context) -> Result<(), ErrorKind<'static>> {
+    let double = ctx.args.get(&DOUBLE);
+    let escape = ctx.args.get_ref(&ESCAPE);
+    let no_escape = ctx.args.get(&NO_ESCAPE) || escape.is_empty();
     let quote = if double { b'"' } else { b'\'' };
-    let context = Context::new(&args);
 
-    let mut reader = context.line_reader();
-    let mut writer = context.writer();
+    let mut reader = ctx.line_reader();
+    let mut writer = ctx.writer();
 
     while let Some(line) = reader.read_line()? {
         writer.write(&[quote])?;

@@ -1,151 +1,199 @@
-use super::ArgValue;
+use super::ArgKind;
+use super::ArgUsage;
+use super::Args;
 use super::CallChain;
+use super::Command;
+use super::CommandChain;
+use super::Context;
 use super::Error;
 use super::ErrorKind;
-use super::PosArg;
-use super::Runner;
-use super::args::Args;
-use super::types::Command;
-use super::types::OptArg;
-use super::types::OptArgKind;
+use super::Value;
 use os_str_bytes::OsStrBytesExt;
 use std::borrow::Cow;
-use std::env::args_os;
 use std::ffi::OsStr;
 use std::ffi::OsString;
 use std::result::Result;
 
-pub struct Parser<'a, I: Iterator> {
-    command: &'a Command<'a>,
-    call_chain: Vec<OsString>,
-    values: Args,
-    allow_options: bool,
-    args: I,
-}
-
-impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
-    pub fn new<T: IntoIterator<IntoIter = I>>(command: &'a Command, args: T) -> Self {
-        Self {
-            command,
-            call_chain: Vec::new(),
-            values: Args::new(),
-            allow_options: true,
-            args: args.into_iter(),
+impl<'a> Command<'a> {
+    pub fn parse_args(&'a self) -> Context<'a> {
+        match self.try_parse_args() {
+            Ok(context) => context,
+            Err(err) => err.exit(),
         }
     }
 
-    pub fn parse(mut self) -> Result<Runner<'a>, Error<'a>> {
+    pub fn try_parse_args(&'a self) -> Result<Context<'a>, Error<'a>> {
+        self.try_parse_args_from(std::env::args_os())
+    }
+
+    pub fn try_parse_args_from(
+        &'a self,
+        args: impl IntoIterator<IntoIter = impl Iterator<Item = OsString>>,
+    ) -> Result<Context<'a>, Error<'a>> {
+        let mut parser = Parser::new(self, args);
+
+        match parser.parse() {
+            Ok(()) => Ok(parser.into()),
+            Err(err) => Err(Error {
+                context: parser.into(),
+                kind: err,
+            }),
+        }
+    }
+}
+
+impl<'a, I> From<Parser<'a, I>> for Context<'a> {
+    fn from(parser: Parser<'a, I>) -> Self {
+        Self {
+            calls: CallChain(parser.calls),
+            commands: CommandChain(parser.commands),
+            args: Args::new(parser.usages),
+        }
+    }
+}
+
+struct Parser<'a, I> {
+    args: I,
+    command: &'a Command<'a>,
+    commands: Vec<&'a Command<'a>>,
+    calls: Vec<OsString>,
+    usages: Vec<ArgUsage>,
+    allow_options: bool,
+    positional_index: usize,
+}
+
+impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
+    fn new<T: IntoIterator<IntoIter = I>>(command: &'a Command<'a>, args: T) -> Self {
+        Self {
+            args: args.into_iter(),
+            usages: Vec::new(),
+            command,
+            commands: Vec::new(),
+            calls: Vec::new(),
+            allow_options: true,
+            positional_index: 0,
+        }
+    }
+
+    fn parse(&mut self) -> Result<(), ErrorKind<'a>> {
+        self.commands.push(self.command);
+
         if let Some(arg) = self.args.next() {
-            self.call_chain.push(arg);
+            self.calls.push(arg);
+        } else {
+            self.calls.push(self.command.name.into());
         }
 
         while let Some(arg) = self.args.next() {
             self.parse_arg(arg)?;
         }
 
-        Ok(Runner {
-            command: self.command,
-            call_chain: CallChain(self.call_chain),
-            args: self.values,
-        })
+        Ok(())
     }
 
-    fn parse_arg(&mut self, arg: OsString) -> Result<(), Error<'a>> {
+    fn parse_arg(&mut self, arg: OsString) -> Result<(), ErrorKind<'a>> {
         if self.allow_options {
             if let Some(name) = arg.strip_prefix("--") {
-                if !name.is_empty() {
-                    return self.parse_long_opt(name);
+                return if !name.is_empty() {
+                    self.parse_long_option(name)
                 } else {
                     self.allow_options = false;
-                    return Ok(());
-                }
+                    Ok(())
+                };
             } else if let Some(name) = arg.strip_prefix("-") {
                 if !name.is_empty() {
-                    return self.parse_short_opts(name);
+                    return self.parse_short_options(name);
                 }
             }
         }
 
         if !self.command.subcommands.is_empty() {
-            if let Some(subcommand) = self.command.find_subcommand(&arg) {
-                self.command = subcommand;
-                self.call_chain.push(arg);
-                return Ok(());
-            } else {
-                return Err(self.err(ErrorKind::UnkownSubcommand(arg)));
-            }
+            let Some(name) = arg.to_str() else {
+                return Err(ErrorKind::UnkownSubcommand(arg));
+            };
+            let Some(subcommand) = self.command.subcommand(name) else {
+                return Err(ErrorKind::UnkownSubcommand(arg));
+            };
+            self.command = subcommand;
+            self.commands.push(subcommand);
+            self.calls.push(arg);
+            self.positional_index = 0;
+            return Ok(());
         }
 
-        if let Some(pos) = self.command.find_unset_pos(&self.values) {
-            let err_value = arg.clone(); // For possible error
+        let Some(pos) = self.command.positionals.get(self.positional_index) else {
+            return Err(ErrorKind::UnexpectedArgument(arg));
+        };
 
-            match (pos.value.parse)(arg.into()) {
-                Ok(value) => {
-                    self.values.set(pos, value);
-                    return Ok(());
-                }
-                Err(err) => {
-                    return Err(self.err(ErrorKind::InvalidArgumentValue(pos, err_value, err)));
-                }
-            }
+        if !pos.multiple {
+            self.positional_index += 1;
         }
 
-        Err(self.err(ErrorKind::UnexpectedArgument(arg)))
+        match (pos.value.parse)(arg.into()) {
+            Ok(value) => {
+                self.usages.push(ArgUsage::new(pos, ArgKind::Positional, value));
+                Ok(())
+            }
+            Err((value, err)) => Err(ErrorKind::InvalidArgumentValue(pos, value, err)),
+        }
     }
 
-    fn parse_long_opt(&mut self, name: &OsStr) -> Result<(), Error<'a>> {
+    fn parse_long_option(&mut self, name: &OsStr) -> Result<(), ErrorKind<'a>> {
         let (name, value) = match name.split_once("=") {
             Some((name, value)) => (name, Some(value)),
             None => (name, None),
         };
-        if let Some(opt) = self.command.find_long_opt(name) {
-            match opt.kind {
-                OptArgKind::Flag => {
-                    if let Some(value) = value {
-                        Err(self.err(ErrorKind::UnexpectedOptionValue(opt, value.into())))
-                    } else {
-                        self.values.set_long(opt, Box::new(true));
+
+        let Some(name) = name.to_str() else {
+            return Err(ErrorKind::UnkownLongOption(name.into()));
+        };
+
+        let Some(opt) = self.command.option_by_long(name) else {
+            return Err(ErrorKind::UnkownLongOption(name.into()));
+        };
+
+        match opt.value {
+            None => {
+                if let Some(value) = value {
+                    return Err(ErrorKind::UnexpectedOptionValue(opt, value.into()));
+                }
+
+                self.usages
+                    .push(ArgUsage::new(opt, ArgKind::LongOption, Box::new(true)));
+                Ok(())
+            }
+            Some(Value { parse, .. }) => {
+                let value = match value {
+                    Some(value) => Some(value.into()),
+                    None => self.args.next().map(Cow::Owned),
+                };
+
+                let Some(value) = value else {
+                    return Err(ErrorKind::MissingOptionValue(opt));
+                };
+
+                match parse(value) {
+                    Ok(value) => {
+                        self.usages.push(ArgUsage::new(opt, ArgKind::LongOption, value));
                         Ok(())
                     }
-                }
-                OptArgKind::Value(ArgValue { parse, .. }) => {
-                    let value = match value {
-                        Some(value) => Some(value.into()),
-                        None => self.args.next().map(Cow::Owned),
-                    };
-
-                    if let Some(value) = value {
-                        let err_value = value.clone(); // For possible error
-
-                        match parse(value) {
-                            Ok(value) => {
-                                self.values.set_long(opt, value);
-                                Ok(())
-                            }
-                            Err(err) => Err(self.err(ErrorKind::InvalidOptionValue(opt, err_value.into(), err))),
-                        }
-                    } else {
-                        Err(self.err(ErrorKind::MissingOptionValue(opt)))
-                    }
+                    Err((value, err)) => Err(ErrorKind::InvalidOptionValue(opt, value, err)),
                 }
             }
-        } else {
-            Err(self.err(ErrorKind::UnkownLongOption(name.into())))
         }
     }
 
-    fn parse_short_opts(&mut self, name: &OsStr) -> Result<(), Error<'a>> {
-        let mut value_pos = 0;
+    fn parse_short_options(&mut self, chars: &OsStr) -> Result<(), ErrorKind<'a>> {
+        let mut suffix_pos = 0;
 
-        for (invalid, chunk) in name.utf8_chunks() {
+        for (invalid, chunk) in chars.utf8_chunks() {
             if !invalid.as_os_str().is_empty() {
-                return Err(self.err(ErrorKind::UnkownShortOption(invalid.into())));
+                return Err(ErrorKind::UnkownShortOption(invalid.into()));
             }
-
             for char in chunk.chars() {
-                value_pos += char.len_utf8();
-                let (_, value) = name.split_at(value_pos);
-                if self.parse_short_opt(char, value)? {
+                suffix_pos += char.len_utf8();
+                let (_, suffix) = chars.split_at(suffix_pos);
+                if self.parse_short_option(char, suffix)? {
                     break;
                 }
             }
@@ -154,118 +202,76 @@ impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
         Ok(())
     }
 
-    fn parse_short_opt(&mut self, char: char, value: &OsStr) -> Result<bool, Error<'a>> {
-        if let Some(opt) = self.command.find_short_opt(char) {
-            match opt.kind {
-                OptArgKind::Flag => {
-                    self.values.set(opt, Box::new(true));
-                    Ok(false)
-                }
-                OptArgKind::Value(ArgValue { parse, .. }) => {
-                    let value: Cow<OsStr> = if value.is_empty() {
-                        if let Some(value) = self.args.next() {
-                            value.into()
-                        } else {
-                            return Err(self.err(ErrorKind::MissingOptionValue(opt)));
-                        }
-                    } else {
-                        value.into()
+    fn parse_short_option(&mut self, char: char, suffix: &OsStr) -> Result<bool, ErrorKind<'a>> {
+        let Some(opt) = self.command.option_by_short(char) else {
+            return Err(ErrorKind::UnkownShortOption(char.to_string().into()));
+        };
+
+        match opt.value {
+            None => {
+                self.usages
+                    .push(ArgUsage::new(opt, ArgKind::ShortOption, Box::new(true)));
+                Ok(false)
+            }
+            Some(Value { parse, .. }) => {
+                let value: Cow<OsStr> = if suffix.is_empty() {
+                    let Some(next_arg) = self.args.next() else {
+                        return Err(ErrorKind::MissingOptionValue(opt));
                     };
+                    next_arg.into()
+                } else {
+                    suffix.into()
+                };
 
-                    let err_value = value.clone(); // For possible error
-
-                    match parse(value) {
-                        Ok(value) => {
-                            self.values.set(opt, value);
-                            Ok(true)
-                        }
-                        Err(err) => Err(self.err(ErrorKind::InvalidOptionValue(opt, err_value.into(), err))),
+                match parse(value) {
+                    Ok(value) => {
+                        self.usages.push(ArgUsage::new(opt, ArgKind::ShortOption, value));
+                        Ok(true)
                     }
+                    Err((value, err)) => Err(ErrorKind::InvalidOptionValue(opt, value, err)),
                 }
             }
-        } else {
-            Err(self.err(ErrorKind::UnkownShortOption(char.to_string().into())))
         }
-    }
-
-    fn err(&self, kind: ErrorKind<'a>) -> Error<'a> {
-        Error {
-            command: self.command,
-            call_chain: CallChain(self.call_chain.clone()),
-            kind,
-        }
-    }
-}
-
-impl Command<'_> {
-    pub fn parse_args(&self) -> Runner {
-        match self.try_parse_args() {
-            Ok(runner) => runner,
-            Err(err) => err.exit(),
-        }
-    }
-
-    pub fn try_parse_args(&self) -> Result<Runner, Error> {
-        Parser::new(self, args_os()).parse()
-    }
-
-    fn find_short_opt(&self, name: char) -> Option<&OptArg> {
-        self.options.iter().find(|opt| opt.short == Some(name))
-    }
-
-    fn find_long_opt(&self, name: &OsStr) -> Option<&OptArg> {
-        self.options.iter().find(|opt| opt.long.map(OsStr::new) == Some(name))
-    }
-
-    fn find_subcommand(&self, name: &OsStr) -> Option<&Command> {
-        self.subcommands.iter().find(|cmd| OsStr::new(cmd.name) == name)
-    }
-
-    fn find_unset_pos(&self, args: &Args) -> Option<&PosArg> {
-        self.positionals.iter().find(|pos| !args.has(*pos))
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::cli::Command;
-    use crate::cli::CommandBuilder;
-    use crate::cli::Flag;
-    use crate::cli::FlagBuilder;
-    use crate::cli::Opt;
-    use crate::cli::OptBuilder;
-    use crate::cli::Pos;
-    use crate::cli::PosBuilder;
+    use crate::cli::build::CommandBuilder;
+    use crate::cli::build::FlagBuilder;
+    use crate::cli::build::OptBuilder;
+    use crate::cli::build::PosBuilder;
+    use crate::cli::option::Flag;
+    use crate::cli::option::Opt;
+    use crate::cli::positional::Pos;
     use crate::utils::strip_colors;
     use claims::*;
     use rstest::rstest;
     use std::ffi::OsString;
 
     const FLAG: Flag = FlagBuilder::new("flag").short('f').long("flag").done();
-    const OPT: Opt<i32> = OptBuilder::new("opt").short('o').long("option").done();
+    const OPT: Opt<i32> = OptBuilder::new("option").short('o').long("option").done();
     const POS: Pos<String> = PosBuilder::new("pos").name("pos").done();
     const SUBCOMMAND: Command = CommandBuilder::new().name("sub").done();
 
     #[test]
     fn command() {
         let command = CommandBuilder::new().done();
-        let parser = Parser::new(&command, make_args(&[]));
-        let runner = assert_ok!(parser.parse());
+        let context = assert_ok!(command.try_parse_args_from(make_args(&[])));
 
-        assert_eq!(runner.command, &command);
-        assert_eq!(runner.call_chain, CallChain(vec![OsString::from("bin")]));
+        assert_eq!(context.commands, CommandChain(vec![&command]));
+        assert_eq!(context.calls, CallChain(vec![OsString::from("bin")]));
     }
 
     #[test]
     fn subcommand() {
         let command = CommandBuilder::new().subcommands(&[SUBCOMMAND]).done();
-        let parser = Parser::new(&command, make_args(&["sub"]));
-        let runner = assert_ok!(parser.parse());
+        let context = assert_ok!(command.try_parse_args_from(make_args(&["sub"])));
 
-        assert_eq!(runner.command, &SUBCOMMAND);
+        assert_eq!(context.commands, CommandChain(vec![&command, &SUBCOMMAND]));
         assert_eq!(
-            runner.call_chain,
+            context.calls,
             CallChain(vec![OsString::from("bin"), OsString::from("sub")])
         );
     }
@@ -300,12 +306,10 @@ mod tests {
             .positionals(&[POS.arg])
             .done();
 
-        let parser = Parser::new(&command, make_args(args));
-        let runner = assert_ok!(parser.parse());
-
-        assert_eq!(runner.args.get(&FLAG), flag);
-        assert_eq!(runner.args.get(&OPT), opt);
-        assert_eq!(runner.args.get(&POS), pos);
+        let context = assert_ok!(command.try_parse_args_from(make_args(args)));
+        assert_eq!(context.args.get(&FLAG), flag);
+        assert_eq!(context.args.get(&OPT), opt);
+        assert_eq!(context.args.get(&POS), pos);
     }
 
     #[rstest]
@@ -316,8 +320,8 @@ mod tests {
     #[case(&["--option", "x"], "Option '-o, --option' got invalid value 'x': invalid digit found in string")]
     #[case(&["--option=x"], "Option '-o, --option' got invalid value 'x': invalid digit found in string")]
     #[case(&["-x"], "Unknown option '-x'")]
-    #[case(&["--xtra"], "Unknown option '--xtra'")]
-    #[case(&["--xtra=x"], "Unknown option '--xtra'")]
+    #[case(&["--extra"], "Unknown option '--extra'")]
+    #[case(&["--extra=x"], "Unknown option '--extra'")]
     #[case(&["arg", "x"], "Unexpected argument 'x'")]
     fn command_args_err(#[case] args: &[&str], #[case] err_msg: &str) {
         let command = CommandBuilder::new()
@@ -325,8 +329,7 @@ mod tests {
             .positionals(&[POS.arg])
             .done();
 
-        let parser = Parser::new(&command, make_args(args));
-        let err = assert_err!(parser.parse());
+        let err = assert_err!(command.try_parse_args_from(make_args(args)));
         assert_eq!(strip_colors(&err.to_string()), err_msg);
     }
 

@@ -1,17 +1,17 @@
-use crate::cli::Args;
 use crate::cli::Command;
 use crate::cli::CommandBuilder;
+use crate::cli::Context;
 use crate::cli::ErrorKind;
 use crate::cli::Flag;
 use crate::cli::FlagBuilder;
-use crate::cli::HELP;
 use crate::cli::Pos;
 use crate::cli::PosBuilder;
 use crate::global::BUF_MODE;
 use crate::global::BUF_SIZE;
-use crate::global::MAPPER_COMMANDS;
+use crate::global::HELP;
+use crate::global::MAP_COMMANDS;
 use crate::global::NULL;
-use crate::run::Context;
+use crate::run::ContextExt;
 use bstr::BString;
 
 const DELETE: Flag = FlagBuilder::new("delete")
@@ -20,7 +20,7 @@ const DELETE: Flag = FlagBuilder::new("delete")
     .description("Delete existing suffix intead.")
     .done();
 
-const VALUE: Pos<BString> = PosBuilder::new("value")
+const VALUE: Pos<BString> = PosBuilder::new("values")
     .name("VALUE")
     .description("Suffix value.")
     .required()
@@ -29,20 +29,19 @@ const VALUE: Pos<BString> = PosBuilder::new("value")
 pub const SUFFIX: Command = CommandBuilder::new()
     .name("suffix")
     .description("Add suffix to each line.")
-    .group(&MAPPER_COMMANDS)
+    .group(&MAP_COMMANDS)
     .options(&[DELETE.arg, HELP.arg, NULL.arg, BUF_SIZE.arg, BUF_MODE.arg])
     .positionals(&[VALUE.arg])
     .run(run)
     .done();
 
-fn run(mut args: Args) -> Result<(), ErrorKind<'static>> {
-    let delete = args.get(&DELETE);
-    let suffix = args.get_owned(&VALUE);
+fn run(ctx: &Context) -> Result<(), ErrorKind<'static>> {
+    let delete = ctx.args.get(&DELETE);
+    let suffix = ctx.args.get_ref(&VALUE);
     let suffix = suffix.as_slice();
-    let context = Context::new(&args);
 
-    let mut reader = context.line_reader();
-    let mut writer = context.writer();
+    let mut reader = ctx.line_reader();
+    let mut writer = ctx.writer();
 
     while let Some(line) = reader.read_line()? {
         if delete {

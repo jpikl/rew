@@ -1,5 +1,5 @@
-use crate::cli::ParseArg;
-use crate::cli::ParseArgResult;
+use crate::cli::ParseValue;
+use crate::cli::ParseValueResult;
 use std::borrow::Cow;
 use std::fmt::Display;
 use std::num::ParseIntError;
@@ -7,11 +7,11 @@ use std::num::ParseIntError;
 #[derive(Default, Clone, Debug)]
 pub struct ByteSize(pub usize);
 
-impl ParseArg for ByteSize {
-    fn parse_arg(raw_value: Cow<str>) -> ParseArgResult {
+impl ParseValue<str> for ByteSize {
+    fn parse_value(raw_value: Cow<str>) -> ParseValueResult<String> {
         match parse_byte_size(raw_value.as_ref()) {
             Ok(size) => Ok(Box::new(ByteSize(size))),
-            Err(err) => Err(err.into()),
+            Err(err) => Err((raw_value.into(), err.into())),
         }
     }
 }

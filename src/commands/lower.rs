@@ -1,29 +1,27 @@
-use crate::cli::Args;
 use crate::cli::Command;
 use crate::cli::CommandBuilder;
+use crate::cli::Context;
 use crate::cli::ErrorKind;
-use crate::cli::HELP;
 use crate::global::BUF_MODE;
 use crate::global::BUF_SIZE;
-use crate::global::MAPPER_COMMANDS;
+use crate::global::HELP;
+use crate::global::MAP_COMMANDS;
 use crate::global::NULL;
-use crate::run::Context;
+use crate::run::ContextExt;
 use bstr::ByteSlice;
 
 pub const LOWER: Command = CommandBuilder::new()
     .name("lower")
     .description("Convert characters to lowercase.")
-    .group(&MAPPER_COMMANDS)
+    .group(&MAP_COMMANDS)
     .options(&[HELP.arg, NULL.arg, BUF_SIZE.arg, BUF_MODE.arg])
     .run(run)
     .done();
 
-fn run(args: Args) -> Result<(), ErrorKind<'static>> {
-    let context = Context::new(&args);
-
-    let mut reader = context.char_chunk_reader();
-    let mut writer = context.writer();
-    let mut buffer = context.uninit_buf();
+fn run(ctx: &Context) -> Result<(), ErrorKind<'static>> {
+    let mut reader = ctx.char_chunk_reader();
+    let mut writer = ctx.writer();
+    let mut buffer = ctx.uninit_buf();
 
     while let Some(chunk) = reader.read_chunk()? {
         if chunk.is_ascii() {

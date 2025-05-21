@@ -7,8 +7,6 @@ mod utils;
 
 use cli::Command;
 use cli::CommandBuilder;
-use cli::HELP;
-use cli::VERSION;
 use commands::cat::CAT;
 use commands::first::FIRST;
 use commands::lower::LOWER;
@@ -19,7 +17,9 @@ use commands::suffix::SUFFIX;
 use commands::upper::UPPER;
 use global::BUF_MODE;
 use global::BUF_SIZE;
+use global::HELP;
 use global::NULL;
+use global::VERSION;
 
 const REW: Command = CommandBuilder::new()
     .name(env!("CARGO_PKG_NAME"))

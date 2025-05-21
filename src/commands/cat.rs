@@ -1,15 +1,15 @@
-use crate::cli::Args;
 use crate::cli::Command;
 use crate::cli::CommandBuilder;
+use crate::cli::Context;
 use crate::cli::ErrorKind;
 use crate::cli::Flag;
 use crate::cli::FlagBuilder;
-use crate::cli::HELP;
 use crate::global::BUF_MODE;
 use crate::global::BUF_SIZE;
-use crate::global::MAPPER_COMMANDS;
+use crate::global::HELP;
+use crate::global::MAP_COMMANDS;
 use crate::global::NULL;
-use crate::run::Context;
+use crate::run::ContextExt;
 use std::io::copy;
 
 const LINES: Flag = FlagBuilder::new("lines")
@@ -35,7 +35,7 @@ pub const CAT: Command = CommandBuilder::new()
     .name("cat")
     .description("Copy all input to output.")
     .description_ex(&["Mostly useful for benchmarking raw IO throughput."])
-    .group(&MAPPER_COMMANDS)
+    .group(&MAP_COMMANDS)
     .options(&[
         LINES.arg,
         CHARS.arg,
@@ -48,10 +48,10 @@ pub const CAT: Command = CommandBuilder::new()
     .run(run)
     .done();
 
-fn run(args: Args) -> Result<(), ErrorKind<'static>> {
-    let lines = args.get(&LINES);
-    let chars = args.get(&CHARS);
-    let bytes = args.get(&BYTES);
+fn run(ctx: &Context) -> Result<(), ErrorKind<'static>> {
+    let lines = ctx.args.get(&LINES);
+    let chars = ctx.args.get(&CHARS);
+    let bytes = ctx.args.get(&BYTES);
 
     if (lines as u8 + chars as u8 + bytes as u8) > 1 {
         return Err(ErrorKind::MutuallyExclusiveOptions(&[
@@ -59,32 +59,30 @@ fn run(args: Args) -> Result<(), ErrorKind<'static>> {
         ]));
     }
 
-    let context = Context::new(&args);
-
     if lines {
-        let mut reader = context.line_reader();
-        let mut writer = context.writer();
+        let mut reader = ctx.line_reader();
+        let mut writer = ctx.writer();
 
         while let Some(line) = reader.read_line()? {
             writer.write_line(line)?;
         }
     } else if chars {
-        let mut reader = context.char_chunk_reader();
-        let mut writer = context.writer();
+        let mut reader = ctx.char_chunk_reader();
+        let mut writer = ctx.writer();
 
         while let Some(chunk) = reader.read_chunk()? {
             writer.write(chunk)?;
         }
     } else if bytes {
-        let mut reader = context.byte_chunk_reader();
-        let mut writer = context.writer();
+        let mut reader = ctx.byte_chunk_reader();
+        let mut writer = ctx.writer();
 
         while let Some(chunk) = reader.read_chunk()? {
             writer.write(chunk)?;
         }
     } else {
-        let mut reader = context.raw_reader();
-        let mut writer = context.raw_writer();
+        let mut reader = ctx.raw_reader();
+        let mut writer = ctx.raw_writer();
 
         copy(&mut reader, &mut writer)?;
     }

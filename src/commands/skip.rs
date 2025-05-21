@@ -1,15 +1,15 @@
-use crate::cli::Args;
 use crate::cli::Command;
 use crate::cli::CommandBuilder;
+use crate::cli::Context;
 use crate::cli::ErrorKind;
-use crate::cli::HELP;
 use crate::cli::Pos;
 use crate::cli::PosBuilder;
 use crate::global::BUF_MODE;
 use crate::global::BUF_SIZE;
 use crate::global::FILTER_COMMANDS;
+use crate::global::HELP;
 use crate::global::NULL;
-use crate::run::Context;
+use crate::run::ContextExt;
 use bstr::ByteSlice;
 use std::io::copy;
 
@@ -28,18 +28,17 @@ pub const SKIP: Command = CommandBuilder::new()
     .run(run)
     .done();
 
-fn run(args: Args) -> Result<(), ErrorKind<'static>> {
-    let mut count = args.get(&COUNT);
-    let context = Context::new(&args);
+fn run(ctx: &Context) -> Result<(), ErrorKind<'static>> {
+    let mut count = ctx.args.get(&COUNT);
 
     if count == 0 {
-        copy(&mut context.raw_reader(), &mut context.raw_writer())?;
+        copy(&mut ctx.raw_reader(), &mut ctx.raw_writer())?;
         return Ok(());
     }
 
-    let separator = context.separator();
-    let mut reader = context.byte_chunk_reader();
-    let mut writer = context.writer();
+    let separator = ctx.separator();
+    let mut reader = ctx.byte_chunk_reader();
+    let mut writer = ctx.writer();
 
     while let Some(chunk) = reader.read_chunk()? {
         let mut start: usize = 0;

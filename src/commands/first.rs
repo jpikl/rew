@@ -1,15 +1,15 @@
-use crate::cli::Args;
 use crate::cli::Command;
 use crate::cli::CommandBuilder;
+use crate::cli::Context;
 use crate::cli::ErrorKind;
-use crate::cli::HELP;
 use crate::cli::Pos;
 use crate::cli::PosBuilder;
 use crate::global::BUF_MODE;
 use crate::global::BUF_SIZE;
 use crate::global::FILTER_COMMANDS;
+use crate::global::HELP;
 use crate::global::NULL;
-use crate::run::Context;
+use crate::run::ContextExt;
 use bstr::ByteSlice;
 
 const COUNT: Pos<u128> = PosBuilder::new("count")
@@ -27,18 +27,16 @@ pub const FIRST: Command = CommandBuilder::new()
     .run(run)
     .done();
 
-fn run(args: Args) -> Result<(), ErrorKind<'static>> {
-    let mut count = args.get(&COUNT);
+fn run(ctx: &Context) -> Result<(), ErrorKind<'static>> {
+    let mut count = ctx.args.get(&COUNT);
 
     if count == 0 {
         return Ok(());
     }
 
-    let context = Context::new(&args);
-    let separator = context.separator();
-
-    let mut reader = context.byte_chunk_reader();
-    let mut writer = context.writer();
+    let separator = ctx.separator();
+    let mut reader = ctx.byte_chunk_reader();
+    let mut writer = ctx.writer();
 
     while let Some(chunk) = reader.read_chunk()? {
         let mut start: usize = 0;

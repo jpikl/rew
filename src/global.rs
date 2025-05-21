@@ -4,21 +4,24 @@ use crate::cli::FlagBuilder;
 use crate::cli::Group;
 use crate::cli::Opt;
 use crate::cli::OptBuilder;
-use crate::cli::ParseArg;
-use crate::cli::ParseArgResult;
 use crate::impl_enum;
 use crate::utils::ByteSize;
 use std::borrow::Cow;
 use std::io::IsTerminal;
+
+pub const USAGE_OPTIONS: Group = Group {
+    name: "Usage options",
+    description: None,
+};
 
 const GLOBAL_OPTIONS: Group = Group {
     name: "Global options",
     description: Some("Options shared by all commands."),
 };
 
-pub const MAPPER_COMMANDS: Group = Group {
-    name: "Mapper commands",
-    description: Some("Commands that transform input lines to output."),
+pub const MAP_COMMANDS: Group = Group {
+    name: "Map commands",
+    description: Some("Commands that map each input line to output."),
 };
 
 pub const FILTER_COMMANDS: Group = Group {
@@ -31,7 +34,10 @@ pub const FILTER_COMMANDS: Group = Group {
 // Also used internally by the `linereader` library https://github.com/Freaky/rust-linereader.
 const DEFAULT_BUF_SIZE: &str = "32K";
 
-pub const NULL: Flag = FlagBuilder::new("null")
+pub const HELP: Flag = FlagBuilder::from(&crate::cli::HELP.arg).group(&USAGE_OPTIONS).done();
+pub const VERSION: Flag = FlagBuilder::from(&crate::cli::VERSION.arg).group(&USAGE_OPTIONS).done();
+
+pub const NULL: Flag = FlagBuilder::new("nul")
     .short('0')
     .long("null")
     .description("Line delimiter is NUL, not newline.")

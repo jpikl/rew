@@ -1,18 +1,21 @@
 use super::ARGUMENTS;
-use super::ArgValue;
 use super::COMMANDS;
+use super::Command;
+use super::CommandRun;
 use super::Enum;
 use super::EnumItem;
-use super::ErrorKind;
+use super::Flag;
+use super::Group;
 use super::OPTIONS;
-use super::ParseOsArg;
-use super::args::Args;
-use super::args::TypedArg;
-use super::types::Command;
-use super::types::Group;
-use super::types::OptArg;
-use super::types::OptArgKind;
-use super::types::PosArg;
+use super::Opt;
+use super::OptArg;
+use super::OptRun;
+use super::ParseValue;
+use super::Pos;
+use super::PosArg;
+use super::TypedArg;
+use super::Value;
+use std::ffi::OsStr;
 use std::marker::PhantomData;
 
 pub struct CommandBuilder<'a> {
@@ -24,7 +27,7 @@ pub struct CommandBuilder<'a> {
     options: &'a [OptArg<'a>],
     positionals: &'a [PosArg<'a>],
     subcommands: &'a [Command<'a>],
-    run: fn(Args) -> Result<(), ErrorKind<'a>>,
+    run: CommandRun,
 }
 
 impl<'a> CommandBuilder<'a> {
@@ -67,7 +70,7 @@ impl<'a> CommandBuilder<'a> {
         self
     }
 
-    pub const fn options(mut self, options: &'a [OptArg]) -> Self {
+    pub const fn options(mut self, options: &'a [OptArg<'a>]) -> Self {
         self.options = options;
         self
     }
@@ -77,12 +80,12 @@ impl<'a> CommandBuilder<'a> {
         self
     }
 
-    pub const fn subcommands(mut self, subcommands: &'a [Command]) -> Self {
+    pub const fn subcommands(mut self, subcommands: &'a [Command<'a>]) -> Self {
         self.subcommands = subcommands;
         self
     }
 
-    pub const fn run(mut self, run: fn(Args) -> Result<(), ErrorKind<'a>>) -> Self {
+    pub const fn run(mut self, run: CommandRun) -> Self {
         self.run = run;
         self
     }
@@ -110,6 +113,7 @@ pub struct FlagBuilder<'a> {
     description_ex: &'a [&'a str],
     group: &'a Group<'a>,
     environment: Option<&'a str>,
+    run: Option<OptRun>,
 }
 
 impl<'a> FlagBuilder<'a> {
@@ -122,6 +126,20 @@ impl<'a> FlagBuilder<'a> {
             description_ex: &[],
             group: &OPTIONS,
             environment: None,
+            run: None,
+        }
+    }
+
+    pub const fn from(opt: &OptArg<'a>) -> Self {
+        Self {
+            id: opt.id,
+            short: opt.short,
+            long: opt.long,
+            description: opt.description,
+            description_ex: opt.description_ex,
+            group: opt.group,
+            environment: opt.environment,
+            run: opt.run,
         }
     }
 
@@ -155,7 +173,12 @@ impl<'a> FlagBuilder<'a> {
         self
     }
 
-    pub const fn done(self) -> TypedArg<OptArg<'a>, bool> {
+    pub const fn run(mut self, run: OptRun) -> Self {
+        self.run = Some(run);
+        self
+    }
+
+    pub const fn done(self) -> Flag<'a> {
         TypedArg::new(OptArg {
             id: self.id,
             short: self.short,
@@ -164,7 +187,8 @@ impl<'a> FlagBuilder<'a> {
             description_ex: self.description_ex,
             group: self.group,
             environment: self.environment,
-            kind: OptArgKind::Flag,
+            run: self.run,
+            value: None,
         })
     }
 }
@@ -180,16 +204,17 @@ pub struct OptBuilder<'a, T> {
     environment: Option<&'a str>,
     enum_items: &'a [EnumItem<'a>],
     default: Option<&'a str>,
+    run: Option<OptRun>,
     _type: PhantomData<T>,
 }
 
-impl<'a, T: ParseOsArg + Enum<'a> + 'a> OptBuilder<'a, T> {
+impl<'a, T: ParseValue<OsStr> + Enum<'a> + 'a> OptBuilder<'a, T> {
     pub const fn new_enum(id: &'a str) -> Self {
         Self::new_with_enum_items(id, T::ENUM_ITEMS)
     }
 }
 
-impl<'a, T: ParseOsArg + 'a> OptBuilder<'a, T> {
+impl<'a, T: ParseValue<OsStr> + 'a> OptBuilder<'a, T> {
     pub const fn new(id: &'a str) -> Self {
         Self::new_with_enum_items(id, &[])
     }
@@ -206,6 +231,7 @@ impl<'a, T: ParseOsArg + 'a> OptBuilder<'a, T> {
             environment: None,
             enum_items,
             default: None,
+            run: None,
             _type: PhantomData,
         }
     }
@@ -250,7 +276,7 @@ impl<'a, T: ParseOsArg + 'a> OptBuilder<'a, T> {
         self
     }
 
-    pub const fn done(self) -> TypedArg<OptArg<'a>, T> {
+    pub const fn done(self) -> Opt<'a, T> {
         TypedArg::new(OptArg {
             id: self.id,
             short: self.short,
@@ -259,11 +285,12 @@ impl<'a, T: ParseOsArg + 'a> OptBuilder<'a, T> {
             description_ex: self.description_ex,
             group: self.group,
             environment: self.environment,
-            kind: OptArgKind::Value(ArgValue {
+            run: self.run,
+            value: Some(Value {
                 name: self.value_name,
                 default: self.default,
                 enum_items: self.enum_items,
-                parse: T::parse_raw_arg,
+                parse: T::parse_value,
             }),
         })
     }
@@ -273,6 +300,7 @@ pub struct PosBuilder<'a, T> {
     id: &'a str,
     name: &'a str,
     required: bool,
+    multiple: bool,
     description: &'a str,
     description_ex: &'a [&'a str],
     group: &'a Group<'a>,
@@ -282,12 +310,13 @@ pub struct PosBuilder<'a, T> {
     _type: PhantomData<T>,
 }
 
-impl<'a, T: ParseOsArg + 'a> PosBuilder<'a, T> {
+impl<'a, T: ParseValue<OsStr> + 'a> PosBuilder<'a, T> {
     pub const fn new(id: &'a str) -> Self {
         Self {
             id,
             name: "VALUE",
             required: false,
+            multiple: false,
             description: "",
             description_ex: &[],
             group: &ARGUMENTS,
@@ -305,6 +334,12 @@ impl<'a, T: ParseOsArg + 'a> PosBuilder<'a, T> {
 
     pub const fn required(mut self) -> Self {
         self.required = true;
+        self
+    }
+
+    #[allow(dead_code)]
+    pub const fn multiple(mut self) -> Self {
+        self.multiple = true;
         self
     }
 
@@ -336,7 +371,7 @@ impl<'a, T: ParseOsArg + 'a> PosBuilder<'a, T> {
         self
     }
 
-    pub const fn done(self) -> TypedArg<PosArg<'a>, T> {
+    pub const fn done(self) -> Pos<'a, T> {
         TypedArg::new(PosArg {
             id: self.id,
             description: self.description,
@@ -344,11 +379,12 @@ impl<'a, T: ParseOsArg + 'a> PosBuilder<'a, T> {
             group: self.group,
             environment: self.environment,
             required: self.required,
-            value: ArgValue {
+            multiple: self.multiple,
+            value: Value {
                 name: self.name,
                 default: self.default,
                 enum_items: self.enum_items,
-                parse: T::parse_raw_arg,
+                parse: T::parse_value,
             },
         })
     }
