@@ -29,3 +29,4 @@ all = { level = "deny", priority = -1 }
 [dev-dependencies]
 claims = "0.8.0"
 rstest = "0.25.0"
+temp-env = "0.3.6"

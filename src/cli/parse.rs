@@ -1,4 +1,4 @@
-use super::ArgKind;
+use super::ArgSource;
 use super::ArgUsage;
 use super::Args;
 use super::CallChain;
@@ -7,6 +7,7 @@ use super::CommandChain;
 use super::Context;
 use super::Error;
 use super::ErrorKind;
+use super::ParseValue;
 use super::Value;
 use os_str_bytes::OsStrBytesExt;
 use std::borrow::Cow;
@@ -88,7 +89,7 @@ impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
             self.parse_arg(arg)?;
         }
 
-        Ok(())
+        self.parse_env()
     }
 
     fn parse_arg(&mut self, arg: OsString) -> Result<(), ErrorKind<'a>> {
@@ -131,7 +132,7 @@ impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
 
         match (pos.value.parse)(arg.into()) {
             Ok(value) => {
-                self.usages.push(ArgUsage::new(pos, ArgKind::Positional, value));
+                self.usages.push(ArgUsage::new(pos, ArgSource::Positional, value));
                 Ok(())
             }
             Err((value, err)) => Err(ErrorKind::InvalidArgumentValue(pos, value, err)),
@@ -157,9 +158,8 @@ impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
                 if let Some(value) = value {
                     return Err(ErrorKind::UnexpectedOptionValue(opt, value.into()));
                 }
-
                 self.usages
-                    .push(ArgUsage::new(opt, ArgKind::LongOption, Box::new(true)));
+                    .push(ArgUsage::new(opt, ArgSource::LongOption, Box::new(true)));
                 Ok(())
             }
             Some(Value { parse, .. }) => {
@@ -167,14 +167,12 @@ impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
                     Some(value) => Some(value.into()),
                     None => self.args.next().map(Cow::Owned),
                 };
-
                 let Some(value) = value else {
                     return Err(ErrorKind::MissingOptionValue(opt));
                 };
-
                 match parse(value) {
                     Ok(value) => {
-                        self.usages.push(ArgUsage::new(opt, ArgKind::LongOption, value));
+                        self.usages.push(ArgUsage::new(opt, ArgSource::LongOption, value));
                         Ok(())
                     }
                     Err((value, err)) => Err(ErrorKind::InvalidOptionValue(opt, value, err)),
@@ -210,7 +208,7 @@ impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
         match opt.value {
             None => {
                 self.usages
-                    .push(ArgUsage::new(opt, ArgKind::ShortOption, Box::new(true)));
+                    .push(ArgUsage::new(opt, ArgSource::ShortOption, Box::new(true)));
                 Ok(false)
             }
             Some(Value { parse, .. }) => {
@@ -222,16 +220,43 @@ impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
                 } else {
                     suffix.into()
                 };
-
                 match parse(value) {
                     Ok(value) => {
-                        self.usages.push(ArgUsage::new(opt, ArgKind::ShortOption, value));
+                        self.usages.push(ArgUsage::new(opt, ArgSource::ShortOption, value));
                         Ok(true)
                     }
                     Err((value, err)) => Err(ErrorKind::InvalidOptionValue(opt, value, err)),
                 }
             }
         }
+    }
+
+    fn parse_env(&mut self) -> Result<(), ErrorKind<'a>> {
+        for opt in self.command.options {
+            if self.usages.iter().any(|usage| usage.arg_id == opt.id) {
+                continue;
+            }
+            let Some(key) = opt.environment else {
+                continue;
+            };
+            let Some(value) = std::env::var_os(key) else {
+                continue;
+            };
+            let parse = match opt.value {
+                None => bool::parse_value,
+                Some(Value { parse, .. }) => parse,
+            };
+            match parse(value.into()) {
+                Ok(value) => {
+                    self.usages.push(ArgUsage::new(opt, ArgSource::Environment, value));
+                }
+                Err((value, err)) => {
+                    return Err(ErrorKind::InvalidEnvironmentValue(key, value, err));
+                }
+            }
+        }
+
+        Ok(())
     }
 }
 
@@ -250,8 +275,18 @@ mod tests {
     use rstest::rstest;
     use std::ffi::OsString;
 
-    const FLAG: Flag = FlagBuilder::new("flag").short('f').long("flag").done();
-    const OPT: Opt<i32> = OptBuilder::new("option").short('o').long("option").done();
+    const FLAG: Flag = FlagBuilder::new("flag")
+        .short('f')
+        .long("flag")
+        .environment("REW_FLAG")
+        .done();
+
+    const OPT: Opt<i32> = OptBuilder::new("option")
+        .short('o')
+        .long("option")
+        .environment("REW_OPTION")
+        .done();
+
     const POS: Pos<String> = PosBuilder::new("pos").name("pos").done();
     const SUBCOMMAND: Command = CommandBuilder::new().name("sub").done();
 
@@ -313,6 +348,33 @@ mod tests {
     }
 
     #[rstest]
+    #[case(&[], "REW_FLAG", None, false, 0)]
+    #[case(&[], "REW_FLAG", Some("true"), true, 0)]
+    #[case(&["-f"], "REW_FLAG", None, true, 0)]
+    #[case(&["-f"], "REW_FLAG", Some("true"), true, 0)]
+    #[case(&["-f"], "REW_FLAG", Some("x"), true, 0)]
+    #[case(&[], "REW_OPTION", None, false, 0)]
+    #[case(&[], "REW_OPTION", Some("456"), false, 456)]
+    #[case(&["-o123"], "REW_OPTION", None, false, 123)]
+    #[case(&["-o123"], "REW_OPTION", Some("456"), false, 123)]
+    #[case(&["-o123"], "REW_OPTION", Some("x"), false, 123)]
+    fn command_env(
+        #[case] args: &[&str],
+        #[case] env_key: &str,
+        #[case] env_value: Option<&str>,
+        #[case] flag: bool,
+        #[case] opt: i32,
+    ) {
+        temp_env::with_var(env_key, env_value, || {
+            let command = CommandBuilder::new().options(&[FLAG.arg, OPT.arg]).done();
+
+            let context = assert_ok!(command.try_parse_args_from(make_args(args)));
+            assert_eq!(context.args.get(&FLAG), flag);
+            assert_eq!(context.args.get(&OPT), opt);
+        });
+    }
+
+    #[rstest]
     #[case(&["--flag=x"], "Option '-f, --flag' got unexpected value 'x'")]
     #[case(&["-o"], "Option '-o, --option' requires value '<VALUE>'")]
     #[case(&["-o", "x"], "Option '-o, --option' got invalid value 'x': invalid digit found in string")]
@@ -331,6 +393,35 @@ mod tests {
 
         let err = assert_err!(command.try_parse_args_from(make_args(args)));
         assert_eq!(strip_colors(&err.to_string()), err_msg);
+    }
+
+    #[rstest]
+    #[case(
+        "REW_FLAG",
+        "",
+        "Environment variable 'REW_FLAG' got invalid value '': provided string was not `true` or `false`"
+    )]
+    #[case(
+        "REW_FLAG",
+        "x",
+        "Environment variable 'REW_FLAG' got invalid value 'x': provided string was not `true` or `false`"
+    )]
+    #[case(
+        "REW_OPTION",
+        "",
+        "Environment variable 'REW_OPTION' got invalid value '': cannot parse integer from empty string"
+    )]
+    #[case(
+        "REW_OPTION",
+        "x",
+        "Environment variable 'REW_OPTION' got invalid value 'x': invalid digit found in string"
+    )]
+    fn command_env_err(#[case] env_key: &str, #[case] env_value: &str, #[case] err_msg: &str) {
+        temp_env::with_var(env_key, Some(env_value), || {
+            let command = CommandBuilder::new().options(&[FLAG.arg, OPT.arg]).done();
+            let err = assert_err!(command.try_parse_args_from(make_args(&[])));
+            assert_eq!(strip_colors(&err.to_string()), err_msg);
+        });
     }
 
     fn make_args(args: &[&str]) -> Vec<OsString> {

@@ -1,4 +1,4 @@
-use super::ArgKind;
+use super::ArgSource;
 use super::Args;
 use super::Command;
 use super::Error;
@@ -23,7 +23,7 @@ impl<'a> Context<'a> {
         let command = self.commands.current();
 
         for usage in self.args.usages() {
-            if let ArgKind::Positional = usage.kind {
+            if let ArgSource::Positional = usage.source {
                 continue;
             }
             if let Some(run) = command.option_by_id(&usage.arg_id).and_then(|opt| opt.run) {

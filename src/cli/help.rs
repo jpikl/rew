@@ -1,4 +1,4 @@
-use super::ArgKind;
+use super::ArgSource;
 use super::ArgUsage;
 use super::CallChain;
 use super::Command;
@@ -26,7 +26,7 @@ pub const HELP: Flag = FlagBuilder::new(HELP_ID)
     .done();
 
 fn print_help<'a>(context: &Context<'a>, usage: &ArgUsage) -> Result<(), ErrorKind<'a>> {
-    let long = matches!(usage.kind, ArgKind::LongOption);
+    let long = matches!(usage.source, ArgSource::LongOption);
     let command = context.commands.current();
     command.print_help(&mut anstream::stdout().lock(), &context.calls, long)?;
     Ok(())

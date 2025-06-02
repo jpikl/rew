@@ -55,22 +55,23 @@ impl<A: Arg, T: Default + Clone + 'static> TypedArg<A, T> {
 #[derive(Debug)]
 pub struct ArgUsage {
     pub arg_id: String,
-    pub kind: ArgKind,
+    pub source: ArgSource,
     pub value: Box<dyn Any>,
 }
 
 #[derive(Debug)]
-pub enum ArgKind {
+pub enum ArgSource {
     ShortOption,
     LongOption,
     Positional,
+    Environment,
 }
 
 impl ArgUsage {
-    pub fn new<A: Arg>(arg: &A, kind: ArgKind, value: Box<dyn Any>) -> Self {
+    pub fn new<A: Arg>(arg: &A, kind: ArgSource, value: Box<dyn Any>) -> Self {
         Self {
             arg_id: arg.id().to_string(),
-            kind,
+            source: kind,
             value,
         }
     }

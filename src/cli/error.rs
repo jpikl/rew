@@ -90,6 +90,7 @@ pub enum ErrorKind<'a> {
     MissingOptionValue(&'a OptArg<'a>),
     InvalidOptionValue(&'a OptArg<'a>, OsString, anyhow::Error),
     InvalidArgumentValue(&'a PosArg<'a>, OsString, anyhow::Error),
+    InvalidEnvironmentValue(&'a str, OsString, anyhow::Error),
     UnexpectedOptionValue(&'a OptArg<'a>, OsString),
     UnexpectedArgument(OsString),
     MissingArgument(&'a PosArg<'a>),
@@ -137,6 +138,13 @@ impl Display for ErrorKind<'_> {
                 "Argument {QUOTE_START}{arg}{QUOTE_END} got invalid value {QUOTE_START}{}{QUOTE_END}: {err}",
                 val.to_string_lossy()
             ),
+            Self::InvalidEnvironmentValue(key, val, err) => {
+                write!(
+                    f,
+                    "Environment variable {QUOTE_START}{key}{QUOTE_END} got invalid value {QUOTE_START}{}{QUOTE_END}: {err}",
+                    val.to_string_lossy()
+                )
+            }
             Self::UnexpectedOptionValue(opt, val) => {
                 write!(
                     f,
