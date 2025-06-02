@@ -5,6 +5,8 @@ mod io;
 mod run;
 mod utils;
 
+use crate::commands::base::BASE;
+use crate::commands::ext::EXT;
 use cli::Command;
 use cli::CommandBuilder;
 use commands::cat::CAT;
@@ -26,7 +28,7 @@ const REW: Command = CommandBuilder::new()
     .description(env!("CARGO_PKG_DESCRIPTION"))
     .version(env!("CARGO_PKG_VERSION"))
     .options(&[HELP.arg, VERSION.arg, NULL.arg, BUF_SIZE.arg, BUF_MODE.arg])
-    .subcommands(&[CAT, PREFIX, SUFFIX, QUOTE, LOWER, UPPER, FIRST, SKIP])
+    .subcommands(&[BASE, EXT, CAT, PREFIX, SUFFIX, QUOTE, LOWER, UPPER, FIRST, SKIP])
     .done();
 
 fn main() {

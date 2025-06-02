@@ -1,8 +1,23 @@
+use crate::cli::ErrorKind;
 use crate::cli::ParseValue;
 use crate::cli::ParseValueResult;
+use anyhow::anyhow;
+use bstr::ByteSlice;
+use os_str_bytes::OsStrBytes;
 use std::borrow::Cow;
 use std::fmt::Display;
 use std::num::ParseIntError;
+use std::path::Path;
+
+pub fn path_from_io_bytes(bytes: &[u8]) -> Result<&Path, ErrorKind<'static>> {
+    match Path::from_io_bytes(bytes) {
+        Some(path) => Ok(path),
+        None => Err(ErrorKind::RuntimeError(anyhow!(
+            "Unable to decode path from stdin: {}",
+            bytes.to_str_lossy()
+        ))),
+    }
+}
 
 #[derive(Default, Clone, Debug)]
 pub struct ByteSize(pub usize);

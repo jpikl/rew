@@ -19,6 +19,11 @@ const GLOBAL_OPTIONS: Group = Group {
     description: Some("Options shared by all commands."),
 };
 
+pub const PATH_COMMANDS: Group = Group {
+    name: "Path commands",
+    description: Some("Commands that transform file system paths."),
+};
+
 pub const MAP_COMMANDS: Group = Group {
     name: "Map commands",
     description: Some("Commands that map each input line to output."),
@@ -84,7 +89,7 @@ impl Default for BufMode {
     }
 }
 
-impl_enum! (BufMode, {
+impl_enum!(BufMode, {
     Line: {
         name: "line",
         description: [

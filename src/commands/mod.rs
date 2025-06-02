@@ -1,4 +1,6 @@
+pub mod base;
 pub mod cat;
+pub mod ext;
 pub mod first;
 pub mod lower;
 pub mod prefix;
