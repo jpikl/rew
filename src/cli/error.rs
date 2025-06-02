@@ -84,9 +84,9 @@ fn is_broken_pipe(err: &anyhow::Error) -> bool {
 
 #[derive(Debug)]
 pub enum ErrorKind<'a> {
-    UnkownShortOption(OsString),
-    UnkownLongOption(OsString),
-    UnkownSubcommand(OsString),
+    UnknownShortOption(OsString),
+    UnknownLongOption(OsString),
+    UnknownSubcommand(OsString),
     MissingOptionValue(&'a OptArg<'a>),
     InvalidOptionValue(&'a OptArg<'a>, OsString, anyhow::Error),
     InvalidArgumentValue(&'a PosArg<'a>, OsString, anyhow::Error),
@@ -107,13 +107,13 @@ impl<E: std::error::Error + Send + Sync + 'static> From<E> for ErrorKind<'_> {
 impl Display for ErrorKind<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::UnkownShortOption(name) => {
+            Self::UnknownShortOption(name) => {
                 write!(f, "Unknown option {QUOTE_START}-{}{QUOTE_END}", name.to_string_lossy())
             }
-            Self::UnkownLongOption(name) => {
+            Self::UnknownLongOption(name) => {
                 write!(f, "Unknown option {QUOTE_START}--{}{QUOTE_END}", name.to_string_lossy())
             }
-            Self::UnkownSubcommand(name) => {
+            Self::UnknownSubcommand(name) => {
                 write!(
                     f,
                     "Unknown subcommand {QUOTE_START}{}{QUOTE_END}",

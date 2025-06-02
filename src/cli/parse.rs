@@ -109,10 +109,10 @@ impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
 
         if !self.command.subcommands.is_empty() {
             let Some(name) = arg.to_str() else {
-                return Err(ErrorKind::UnkownSubcommand(arg));
+                return Err(ErrorKind::UnknownSubcommand(arg));
             };
             let Some(subcommand) = self.command.subcommand(name) else {
-                return Err(ErrorKind::UnkownSubcommand(arg));
+                return Err(ErrorKind::UnknownSubcommand(arg));
             };
             self.command = subcommand;
             self.commands.push(subcommand);
@@ -145,11 +145,11 @@ impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
         };
 
         let Some(name) = name.to_str() else {
-            return Err(ErrorKind::UnkownLongOption(name.into()));
+            return Err(ErrorKind::UnknownLongOption(name.into()));
         };
 
         let Some(opt) = self.command.option_by_long(name) else {
-            return Err(ErrorKind::UnkownLongOption(name.into()));
+            return Err(ErrorKind::UnknownLongOption(name.into()));
         };
 
         match opt.value {
@@ -188,7 +188,7 @@ impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
 
         for (invalid, chunk) in chars.utf8_chunks() {
             if !invalid.as_os_str().is_empty() {
-                return Err(ErrorKind::UnkownShortOption(invalid.into()));
+                return Err(ErrorKind::UnknownShortOption(invalid.into()));
             }
             for char in chunk.chars() {
                 suffix_pos += char.len_utf8();
@@ -204,7 +204,7 @@ impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
 
     fn parse_short_option(&mut self, char: char, suffix: &OsStr) -> Result<bool, ErrorKind<'a>> {
         let Some(opt) = self.command.option_by_short(char) else {
-            return Err(ErrorKind::UnkownShortOption(char.to_string().into()));
+            return Err(ErrorKind::UnknownShortOption(char.to_string().into()));
         };
 
         match opt.value {
