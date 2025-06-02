@@ -93,5 +93,5 @@ setup:
         cargo-bloat@0.12.1 \
         cargo-llvm-cov@0.6.16 \
         cargo-mutants@25.0.0 \
-        cargo-nextest@0.9.93 \
+        cargo-nextest@0.9.97 \
         llvm-cov-pretty@0.1.10
