@@ -2,11 +2,8 @@ use crate::cli::Command;
 use crate::cli::CommandBuilder;
 use crate::cli::Context;
 use crate::cli::ErrorKind;
-use crate::global::BUF_MODE;
-use crate::global::BUF_SIZE;
+use crate::common_options;
 use crate::global::GENERATOR_COMMANDS;
-use crate::global::HELP;
-use crate::global::NULL;
 use crate::run::ContextExt;
 use uuid::Uuid;
 
@@ -14,7 +11,7 @@ pub const UUID: Command = CommandBuilder::new()
     .name("uuid")
     .description("Generate stream of UUID v4 as lines.")
     .group(&GENERATOR_COMMANDS)
-    .options(&[HELP.arg, NULL.arg, BUF_SIZE.arg, BUF_MODE.arg])
+    .options(common_options![])
     .run(run)
     .done();
 

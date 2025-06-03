@@ -4,10 +4,7 @@ use crate::cli::Context;
 use crate::cli::ErrorKind;
 use crate::cli::Flag;
 use crate::cli::FlagBuilder;
-use crate::global::BUF_MODE;
-use crate::global::BUF_SIZE;
-use crate::global::HELP;
-use crate::global::NULL;
+use crate::common_options;
 use crate::global::PATH_COMMANDS;
 use crate::run::ContextExt;
 use crate::utils::path_from_io_bytes;
@@ -22,7 +19,7 @@ pub const EXT: Command = CommandBuilder::new()
     .name("ext")
     .description("Output extension of paths.")
     .group(&PATH_COMMANDS)
-    .options(&[WITH_DOT.arg, HELP.arg, NULL.arg, BUF_SIZE.arg, BUF_MODE.arg])
+    .options(common_options![WITH_DOT.arg])
     .run(run)
     .done();
 

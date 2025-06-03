@@ -6,11 +6,8 @@ use crate::cli::Flag;
 use crate::cli::FlagBuilder;
 use crate::cli::Opt;
 use crate::cli::OptBuilder;
-use crate::global::BUF_MODE;
-use crate::global::BUF_SIZE;
-use crate::global::HELP;
+use crate::common_options;
 use crate::global::MAP_COMMANDS;
-use crate::global::NULL;
 use crate::run::ContextExt;
 use bstr::BString;
 use bstr::ByteSlice;
@@ -40,15 +37,7 @@ pub const QUOTE: Command = CommandBuilder::new()
     .description("Put each line into quotes.")
     .description_ex(&["Also escapes quote characters inside."])
     .group(&MAP_COMMANDS)
-    .options(&[
-        DOUBLE.arg,
-        ESCAPE.arg,
-        NO_ESCAPE.arg,
-        HELP.arg,
-        NULL.arg,
-        BUF_SIZE.arg,
-        BUF_MODE.arg,
-    ])
+    .options(common_options![DOUBLE.arg, ESCAPE.arg, NO_ESCAPE.arg])
     .run(run)
     .done();
 

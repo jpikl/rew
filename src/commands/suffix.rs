@@ -6,11 +6,8 @@ use crate::cli::Flag;
 use crate::cli::FlagBuilder;
 use crate::cli::Pos;
 use crate::cli::PosBuilder;
-use crate::global::BUF_MODE;
-use crate::global::BUF_SIZE;
-use crate::global::HELP;
+use crate::common_options;
 use crate::global::MAP_COMMANDS;
-use crate::global::NULL;
 use crate::run::ContextExt;
 use bstr::BString;
 
@@ -30,7 +27,7 @@ pub const SUFFIX: Command = CommandBuilder::new()
     .name("suffix")
     .description("Add suffix to each line.")
     .group(&MAP_COMMANDS)
-    .options(&[DELETE.arg, HELP.arg, NULL.arg, BUF_SIZE.arg, BUF_MODE.arg])
+    .options(common_options![DELETE.arg])
     .positionals(&[VALUE.arg])
     .run(run)
     .done();

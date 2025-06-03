@@ -4,11 +4,8 @@ use crate::cli::Context;
 use crate::cli::ErrorKind;
 use crate::cli::Pos;
 use crate::cli::PosBuilder;
-use crate::global::BUF_MODE;
-use crate::global::BUF_SIZE;
+use crate::common_options;
 use crate::global::GENERATOR_COMMANDS;
-use crate::global::HELP;
-use crate::global::NULL;
 use crate::run::ContextExt;
 use std::ffi::OsString;
 
@@ -22,7 +19,7 @@ pub const STREAM: Command = CommandBuilder::new()
     .name("stream")
     .description("Output arguments as lines.")
     .group(&GENERATOR_COMMANDS)
-    .options(&[HELP.arg, NULL.arg, BUF_SIZE.arg, BUF_MODE.arg])
+    .options(common_options![])
     .positionals(&[VALUES.arg])
     .run(run)
     .done();

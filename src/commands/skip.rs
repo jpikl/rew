@@ -4,11 +4,8 @@ use crate::cli::Context;
 use crate::cli::ErrorKind;
 use crate::cli::Pos;
 use crate::cli::PosBuilder;
-use crate::global::BUF_MODE;
-use crate::global::BUF_SIZE;
+use crate::common_options;
 use crate::global::FILTER_COMMANDS;
-use crate::global::HELP;
-use crate::global::NULL;
 use crate::run::ContextExt;
 use bstr::ByteSlice;
 use std::io::copy;
@@ -23,7 +20,7 @@ pub const SKIP: Command = CommandBuilder::new()
     .name("skip")
     .description("Skip first N lines in output.")
     .group(&FILTER_COMMANDS)
-    .options(&[HELP.arg, NULL.arg, BUF_SIZE.arg, BUF_MODE.arg])
+    .options(common_options![])
     .positionals(&[COUNT.arg])
     .run(run)
     .done();
