@@ -9,3 +9,4 @@ pub mod skip;
 pub mod stream;
 pub mod suffix;
 pub mod upper;
+pub mod uuid;

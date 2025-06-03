@@ -16,6 +16,7 @@ anstream = "0.6.18"
 anyhow = "1.0.97"
 bstr = "1.11.3"
 os_str_bytes = "7.1"
+uuid = { version = "1.17.0", features = ["v4"] }
 
 [profile.release]
 codegen-units = 1
