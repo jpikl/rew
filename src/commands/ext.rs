@@ -15,7 +15,7 @@ use crate::utils::path_from_io_bytes;
 const WITH_DOT: Flag = FlagBuilder::new("with-dot")
     .short('d')
     .long("with-dot")
-    .description("Preserve dot before the extension.")
+    .description("Keep dot before the extension.")
     .done();
 
 pub const EXT: Command = CommandBuilder::new()
