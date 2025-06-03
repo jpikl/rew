@@ -34,6 +34,11 @@ pub const FILTER_COMMANDS: Group = Group {
     description: Some("Commands that filter input lines to output."),
 };
 
+pub const GENERATOR_COMMANDS: Group = Group {
+    name: "Generator commands",
+    description: Some("Commands that produce output without reading stdin."),
+};
+
 // Optimal value for max IO throughput, according to https://www.evanjones.ca/read-write-buffer-size.html
 // Also confirmed by some custom benchmarks.
 // Also used internally by the `linereader` library https://github.com/Freaky/rust-linereader.

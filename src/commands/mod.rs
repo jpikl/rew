@@ -6,5 +6,6 @@ pub mod lower;
 pub mod prefix;
 pub mod quote;
 pub mod skip;
+pub mod stream;
 pub mod suffix;
 pub mod upper;
