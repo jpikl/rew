@@ -337,7 +337,6 @@ impl<'a, T: ParseValue<OsStr> + 'a> PosBuilder<'a, T> {
         self
     }
 
-    #[allow(dead_code)]
     pub const fn multiple(mut self) -> Self {
         self.multiple = true;
         self

@@ -116,7 +116,6 @@ impl Args {
         self.iter_values(&arg.arg).map(|value| arg.unbox(Some(value)))
     }
 
-    #[allow(dead_code)]
     pub fn iter_ref<A: Arg, T: Default + Clone + 'static>(&self, arg: &TypedArg<A, T>) -> impl Iterator<Item = Cow<T>> {
         self.iter_values(&arg.arg).map(|value| arg.unbox_ref(Some(value)))
     }
