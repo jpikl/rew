@@ -1,11 +1,10 @@
-use crate::cli::EnumItem;
 use crate::cli::Flag;
 use crate::cli::FlagBuilder;
 use crate::cli::Group;
 use crate::cli::Opt;
 use crate::cli::OptBuilder;
 use crate::impl_enum;
-use crate::utils::ByteSize;
+use crate::utils::Bytes;
 use std::borrow::Cow;
 use std::io::IsTerminal;
 
@@ -68,7 +67,7 @@ pub const NULL: Flag = FlagBuilder::new("nul")
     .group(&GLOBAL_OPTIONS)
     .done();
 
-pub const BUF_SIZE: Opt<ByteSize> = OptBuilder::new("buf-size")
+pub const BUF_SIZE: Opt<Bytes> = OptBuilder::new("buf-size")
     .long("buf-size")
     .description("Size of a buffer used for IO operations.")
     .description_ex(&[

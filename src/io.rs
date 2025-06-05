@@ -1,12 +1,12 @@
-use crate::utils::ByteSize;
-use bstr::ByteSlice;
+use crate::utils::Bytes;
 use bstr::decode_last_utf8;
+use bstr::ByteSlice;
 use std::fmt::Display;
 use std::fmt::Formatter;
+use std::io::copy;
 use std::io::BufWriter;
 use std::io::Read;
 use std::io::Write;
-use std::io::copy;
 use std::marker::PhantomData;
 
 #[derive(Debug)]
@@ -21,7 +21,7 @@ impl Display for Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::BufferFull(len) => {
-                write!(f, "Unable to fit input data into buffer ({})", ByteSize(*len))
+                write!(f, "Unable to fit input data into buffer ({})", Bytes(*len))
             }
             Self::Io(err) => err.fmt(f),
         }

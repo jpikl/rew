@@ -20,18 +20,18 @@ pub fn path_from_io_bytes(bytes: &[u8]) -> Result<&Path, ErrorKind<'static>> {
 }
 
 #[derive(Default, Clone, Debug)]
-pub struct ByteSize(pub usize);
+pub struct Bytes(pub usize);
 
-impl ParseValue<str> for ByteSize {
+impl ParseValue<str> for Bytes {
     fn parse_value(raw_value: Cow<str>) -> ParseValueResult<String> {
-        match parse_byte_size(raw_value.as_ref()) {
-            Ok(size) => Ok(Box::new(ByteSize(size))),
+        match parse_bytes(raw_value.as_ref()) {
+            Ok(size) => Ok(Box::new(Bytes(size))),
             Err(err) => Err((raw_value.into(), err.into())),
         }
     }
 }
 
-impl Display for ByteSize {
+impl Display for Bytes {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let (divider, unit) = if self.0 > 1 << 30 {
             (1 << 30, "GiB")
@@ -50,7 +50,7 @@ impl Display for ByteSize {
     }
 }
 
-fn parse_byte_size(value: &str) -> Result<usize, ParseIntError> {
+fn parse_bytes(value: &str) -> Result<usize, ParseIntError> {
     let (value, multiplier) = if let Some(value) = strip_any_suffix(value, &["GiB", "GB", "G"]) {
         (value, 1 << 30)
     } else if let Some(value) = strip_any_suffix(value, &["MiB", "MB", "M"]) {
@@ -88,7 +88,7 @@ pub fn strip_colors(value: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use crate::utils::ByteSize;
+    use super::*;
     use claims::*;
     use rstest::rstest;
 
@@ -100,8 +100,8 @@ mod tests {
     #[case((123.456 * 1024.0) as usize, "123.45 KiB")]
     #[case((123.456 * 1024.0 * 1024.0) as usize, "123.45 MiB")]
     #[case((123.456 * 1024.0 * 1024.0 * 1024.0) as usize, "123.45 GiB")]
-    fn display_byte_size(#[case] input: usize, #[case] output: &str) {
-        assert_eq!(ByteSize(input).to_string(), output);
+    fn display_bytes(#[case] input: usize, #[case] output: &str) {
+        assert_eq!(Bytes(input).to_string(), output);
     }
 
     #[rstest]
@@ -126,7 +126,7 @@ mod tests {
     #[case("123 G", 123 * 1024 * 1024 * 1024)]
     #[case("123 GB", 123 * 1024 * 1024 * 1024)]
     #[case("123 GiB", 123 * 1024 * 1024 * 1024)]
-    fn parse_byte_size(#[case] input: &str, #[case] output: usize) {
-        assert_ok_eq!(super::parse_byte_size(input), output);
+    fn parse_bytes(#[case] input: &str, #[case] output: usize) {
+        assert_ok_eq!(super::parse_bytes(input), output);
     }
 }
