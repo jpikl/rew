@@ -10,5 +10,6 @@ pub mod rand;
 pub mod skip;
 pub mod stream;
 pub mod suffix;
+pub mod trim;
 pub mod upper;
 pub mod uuid;

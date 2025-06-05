@@ -10,6 +10,7 @@ use crate::commands::echo::ECHO;
 use crate::commands::ext::EXT;
 use crate::commands::rand::RAND;
 use crate::commands::stream::STREAM;
+use crate::commands::trim::TRIM;
 use crate::commands::uuid::UUID;
 use cli::Command;
 use cli::CommandBuilder;
@@ -34,7 +35,7 @@ const REW: Command = CommandBuilder::new()
     .options(&[&HELP.arg, &VERSION.arg, &NULL.arg, &BUF_SIZE.arg, &BUF_MODE.arg])
     .subcommands(&[
         &BASE, &EXT, // Path commands
-        &CAT, &PREFIX, &SUFFIX, &QUOTE, &LOWER, &UPPER, // Map commands
+        &CAT, &PREFIX, &SUFFIX, &QUOTE, &LOWER, &UPPER, &TRIM, // Map commands
         &FIRST, &SKIP, // Filter commands
         &ECHO, &STREAM, &RAND, &UUID, // Generator commands
     ])
