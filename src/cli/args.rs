@@ -37,11 +37,19 @@ impl<A: Arg, T: Default + Clone + 'static> TypedArg<A, T> {
         }
     }
 
+    pub fn unbox_opt(&self, value: Option<&Box<dyn Any>>) -> Option<T> {
+        value.map(|value| value.downcast_ref::<T>().expect("mismatched arg type").clone())
+    }
+
     pub fn unbox_ref<'a>(&self, value: Option<&'a Box<dyn Any>>) -> Cow<'a, T> {
         match value {
             Some(value) => Cow::Borrowed(value.downcast_ref::<T>().expect("mismatched arg type")),
             None => Cow::Owned(self.default_value()),
         }
+    }
+
+    pub fn unbox_opt_ref<'a>(&self, value: Option<&'a Box<dyn Any>>) -> Option<&'a T> {
+        value.map(|value| value.downcast_ref::<T>().expect("mismatched arg type"))
     }
 
     pub fn default_value(&self) -> T {
@@ -99,8 +107,17 @@ impl Args {
         arg.unbox(self.get_value(&arg.arg))
     }
 
+    pub fn get_opt<A: Arg, T: Default + Clone + 'static>(&self, arg: &TypedArg<A, T>) -> Option<T> {
+        arg.unbox_opt(self.get_value(&arg.arg))
+    }
+
     pub fn get_ref<A: Arg, T: Default + Clone + 'static>(&self, arg: &TypedArg<A, T>) -> Cow<T> {
         arg.unbox_ref(self.get_value(&arg.arg))
+    }
+
+    #[allow(dead_code)]
+    pub fn get_opt_ref<A: Arg, T: Default + Clone + 'static>(&self, arg: &TypedArg<A, T>) -> Option<&T> {
+        arg.unbox_opt_ref(self.get_value(&arg.arg))
     }
 
     fn get_value<A: Arg>(&self, arg: &A) -> Option<&Box<dyn Any>> {
