@@ -190,7 +190,7 @@ impl Display for ErrorKind<'_> {
                     write!(f, "{QUOTE_START}{}{QUOTE_END}", opt)?;
                 }
 
-                write!(f, " are mutualy exclusive")
+                write!(f, " are mutually exclusive")
             }
             Self::InvalidUsage(msg) => msg.fmt(f),
             Self::RuntimeError(err) => err.fmt(f),
