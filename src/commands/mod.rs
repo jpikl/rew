@@ -1,5 +1,6 @@
 pub mod base;
 pub mod cat;
+pub mod echo;
 pub mod ext;
 pub mod first;
 pub mod lower;

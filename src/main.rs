@@ -6,6 +6,7 @@ mod run;
 mod utils;
 
 use crate::commands::base::BASE;
+use crate::commands::echo::ECHO;
 use crate::commands::ext::EXT;
 use crate::commands::rand::RAND;
 use crate::commands::stream::STREAM;
@@ -32,7 +33,10 @@ const REW: Command = CommandBuilder::new()
     .version(env!("CARGO_PKG_VERSION"))
     .options(&[&HELP.arg, &VERSION.arg, &NULL.arg, &BUF_SIZE.arg, &BUF_MODE.arg])
     .subcommands(&[
-        &BASE, &EXT, &CAT, &PREFIX, &SUFFIX, &QUOTE, &LOWER, &UPPER, &FIRST, &SKIP, &STREAM, &RAND, &UUID,
+        &BASE, &EXT, // Path commands
+        &CAT, &PREFIX, &SUFFIX, &QUOTE, &LOWER, &UPPER, // Map commands
+        &FIRST, &SKIP, // Filter commands
+        &ECHO, &STREAM, &RAND, &UUID, // Generator commands
     ])
     .done();
 
