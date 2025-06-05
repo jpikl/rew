@@ -5,6 +5,7 @@ pub mod first;
 pub mod lower;
 pub mod prefix;
 pub mod quote;
+pub mod rand;
 pub mod skip;
 pub mod stream;
 pub mod suffix;
