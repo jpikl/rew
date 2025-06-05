@@ -27,33 +27,21 @@ impl<'a> Context<'a> {
                 continue;
             }
             if let Some(run) = command.option_by_id(&usage.arg_id).and_then(|opt| opt.run) {
-                return run(&self, usage).map_err(|err| Error {
-                    context: self,
-                    kind: err,
-                });
+                return run(&self, usage).map_err(|err| Error::new(self, err));
             }
         }
 
         if !command.subcommands.is_empty() {
-            return Err(Error {
-                context: self,
-                kind: ErrorKind::MissingSubcommand,
-            });
+            return Err(Error::new(self, ErrorKind::MissingSubcommand));
         }
 
         for pos in command.positionals {
             if pos.required && !self.args.has(pos) {
-                return Err(Error {
-                    context: self,
-                    kind: ErrorKind::MissingArgument(pos),
-                });
+                return Err(Error::new(self, ErrorKind::MissingArgument(pos)));
             }
         }
 
-        (command.run)(&self).map_err(|err| Error {
-            context: self,
-            kind: err,
-        })
+        (command.run)(&self).map_err(|err| Error::new(self, err))
     }
 }
 

@@ -1,7 +1,7 @@
 use crate::cli::ErrorKind;
 use crate::cli::ParseValue;
 use crate::cli::ParseValueResult;
-use anyhow::anyhow;
+use crate::cli::SimpleError;
 use bstr::ByteSlice;
 use os_str_bytes::OsStrBytes;
 use std::borrow::Cow;
@@ -12,10 +12,7 @@ use std::path::Path;
 pub fn path_from_io_bytes(bytes: &[u8]) -> Result<&Path, ErrorKind<'static>> {
     match Path::from_io_bytes(bytes) {
         Some(path) => Ok(path),
-        None => Err(ErrorKind::RuntimeError(anyhow!(
-            "Unable to decode path from stdin: {}",
-            bytes.to_str_lossy()
-        ))),
+        None => Err(SimpleError::new(format!("Unable to decode path from stdin: {}", bytes.to_str_lossy())).into()),
     }
 }
 

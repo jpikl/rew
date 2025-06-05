@@ -35,10 +35,7 @@ impl<'a> Command<'a> {
 
         match parser.parse() {
             Ok(()) => Ok(parser.into()),
-            Err(err) => Err(Error {
-                context: parser.into(),
-                kind: err,
-            }),
+            Err(err) => Err(Error::new(parser.into(), err)),
         }
     }
 }

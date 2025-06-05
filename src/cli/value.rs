@@ -1,4 +1,4 @@
-use anyhow::anyhow;
+use crate::cli::SimpleError;
 use bstr::BString;
 use std::any::Any;
 use std::borrow::Cow;
@@ -49,13 +49,13 @@ macro_rules! impl_enum {
             fn parse_value(raw_value: Cow<str>) -> $crate::cli::ParseValueResult<String> {
                 match raw_value.as_ref() {
                     $($name => Ok(Box::new(Self::$value)),)*
-                    _ => Err((raw_value.clone().into(), Self::unexpected_value_err())),
+                    _ => Err((raw_value.clone().into(), Self::unexpected_value_err().into())),
                 }
             }
         }
 
         impl $type {
-            fn unexpected_value_err() -> anyhow::Error {
+            fn unexpected_value_err() -> impl std::error::Error {
                 use $crate::cli::Enum;
                 let mut err = String::from("Expected one of [");
                 for (i, item) in Self::ENUM_ITEMS.iter().enumerate() {
@@ -67,13 +67,13 @@ macro_rules! impl_enum {
                     err.push_str($crate::cli::QUOTE_END);
                 }
                 err.push(']');
-                anyhow::anyhow!(err)
+                $crate::cli::SimpleError::new(err)
             }
         }
     };
 }
 
-pub type ParseValueResult<T> = Result<Box<dyn Any>, (T, anyhow::Error)>;
+pub type ParseValueResult<T> = Result<Box<dyn Any>, (T, Box<dyn std::error::Error>)>;
 pub type ParseValueFn<T> = fn(Cow<T>) -> ParseValueResult<<T as ToOwned>::Owned>;
 
 pub trait ParseValue<T: ?Sized + ToOwned> {
@@ -121,7 +121,7 @@ fn result_into_os(res: ParseValueResult<String>) -> ParseValueResult<OsString> {
 }
 
 fn invalid_utf_err(value: OsString) -> ParseValueResult<OsString> {
-    Err((value, anyhow!("value is not valid UTF-8 string")))
+    Err((value, SimpleError::new("value is not valid UTF-8 string").into()))
 }
 
 #[macro_export]

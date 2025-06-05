@@ -13,8 +13,18 @@ use std::ffi::OsString;
 use std::fmt::Display;
 use std::process::exit;
 
+// Box error implementation to keep the error object on stack small
 #[derive(Debug)]
-pub struct Error<'a> {
+pub struct Error<'a>(Box<ErrorInner<'a>>);
+
+impl<'a> Error<'a> {
+    pub fn new(context: Context<'a>, kind: ErrorKind<'a>) -> Self {
+        Self(Box::new(ErrorInner { context, kind }))
+    }
+}
+
+#[derive(Debug)]
+struct ErrorInner<'a> {
     pub context: Context<'a>,
     pub kind: ErrorKind<'a>,
 }
@@ -23,21 +33,23 @@ impl std::error::Error for Error<'_> {}
 
 impl Display for Error<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.kind)
+        write!(f, "{}", self.0.kind)
     }
 }
 
 impl Error<'_> {
     pub fn exit(self) -> ! {
-        match self.kind {
+        match self.0.kind {
             ErrorKind::RuntimeError(ref err) if is_broken_pipe(err) => {
                 exit(0);
             }
             ErrorKind::RuntimeError(ref err) => {
                 self.print_error(err);
 
-                for cause in err.chain().skip(1) {
+                let mut source = err.source();
+                while let Some(cause) = source {
                     eprintln!("Caused by: {cause}");
+                    source = cause.source();
                 }
 
                 exit(1);
@@ -45,7 +57,7 @@ impl Error<'_> {
             ref err => {
                 self.print_error(err);
 
-                if let Some(help) = self.context.commands.current().option_by_id(HELP_ID) {
+                if let Some(help) = self.0.context.commands.current().option_by_id(HELP_ID) {
                     self.print_help_usage(help);
                 }
 
@@ -55,25 +67,27 @@ impl Error<'_> {
     }
 
     fn print_error(&self, err: &impl Display) {
-        eprintln!("{ERROR_START}{}{ERROR_END}: {err}", self.context.calls);
+        eprintln!("{ERROR_START}{}{ERROR_END}: {err}", self.0.context.calls);
     }
 
     fn print_help_usage(&self, help: &OptArg<'_>) {
         if let Some(short) = help.short {
             eprintln!(
                 "Try {QUOTE_START}{} -{}{QUOTE_END} for more information.",
-                self.context.calls, short
+                self.0.context.calls, short
             );
         } else if let Some(long) = help.long {
             eprintln!(
                 "Try {QUOTE_START}{} --{}{QUOTE_END} for more information.",
-                self.context.calls, long
+                self.0.context.calls, long
             );
         }
     }
 }
 
-fn is_broken_pipe(err: &anyhow::Error) -> bool {
+// Clippy suggestion to fix this using `&dyn std::error::Error` is compiler error
+#[allow(clippy::borrowed_box)]
+fn is_broken_pipe(err: &Box<dyn std::error::Error>) -> bool {
     if let Some(io_err) = err.downcast_ref::<std::io::Error>() {
         if io_err.kind() == std::io::ErrorKind::BrokenPipe {
             return true;
@@ -88,20 +102,21 @@ pub enum ErrorKind<'a> {
     UnknownLongOption(OsString),
     UnknownSubcommand(OsString),
     MissingOptionValue(&'a OptArg<'a>),
-    InvalidOptionValue(&'a OptArg<'a>, OsString, anyhow::Error),
-    InvalidArgumentValue(&'a PosArg<'a>, OsString, anyhow::Error),
-    InvalidEnvironmentValue(&'a str, OsString, anyhow::Error),
+    InvalidOptionValue(&'a OptArg<'a>, OsString, Box<dyn std::error::Error>),
+    InvalidArgumentValue(&'a PosArg<'a>, OsString, Box<dyn std::error::Error>),
+    InvalidEnvironmentValue(&'a str, OsString, Box<dyn std::error::Error>),
     UnexpectedOptionValue(&'a OptArg<'a>, OsString),
     UnexpectedArgument(OsString),
     MissingArgument(&'a PosArg<'a>),
     MissingSubcommand,
     MutuallyExclusiveOptions(&'a [&'a OptArg<'a>]),
-    RuntimeError(anyhow::Error),
+    InvalidUsage(String),
+    RuntimeError(Box<dyn std::error::Error>),
 }
 
-impl<E: std::error::Error + Send + Sync + 'static> From<E> for ErrorKind<'_> {
+impl<E: std::error::Error + 'static> From<E> for ErrorKind<'_> {
     fn from(err: E) -> Self {
-        Self::RuntimeError(err.into())
+        Self::RuntimeError(Box::new(err))
     }
 }
 
@@ -177,7 +192,25 @@ impl Display for ErrorKind<'_> {
 
                 write!(f, " are mutualy exclusive")
             }
+            Self::InvalidUsage(msg) => msg.fmt(f),
             Self::RuntimeError(err) => err.fmt(f),
         }
+    }
+}
+
+#[derive(Debug)]
+pub struct SimpleError(String);
+
+impl std::error::Error for SimpleError {}
+
+impl SimpleError {
+    pub fn new(msg: impl Into<String>) -> Self {
+        Self(msg.into())
+    }
+}
+
+impl Display for SimpleError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
     }
 }
