@@ -12,6 +12,20 @@ pub const SECTION_END: &str = "\x1b[0m";
 pub const HIGHLIGHT_START: &str = "\x1b[1m";
 pub const HIGHLIGHT_END: &str = "\x1b[0m";
 
+pub struct Fmt<T>(&'static str, T, &'static str);
+
+impl<T> Fmt<T> {
+    pub fn quote(value: T) -> Self {
+        Self(QUOTE_START, value, QUOTE_END)
+    }
+}
+
+impl<T: Display> Display for Fmt<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}{}{}", self.0, self.1, self.2)
+    }
+}
+
 pub struct Highlight<'a>(pub &'a str);
 
 impl Display for Highlight<'_> {

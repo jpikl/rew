@@ -2,10 +2,9 @@ use crate::cli::Command;
 use crate::cli::CommandBuilder;
 use crate::cli::Context;
 use crate::cli::ErrorKind;
+use crate::cli::Fmt;
 use crate::cli::Pos;
 use crate::cli::PosBuilder;
-use crate::cli::QUOTE_END;
-use crate::cli::QUOTE_START;
 use crate::common_options;
 use crate::global::GENERATOR_COMMANDS;
 use crate::run::ContextExt;
@@ -37,8 +36,11 @@ fn run(ctx: &Context) -> Result<(), ErrorKind<'static>> {
 
     if from > to {
         return Err(ErrorKind::InvalidUsage(format!(
-            "{QUOTE_START}{}{QUOTE_END} value {} cannot be greater than {QUOTE_START}{}{QUOTE_END} value {}",
-            FROM.arg, from, TO.arg, to
+            "{} value {} cannot be greater than {} value {}",
+            Fmt::quote(FROM.arg),
+            Fmt::quote(from),
+            Fmt::quote(TO.arg),
+            Fmt::quote(to)
         )));
     }
 
