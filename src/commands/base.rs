@@ -20,7 +20,7 @@ pub const BASE: Command = CommandBuilder::new()
     .name("base")
     .description("Output base name of paths.")
     .group(&PATH_COMMANDS)
-    .options(common_options![WITH_DIR.arg])
+    .options(common_options![&WITH_DIR.arg])
     .run(run)
     .done();
 

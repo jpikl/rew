@@ -20,7 +20,7 @@ pub const FIRST: Command = CommandBuilder::new()
     .description("Output first N lines.")
     .group(&FILTER_COMMANDS)
     .options(common_options![])
-    .positionals(&[COUNT.arg])
+    .positionals(&[&COUNT.arg])
     .run(run)
     .done();
 

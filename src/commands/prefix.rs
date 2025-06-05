@@ -27,8 +27,8 @@ pub const PREFIX: Command = CommandBuilder::new()
     .name("prefix")
     .description("Add prefix to each line.")
     .group(&MAP_COMMANDS)
-    .options(common_options![DELETE.arg])
-    .positionals(&[VALUE.arg])
+    .options(common_options![&DELETE.arg])
+    .positionals(&[&VALUE.arg])
     .run(run)
     .done();
 

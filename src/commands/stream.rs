@@ -20,7 +20,7 @@ pub const STREAM: Command = CommandBuilder::new()
     .description("Output arguments as lines.")
     .group(&GENERATOR_COMMANDS)
     .options(common_options![])
-    .positionals(&[VALUES.arg])
+    .positionals(&[&VALUES.arg])
     .run(run)
     .done();
 

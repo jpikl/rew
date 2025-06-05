@@ -35,7 +35,7 @@ impl<'a> Context<'a> {
             return Err(Error::new(self, ErrorKind::MissingSubcommand));
         }
 
-        for pos in command.positionals {
+        for &pos in command.positionals {
             if pos.required && !self.args.has(pos) {
                 return Err(Error::new(self, ErrorKind::MissingArgument(pos)));
             }

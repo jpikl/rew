@@ -13,7 +13,7 @@ pub const USAGE_OPTIONS: Group = Group {
     description: None,
 };
 
-const GLOBAL_OPTIONS: Group = Group {
+pub const GLOBAL_OPTIONS: Group = Group {
     name: "Global options",
     description: Some("Options shared by all commands."),
 };
@@ -43,10 +43,10 @@ macro_rules! common_options {
     ($($opt:expr),*$(,)?) => {
         &[
             $($opt,)*
-            $crate::global::HELP.arg,
-            $crate::global::NULL.arg,
-            $crate::global::BUF_SIZE.arg,
-            $crate::global::BUF_MODE.arg,
+            &$crate::global::HELP.arg,
+            &$crate::global::NULL.arg,
+            &$crate::global::BUF_SIZE.arg,
+            &$crate::global::BUF_MODE.arg,
         ]
     };
 }

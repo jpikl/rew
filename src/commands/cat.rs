@@ -33,7 +33,7 @@ pub const CAT: Command = CommandBuilder::new()
     .description("Copy all input to output.")
     .description_ex(&["Mostly useful for benchmarking raw IO throughput."])
     .group(&MAP_COMMANDS)
-    .options(common_options![LINES.arg, CHARS.arg, BYTES.arg])
+    .options(common_options![&LINES.arg, &CHARS.arg, &BYTES.arg])
     .run(run)
     .done();
 
@@ -43,7 +43,7 @@ fn run(ctx: &Context) -> Result<(), ErrorKind<'static>> {
     let bytes = ctx.args.get(&BYTES);
 
     if (lines as u8 + chars as u8 + bytes as u8) > 1 {
-        return Err(ErrorKind::MutuallyExclusiveOptions(&[
+        return Err(ErrorKind::MutuallyExclusiveOptions(vec![
             &LINES.arg, &CHARS.arg, &BYTES.arg,
         ]));
     }

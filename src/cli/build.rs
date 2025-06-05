@@ -24,9 +24,9 @@ pub struct CommandBuilder<'a> {
     description_ex: &'a [&'a str],
     version: Option<&'a str>,
     group: &'a Group<'a>,
-    options: &'a [OptArg<'a>],
-    positionals: &'a [PosArg<'a>],
-    subcommands: &'a [Command<'a>],
+    options: &'a [&'a OptArg<'a>],
+    positionals: &'a [&'a PosArg<'a>],
+    subcommands: &'a [&'a Command<'a>],
     run: CommandRun,
 }
 
@@ -70,17 +70,17 @@ impl<'a> CommandBuilder<'a> {
         self
     }
 
-    pub const fn options(mut self, options: &'a [OptArg<'a>]) -> Self {
+    pub const fn options(mut self, options: &'a [&'a OptArg<'a>]) -> Self {
         self.options = options;
         self
     }
 
-    pub const fn positionals(mut self, positionals: &'a [PosArg]) -> Self {
+    pub const fn positionals(mut self, positionals: &'a [&'a PosArg]) -> Self {
         self.positionals = positionals;
         self
     }
 
-    pub const fn subcommands(mut self, subcommands: &'a [Command<'a>]) -> Self {
+    pub const fn subcommands(mut self, subcommands: &'a [&'a Command<'a>]) -> Self {
         self.subcommands = subcommands;
         self
     }

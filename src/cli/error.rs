@@ -109,7 +109,7 @@ pub enum ErrorKind<'a> {
     UnexpectedArgument(OsString),
     MissingArgument(&'a PosArg<'a>),
     MissingSubcommand,
-    MutuallyExclusiveOptions(&'a [&'a OptArg<'a>]),
+    MutuallyExclusiveOptions(Vec<&'a OptArg<'a>>),
     InvalidUsage(String),
     RuntimeError(Box<dyn std::error::Error>),
 }

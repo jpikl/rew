@@ -27,8 +27,8 @@ pub const SUFFIX: Command = CommandBuilder::new()
     .name("suffix")
     .description("Add suffix to each line.")
     .group(&MAP_COMMANDS)
-    .options(common_options![DELETE.arg])
-    .positionals(&[VALUE.arg])
+    .options(common_options![&DELETE.arg])
+    .positionals(&[&VALUE.arg])
     .run(run)
     .done();
 

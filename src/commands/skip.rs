@@ -21,7 +21,7 @@ pub const SKIP: Command = CommandBuilder::new()
     .description("Skip first N lines in output.")
     .group(&FILTER_COMMANDS)
     .options(common_options![])
-    .positionals(&[COUNT.arg])
+    .positionals(&[&COUNT.arg])
     .run(run)
     .done();
 

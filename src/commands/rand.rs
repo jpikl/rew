@@ -26,7 +26,7 @@ pub const RAND: Command = CommandBuilder::new()
     .description("Generate stream of random numbers as lines.")
     .group(&GENERATOR_COMMANDS)
     .options(common_options![])
-    .positionals(&[FROM.arg, TO.arg])
+    .positionals(&[&FROM.arg, &TO.arg])
     .run(run)
     .done();
 
@@ -37,9 +37,9 @@ fn run(ctx: &Context) -> Result<(), ErrorKind<'static>> {
     if from > to {
         return Err(ErrorKind::InvalidUsage(format!(
             "{} value {} cannot be greater than {} value {}",
-            Fmt::quote(FROM.arg),
+            Fmt::quote(&FROM.arg),
             Fmt::quote(from),
-            Fmt::quote(TO.arg),
+            Fmt::quote(&TO.arg),
             Fmt::quote(to)
         )));
     }

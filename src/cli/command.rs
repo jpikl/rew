@@ -16,9 +16,9 @@ pub struct Command<'a> {
     pub description_ex: &'a [&'a str],
     pub version: Option<&'a str>,
     pub group: &'a Group<'a>,
-    pub options: &'a [OptArg<'a>],
-    pub positionals: &'a [PosArg<'a>],
-    pub subcommands: &'a [Command<'a>],
+    pub options: &'a [&'a OptArg<'a>],
+    pub positionals: &'a [&'a PosArg<'a>],
+    pub subcommands: &'a [&'a Command<'a>],
     pub run: CommandRun,
 }
 
@@ -52,7 +52,7 @@ impl CommandItem for Command<'_> {
             params.push(OPTIONS_PARAM.into());
         }
 
-        for positional in self.positionals {
+        for &positional in self.positionals {
             params.push(positional.to_string());
         }
 
@@ -86,19 +86,19 @@ impl CommandItem for Command<'_> {
 
 impl<'a> Command<'a> {
     pub fn option_by_id(&self, id: &str) -> Option<&OptArg<'a>> {
-        self.options.iter().find(|opt| opt.id == id)
+        self.options.iter().cloned().find(|opt| opt.id == id)
     }
 
     pub fn option_by_short(&self, name: char) -> Option<&OptArg<'a>> {
-        self.options.iter().find(|opt| opt.short == Some(name))
+        self.options.iter().cloned().find(|opt| opt.short == Some(name))
     }
 
     pub fn option_by_long(&self, name: &str) -> Option<&OptArg<'a>> {
-        self.options.iter().find(|opt| opt.long == Some(name))
+        self.options.iter().cloned().find(|opt| opt.long == Some(name))
     }
 
     pub fn subcommand(&self, name: &str) -> Option<&Command<'a>> {
-        self.subcommands.iter().find(|cmd| cmd.name == name)
+        self.subcommands.iter().cloned().find(|cmd| cmd.name == name)
     }
 
     pub fn grouped_options(&self) -> Vec<(&Group, Vec<&OptArg<'a>>)> {
@@ -114,7 +114,7 @@ impl<'a> Command<'a> {
     }
 }
 
-fn group_items<T: CommandItem>(items: &[T]) -> Vec<(&Group, Vec<&T>)> {
+fn group_items<'a, T: CommandItem>(items: &'a [&'a T]) -> Vec<(&'a Group<'a>, Vec<&'a T>)> {
     let mut grouped: Vec<(&Group, Vec<&T>)> = Vec::new();
 
     for item in items.iter() {

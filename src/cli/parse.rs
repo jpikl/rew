@@ -119,7 +119,7 @@ impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
             return Ok(());
         }
 
-        let Some(pos) = self.command.positionals.get(self.positional_index) else {
+        let Some(&pos) = self.command.positionals.get(self.positional_index) else {
             return Err(ErrorKind::UnexpectedArgument(arg));
         };
 
@@ -229,7 +229,7 @@ impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
     }
 
     fn parse_env(&mut self) -> Result<(), ErrorKind<'a>> {
-        for opt in self.command.options {
+        for &opt in self.command.options {
             if self.usages.iter().any(|usage| usage.arg_id == opt.id) {
                 continue;
             }
@@ -298,7 +298,7 @@ mod tests {
 
     #[test]
     fn subcommand() {
-        let command = CommandBuilder::new().subcommands(&[SUBCOMMAND]).done();
+        let command = CommandBuilder::new().subcommands(&[&SUBCOMMAND]).done();
         let context = assert_ok!(command.try_parse_args_from(make_args(&["sub"])));
 
         assert_eq!(context.commands, CommandChain(vec![&command, &SUBCOMMAND]));
@@ -334,8 +334,8 @@ mod tests {
     #[case(&["-ffo123", "-o456", "abc"], true, 456, "abc")]
     fn command_args(#[case] args: &[&str], #[case] flag: bool, #[case] opt: i32, #[case] pos: &str) {
         let command = CommandBuilder::new()
-            .options(&[FLAG.arg, OPT.arg])
-            .positionals(&[POS.arg])
+            .options(&[&FLAG.arg, &OPT.arg])
+            .positionals(&[&POS.arg])
             .done();
 
         let context = assert_ok!(command.try_parse_args_from(make_args(args)));
@@ -363,7 +363,7 @@ mod tests {
         #[case] opt: i32,
     ) {
         temp_env::with_var(env_key, env_value, || {
-            let command = CommandBuilder::new().options(&[FLAG.arg, OPT.arg]).done();
+            let command = CommandBuilder::new().options(&[&FLAG.arg, &OPT.arg]).done();
 
             let context = assert_ok!(command.try_parse_args_from(make_args(args)));
             assert_eq!(context.args.get(&FLAG), flag);
@@ -384,8 +384,8 @@ mod tests {
     #[case(&["arg", "x"], "Unexpected argument 'x'")]
     fn command_args_err(#[case] args: &[&str], #[case] err_msg: &str) {
         let command = CommandBuilder::new()
-            .options(&[FLAG.arg, OPT.arg])
-            .positionals(&[POS.arg])
+            .options(&[&FLAG.arg, &OPT.arg])
+            .positionals(&[&POS.arg])
             .done();
 
         let err = assert_err!(command.try_parse_args_from(make_args(args)));
@@ -415,7 +415,7 @@ mod tests {
     )]
     fn command_env_err(#[case] env_key: &str, #[case] env_value: &str, #[case] err_msg: &str) {
         temp_env::with_var(env_key, Some(env_value), || {
-            let command = CommandBuilder::new().options(&[FLAG.arg, OPT.arg]).done();
+            let command = CommandBuilder::new().options(&[&FLAG.arg, &OPT.arg]).done();
             let err = assert_err!(command.try_parse_args_from(make_args(&[])));
             assert_eq!(strip_colors(&err.to_string()), err_msg);
         });

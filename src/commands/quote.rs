@@ -37,7 +37,7 @@ pub const QUOTE: Command = CommandBuilder::new()
     .description("Put each line into quotes.")
     .description_ex(&["Also escapes quote characters inside."])
     .group(&MAP_COMMANDS)
-    .options(common_options![DOUBLE.arg, ESCAPE.arg, NO_ESCAPE.arg])
+    .options(common_options![&DOUBLE.arg, &ESCAPE.arg, &NO_ESCAPE.arg])
     .run(run)
     .done();
 

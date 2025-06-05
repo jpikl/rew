@@ -19,7 +19,7 @@ pub const EXT: Command = CommandBuilder::new()
     .name("ext")
     .description("Output extension of paths.")
     .group(&PATH_COMMANDS)
-    .options(common_options![WITH_DOT.arg])
+    .options(common_options![&WITH_DOT.arg])
     .run(run)
     .done();
 
