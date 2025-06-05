@@ -1,12 +1,12 @@
 use crate::utils::Bytes;
-use bstr::decode_last_utf8;
 use bstr::ByteSlice;
+use bstr::decode_last_utf8;
 use std::fmt::Display;
 use std::fmt::Formatter;
-use std::io::copy;
 use std::io::BufWriter;
 use std::io::Read;
 use std::io::Write;
+use std::io::copy;
 use std::marker::PhantomData;
 
 #[derive(Debug)]
