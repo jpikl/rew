@@ -32,9 +32,13 @@ pub struct EnumItem<'a> {
 
 #[macro_export]
 macro_rules! impl_enum {
-    ($type:path, {$($value:ident: {name: $name:literal, description: [$($description:literal),*,], }),*,}) => {
+    ($type:path, {$($value:ident: $name:literal),*$(,)?}) => {
+        impl_enum!($type, {$($value: {name: $name, description: []}),*});
+    };
+
+    ($type:path, {$($value:ident: {name: $name:literal, description: [$($description:literal),*$(,)?]$(,)?}),*$(,)?}) => {
         impl<'a> $crate::cli::Enum<'a> for $type {
-            const ENUM_ITEMS: &'a [EnumItem<'a>] = &[$( EnumItem {name: $name, description: &[$($description),*]}, )*];
+            const ENUM_ITEMS: &'a [$crate::cli::EnumItem<'a>] = &[$( $crate::cli::EnumItem {name: $name, description: &[$($description),*]},)*];
         }
 
         impl std::fmt::Display for $type {
