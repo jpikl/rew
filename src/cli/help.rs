@@ -33,14 +33,16 @@ fn print_help<'a>(ctx: &Context<'a>, usage: &ArgUsage) -> Result<(), ErrorKind<'
     Ok(())
 }
 
-fn print_err_hint(ctx: &Context, err: &ErrorKind) {
+fn print_err_hint(ctx: &Context, err: &ErrorKind, out: &mut dyn Write) -> std::io::Result<()> {
     if err.is_invalid_usage() {
-        anstream::eprintln!("Try {QUOTE_START}{} -h{QUOTE_END} for program usage.", ctx.calls);
-        anstream::eprintln!(
+        writeln!(out, "Try {QUOTE_START}{} -h{QUOTE_END} for program usage.", ctx.calls)?;
+        writeln!(
+            out,
             "You can get more detailed usage with {QUOTE_START}{} --help{QUOTE_END}.",
             ctx.calls
-        );
+        )?;
     }
+    Ok(())
 }
 
 impl Command<'_> {

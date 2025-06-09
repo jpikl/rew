@@ -7,9 +7,9 @@ use crate::cli::ERROR_END;
 use crate::cli::ERROR_START;
 use crate::cli::QUOTE_END;
 use crate::cli::QUOTE_START;
-use anstream::eprintln;
 use std::ffi::OsString;
 use std::fmt::Display;
+use std::io::Write;
 use std::process::exit;
 
 // Box error implementation to keep the error object on stack small
@@ -29,33 +29,41 @@ impl<'a> Error<'a> {
 }
 
 impl Error<'_> {
-    pub fn exit(self) -> ! {
-        let kind = self.0.kind;
-        let context = self.0.context;
+    pub fn exit(&self) -> ! {
+        let kind = &self.0.kind;
 
         if kind.is_broken_pipe() {
             exit(0);
         }
 
-        eprintln!("{ERROR_START}{}{ERROR_END}: {kind}", context.calls);
-
-        let mut source = kind.source();
-        while let Some(cause) = source {
-            eprintln!("Caused by: {cause}");
-            source = cause.source();
-        }
-
-        for opt in context.commands.current().options {
-            if let Some(err_hint) = opt.err_hint {
-                err_hint(&context, &kind);
-            }
-        }
+        let _ = self.print(&mut anstream::stderr().lock());
 
         if kind.is_invalid_usage() {
             exit(2);
         }
 
         exit(1);
+    }
+
+    fn print(&self, out: &mut dyn Write) -> std::io::Result<()> {
+        let kind = &self.0.kind;
+        let context = &self.0.context;
+
+        writeln!(out, "{ERROR_START}{}{ERROR_END}: {kind}", context.calls)?;
+
+        let mut source = kind.source();
+        while let Some(cause) = source {
+            writeln!(out, "Caused by: {cause}")?;
+            source = cause.source();
+        }
+
+        for opt in context.commands.current().options {
+            if let Some(err_hint) = opt.err_hint {
+                err_hint(context, kind, out)?;
+            }
+        }
+
+        Ok(())
     }
 }
 
@@ -93,11 +101,15 @@ impl ErrorKind<'_> {
         }
     }
 
+    pub fn downcast_ref<T: std::error::Error + 'static>(&self) -> Option<&T> {
+        match self {
+            Self::RuntimeError(err) => err.downcast_ref(),
+            _ => None,
+        }
+    }
+
     pub fn is_broken_pipe(&self) -> bool {
-        let Self::RuntimeError(err) = self else {
-            return false;
-        };
-        match err.downcast_ref::<std::io::Error>() {
+        match self.downcast_ref::<std::io::Error>() {
             Some(io_err) => io_err.kind() == std::io::ErrorKind::BrokenPipe,
             None => false,
         }

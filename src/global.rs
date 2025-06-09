@@ -11,6 +11,7 @@ use crate::impl_enum;
 use crate::utils::Bytes;
 use std::borrow::Cow;
 use std::io::IsTerminal;
+use std::io::Write;
 
 pub const USAGE_OPTIONS: Group = Group {
     name: "Usage options",
@@ -87,16 +88,17 @@ pub const BUF_SIZE: Opt<Bytes> = OptBuilder::new()
     .err_hint(buf_size_err_hint)
     .done();
 
-fn buf_size_err_hint(_ctx: &Context, err: &ErrorKind) {
-    let ErrorKind::RuntimeError(err) = err else {
-        return;
-    };
+fn buf_size_err_hint(_ctx: &Context, err: &ErrorKind, out: &mut dyn Write) -> std::io::Result<()> {
     let Some(err) = err.downcast_ref::<crate::io::Error>() else {
-        return;
+        return Ok(());
     };
     if let crate::io::Error::BufferFull(_) = err {
-        eprintln!("You can use {QUOTE_START}--buf-size=<SIZE>{QUOTE_END} option to increase the buffer size.")
+        writeln!(
+            out,
+            "You can use {QUOTE_START}--buf-size=<SIZE>{QUOTE_END} option to increase the buffer size."
+        )?;
     };
+    Ok(())
 }
 
 pub const BUF_MODE: Opt<BufMode> = OptBuilder::new_enum()

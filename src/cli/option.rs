@@ -10,6 +10,7 @@ use super::TypedArg;
 use super::Value;
 use std::any::Any;
 use std::fmt::Display;
+use std::io::Write;
 
 pub type Flag<'a> = TypedArg<OptArg<'a>, bool>;
 pub type Opt<'a, T> = TypedArg<OptArg<'a>, T>;
@@ -28,7 +29,7 @@ pub struct OptArg<'a> {
 }
 
 pub type OptRun = for<'a> fn(&Context<'a>, &ArgUsage) -> Result<(), ErrorKind<'a>>;
-pub type OptErrHint = for<'a> fn(&Context<'a>, err: &ErrorKind<'a>) -> ();
+pub type OptErrHint = for<'a> fn(&Context<'a>, err: &ErrorKind<'a>, out: &mut dyn Write) -> std::io::Result<()>;
 
 impl Display for OptArg<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
