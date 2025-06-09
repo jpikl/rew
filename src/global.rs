@@ -59,7 +59,7 @@ const DEFAULT_BUF_SIZE: &str = "32K";
 pub const HELP: Flag = FlagBuilder::from(&crate::cli::HELP.arg).group(&USAGE_OPTIONS).done();
 pub const VERSION: Flag = FlagBuilder::from(&crate::cli::VERSION.arg).group(&USAGE_OPTIONS).done();
 
-pub const NULL: Flag = FlagBuilder::new("nul")
+pub const NULL: Flag = FlagBuilder::new()
     .short('0')
     .long("null")
     .description("Line delimiter is NUL, not newline.")
@@ -67,7 +67,7 @@ pub const NULL: Flag = FlagBuilder::new("nul")
     .group(&GLOBAL_OPTIONS)
     .done();
 
-pub const BUF_SIZE: Opt<Bytes> = OptBuilder::new("buf-size")
+pub const BUF_SIZE: Opt<Bytes> = OptBuilder::new()
     .long("buf-size")
     .description("Size of a buffer used for IO operations.")
     .description_ex(&[
@@ -82,7 +82,7 @@ pub const BUF_SIZE: Opt<Bytes> = OptBuilder::new("buf-size")
     .group(&GLOBAL_OPTIONS)
     .done();
 
-pub const BUF_MODE: Opt<BufMode> = OptBuilder::new_enum("buf-mode")
+pub const BUF_MODE: Opt<BufMode> = OptBuilder::new_enum()
     .long("buf-mode")
     .description("Output buffering mode.")
     .environment("REW_BUF_MODE")

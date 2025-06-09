@@ -9,7 +9,7 @@ use crate::global::PATH_COMMANDS;
 use crate::run::ContextExt;
 use crate::utils::path_from_io_bytes;
 
-pub const WITH_DIR: Flag = FlagBuilder::new("full")
+pub const WITH_DIR: Flag = FlagBuilder::new()
     .short('d')
     .long("with-dir")
     .description("Keep directory path before the base name.")

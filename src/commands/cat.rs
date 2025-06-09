@@ -9,20 +9,20 @@ use crate::global::MAP_COMMANDS;
 use crate::run::ContextExt;
 use std::io::copy;
 
-const LINES: Flag = FlagBuilder::new("lines")
+const LINES: Flag = FlagBuilder::new()
     .short('l')
     .long("lines")
     .description("Process data as lines.")
     .description_ex(&["Will normalize newlines to LF as a side effect."])
     .done();
 
-const CHARS: Flag = FlagBuilder::new("chars")
+const CHARS: Flag = FlagBuilder::new()
     .short('c')
     .long("chars")
     .description("Process data as character chunks.")
     .done();
 
-const BYTES: Flag = FlagBuilder::new("bytes")
+const BYTES: Flag = FlagBuilder::new()
     .short('b')
     .long("bytes")
     .description("Process data as byte chunks.")

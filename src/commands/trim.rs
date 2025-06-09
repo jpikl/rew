@@ -9,13 +9,13 @@ use crate::global::MAP_COMMANDS;
 use crate::run::ContextExt;
 use bstr::ByteSlice;
 
-const START: Flag = FlagBuilder::new("start")
+const START: Flag = FlagBuilder::new()
     .short('s')
     .long("start")
     .description("Trim start of each line.")
     .done();
 
-const END: Flag = FlagBuilder::new("end")
+const END: Flag = FlagBuilder::new()
     .short('e')
     .long("end")
     .description("Trim end of each line.")

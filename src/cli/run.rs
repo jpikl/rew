@@ -1,15 +1,15 @@
-use super::ArgSource;
 use super::Args;
 use super::Command;
 use super::Error;
 use super::ErrorKind;
+use super::ValueSource;
 use std::ffi::OsString;
 
 #[derive(Debug)]
 pub struct Context<'a> {
     pub calls: CallChain,
     pub commands: CommandChain<'a>,
-    pub args: Args,
+    pub args: Args<'a>,
 }
 
 impl<'a> Context<'a> {
@@ -23,10 +23,10 @@ impl<'a> Context<'a> {
         let command = self.commands.current();
 
         for usage in self.args.usages() {
-            if let ArgSource::Positional = usage.source {
+            if let ValueSource::Positional = usage.source {
                 continue;
             }
-            if let Some(run) = command.option_by_id(&usage.arg_id).and_then(|opt| opt.run) {
+            if let Some(run) = command.option_by_id(usage.id).and_then(|opt| opt.run) {
                 return run(&self, usage).map_err(|err| Error::new(self, err));
             }
         }

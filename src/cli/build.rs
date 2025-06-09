@@ -9,6 +9,7 @@ use super::Group;
 use super::OPTIONS;
 use super::Opt;
 use super::OptArg;
+use super::OptErrHint;
 use super::OptRun;
 use super::ParseValue;
 use super::Pos;
@@ -106,7 +107,6 @@ impl<'a> CommandBuilder<'a> {
 }
 
 pub struct FlagBuilder<'a> {
-    id: &'a str,
     short: Option<char>,
     long: Option<&'a str>,
     description: &'a str,
@@ -114,12 +114,12 @@ pub struct FlagBuilder<'a> {
     group: &'a Group<'a>,
     environment: Option<&'a str>,
     run: Option<OptRun>,
+    err_hint: Option<OptErrHint>,
 }
 
 impl<'a> FlagBuilder<'a> {
-    pub const fn new(id: &'a str) -> Self {
+    pub const fn new() -> Self {
         Self {
-            id,
             short: None,
             long: None,
             description: "",
@@ -127,12 +127,12 @@ impl<'a> FlagBuilder<'a> {
             group: &OPTIONS,
             environment: None,
             run: None,
+            err_hint: None,
         }
     }
 
     pub const fn from(opt: &OptArg<'a>) -> Self {
         Self {
-            id: opt.id,
             short: opt.short,
             long: opt.long,
             description: opt.description,
@@ -140,6 +140,7 @@ impl<'a> FlagBuilder<'a> {
             group: opt.group,
             environment: opt.environment,
             run: opt.run,
+            err_hint: opt.err_hint,
         }
     }
 
@@ -178,9 +179,13 @@ impl<'a> FlagBuilder<'a> {
         self
     }
 
+    pub const fn err_hint(mut self, err_hint: OptErrHint) -> Self {
+        self.err_hint = Some(err_hint);
+        self
+    }
+
     pub const fn done(self) -> Flag<'a> {
         TypedArg::new(OptArg {
-            id: self.id,
             short: self.short,
             long: self.long,
             description: self.description,
@@ -188,13 +193,13 @@ impl<'a> FlagBuilder<'a> {
             group: self.group,
             environment: self.environment,
             run: self.run,
+            err_hint: self.err_hint,
             value: None,
         })
     }
 }
 
 pub struct OptBuilder<'a, T> {
-    id: &'a str,
     short: Option<char>,
     long: Option<&'a str>,
     value_name: &'a str,
@@ -205,23 +210,23 @@ pub struct OptBuilder<'a, T> {
     enum_items: &'a [EnumItem<'a>],
     default: Option<&'a str>,
     run: Option<OptRun>,
+    err_hint: Option<OptErrHint>,
     _type: PhantomData<T>,
 }
 
 impl<'a, T: ParseValue<OsStr> + Enum<'a> + 'a> OptBuilder<'a, T> {
-    pub const fn new_enum(id: &'a str) -> Self {
-        Self::new_with_enum_items(id, T::ENUM_ITEMS)
+    pub const fn new_enum() -> Self {
+        Self::new_with_enum_items(T::ENUM_ITEMS)
     }
 }
 
 impl<'a, T: ParseValue<OsStr> + 'a> OptBuilder<'a, T> {
-    pub const fn new(id: &'a str) -> Self {
-        Self::new_with_enum_items(id, &[])
+    pub const fn new() -> Self {
+        Self::new_with_enum_items(&[])
     }
 
-    const fn new_with_enum_items(id: &'a str, enum_items: &'a [EnumItem]) -> Self {
+    const fn new_with_enum_items(enum_items: &'a [EnumItem]) -> Self {
         Self {
-            id,
             short: None,
             long: None,
             value_name: "VALUE",
@@ -232,6 +237,7 @@ impl<'a, T: ParseValue<OsStr> + 'a> OptBuilder<'a, T> {
             enum_items,
             default: None,
             run: None,
+            err_hint: None,
             _type: PhantomData,
         }
     }
@@ -276,9 +282,20 @@ impl<'a, T: ParseValue<OsStr> + 'a> OptBuilder<'a, T> {
         self
     }
 
+    #[allow(dead_code)]
+    pub const fn run(mut self, run: OptRun) -> Self {
+        self.run = Some(run);
+        self
+    }
+
+    #[allow(dead_code)]
+    pub const fn err_hint(mut self, err_hint: OptErrHint) -> Self {
+        self.err_hint = Some(err_hint);
+        self
+    }
+
     pub const fn done(self) -> Opt<'a, T> {
         TypedArg::new(OptArg {
-            id: self.id,
             short: self.short,
             long: self.long,
             description: self.description,
@@ -286,6 +303,7 @@ impl<'a, T: ParseValue<OsStr> + 'a> OptBuilder<'a, T> {
             group: self.group,
             environment: self.environment,
             run: self.run,
+            err_hint: self.err_hint,
             value: Some(Value {
                 name: self.value_name,
                 default: self.default,
@@ -297,7 +315,6 @@ impl<'a, T: ParseValue<OsStr> + 'a> OptBuilder<'a, T> {
 }
 
 pub struct PosBuilder<'a, T> {
-    id: &'a str,
     name: &'a str,
     required: bool,
     multiple: bool,
@@ -311,9 +328,8 @@ pub struct PosBuilder<'a, T> {
 }
 
 impl<'a, T: ParseValue<OsStr> + 'a> PosBuilder<'a, T> {
-    pub const fn new(id: &'a str) -> Self {
+    pub const fn new() -> Self {
         Self {
-            id,
             name: "VALUE",
             required: false,
             multiple: false,
@@ -372,7 +388,6 @@ impl<'a, T: ParseValue<OsStr> + 'a> PosBuilder<'a, T> {
 
     pub const fn done(self) -> Pos<'a, T> {
         TypedArg::new(PosArg {
-            id: self.id,
             description: self.description,
             description_ex: self.description_ex,
             group: self.group,

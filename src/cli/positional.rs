@@ -1,4 +1,5 @@
 use super::Arg;
+use super::ArgId;
 use super::CommandItem;
 use super::EnumItem;
 use super::Group;
@@ -11,7 +12,6 @@ pub type Pos<'a, T> = TypedArg<PosArg<'a>, T>;
 
 #[derive(Debug, PartialEq)]
 pub struct PosArg<'a> {
-    pub id: &'a str,
     pub description: &'a str,
     pub description_ex: &'a [&'a str],
     pub group: &'a Group<'a>,
@@ -36,8 +36,12 @@ impl Display for PosArg<'_> {
 }
 
 impl Arg for PosArg<'_> {
-    fn id(&self) -> &str {
-        self.id
+    fn id(&self) -> ArgId {
+        if self.value.name.is_empty() {
+            ArgId::Undefined
+        } else {
+            ArgId::PosName(self.value.name)
+        }
     }
 
     fn default_value(&self) -> Option<Box<dyn Any>> {

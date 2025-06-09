@@ -1,4 +1,3 @@
-use super::ArgSource;
 use super::ArgUsage;
 use super::CallChain;
 use super::Command;
@@ -8,6 +7,9 @@ use super::ErrorKind;
 use super::Flag;
 use super::FlagBuilder;
 use super::Group;
+use super::QUOTE_END;
+use super::QUOTE_START;
+use super::ValueSource;
 use crate::cli::HIGHLIGHT_END;
 use crate::cli::HIGHLIGHT_START;
 use crate::cli::Highlight;
@@ -16,20 +18,29 @@ use crate::cli::SECTION_START;
 use std::fmt::Display;
 use std::io::Write;
 
-pub const HELP_ID: &str = "help";
-
-pub const HELP: Flag = FlagBuilder::new(HELP_ID)
+pub const HELP: Flag = FlagBuilder::new()
     .short('h')
     .long("help")
     .description("Print short help `-h` or detailed help `--help`.")
     .run(print_help)
+    .err_hint(print_err_hint)
     .done();
 
-fn print_help<'a>(context: &Context<'a>, usage: &ArgUsage) -> Result<(), ErrorKind<'a>> {
-    let long = matches!(usage.source, ArgSource::LongOption);
-    let command = context.commands.current();
-    command.print_help(&mut anstream::stdout().lock(), &context.calls, long)?;
+fn print_help<'a>(ctx: &Context<'a>, usage: &ArgUsage) -> Result<(), ErrorKind<'a>> {
+    let long = matches!(usage.source, ValueSource::LongOption);
+    let command = ctx.commands.current();
+    command.print_help(&mut anstream::stdout().lock(), &ctx.calls, long)?;
     Ok(())
+}
+
+fn print_err_hint(ctx: &Context, err: &ErrorKind) {
+    if err.is_invalid_usage() {
+        anstream::eprintln!("Try {QUOTE_START}{} -h{QUOTE_END} for program usage.", ctx.calls);
+        anstream::eprintln!(
+            "You can get more detailed usage with {QUOTE_START}{} --help{QUOTE_END}.",
+            ctx.calls
+        );
+    }
 }
 
 impl Command<'_> {

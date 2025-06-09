@@ -9,7 +9,7 @@ use crate::global::FILTER_COMMANDS;
 use crate::run::ContextExt;
 use bstr::ByteSlice;
 
-const COUNT: Pos<u128> = PosBuilder::new("count")
+const COUNT: Pos<u128> = PosBuilder::new()
     .name("COUNT")
     .description("Number of lines to print.")
     .default("1")

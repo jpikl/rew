@@ -6,9 +6,7 @@ use crate::cli::Flag;
 use crate::cli::FlagBuilder;
 use std::io::Write;
 
-pub const VERSION_ID: &str = "version";
-
-pub const VERSION: Flag = FlagBuilder::new(VERSION_ID)
+pub const VERSION: Flag = FlagBuilder::new()
     .short('V')
     .long("version")
     .description("Print version.")

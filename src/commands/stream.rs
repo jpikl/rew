@@ -9,7 +9,7 @@ use crate::global::GENERATOR_COMMANDS;
 use crate::run::ContextExt;
 use std::ffi::OsString;
 
-pub const VALUES: Pos<OsString> = PosBuilder::new("value")
+pub const VALUES: Pos<OsString> = PosBuilder::new()
     .description("Values to output.")
     .name("VALUE")
     .multiple()

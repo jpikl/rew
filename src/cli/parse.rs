@@ -1,4 +1,4 @@
-use super::ArgSource;
+use super::Arg;
 use super::ArgUsage;
 use super::Args;
 use super::CallChain;
@@ -9,6 +9,7 @@ use super::Error;
 use super::ErrorKind;
 use super::ParseValue;
 use super::Value;
+use super::ValueSource;
 use os_str_bytes::OsStrBytesExt;
 use std::borrow::Cow;
 use std::ffi::OsStr;
@@ -55,7 +56,7 @@ struct Parser<'a, I> {
     command: &'a Command<'a>,
     commands: Vec<&'a Command<'a>>,
     calls: Vec<OsString>,
-    usages: Vec<ArgUsage>,
+    usages: Vec<ArgUsage<'a>>,
     allow_options: bool,
     positional_index: usize,
 }
@@ -129,7 +130,7 @@ impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
 
         match (pos.value.parse)(arg.into()) {
             Ok(value) => {
-                self.usages.push(ArgUsage::new(pos, ArgSource::Positional, value));
+                self.usages.push(ArgUsage::new(pos, ValueSource::Positional, value));
                 Ok(())
             }
             Err((value, err)) => Err(ErrorKind::InvalidArgumentValue(pos, value, err)),
@@ -156,7 +157,7 @@ impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
                     return Err(ErrorKind::UnexpectedOptionValue(opt, value.into()));
                 }
                 self.usages
-                    .push(ArgUsage::new(opt, ArgSource::LongOption, Box::new(true)));
+                    .push(ArgUsage::new(opt, ValueSource::LongOption, Box::new(true)));
                 Ok(())
             }
             Some(Value { parse, .. }) => {
@@ -169,7 +170,7 @@ impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
                 };
                 match parse(value) {
                     Ok(value) => {
-                        self.usages.push(ArgUsage::new(opt, ArgSource::LongOption, value));
+                        self.usages.push(ArgUsage::new(opt, ValueSource::LongOption, value));
                         Ok(())
                     }
                     Err((value, err)) => Err(ErrorKind::InvalidOptionValue(opt, value, err)),
@@ -205,7 +206,7 @@ impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
         match opt.value {
             None => {
                 self.usages
-                    .push(ArgUsage::new(opt, ArgSource::ShortOption, Box::new(true)));
+                    .push(ArgUsage::new(opt, ValueSource::ShortOption, Box::new(true)));
                 Ok(false)
             }
             Some(Value { parse, .. }) => {
@@ -219,7 +220,7 @@ impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
                 };
                 match parse(value) {
                     Ok(value) => {
-                        self.usages.push(ArgUsage::new(opt, ArgSource::ShortOption, value));
+                        self.usages.push(ArgUsage::new(opt, ValueSource::ShortOption, value));
                         Ok(true)
                     }
                     Err((value, err)) => Err(ErrorKind::InvalidOptionValue(opt, value, err)),
@@ -230,7 +231,7 @@ impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
 
     fn parse_env(&mut self) -> Result<(), ErrorKind<'a>> {
         for &opt in self.command.options {
-            if self.usages.iter().any(|usage| usage.arg_id == opt.id) {
+            if self.usages.iter().any(|usage| usage.id == opt.id()) {
                 continue;
             }
             let Some(key) = opt.environment else {
@@ -245,7 +246,7 @@ impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
             };
             match parse(value.into()) {
                 Ok(value) => {
-                    self.usages.push(ArgUsage::new(opt, ArgSource::Environment, value));
+                    self.usages.push(ArgUsage::new(opt, ValueSource::Environment, value));
                 }
                 Err((value, err)) => {
                     return Err(ErrorKind::InvalidEnvironmentValue(key, value, err));
@@ -272,19 +273,19 @@ mod tests {
     use rstest::rstest;
     use std::ffi::OsString;
 
-    const FLAG: Flag = FlagBuilder::new("flag")
+    const FLAG: Flag = FlagBuilder::new()
         .short('f')
         .long("flag")
         .environment("REW_FLAG")
         .done();
 
-    const OPT: Opt<i32> = OptBuilder::new("option")
+    const OPT: Opt<i32> = OptBuilder::new()
         .short('o')
         .long("option")
         .environment("REW_OPTION")
         .done();
 
-    const POS: Pos<String> = PosBuilder::new("pos").name("pos").done();
+    const POS: Pos<String> = PosBuilder::new().name("pos").done();
     const SUBCOMMAND: Command = CommandBuilder::new().name("sub").done();
 
     #[test]

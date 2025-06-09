@@ -9,7 +9,7 @@ use crate::global::PATH_COMMANDS;
 use crate::run::ContextExt;
 use crate::utils::path_from_io_bytes;
 
-const WITH_DOT: Flag = FlagBuilder::new("with-dot")
+const WITH_DOT: Flag = FlagBuilder::new()
     .short('d')
     .long("with-dot")
     .description("Keep dot before the extension.")

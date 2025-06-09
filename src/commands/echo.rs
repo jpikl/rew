@@ -9,7 +9,7 @@ use crate::global::GENERATOR_COMMANDS;
 use crate::run::ContextExt;
 use std::ffi::OsString;
 
-pub const ARG: Pos<OsString> = PosBuilder::new("arg")
+pub const ARG: Pos<OsString> = PosBuilder::new()
     .name("ARG")
     .description("Arguments to be printed on each line.")
     .description_ex(&["Their values will be separated by a space."])

@@ -12,13 +12,13 @@ use crate::run::ContextExt;
 use bstr::BString;
 use bstr::ByteSlice;
 
-const DOUBLE: Flag = FlagBuilder::new("double")
+const DOUBLE: Flag = FlagBuilder::new()
     .short('d')
     .long("double")
     .description("Use double quotes instead of single.")
     .done();
 
-const ESCAPE: Opt<BString> = OptBuilder::new("escape")
+const ESCAPE: Opt<BString> = OptBuilder::new()
     .short('e')
     .long("escape")
     .value_name("CHAR")
@@ -26,7 +26,7 @@ const ESCAPE: Opt<BString> = OptBuilder::new("escape")
     .default("\\")
     .done();
 
-const NO_ESCAPE: Flag = FlagBuilder::new("no-escape")
+const NO_ESCAPE: Flag = FlagBuilder::new()
     .short('E')
     .long("no-escape")
     .description("Do not escape inner quotes.")

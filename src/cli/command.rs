@@ -1,3 +1,5 @@
+use super::Arg;
+use super::ArgId;
 use super::Context;
 use super::EnumItem;
 use super::ErrorKind;
@@ -85,8 +87,8 @@ impl CommandItem for Command<'_> {
 }
 
 impl<'a> Command<'a> {
-    pub fn option_by_id(&self, id: &str) -> Option<&OptArg<'a>> {
-        self.options.iter().cloned().find(|opt| opt.id == id)
+    pub fn option_by_id(&self, id: ArgId) -> Option<&OptArg<'a>> {
+        self.options.iter().cloned().find(|opt| opt.id() == id)
     }
 
     pub fn option_by_short(&self, name: char) -> Option<&OptArg<'a>> {

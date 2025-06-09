@@ -1,4 +1,5 @@
 use super::Arg;
+use super::ArgId;
 use super::ArgUsage;
 use super::CommandItem;
 use super::Context;
@@ -15,7 +16,6 @@ pub type Opt<'a, T> = TypedArg<OptArg<'a>, T>;
 
 #[derive(Debug, PartialEq)]
 pub struct OptArg<'a> {
-    pub id: &'a str,
     pub short: Option<char>,
     pub long: Option<&'a str>,
     pub description: &'a str,
@@ -24,9 +24,11 @@ pub struct OptArg<'a> {
     pub environment: Option<&'a str>,
     pub value: Option<Value<'a>>,
     pub run: Option<OptRun>,
+    pub err_hint: Option<OptErrHint>,
 }
 
 pub type OptRun = for<'a> fn(&Context<'a>, &ArgUsage) -> Result<(), ErrorKind<'a>>;
+pub type OptErrHint = for<'a> fn(&Context<'a>, err: &ErrorKind<'a>) -> ();
 
 impl Display for OptArg<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -44,8 +46,14 @@ impl Display for OptArg<'_> {
 }
 
 impl Arg for OptArg<'_> {
-    fn id(&self) -> &str {
-        self.id
+    fn id(&self) -> ArgId {
+        let short = self.short.unwrap_or_default();
+        let long = self.long.unwrap_or_default();
+        if short as u32 == 0 && long.is_empty() {
+            ArgId::Undefined
+        } else {
+            ArgId::OptName(short, long)
+        }
     }
 
     fn default_value(&self) -> Option<Box<dyn Any>> {

@@ -10,7 +10,7 @@ use crate::run::ContextExt;
 use bstr::ByteSlice;
 use std::io::copy;
 
-const COUNT: Pos<u128> = PosBuilder::new("count")
+const COUNT: Pos<u128> = PosBuilder::new()
     .name("COUNT")
     .description("Number of lines to skip.")
     .required()

@@ -11,13 +11,13 @@ use crate::global::MAP_COMMANDS;
 use crate::run::ContextExt;
 use bstr::BString;
 
-const DELETE: Flag = FlagBuilder::new("delete")
+const DELETE: Flag = FlagBuilder::new()
     .short('d')
     .long("delete")
     .description("Delete existing suffix intead.")
     .done();
 
-const VALUE: Pos<BString> = PosBuilder::new("values")
+const VALUE: Pos<BString> = PosBuilder::new()
     .name("VALUE")
     .description("Suffix value.")
     .required()

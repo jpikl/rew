@@ -5,7 +5,7 @@ use std::fmt::Display;
 use std::marker::PhantomData;
 
 pub trait Arg {
-    fn id(&self) -> &str;
+    fn id(&self) -> ArgId;
     fn default_value(&self) -> Option<Box<dyn Any>>;
 }
 
@@ -61,37 +61,54 @@ impl<A: Arg, T: Default + Clone + 'static> TypedArg<A, T> {
 }
 
 #[derive(Debug)]
-pub struct ArgUsage {
-    pub arg_id: String,
-    pub source: ArgSource,
+pub struct ArgUsage<'a> {
+    pub id: ArgId<'a>,
+    pub source: ValueSource,
     pub value: Box<dyn Any>,
 }
 
+#[derive(Debug, Copy, Clone)]
+pub enum ArgId<'a> {
+    OptName(char, &'a str),
+    PosName(&'a str),
+    Undefined,
+}
+
+impl PartialEq for ArgId<'_> {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::OptName(short1, long1), Self::OptName(short2, long2)) => short1 == short2 && long1 == long2,
+            (Self::PosName(name1), Self::PosName(name2)) => name1 == name2,
+            _ => false,
+        }
+    }
+}
+
 #[derive(Debug)]
-pub enum ArgSource {
+pub enum ValueSource {
     ShortOption,
     LongOption,
     Positional,
     Environment,
 }
 
-impl ArgUsage {
-    pub fn new<A: Arg>(arg: &A, kind: ArgSource, value: Box<dyn Any>) -> Self {
+impl<'a> ArgUsage<'a> {
+    pub fn new<A: Arg>(arg: &'a A, source: ValueSource, value: Box<dyn Any>) -> Self {
         Self {
-            arg_id: arg.id().to_string(),
-            source: kind,
+            id: arg.id(),
+            source,
             value,
         }
     }
 }
 
 #[derive(Debug)]
-pub struct Args {
-    usages: Vec<ArgUsage>,
+pub struct Args<'a> {
+    usages: Vec<ArgUsage<'a>>,
 }
 
-impl Args {
-    pub fn new(usages: Vec<ArgUsage>) -> Self {
+impl<'a> Args<'a> {
+    pub fn new(usages: Vec<ArgUsage<'a>>) -> Self {
         Self { usages }
     }
 
@@ -100,7 +117,7 @@ impl Args {
     }
 
     pub fn has<A: Arg>(&self, arg: &A) -> bool {
-        self.usages.iter().any(|usage| usage.arg_id == arg.id())
+        self.usages.iter().any(|usage| usage.id == arg.id())
     }
 
     pub fn get<A: Arg, T: Default + Clone + 'static>(&self, arg: &TypedArg<A, T>) -> T {
@@ -124,7 +141,7 @@ impl Args {
         self.usages
             .iter()
             .rev()
-            .find(|usage| usage.arg_id == arg.id())
+            .find(|usage| usage.id == arg.id())
             .map(|usage| &usage.value)
     }
 
@@ -140,7 +157,7 @@ impl Args {
     fn iter_values<A: Arg>(&self, arg: &A) -> impl Iterator<Item = &Box<dyn Any>> {
         self.usages
             .iter()
-            .filter(|usage| usage.arg_id == arg.id())
+            .filter(|usage| usage.id == arg.id())
             .map(|usage| &usage.value)
     }
 }

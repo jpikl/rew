@@ -10,13 +10,13 @@ use crate::global::GENERATOR_COMMANDS;
 use crate::run::ContextExt;
 use rand::Rng;
 
-const FROM: Pos<u64> = PosBuilder::new("from")
+const FROM: Pos<u64> = PosBuilder::new()
     .name("FROM")
     .description("Lower inclusive bound of the generated range.")
     .default("0")
     .done();
 
-const TO: Pos<u64> = PosBuilder::new("to")
+const TO: Pos<u64> = PosBuilder::new()
     .name("TO")
     .description("Upper inclusive bound of the generated range.")
     .done();

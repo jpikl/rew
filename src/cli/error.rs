@@ -1,7 +1,6 @@
 use super::COMMAND_PARAM;
 use super::CommandItem;
 use super::Context;
-use super::HELP_ID;
 use super::OptArg;
 use super::PosArg;
 use crate::cli::ERROR_END;
@@ -17,16 +16,47 @@ use std::process::exit;
 #[derive(Debug)]
 pub struct Error<'a>(Box<ErrorInner<'a>>);
 
+#[derive(Debug)]
+struct ErrorInner<'a> {
+    context: Context<'a>,
+    kind: ErrorKind<'a>,
+}
+
 impl<'a> Error<'a> {
     pub fn new(context: Context<'a>, kind: ErrorKind<'a>) -> Self {
         Self(Box::new(ErrorInner { context, kind }))
     }
 }
 
-#[derive(Debug)]
-struct ErrorInner<'a> {
-    pub context: Context<'a>,
-    pub kind: ErrorKind<'a>,
+impl Error<'_> {
+    pub fn exit(self) -> ! {
+        let kind = self.0.kind;
+        let context = self.0.context;
+
+        if kind.is_broken_pipe() {
+            exit(0);
+        }
+
+        eprintln!("{ERROR_START}{}{ERROR_END}: {kind}", context.calls);
+
+        let mut source = kind.source();
+        while let Some(cause) = source {
+            eprintln!("Caused by: {cause}");
+            source = cause.source();
+        }
+
+        for opt in context.commands.current().options {
+            if let Some(err_hint) = opt.err_hint {
+                err_hint(&context, &kind);
+            }
+        }
+
+        if kind.is_invalid_usage() {
+            exit(2);
+        }
+
+        exit(1);
+    }
 }
 
 impl std::error::Error for Error<'_> {}
@@ -35,65 +65,6 @@ impl Display for Error<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0.kind)
     }
-}
-
-impl Error<'_> {
-    pub fn exit(self) -> ! {
-        match self.0.kind {
-            ErrorKind::RuntimeError(ref err) if is_broken_pipe(err) => {
-                exit(0);
-            }
-            ErrorKind::RuntimeError(ref err) => {
-                self.print_error(err);
-
-                let mut source = err.source();
-                while let Some(cause) = source {
-                    eprintln!("Caused by: {cause}");
-                    source = cause.source();
-                }
-
-                exit(1);
-            }
-            ref err => {
-                self.print_error(err);
-
-                if let Some(help) = self.0.context.commands.current().option_by_id(HELP_ID) {
-                    self.print_help_usage(help);
-                }
-
-                exit(2)
-            }
-        }
-    }
-
-    fn print_error(&self, err: &impl Display) {
-        eprintln!("{ERROR_START}{}{ERROR_END}: {err}", self.0.context.calls);
-    }
-
-    fn print_help_usage(&self, help: &OptArg<'_>) {
-        if let Some(short) = help.short {
-            eprintln!(
-                "Try {QUOTE_START}{} -{}{QUOTE_END} for more information.",
-                self.0.context.calls, short
-            );
-        } else if let Some(long) = help.long {
-            eprintln!(
-                "Try {QUOTE_START}{} --{}{QUOTE_END} for more information.",
-                self.0.context.calls, long
-            );
-        }
-    }
-}
-
-// Clippy suggestion to fix this using `&dyn std::error::Error` is compiler error
-#[allow(clippy::borrowed_box)]
-fn is_broken_pipe(err: &Box<dyn std::error::Error>) -> bool {
-    if let Some(io_err) = err.downcast_ref::<std::io::Error>() {
-        if io_err.kind() == std::io::ErrorKind::BrokenPipe {
-            return true;
-        }
-    }
-    false
 }
 
 #[derive(Debug)]
@@ -112,6 +83,29 @@ pub enum ErrorKind<'a> {
     MutuallyExclusiveOptions(Vec<&'a OptArg<'a>>),
     InvalidUsage(String),
     RuntimeError(Box<dyn std::error::Error>),
+}
+
+impl ErrorKind<'_> {
+    pub fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::RuntimeError(err) => Some(err.as_ref()),
+            _ => None,
+        }
+    }
+
+    pub fn is_broken_pipe(&self) -> bool {
+        let Self::RuntimeError(err) = self else {
+            return false;
+        };
+        match err.downcast_ref::<std::io::Error>() {
+            Some(io_err) => io_err.kind() == std::io::ErrorKind::BrokenPipe,
+            None => false,
+        }
+    }
+
+    pub fn is_invalid_usage(&self) -> bool {
+        !matches!(self, Self::RuntimeError(_))
+    }
 }
 
 impl<E: std::error::Error + 'static> From<E> for ErrorKind<'_> {
@@ -201,13 +195,13 @@ impl Display for ErrorKind<'_> {
 #[derive(Debug)]
 pub struct SimpleError(String);
 
-impl std::error::Error for SimpleError {}
-
 impl SimpleError {
     pub fn new(msg: impl Into<String>) -> Self {
         Self(msg.into())
     }
 }
+
+impl std::error::Error for SimpleError {}
 
 impl Display for SimpleError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
