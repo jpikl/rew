@@ -1,8 +1,12 @@
+use crate::cli::Context;
+use crate::cli::ErrorKind;
 use crate::cli::Flag;
 use crate::cli::FlagBuilder;
 use crate::cli::Group;
 use crate::cli::Opt;
 use crate::cli::OptBuilder;
+use crate::cli::QUOTE_END;
+use crate::cli::QUOTE_START;
 use crate::impl_enum;
 use crate::utils::Bytes;
 use std::borrow::Cow;
@@ -80,7 +84,20 @@ pub const BUF_SIZE: Opt<Bytes> = OptBuilder::new()
     .value_name("SIZE")
     .default(DEFAULT_BUF_SIZE)
     .group(&GLOBAL_OPTIONS)
+    .err_hint(buf_size_err_hint)
     .done();
+
+fn buf_size_err_hint(_ctx: &Context, err: &ErrorKind) {
+    let ErrorKind::RuntimeError(err) = err else {
+        return;
+    };
+    let Some(err) = err.downcast_ref::<crate::io::Error>() else {
+        return;
+    };
+    if let crate::io::Error::BufferFull(_) = err {
+        eprintln!("You can use {QUOTE_START}--buf-size=<SIZE>{QUOTE_END} option to increase the buffer size.")
+    };
+}
 
 pub const BUF_MODE: Opt<BufMode> = OptBuilder::new_enum()
     .long("buf-mode")
