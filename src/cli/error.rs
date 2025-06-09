@@ -88,7 +88,7 @@ pub enum ErrorKind<'a> {
 impl ErrorKind<'_> {
     pub fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
-            Self::RuntimeError(err) => Some(err.as_ref()),
+            Self::RuntimeError(err) => err.source(),
             _ => None,
         }
     }
