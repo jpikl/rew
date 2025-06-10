@@ -1,12 +1,15 @@
 use super::ArgUsage;
 use super::CallChain;
 use super::Command;
+use super::CommandBuilder;
 use super::CommandItem;
 use super::Context;
 use super::ErrorKind;
 use super::Flag;
 use super::FlagBuilder;
 use super::Group;
+use super::Pos;
+use super::PosBuilder;
 use super::QUOTE_END;
 use super::QUOTE_START;
 use super::ValueSource;
@@ -25,6 +28,36 @@ pub const HELP: Flag = FlagBuilder::new()
     .run(print_help)
     .err_hint(print_err_hint)
     .done();
+
+const HELP_ARG: Pos<String> = PosBuilder::new()
+    .name("COMMAND")
+    .description("Subcommand chain")
+    .description_ex(&["If none is provided, print help for the main command."])
+    .multiple()
+    .done();
+
+pub const HELP_CMD: Command = CommandBuilder::new()
+    .name("help")
+    .description("Print help for a subcommand.")
+    .description_ex(&["Provides the same output as `--help` flag."])
+    .positionals(&[&HELP_ARG.arg])
+    .run(print_subcommand_help)
+    .done();
+
+fn print_subcommand_help(ctx: &Context) -> Result<(), ErrorKind<'static>> {
+    let Some(mut command) = ctx.commands.parent() else {
+        return Ok(());
+    };
+    for name in ctx.args.iter_ref(&HELP_ARG) {
+        if let Some(child) = command.subcommand(&name) {
+            command = child;
+        } else {
+            return Err(ErrorKind::UnknownSubcommand(name.to_string().into()));
+        }
+    }
+    command.print_help(&mut anstream::stdout().lock(), &ctx.calls, true)?;
+    Ok(())
+}
 
 fn print_help<'a>(ctx: &Context<'a>, usage: &ArgUsage) -> Result<(), ErrorKind<'a>> {
     let long = matches!(usage.source, ValueSource::LongOption);

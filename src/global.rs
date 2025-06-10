@@ -1,3 +1,5 @@
+use crate::cli::Command;
+use crate::cli::CommandBuilder;
 use crate::cli::Context;
 use crate::cli::ErrorKind;
 use crate::cli::Flag;
@@ -43,6 +45,11 @@ pub const GENERATOR_COMMANDS: Group = Group {
     description: Some("Commands that produce output without reading stdin."),
 };
 
+pub const OTHER_COMMANDS: Group = Group {
+    name: "Other commands",
+    description: None,
+};
+
 #[macro_export]
 macro_rules! common_options {
     ($($opt:expr),*$(,)?) => {
@@ -63,6 +70,10 @@ const DEFAULT_BUF_SIZE: &str = "32K";
 
 pub const HELP: Flag = FlagBuilder::from(&crate::cli::HELP.arg).group(&USAGE_OPTIONS).done();
 pub const VERSION: Flag = FlagBuilder::from(&crate::cli::VERSION.arg).group(&USAGE_OPTIONS).done();
+
+pub const HELP_CMD: Command = CommandBuilder::from(&crate::cli::HELP_CMD)
+    .group(&OTHER_COMMANDS)
+    .done();
 
 pub const NULL: Flag = FlagBuilder::new()
     .short('0')

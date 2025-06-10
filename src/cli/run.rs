@@ -67,6 +67,14 @@ impl<'a> CommandChain<'a> {
     pub fn current(&self) -> &Command<'a> {
         self.0.last().expect("command chain is empty")
     }
+
+    pub fn parent(&self) -> Option<&Command<'a>> {
+        if let [.., parent, _current] = self.0.as_slice() {
+            Some(parent)
+        } else {
+            None
+        }
+    }
 }
 
 impl std::fmt::Display for CommandChain<'_> {

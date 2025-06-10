@@ -46,6 +46,20 @@ impl<'a> CommandBuilder<'a> {
         }
     }
 
+    pub const fn from(other: &Command<'a>) -> Self {
+        Self {
+            name: other.name,
+            description: other.description,
+            description_ex: other.description_ex,
+            version: other.version,
+            group: other.group,
+            options: other.options,
+            positionals: other.positionals,
+            subcommands: other.subcommands,
+            run: other.run,
+        }
+    }
+
     pub const fn name(mut self, name: &'a str) -> Self {
         self.name = name;
         self
@@ -131,16 +145,16 @@ impl<'a> FlagBuilder<'a> {
         }
     }
 
-    pub const fn from(opt: &OptArg<'a>) -> Self {
+    pub const fn from(other: &OptArg<'a>) -> Self {
         Self {
-            short: opt.short,
-            long: opt.long,
-            description: opt.description,
-            description_ex: opt.description_ex,
-            group: opt.group,
-            environment: opt.environment,
-            run: opt.run,
-            err_hint: opt.err_hint,
+            short: other.short,
+            long: other.long,
+            description: other.description,
+            description_ex: other.description_ex,
+            group: other.group,
+            environment: other.environment,
+            run: other.run,
+            err_hint: other.err_hint,
         }
     }
 

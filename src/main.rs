@@ -6,27 +6,28 @@ mod io;
 mod run;
 mod utils;
 
-use crate::commands::base::BASE;
-use crate::commands::echo::ECHO;
-use crate::commands::ext::EXT;
-use crate::commands::rand::RAND;
-use crate::commands::seq::SEQ;
-use crate::commands::stream::STREAM;
-use crate::commands::trim::TRIM;
-use crate::commands::uuid::UUID;
 use cli::Command;
 use cli::CommandBuilder;
+use commands::base::BASE;
 use commands::cat::CAT;
+use commands::echo::ECHO;
+use commands::ext::EXT;
 use commands::first::FIRST;
 use commands::lower::LOWER;
 use commands::prefix::PREFIX;
 use commands::quote::QUOTE;
+use commands::rand::RAND;
+use commands::seq::SEQ;
 use commands::skip::SKIP;
+use commands::stream::STREAM;
 use commands::suffix::SUFFIX;
+use commands::trim::TRIM;
 use commands::upper::UPPER;
+use commands::uuid::UUID;
 use global::BUF_MODE;
 use global::BUF_SIZE;
 use global::HELP;
+use global::HELP_CMD;
 use global::NULL;
 use global::VERSION;
 
@@ -39,7 +40,8 @@ const REW: Command = CommandBuilder::new()
         &BASE, &EXT, // Path commands
         &CAT, &PREFIX, &SUFFIX, &QUOTE, &LOWER, &UPPER, &TRIM, // Map commands
         &FIRST, &SKIP, // Filter commands
-        &ECHO, &STREAM, &SEQ, &RAND, &UUID, // Generator commands
+        &ECHO, &STREAM, &SEQ, &RAND, &UUID,     // Generator commands
+        &HELP_CMD, // Helper commands
     ])
     .done();
 
