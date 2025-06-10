@@ -94,6 +94,10 @@ pub enum ErrorKind<'a> {
 }
 
 impl ErrorKind<'_> {
+    pub fn msg(msg: impl Into<String>) -> Self {
+        SimpleError::new(msg).into()
+    }
+
     pub fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             Self::RuntimeError(err) => err.source(),
