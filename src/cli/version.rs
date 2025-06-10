@@ -1,5 +1,6 @@
 use crate::cli::ArgUsage;
 use crate::cli::Command;
+use crate::cli::CommandChain;
 use crate::cli::Context;
 use crate::cli::ErrorKind;
 use crate::cli::Flag;
@@ -13,15 +14,15 @@ pub const VERSION: Flag = FlagBuilder::new()
     .run(print_version)
     .done();
 
-fn print_version<'a>(context: &Context<'a>, _usage: &ArgUsage) -> Result<(), ErrorKind<'a>> {
-    let command = context.commands.current();
-    command.print_version(&mut std::io::stdout().lock())?;
+fn print_version<'a>(ctx: &Context<'a>, _usage: &ArgUsage) -> Result<(), ErrorKind<'a>> {
+    let command = ctx.commands.current();
+    command.print_version(&mut std::io::stdout().lock(), &ctx.commands)?;
     Ok(())
 }
 
 impl Command<'_> {
-    pub fn print_version(&self, writer: &mut impl Write) -> std::io::Result<()> {
-        write!(writer, "{}", self.name)?;
+    pub fn print_version(&self, writer: &mut impl Write, commands: &CommandChain) -> std::io::Result<()> {
+        write!(writer, "{}", commands)?;
 
         if let Some(version) = self.version {
             write!(writer, " {version}")?;
