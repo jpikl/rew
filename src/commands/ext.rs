@@ -17,7 +17,7 @@ const WITH_DOT: Flag = FlagBuilder::new()
 
 pub const EXT: Command = CommandBuilder::new()
     .name("ext")
-    .description("Output extension of paths.")
+    .description("Output extension of each path.")
     .group(&PATH_COMMANDS)
     .options(common_options![&WITH_DOT.arg])
     .run(run)

@@ -17,7 +17,7 @@ pub const VALUES: Pos<OsString> = PosBuilder::new()
 
 pub const STREAM: Command = CommandBuilder::new()
     .name("stream")
-    .description("Output each argument as line.")
+    .description("Output arguments as lines.")
     .group(&GENERATOR_COMMANDS)
     .options(common_options![])
     .positionals(&[&VALUES.arg])

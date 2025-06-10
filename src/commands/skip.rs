@@ -18,7 +18,7 @@ const COUNT: Pos<u128> = PosBuilder::new()
 
 pub const SKIP: Command = CommandBuilder::new()
     .name("skip")
-    .description("Skip first N lines in output.")
+    .description("Skip the first N lines in output.")
     .group(&FILTER_COMMANDS)
     .options(common_options![])
     .positionals(&[&COUNT.arg])

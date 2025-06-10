@@ -18,7 +18,7 @@ pub const WITH_DIR: Flag = FlagBuilder::new()
 
 pub const BASE: Command = CommandBuilder::new()
     .name("base")
-    .description("Output base name of paths.")
+    .description("Output base name of each path.")
     .group(&PATH_COMMANDS)
     .options(common_options![&WITH_DIR.arg])
     .run(run)

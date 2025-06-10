@@ -17,7 +17,7 @@ const COUNT: Pos<u128> = PosBuilder::new()
 
 pub const FIRST: Command = CommandBuilder::new()
     .name("first")
-    .description("Output first N lines.")
+    .description("Output the first N lines.")
     .group(&FILTER_COMMANDS)
     .options(common_options![])
     .positionals(&[&COUNT.arg])

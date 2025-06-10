@@ -30,7 +30,7 @@ const BYTES: Flag = FlagBuilder::new()
 
 pub const CAT: Command = CommandBuilder::new()
     .name("cat")
-    .description("Copy all input to output.")
+    .description("Copy input data to output.")
     .description_ex(&["Mostly useful for benchmarking raw IO throughput."])
     .group(&MAP_COMMANDS)
     .options(common_options![&LINES.arg, &CHARS.arg, &BYTES.arg])

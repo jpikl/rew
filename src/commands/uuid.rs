@@ -9,7 +9,7 @@ use uuid::Uuid;
 
 pub const UUID: Command = CommandBuilder::new()
     .name("uuid")
-    .description("Generate stream of UUID v4 as lines.")
+    .description("Generate v4 UUIDs as lines.")
     .group(&GENERATOR_COMMANDS)
     .options(common_options![])
     .run(run)

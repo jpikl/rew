@@ -24,7 +24,7 @@ const TO: Pos<u64> = PosBuilder::new()
 
 pub const RAND: Command = CommandBuilder::new()
     .name("rand")
-    .description("Generate stream of random numbers as lines.")
+    .description("Generate random numbers as lines.")
     .group(&GENERATOR_COMMANDS)
     .options(common_options![])
     .positionals(&[&FROM.arg, &TO.arg])
