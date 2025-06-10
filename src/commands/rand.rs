@@ -6,6 +6,7 @@ use crate::cli::Fmt;
 use crate::cli::Pos;
 use crate::cli::PosBuilder;
 use crate::common_options;
+use crate::format::Formatter;
 use crate::global::GENERATOR_COMMANDS;
 use crate::run::ContextExt;
 use rand::Rng;
@@ -46,12 +47,10 @@ fn run(ctx: &Context) -> Result<(), ErrorKind<'static>> {
 
     let mut writer = ctx.writer();
     let mut rng = rand::rng();
-    let mut buf: Vec<u8> = Vec::with_capacity(64);
+    let mut fmt = Formatter::with_buf_size(32); // Enough for digits of u64
 
     loop {
         let num = rng.random_range(from..=to);
-        buf.clear();
-        itoap::write_to_vec(&mut buf, num);
-        writer.write_line(buf.as_slice())?
+        writer.write_line(fmt.format_int(num))?
     }
 }
