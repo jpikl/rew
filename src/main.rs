@@ -1,5 +1,6 @@
 mod cli;
 mod commands;
+mod format;
 mod global;
 mod io;
 mod run;
@@ -9,6 +10,7 @@ use crate::commands::base::BASE;
 use crate::commands::echo::ECHO;
 use crate::commands::ext::EXT;
 use crate::commands::rand::RAND;
+use crate::commands::seq::SEQ;
 use crate::commands::stream::STREAM;
 use crate::commands::trim::TRIM;
 use crate::commands::uuid::UUID;
@@ -37,7 +39,7 @@ const REW: Command = CommandBuilder::new()
         &BASE, &EXT, // Path commands
         &CAT, &PREFIX, &SUFFIX, &QUOTE, &LOWER, &UPPER, &TRIM, // Map commands
         &FIRST, &SKIP, // Filter commands
-        &ECHO, &STREAM, &RAND, &UUID, // Generator commands
+        &ECHO, &STREAM, &SEQ, &RAND, &UUID, // Generator commands
     ])
     .done();
 
