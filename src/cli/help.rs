@@ -68,10 +68,10 @@ fn print_help<'a>(ctx: &Context<'a>, usage: &ArgUsage) -> Result<(), ErrorKind<'
 
 fn print_err_hint(ctx: &Context, err: &ErrorKind, out: &mut dyn Write) -> std::io::Result<()> {
     if err.is_invalid_usage() {
-        writeln!(out, "Try {QUOTE_START}{} -h{QUOTE_END} for program usage.", ctx.calls)?;
+        writeln!(out, "Run {QUOTE_START}{} -h{QUOTE_END} for usage.", ctx.calls)?;
         writeln!(
             out,
-            "You can get more detailed usage with {QUOTE_START}{} --help{QUOTE_END}.",
+            "Run {QUOTE_START}{} --help{QUOTE_END} for more detailed help.",
             ctx.calls
         )?;
     }
