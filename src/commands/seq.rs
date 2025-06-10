@@ -6,6 +6,7 @@ use crate::cli::Opt;
 use crate::cli::OptBuilder;
 use crate::cli::Pos;
 use crate::cli::PosBuilder;
+use crate::cli::SimpleError;
 use crate::common_options;
 use crate::format::Formatter;
 use crate::global::GENERATOR_COMMANDS;
@@ -72,7 +73,7 @@ fn run(ctx: &Context) -> Result<(), ErrorKind<'static>> {
                 if let Some(new_value) = value.checked_add(inc) {
                     value = new_value;
                 } else {
-                    return Err(ErrorKind::msg("number sequence reached integer limit"));
+                    return Err(SimpleError::new("Number sequence reached integer limit").into());
                 }
             }
         }
