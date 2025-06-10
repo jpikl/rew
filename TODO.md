@@ -1,0 +1,31 @@
+- Allow negative numbers as args.
+- Allow negative numbers for seq and rand commands.
+- Command aliases.
+- Add 'q=quote' and 'qq=quote --double' aliases.
+- Implement 'help' command.
+- Implement 'exec' command with 'x' alias.
+- Implement 'file' command (file name / last name).
+- Implement 'dir' command (parent dir / remove last name).
+- Implement 'wd' command (working dir).
+- Implement 'abs' command (absolute path).
+- Implement 'rel' command (relative path).
+- Implement 'norm' command (normalize path / canonical path).
+- Implement 'sub' command (substring).
+- Implement 'col' command (column selector).
+- Implement 'repl' command (string replace / regex replace).
+- Implement 'match' command (string matches / regex matches).
+- Implement 'switch' command (regex switch).
+- Implement 'ascii' command (keep ASCII / remove non-ASCII).
+- Implement 'pad' command with 'lpad' and 'rpad' aliases.
+- Implement 'dup' command (line duplication).
+- Implement 'count' command (occurrence counter).
+- Implement 'sep' command (append / remove path separator).
+- Implement 'loop' command (repeat input) + delete unnecessary 'echo' command.
+- Implement 'split' command with (split input to lines).
+- Implement 'join' command (join lines) with '--count' option.
+- Implement 'last' command (last N lines).
+- Command examples.
+- Command tests.
+- Write docs.
+- Docs reference generator.
+- Command benchmarks.
