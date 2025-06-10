@@ -48,6 +48,15 @@ impl<'a> Context<'a> {
 #[derive(Debug, Clone, PartialEq)]
 pub struct CallChain(pub Vec<OsString>);
 
+impl CallChain {
+    pub fn parents(&self) -> &[OsString] {
+        match self.0.split_last() {
+            Some((_, parents)) => parents,
+            None => &[],
+        }
+    }
+}
+
 impl std::fmt::Display for CallChain {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for (i, str) in self.0.iter().enumerate() {

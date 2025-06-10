@@ -48,14 +48,16 @@ fn print_subcommand_help(ctx: &Context) -> Result<(), ErrorKind<'static>> {
     let Some(mut command) = ctx.commands.parent() else {
         return Ok(());
     };
+    let mut calls = ctx.calls.parents().to_vec();
     for name in ctx.args.iter_ref(&HELP_ARG) {
-        if let Some(child) = command.subcommand(&name) {
-            command = child;
+        if let Some(subcommand) = command.subcommand(&name) {
+            calls.push(subcommand.name.into());
+            command = subcommand;
         } else {
             return Err(ErrorKind::UnknownSubcommand(name.to_string().into()));
         }
     }
-    command.print_help(&mut anstream::stdout().lock(), &ctx.calls, true)?;
+    command.print_help(&mut anstream::stdout().lock(), &CallChain(calls), true)?;
     Ok(())
 }
 
