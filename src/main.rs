@@ -10,9 +10,9 @@ use cli::Command;
 use cli::CommandBuilder;
 use commands::base::BASE;
 use commands::cat::CAT;
-use commands::echo::ECHO;
 use commands::ext::EXT;
 use commands::first::FIRST;
+use commands::r#loop::LOOP;
 use commands::lower::LOWER;
 use commands::prefix::PREFIX;
 use commands::quote::QUOTE;
@@ -40,7 +40,7 @@ const REW: Command = CommandBuilder::new()
         &BASE, &EXT, // Path commands
         &CAT, &PREFIX, &SUFFIX, &QUOTE, &LOWER, &UPPER, &TRIM, // Map commands
         &FIRST, &SKIP, // Filter commands
-        &ECHO, &STREAM, &SEQ, &RAND, &UUID,     // Generator commands
+        &STREAM, &LOOP, &SEQ, &RAND, &UUID,     // Generator commands
         &HELP_CMD, // Helper commands
     ])
     .done();

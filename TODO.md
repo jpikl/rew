@@ -19,7 +19,6 @@
 - Implement 'dup' command (line duplication).
 - Implement 'count' command (occurrence counter).
 - Implement 'sep' command (append / remove path separator).
-- Implement 'loop' command (repeat input) + delete unnecessary 'echo' command.
 - Implement 'split' command with (split input to lines).
 - Implement 'join' command (join lines) with '--count' option.
 - Implement 'last' command (last N lines).
