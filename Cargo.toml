@@ -14,6 +14,7 @@ edition = "2024"
 [dependencies]
 anstream = "0.6.18"
 bstr = "1.11.3"
+deunicode = "1.6.2"
 itoap = "1.0.1"
 os_str_bytes = "7.1"
 rand = "0.9.1"

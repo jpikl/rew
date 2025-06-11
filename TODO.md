@@ -14,7 +14,6 @@
 - Implement 'repl' command (string replace / regex replace).
 - Implement 'match' command (string matches / regex matches).
 - Implement 'switch' command (regex switch).
-- Implement 'ascii' command (keep ASCII / remove non-ASCII).
 - Implement 'pad' command with 'lpad' and 'rpad' aliases.
 - Implement 'dup' command (line duplication).
 - Implement 'count' command (occurrence counter).

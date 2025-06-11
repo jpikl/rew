@@ -1,3 +1,4 @@
+pub mod ascii;
 pub mod base;
 pub mod cat;
 pub mod ext;

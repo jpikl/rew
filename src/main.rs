@@ -6,6 +6,7 @@ mod io;
 mod run;
 mod utils;
 
+use crate::commands::ascii::ASCII;
 use cli::Command;
 use cli::CommandBuilder;
 use commands::base::BASE;
@@ -38,7 +39,7 @@ const REW: Command = CommandBuilder::new()
     .options(&[&HELP.arg, &VERSION.arg, &NULL.arg, &BUF_SIZE.arg, &BUF_MODE.arg])
     .subcommands(&[
         &BASE, &EXT, // Path commands
-        &CAT, &PREFIX, &SUFFIX, &QUOTE, &LOWER, &UPPER, &TRIM, // Map commands
+        &CAT, &PREFIX, &SUFFIX, &QUOTE, &TRIM, &LOWER, &UPPER, &ASCII, // Map commands
         &FIRST, &SKIP, // Filter commands
         &STREAM, &LOOP, &SEQ, &RAND, &UUID,     // Generator commands
         &HELP_CMD, // Helper commands
