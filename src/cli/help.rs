@@ -21,6 +21,9 @@ use crate::cli::SECTION_START;
 use std::fmt::Display;
 use std::io::Write;
 
+pub const OPTIONS_PARAM: &str = "[OPTIONS]";
+pub const COMMAND_PARAM: &str = "<COMMAND>";
+
 pub const HELP: Flag = FlagBuilder::new()
     .short('h')
     .long("help")
@@ -50,7 +53,7 @@ fn print_subcommand_help(ctx: &Context) -> Result<(), ErrorKind<'static>> {
     };
     let mut calls = ctx.calls.parents().to_vec();
     for name in ctx.args.iter_ref(&HELP_ARG) {
-        if let Some(subcommand) = command.subcommand(&name) {
+        if let Some((subcommand, _)) = command.subcommand_or_alias(&name) {
             calls.push(subcommand.name.into());
             command = subcommand;
         } else {
@@ -97,137 +100,128 @@ impl Command<'_> {
             calls
         )?;
 
-        for param in self.params() {
-            write!(writer, " {param}")?;
+        if !self.options.is_empty() {
+            write!(writer, " {OPTIONS_PARAM}")?;
+        }
+
+        for &positional in self.positionals {
+            write!(writer, " {positional}")?;
+        }
+
+        if !self.subcommands.is_empty() {
+            write!(writer, " {COMMAND_PARAM}")?;
         }
 
         writeln!(writer)?;
 
-        for (group, commands) in self.grouped_subcommands() {
-            print_item_group(writer, group, &commands, long, false)?;
+        for group in self.groups() {
+            self.print_group_items(writer, group, long)?;
         }
 
-        for (group, positionals) in self.grouped_positionals() {
-            print_item_group(writer, group, &positionals, long, true)?;
-        }
+        Ok(())
+    }
 
-        for (group, options) in self.grouped_options() {
-            print_item_group(writer, group, &options, long, true)?;
+    fn print_group_items(&self, writer: &mut impl Write, group: &Group, long: bool) -> std::io::Result<()> {
+        let items = self.group_items(group);
+
+        writeln!(writer)?;
+        writeln!(writer, "{SECTION_START}{}:{SECTION_END}", group.name)?;
+
+        if long {
+            let mut add_newline = false;
+
+            for item in items {
+                if add_newline {
+                    writeln!(writer)?;
+                } else {
+                    add_newline = true;
+                }
+
+                write!(writer, "  {HIGHLIGHT_START}{item}{HIGHLIGHT_END}")?;
+
+                for param in item.params() {
+                    write!(writer, " {param}")?;
+                }
+
+                writeln!(writer)?;
+                writeln!(writer, "          {}", Highlight(item.description().as_ref()))?;
+
+                for description in item.description_ex() {
+                    writeln!(writer, "          {}", Highlight(description))?;
+                }
+
+                if !item.enum_items().is_empty() {
+                    writeln!(writer)?;
+                    writeln!(writer, "          Values:")?;
+
+                    for enum_item in item.enum_items() {
+                        if let Some((main_desc, descriptions)) = enum_item.description.split_first() {
+                            writeln!(
+                                writer,
+                                "          - {HIGHLIGHT_START}{}{HIGHLIGHT_END}: {main_desc}",
+                                enum_item.name
+                            )?;
+
+                            let padding = " ".repeat(enum_item.name.chars().count());
+
+                            for description in descriptions {
+                                writeln!(writer, "              {padding}{}", Highlight(description))?;
+                            }
+                        } else {
+                            writeln!(writer, "          - {HIGHLIGHT_START}{}{HIGHLIGHT_END}", enum_item.name)?;
+                        }
+                    }
+                }
+
+                if item.default().is_some() || item.environment().is_some() {
+                    writeln!(writer)?;
+                }
+
+                if let Some(default) = item.default() {
+                    writeln!(writer, "          Default value: {default}")?;
+                }
+
+                if let Some(environment) = item.environment() {
+                    writeln!(writer, "          Environment: {environment}")?;
+                }
+            }
+        } else {
+            let width = items.iter().map(|&item| get_usage_len(item)).max().unwrap_or_default();
+
+            for item in items {
+                write!(writer, "  {HIGHLIGHT_START}{item}{HIGHLIGHT_END}")?;
+
+                for param in item.params() {
+                    write!(writer, " {param}")?;
+                }
+
+                write!(writer, "{}  ", " ".repeat(width - get_usage_len(item)))?;
+
+                if let Some(default) = item.default() {
+                    if let Some(description) = item.description().strip_suffix('.') {
+                        writeln!(writer, "{} (default: {}).", Highlight(description), default)?;
+                    } else {
+                        writeln!(
+                            writer,
+                            "{} (default: {})",
+                            Highlight(item.description().as_ref()),
+                            default
+                        )?;
+                    }
+                } else {
+                    writeln!(writer, "{}", Highlight(item.description().as_ref()))?;
+                }
+            }
         }
 
         Ok(())
     }
 }
 
-fn print_item_group<T: CommandItem + Display>(
-    writer: &mut impl Write,
-    group: &Group,
-    items: &[&T],
-    long: bool,
-    with_params: bool,
-) -> std::io::Result<()> {
-    writeln!(writer)?;
-    writeln!(writer, "{SECTION_START}{}:{SECTION_END}", group.name)?;
-
-    if long {
-        let mut add_newline = false;
-
-        for item in items {
-            if add_newline {
-                writeln!(writer)?;
-            } else {
-                add_newline = true;
-            }
-
-            write!(writer, "  {HIGHLIGHT_START}{item}{HIGHLIGHT_END}")?;
-
-            if with_params {
-                for param in item.params() {
-                    write!(writer, " {param}")?;
-                }
-            }
-
-            writeln!(writer)?;
-            writeln!(writer, "          {}", Highlight(item.description()))?;
-
-            for description in item.description_ex() {
-                writeln!(writer, "          {}", Highlight(description))?;
-            }
-
-            if !item.enum_items().is_empty() {
-                writeln!(writer)?;
-                writeln!(writer, "          Values:")?;
-
-                for enum_item in item.enum_items() {
-                    if let Some((main_desc, descriptions)) = enum_item.description.split_first() {
-                        writeln!(
-                            writer,
-                            "          - {HIGHLIGHT_START}{}{HIGHLIGHT_END}: {main_desc}",
-                            enum_item.name
-                        )?;
-
-                        let padding = " ".repeat(enum_item.name.chars().count());
-
-                        for description in descriptions {
-                            writeln!(writer, "              {padding}{}", Highlight(description))?;
-                        }
-                    } else {
-                        writeln!(writer, "          - {HIGHLIGHT_START}{}{HIGHLIGHT_END}", enum_item.name)?;
-                    }
-                }
-            }
-
-            if item.default().is_some() || item.environment().is_some() {
-                writeln!(writer)?;
-            }
-
-            if let Some(default) = item.default() {
-                writeln!(writer, "          Default value: {default}")?;
-            }
-
-            if let Some(environment) = item.environment() {
-                writeln!(writer, "          Environment: {environment}")?;
-            }
-        }
-    } else {
-        let width = items
-            .iter()
-            .map(|item| get_usage_len(*item, with_params))
-            .max()
-            .unwrap_or_default();
-
-        for item in items {
-            write!(writer, "  {HIGHLIGHT_START}{item}{HIGHLIGHT_END}")?;
-
-            if with_params {
-                for param in item.params() {
-                    write!(writer, " {param}")?;
-                }
-            }
-
-            write!(writer, "{}  ", " ".repeat(width - get_usage_len(*item, with_params)))?;
-
-            if let Some(default) = item.default() {
-                if let Some(description) = item.description().strip_suffix('.') {
-                    writeln!(writer, "{} (default: {}).", Highlight(description), default)?;
-                } else {
-                    writeln!(writer, "{} (default: {})", Highlight(item.description()), default)?;
-                }
-            } else {
-                writeln!(writer, "{}", Highlight(item.description()))?;
-            }
-        }
-    }
-
-    Ok(())
-}
-
-fn get_usage_len<T: CommandItem + Display>(item: &T, with_params: bool) -> usize {
+fn get_usage_len<T: CommandItem + Display + ?Sized>(item: &T) -> usize {
     let mut len = item.to_string().chars().count();
-    if with_params {
-        for param in item.params() {
-            len += param.chars().count() + 1;
-        }
+    for param in item.params() {
+        len += param.chars().count() + 1;
     }
     len
 }

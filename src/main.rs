@@ -6,9 +6,9 @@ mod io;
 mod run;
 mod utils;
 
-use crate::commands::ascii::ASCII;
 use cli::Command;
 use cli::CommandBuilder;
+use commands::ascii::ASCII;
 use commands::base::BASE;
 use commands::cat::CAT;
 use commands::ext::EXT;
@@ -44,6 +44,7 @@ const REW: Command = CommandBuilder::new()
         &STREAM, &LOOP, &SEQ, &RAND, &UUID,     // Generator commands
         &HELP_CMD, // Helper commands
     ])
+    .subcommand_aliases(&[&QUOTE.alias("q"), &QUOTE.alias_with_args("qq", &["--double"])])
     .done();
 
 fn main() {

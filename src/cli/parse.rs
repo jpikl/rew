@@ -15,6 +15,7 @@ use std::borrow::Cow;
 use std::ffi::OsStr;
 use std::ffi::OsString;
 use std::result::Result;
+use std::vec::IntoIter;
 
 impl<'a> Command<'a> {
     pub fn parse_args(&'a self) -> Context<'a> {
@@ -53,6 +54,7 @@ impl<'a, I> From<Parser<'a, I>> for Context<'a> {
 
 struct Parser<'a, I> {
     args: I,
+    injected_args: IntoIter<OsString>,
     command: &'a Command<'a>,
     commands: Vec<&'a Command<'a>>,
     calls: Vec<OsString>,
@@ -65,6 +67,7 @@ impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
     fn new<T: IntoIterator<IntoIter = I>>(command: &'a Command<'a>, args: T) -> Self {
         Self {
             args: args.into_iter(),
+            injected_args: IntoIter::default(),
             usages: Vec::new(),
             command,
             commands: Vec::new(),
@@ -77,13 +80,13 @@ impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
     fn parse(&mut self) -> Result<(), ErrorKind<'a>> {
         self.commands.push(self.command);
 
-        if let Some(arg) = self.args.next() {
+        if let Some(arg) = self.next_arg() {
             self.calls.push(arg);
         } else {
             self.calls.push(self.command.name.into());
         }
 
-        while let Some(arg) = self.args.next() {
+        while let Some(arg) = self.next_arg() {
             self.parse_arg(arg)?;
         }
 
@@ -110,13 +113,24 @@ impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
             let Some(name) = arg.to_str() else {
                 return Err(ErrorKind::UnknownSubcommand(arg));
             };
-            let Some(subcommand) = self.command.subcommand(name) else {
+
+            let Some((subcommand, alias_args)) = self.command.subcommand_or_alias(name) else {
                 return Err(ErrorKind::UnknownSubcommand(arg));
             };
+
             self.command = subcommand;
             self.commands.push(subcommand);
-            self.calls.push(arg);
+            self.calls.push(subcommand.name.into()); // Arg might be alias, we need real command name
             self.positional_index = 0;
+
+            if !alias_args.is_empty() {
+                self.injected_args = alias_args
+                    .iter()
+                    .map(OsString::from)
+                    .collect::<Vec<OsString>>()
+                    .into_iter();
+            }
+
             return Ok(());
         }
 
@@ -163,7 +177,7 @@ impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
             Some(Value { parse, .. }) => {
                 let value = match value {
                     Some(value) => Some(value.into()),
-                    None => self.args.next().map(Cow::Owned),
+                    None => self.next_arg().map(Cow::Owned),
                 };
                 let Some(value) = value else {
                     return Err(ErrorKind::MissingOptionValue(opt));
@@ -211,7 +225,7 @@ impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
             }
             Some(Value { parse, .. }) => {
                 let value: Cow<OsStr> = if suffix.is_empty() {
-                    let Some(next_arg) = self.args.next() else {
+                    let Some(next_arg) = self.next_arg() else {
                         return Err(ErrorKind::MissingOptionValue(opt));
                     };
                     next_arg.into()
@@ -255,6 +269,10 @@ impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
         }
 
         Ok(())
+    }
+
+    fn next_arg(&mut self) -> Option<OsString> {
+        self.injected_args.next().or_else(|| self.args.next())
     }
 }
 

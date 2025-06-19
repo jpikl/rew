@@ -1,6 +1,7 @@
 use super::ARGUMENTS;
 use super::COMMANDS;
 use super::Command;
+use super::CommandAlias;
 use super::CommandRun;
 use super::Enum;
 use super::EnumItem;
@@ -28,6 +29,7 @@ pub struct CommandBuilder<'a> {
     options: &'a [&'a OptArg<'a>],
     positionals: &'a [&'a PosArg<'a>],
     subcommands: &'a [&'a Command<'a>],
+    subcommand_aliases: &'a [&'a CommandAlias<'a>],
     run: CommandRun,
 }
 
@@ -42,6 +44,7 @@ impl<'a> CommandBuilder<'a> {
             options: &[],
             positionals: &[],
             subcommands: &[],
+            subcommand_aliases: &[],
             run: |_| unimplemented!("command not implemented"),
         }
     }
@@ -56,6 +59,7 @@ impl<'a> CommandBuilder<'a> {
             options: other.options,
             positionals: other.positionals,
             subcommands: other.subcommands,
+            subcommand_aliases: other.subcommand_aliases,
             run: other.run,
         }
     }
@@ -100,6 +104,11 @@ impl<'a> CommandBuilder<'a> {
         self
     }
 
+    pub const fn subcommand_aliases(mut self, aliases: &'a [&'a CommandAlias<'a>]) -> Self {
+        self.subcommand_aliases = aliases;
+        self
+    }
+
     pub const fn run(mut self, run: CommandRun) -> Self {
         self.run = run;
         self
@@ -115,6 +124,7 @@ impl<'a> CommandBuilder<'a> {
             options: self.options,
             positionals: self.positionals,
             subcommands: self.subcommands,
+            subcommand_aliases: self.subcommand_aliases,
             run: self.run,
         }
     }

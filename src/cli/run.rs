@@ -45,7 +45,7 @@ impl<'a> Context<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct CallChain(pub Vec<OsString>);
 
 impl CallChain {

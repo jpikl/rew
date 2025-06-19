@@ -6,6 +6,7 @@ use super::Group;
 use super::TypedArg;
 use super::Value;
 use std::any::Any;
+use std::borrow::Cow;
 use std::fmt::Display;
 
 pub type Pos<'a, T> = TypedArg<PosArg<'a>, T>;
@@ -54,12 +55,8 @@ impl CommandItem for PosArg<'_> {
         self.group
     }
 
-    fn params(&self) -> Vec<String> {
-        Vec::new()
-    }
-
-    fn description(&self) -> &str {
-        self.description
+    fn description(&self) -> Cow<'_, str> {
+        self.description.into()
     }
 
     fn description_ex(&self) -> &[&str] {

@@ -1,7 +1,5 @@
 - Allow negative numbers as args.
 - Allow negative numbers for seq and rand commands.
-- Command aliases.
-- Add 'q=quote' and 'qq=quote --double' aliases.
 - Implement 'exec' command with 'x' alias.
 - Implement 'file' command (file name / last name).
 - Implement 'dir' command (parent dir / remove last name).

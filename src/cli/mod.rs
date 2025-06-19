@@ -1,3 +1,4 @@
+mod alias;
 mod args;
 mod build;
 mod command;
@@ -12,6 +13,7 @@ mod run;
 mod value;
 mod version;
 
+pub use alias::*;
 pub use args::*;
 pub use build::*;
 pub use command::*;

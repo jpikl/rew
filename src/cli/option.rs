@@ -9,6 +9,7 @@ use super::Group;
 use super::TypedArg;
 use super::Value;
 use std::any::Any;
+use std::borrow::Cow;
 use std::fmt::Display;
 use std::io::Write;
 
@@ -77,8 +78,8 @@ impl CommandItem for OptArg<'_> {
         params
     }
 
-    fn description(&self) -> &str {
-        self.description
+    fn description(&self) -> Cow<'_, str> {
+        self.description.into()
     }
 
     fn description_ex(&self) -> &[&str] {
