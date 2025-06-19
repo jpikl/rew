@@ -197,19 +197,17 @@ impl Command<'_> {
 
                 write!(writer, "{}  ", " ".repeat(width - get_usage_len(item)))?;
 
+                let description = item.description();
+                let description = description.as_ref();
+
                 if let Some(default) = item.default() {
-                    if let Some(description) = item.description().strip_suffix('.') {
+                    if let Some(description) = description.strip_suffix('.') {
                         writeln!(writer, "{} (default: {}).", Highlight(description), default)?;
                     } else {
-                        writeln!(
-                            writer,
-                            "{} (default: {})",
-                            Highlight(item.description().as_ref()),
-                            default
-                        )?;
+                        writeln!(writer, "{} (default: {})", Highlight(description), default)?;
                     }
                 } else {
-                    writeln!(writer, "{}", Highlight(item.description().as_ref()))?;
+                    writeln!(writer, "{}", Highlight(description))?;
                 }
             }
         }
