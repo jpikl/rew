@@ -143,32 +143,34 @@ impl Command<'_> {
                     write!(writer, " {param}")?;
                 }
 
+                const INDENT: &str = "          ";
+
                 writeln!(writer)?;
-                writeln!(writer, "          {}", Highlight(item.description().as_ref()))?;
+                writeln!(writer, "{INDENT}{}", Highlight(item.description().as_ref()))?;
 
                 for description in item.description_ex() {
-                    writeln!(writer, "          {}", Highlight(description))?;
+                    writeln!(writer, "{INDENT}{}", Highlight(description))?;
                 }
 
                 if !item.enum_items().is_empty() {
                     writeln!(writer)?;
-                    writeln!(writer, "          Values:")?;
+                    writeln!(writer, "{INDENT}Values:")?;
 
                     for enum_item in item.enum_items() {
                         if let Some((main_desc, descriptions)) = enum_item.description.split_first() {
                             writeln!(
                                 writer,
-                                "          - {HIGHLIGHT_START}{}{HIGHLIGHT_END}: {main_desc}",
+                                "{INDENT}- {HIGHLIGHT_START}{}{HIGHLIGHT_END}: {main_desc}",
                                 enum_item.name
                             )?;
 
                             let padding = " ".repeat(enum_item.name.chars().count());
 
                             for description in descriptions {
-                                writeln!(writer, "              {padding}{}", Highlight(description))?;
+                                writeln!(writer, "{INDENT}    {padding}{}", Highlight(description))?;
                             }
                         } else {
-                            writeln!(writer, "          - {HIGHLIGHT_START}{}{HIGHLIGHT_END}", enum_item.name)?;
+                            writeln!(writer, "{INDENT}- {HIGHLIGHT_START}{}{HIGHLIGHT_END}", enum_item.name)?;
                         }
                     }
                 }
@@ -178,11 +180,11 @@ impl Command<'_> {
                 }
 
                 if let Some(default) = item.default() {
-                    writeln!(writer, "          Default value: {default}")?;
+                    writeln!(writer, "{INDENT}Default value: {default}")?;
                 }
 
                 if let Some(environment) = item.environment() {
-                    writeln!(writer, "          Environment: {environment}")?;
+                    writeln!(writer, "{INDENT}Environment: {environment}")?;
                 }
             }
         } else {
