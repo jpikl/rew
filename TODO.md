@@ -1,4 +1,3 @@
-- Allow negative numbers as args.
 - Allow negative numbers for seq and rand commands.
 - Implement 'exec' command with 'x' alias.
 - Implement 'file' command (file name / last name).

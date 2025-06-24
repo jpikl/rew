@@ -20,6 +20,7 @@ pub struct PosArg<'a> {
     pub value: Value<'a>,
     pub required: bool,
     pub multiple: bool,
+    pub negative: bool,
 }
 
 impl Display for PosArg<'_> {

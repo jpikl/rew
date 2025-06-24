@@ -342,6 +342,7 @@ pub struct PosBuilder<'a, T> {
     name: &'a str,
     required: bool,
     multiple: bool,
+    negative: bool,
     description: &'a str,
     description_ex: &'a [&'a str],
     group: &'a Group<'a>,
@@ -357,6 +358,7 @@ impl<'a, T: ParseValue<OsStr> + 'a> PosBuilder<'a, T> {
             name: "VALUE",
             required: false,
             multiple: false,
+            negative: true,
             description: "",
             description_ex: &[],
             group: &ARGUMENTS,
@@ -379,6 +381,11 @@ impl<'a, T: ParseValue<OsStr> + 'a> PosBuilder<'a, T> {
 
     pub const fn multiple(mut self) -> Self {
         self.multiple = true;
+        self
+    }
+
+    pub const fn negative(mut self) -> Self {
+        self.negative = true;
         self
     }
 
@@ -418,6 +425,7 @@ impl<'a, T: ParseValue<OsStr> + 'a> PosBuilder<'a, T> {
             environment: self.environment,
             required: self.required,
             multiple: self.multiple,
+            negative: self.negative,
             value: Value {
                 name: self.name,
                 default: self.default,

@@ -96,58 +96,24 @@ impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
     fn parse_arg(&mut self, arg: OsString) -> Result<(), ErrorKind<'a>> {
         if self.allow_options {
             if let Some(name) = arg.strip_prefix("--") {
-                return if !name.is_empty() {
-                    self.parse_long_option(name)
-                } else {
-                    self.allow_options = false;
-                    Ok(())
-                };
+                if !name.is_empty() {
+                    return self.parse_long_option(name);
+                }
+                self.allow_options = false;
+                return Ok(());
             } else if let Some(name) = arg.strip_prefix("-") {
                 if !name.is_empty() {
+                    if self.can_parse_as_negative_positional(name) {
+                        return self.parse_positional(arg);
+                    }
                     return self.parse_short_options(name);
                 }
             }
         }
-
         if !self.command.subcommands.is_empty() {
-            let Some(name) = arg.to_str() else {
-                return Err(ErrorKind::UnknownSubcommand(arg));
-            };
-
-            let Some((subcommand, alias_args)) = self.command.subcommand_or_alias(name) else {
-                return Err(ErrorKind::UnknownSubcommand(arg));
-            };
-
-            self.command = subcommand;
-            self.commands.push(subcommand);
-            self.calls.push(subcommand.name.into()); // Arg might be alias, we need real command name
-            self.positional_index = 0;
-
-            if !alias_args.is_empty() {
-                self.injected_args = alias_args
-                    .iter()
-                    .map(OsString::from)
-                    .collect::<Vec<OsString>>()
-                    .into_iter();
-            }
-
-            return Ok(());
-        }
-
-        let Some(&pos) = self.command.positionals.get(self.positional_index) else {
-            return Err(ErrorKind::UnexpectedArgument(arg));
-        };
-
-        if !pos.multiple {
-            self.positional_index += 1;
-        }
-
-        match (pos.value.parse)(arg.into()) {
-            Ok(value) => {
-                self.usages.push(ArgUsage::new(pos, ValueSource::Positional, value));
-                Ok(())
-            }
-            Err((value, err)) => Err(ErrorKind::InvalidArgumentValue(pos, value, err)),
+            self.parse_subcommand(arg)
+        } else {
+            self.parse_positional(arg)
         }
     }
 
@@ -266,6 +232,64 @@ impl<'a, I: Iterator<Item = OsString>> Parser<'a, I> {
                     return Err(ErrorKind::InvalidEnvironmentValue(key, value, err));
                 }
             }
+        }
+
+        Ok(())
+    }
+
+    fn can_parse_as_negative_positional(&self, name: &OsStr) -> bool {
+        let first_byte_is_digit = name
+            .to_str()
+            .map(|name| name.as_bytes())
+            .is_some_and(|name| name[0] >= b'0' && name[0] <= b'9');
+
+        let next_positional_is_negative = self
+            .command
+            .positionals
+            .get(self.positional_index)
+            .is_some_and(|&pos| pos.negative);
+
+        first_byte_is_digit && next_positional_is_negative
+    }
+
+    fn parse_positional(&mut self, arg: OsString) -> Result<(), ErrorKind<'a>> {
+        let Some(&pos) = self.command.positionals.get(self.positional_index) else {
+            return Err(ErrorKind::UnexpectedArgument(arg));
+        };
+
+        if !pos.multiple {
+            self.positional_index += 1;
+        }
+
+        match (pos.value.parse)(arg.into()) {
+            Ok(value) => {
+                self.usages.push(ArgUsage::new(pos, ValueSource::Positional, value));
+                Ok(())
+            }
+            Err((value, err)) => Err(ErrorKind::InvalidArgumentValue(pos, value, err)),
+        }
+    }
+
+    fn parse_subcommand(&mut self, arg: OsString) -> Result<(), ErrorKind<'a>> {
+        let Some(name) = arg.to_str() else {
+            return Err(ErrorKind::UnknownSubcommand(arg));
+        };
+
+        let Some((subcommand, alias_args)) = self.command.subcommand_or_alias(name) else {
+            return Err(ErrorKind::UnknownSubcommand(arg));
+        };
+
+        self.command = subcommand;
+        self.commands.push(subcommand);
+        self.calls.push(subcommand.name.into()); // Arg might be alias, we need real command name
+        self.positional_index = 0;
+
+        if !alias_args.is_empty() {
+            self.injected_args = alias_args
+                .iter()
+                .map(OsString::from)
+                .collect::<Vec<OsString>>()
+                .into_iter();
         }
 
         Ok(())

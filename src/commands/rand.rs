@@ -12,15 +12,17 @@ use crate::global::GENERATOR_COMMANDS;
 use crate::run::ContextExt;
 use rand::Rng;
 
-const FROM: Pos<u64> = PosBuilder::new()
+const FROM: Pos<i128> = PosBuilder::new()
     .name("FROM")
     .description("Lower inclusive bound of the generated range.")
     .default("0")
+    .negative()
     .done();
 
-const TO: Pos<u64> = PosBuilder::new()
+const TO: Pos<i128> = PosBuilder::new()
     .name("TO")
     .description("Upper inclusive bound of the generated range.")
+    .negative()
     .done();
 
 pub const RAND: Command = CommandBuilder::new()
@@ -34,7 +36,7 @@ pub const RAND: Command = CommandBuilder::new()
 
 fn run(ctx: &Context) -> Result<(), ErrorKind<'static>> {
     let from = ctx.args.get(&FROM);
-    let to = ctx.args.get_opt(&TO).unwrap_or(u64::MAX);
+    let to = ctx.args.get_opt(&TO).unwrap_or(i128::MAX);
 
     if from > to {
         return Err(ErrorKind::InvalidUsage(format!(
@@ -45,7 +47,7 @@ fn run(ctx: &Context) -> Result<(), ErrorKind<'static>> {
 
     let mut writer = ctx.writer();
     let mut rng = rand::rng();
-    let mut fmt = Formatter::with_buf_size(32); // Enough for digits of u64
+    let mut fmt = Formatter::with_buf_size(64); // Enough for digits of i128
 
     loop {
         let num = rng.random_range(from..=to);
