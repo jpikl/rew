@@ -1,4 +1,3 @@
-- Allow negative numbers for seq and rand commands.
 - Implement 'exec' command with 'x' alias.
 - Implement 'file' command (file name / last name).
 - Implement 'dir' command (parent dir / remove last name).
