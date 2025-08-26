@@ -3,6 +3,7 @@ mod commands;
 mod format;
 mod global;
 mod io;
+mod path;
 mod run;
 mod utils;
 
@@ -11,7 +12,10 @@ use cli::CommandBuilder;
 use commands::ascii::ASCII;
 use commands::base::BASE;
 use commands::cat::CAT;
+use commands::dir::DIR;
+use commands::drive::DRIVE;
 use commands::ext::EXT;
+use commands::file::FILE;
 use commands::first::FIRST;
 use commands::r#loop::LOOP;
 use commands::lower::LOWER;
@@ -38,7 +42,7 @@ const REW: Command = CommandBuilder::new()
     .version(env!("CARGO_PKG_VERSION"))
     .options(&[&HELP.arg, &VERSION.arg, &NULL.arg, &BUF_SIZE.arg, &BUF_MODE.arg])
     .subcommands(&[
-        &BASE, &EXT, // Path commands
+        &DRIVE, &DIR, &FILE, &BASE, &EXT, // Path commands
         &CAT, &PREFIX, &SUFFIX, &QUOTE, &TRIM, &LOWER, &UPPER, &ASCII, // Map commands
         &FIRST, &SKIP, // Filter commands
         &STREAM, &LOOP, &SEQ, &RAND, &UUID,     // Generator commands

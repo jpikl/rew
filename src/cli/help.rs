@@ -88,6 +88,9 @@ impl Command<'_> {
         writeln!(writer, "{}", Highlight(self.description))?;
 
         if long {
+            if !self.description_ex.is_empty() {
+                writeln!(writer)?;
+            }
             for description in self.description_ex {
                 writeln!(writer, "{}", Highlight(description))?;
             }
@@ -160,8 +163,9 @@ impl Command<'_> {
                         if let Some((main_desc, descriptions)) = enum_item.description.split_first() {
                             writeln!(
                                 writer,
-                                "{INDENT}- {HIGHLIGHT_START}{}{HIGHLIGHT_END}: {main_desc}",
-                                enum_item.name
+                                "{INDENT}- {HIGHLIGHT_START}{}{HIGHLIGHT_END}: {}",
+                                enum_item.name,
+                                Highlight(main_desc)
                             )?;
 
                             let padding = " ".repeat(enum_item.name.chars().count());
@@ -200,7 +204,7 @@ impl Command<'_> {
                 write!(writer, "{}  ", " ".repeat(width - get_usage_len(item)))?;
 
                 let description = item.description();
-                let description = description.as_ref();
+                let description: &str = description.as_ref();
 
                 if let Some(default) = item.default() {
                     if let Some(description) = description.strip_suffix('.') {

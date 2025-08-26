@@ -1,7 +1,10 @@
 pub mod ascii;
 pub mod base;
 pub mod cat;
+pub mod dir;
+pub mod drive;
 pub mod ext;
+pub mod file;
 pub mod first;
 pub mod r#loop;
 pub mod lower;

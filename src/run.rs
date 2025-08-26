@@ -3,6 +3,8 @@ use crate::global::BUF_MODE;
 use crate::global::BUF_SIZE;
 use crate::global::BufMode;
 use crate::global::NULL;
+use crate::global::PATH_STYLE;
+use crate::global::PathStyle;
 use crate::io::ByteChunkReader;
 use crate::io::CharChunkReader;
 use crate::io::LineReader;
@@ -22,6 +24,7 @@ pub trait ContextExt {
     fn buf_size(&self) -> usize;
     fn buf_mode(&self) -> BufMode;
     fn separator(&self) -> u8;
+    fn path_style(&self) -> PathStyle;
 }
 
 impl<'a> ContextExt for Context<'a> {
@@ -76,5 +79,9 @@ impl<'a> ContextExt for Context<'a> {
             true => b'\0',
             false => b'\n',
         }
+    }
+
+    fn path_style(&self) -> PathStyle {
+        self.args.get(&PATH_STYLE)
     }
 }

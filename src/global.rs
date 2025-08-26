@@ -59,6 +59,7 @@ macro_rules! common_options {
             &$crate::global::NULL.arg,
             &$crate::global::BUF_SIZE.arg,
             &$crate::global::BUF_MODE.arg,
+            &$crate::global::PATH_STYLE.arg,
         ]
     };
 }
@@ -149,6 +150,47 @@ impl_enum!(BufMode, {
         description: [
             "Writes to stdout only when the output buffer is full.",
             "Enabled by default when stdout is not TTY (for maximal throughput).",
+        ],
+    },
+});
+
+pub const PATH_STYLE: Opt<PathStyle> = OptBuilder::new_enum()
+    .long("paths")
+    .description("Style of filesystem paths.")
+    .environment("REW_PATHS")
+    .value_name("STYLE")
+    .group(&GLOBAL_OPTIONS)
+    .done();
+
+#[derive(Clone, Copy)]
+pub enum PathStyle {
+    Unix,
+    Windows,
+}
+
+impl Default for PathStyle {
+    fn default() -> Self {
+        if cfg!(target_family = "unix") {
+            Self::Unix
+        } else {
+            Self::Windows
+        }
+    }
+}
+
+impl_enum!(PathStyle, {
+    Unix: {
+        name: "unix",
+        description: [
+            "Use POSIX-style paths with `/` separators.",
+            "This is the default mode on Unix-like systems.",
+        ],
+    },
+    Windows: {
+        name: "windows",
+        description: [
+            "Use Windows-style paths with `\\` and `/` separators.",
+            "This is the default mode on Windows systems.",
         ],
     },
 });
