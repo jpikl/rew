@@ -65,6 +65,84 @@ pub fn get_prefix_len(path: &[u8], style: PathStyle) -> usize {
     }
 }
 
+pub fn get_win_prefix_len_2(path: &[u8]) -> usize {
+    if path.is_empty() {
+        return 0;
+    }
+    if path.len() >= 2 && path[1] == b':' && path[0].is_ascii_alphabetic() {
+        return 2;
+    }
+    if path.len() < 2 || path[0] != b'\\' || path[1] != b'\\' {
+        return 0;
+    }
+    let separator = |b: &u8| *b == b'\\' || *b == b'/';
+    let is_device = path.len() >= 4 && (path[2] == b'?' || path[2] == b'.') && path[3] == b'\\';
+    if is_device {
+        let device_start = 4;
+        let device_name_end = device_start
+            + path[device_start..]
+                .iter()
+                .position(separator)
+                .unwrap_or(path[device_start..].len());
+        let device_name = &path[device_start..device_name_end];
+        if device_name == b"UNC" {
+            let unc_start = device_name_end + 1;
+            if unc_start > path.len() {
+                return device_name_end;
+            }
+            let unc_path = &path[unc_start..];
+            let mut pos = 0;
+            if pos < unc_path.len() && separator(&unc_path[pos]) {
+                pos += 1;
+            }
+            if pos >= unc_path.len() {
+                return unc_start + pos;
+            }
+            if let Some(host_end) = unc_path[pos..].iter().position(separator) {
+                pos += host_end;
+                if pos < unc_path.len() && separator(&unc_path[pos]) {
+                    pos += 1;
+                }
+                if let Some(share_end) = unc_path[pos..].iter().position(separator) {
+                    pos += share_end;
+                } else {
+                    pos = unc_path.len();
+                }
+                unc_start + pos
+            } else {
+                unc_start + unc_path.len()
+            }
+        } else {
+            device_name_end
+        }
+    } else {
+        // regular UNC
+        let unc_start = 2;
+        let unc_path = &path[unc_start..];
+        let mut pos = 0;
+        if pos < unc_path.len() && separator(&unc_path[pos]) {
+            pos += 1;
+        }
+        if pos >= unc_path.len() {
+            return unc_start + pos;
+        }
+        if let Some(host_end) = unc_path[pos..].iter().position(separator) {
+            pos += host_end;
+            if pos < unc_path.len() && separator(&unc_path[pos]) {
+                pos += 1;
+            }
+            if let Some(share_end) = unc_path[pos..].iter().position(separator) {
+                pos += share_end;
+            } else {
+                pos = unc_path.len();
+            }
+            unc_start + pos
+        } else {
+            0
+        }
+    }
+}
+
 pub fn get_win_prefix_len(path: &[u8]) -> usize {
     if path.len() >= 2 && path[0].is_ascii_alphabetic() && path[1] == b':' {
         return 2;
