@@ -1,4 +1,5 @@
 mod cli;
+mod cli2;
 mod commands;
 mod format;
 mod global;
