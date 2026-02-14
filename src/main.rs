@@ -48,6 +48,7 @@ const REW: Command = CommandBuilder::new()
     .subcommand_aliases(&[&QUOTE.alias("q"), &QUOTE.alias_with_args("qq", &["--double"])])
     .done();
 
-fn main() {
-    REW.parse_args().run();
+fn main() -> Result<(), crate::cli2::ParseError> {
+    //REW.parse_args().run();
+    crate::cli2::main()
 }
