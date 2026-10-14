@@ -27,7 +27,7 @@ unidecode = "0.3.0"
 uuid = { version = "0.8", features = ["v4"] }
 
 [dev-dependencies]
-assert_cmd = "2.0.2"
+assert_cmd = "2.2.2"
 assert_fs = "1.0.0"
 claim = "0.5.0"
 naughty-strings = "0.2.3"
