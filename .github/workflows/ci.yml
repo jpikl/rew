@@ -86,51 +86,27 @@ jobs:
   coverage:
     name: Coverage
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Install toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: nightly
-          profile: minimal
-          override: true
+          toolchain: stable
+          components: llvm-tools-preview
 
-      - name: Install grcov
-        uses: actions-rs/install@v0.1
-        with:
-          crate: grcov
-          use-tool-cache: true
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
 
-      - name: Install rust-covfix
-        uses: actions-rs/install@v0.1
-        with:
-          crate: rust-covfix
-          use-tool-cache: true
-
-      - name: Run cargo test
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --no-fail-fast
-        env:
-          CARGO_INCREMENTAL: '0'
-          RUSTFLAGS: '-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
-          RUSTDOCFLAGS: '-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
-
-      - name: Prepare grcov input
-        run: zip -0 ccov.zip target/debug/deps/{rew,cpb,mvb}*.{gcda,gcno}
-
-      - name: Run grcov
-        run: grcov ccov.zip --source-dir . --output-path lcov.info --llvm --branch --ignore-not-existing --ignore "/*" --ignore "tests/*"
-
-      - name: Run rust-covfix
-        run: rust-covfix --verbose --output lcov_correct.info lcov.info
+      - name: Generate coverage
+        run: cargo llvm-cov --locked --all-targets --lcov --output-path lcov.info
 
       - name: Upload coverage
-        if: ${{ github.event_name == 'push' }}
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v5
         with:
-          file: lcov_correct.info
+          files: lcov.info
           fail_ci_if_error: true
+          use_oidc: true
