@@ -51,28 +51,31 @@ jobs:
 
     steps:
       - name: Install toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@1.99.1
         with:
           toolchain: stable
-          profile: minimal
-          override: true
+
+      - name: Install cross
+        if: matrix.use-cross
+        uses: taiki-e/install-action@cross
 
       - name: Install strip
-        if: ${{ matrix.binutils-target != '' }}
+        if: matrix.binutils-target != ''
         shell: bash
         run: |
           sudo apt update
           sudo apt-get install -y binutils-${{ matrix.binutils-target }}
 
       - name: Checkout sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Run cargo build
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release --target ${{ matrix.target }}
-          use-cross: ${{ matrix.use-cross }}
+        if: ${{ !matrix.use-cross }}
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Run cross build
+        if: matrix.use-cross
+        run: cross build --release --target ${{ matrix.target }}
 
       - name: Package binaries
         shell: bash
@@ -101,7 +104,7 @@ jobs:
           fi
 
       - name: Upload release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: |
             target/${{ matrix.target }}/release/rew-*.tar.gz
@@ -115,17 +118,14 @@ jobs:
     needs: release
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Install toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@1.99.1
         with:
           toolchain: stable
-          profile: minimal
-          override: true
 
       - name: Run cargo publish
-        uses: actions-rs/cargo@v1
-        with:
-          command: publish
-          args: --allow-dirty --token ${{ secrets.CARGO_API_KEY }}
+        run: cargo publish --allow-dirty
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_API_KEY }}
