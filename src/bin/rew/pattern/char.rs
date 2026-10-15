@@ -96,9 +96,12 @@ impl<'a, T: AsChar> Deref for Chars<'a, T> {
     }
 }
 
-impl<'a, T: AsChar> ToString for Chars<'a, T> {
-    fn to_string(&self) -> String {
-        self.0.iter().map(T::as_char).collect()
+impl<'a, T: AsChar> fmt::Display for Chars<'a, T> {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for char in self.0.iter().map(T::as_char) {
+            write!(formatter, "{}", char)?;
+        }
+        Ok(())
     }
 }
 

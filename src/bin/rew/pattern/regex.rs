@@ -17,7 +17,7 @@ lazy_static! {
     static ref CAPTURE_GROUP_VAR_REGEX: Regex = Regex::new(r"\$(\d+)").unwrap();
 }
 
-pub fn add_capture_group_brackets(string: &str) -> Cow<str> {
+pub fn add_capture_group_brackets(string: &str) -> Cow<'_, str> {
     if string.contains('$') {
         CAPTURE_GROUP_VAR_REGEX.replace_all(string, r"$${${1}}")
     } else {

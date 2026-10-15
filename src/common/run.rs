@@ -32,15 +32,15 @@ impl Io {
         }
     }
 
-    pub fn stdin(&self) -> StdinLock {
+    pub fn stdin(&self) -> StdinLock<'_> {
         self.stdin.lock()
     }
 
-    pub fn stdout(&self) -> StandardStreamLock {
+    pub fn stdout(&self) -> StandardStreamLock<'_> {
         self.stdout.lock()
     }
 
-    pub fn stderr(&self) -> StandardStreamLock {
+    pub fn stderr(&self) -> StandardStreamLock<'_> {
         self.stderr.lock()
     }
 }

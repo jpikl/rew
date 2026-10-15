@@ -66,7 +66,7 @@ pub mod tests {
         let mut output = ColoredOuput::new();
 
         TransferLog::new(&mut output)
-            .begin_transfer(mode, &Path::new("a/b.c"), &Path::new("d/e.f"))
+            .begin_transfer(mode, Path::new("a/b.c"), Path::new("d/e.f"))
             .unwrap();
 
         assert_eq!(

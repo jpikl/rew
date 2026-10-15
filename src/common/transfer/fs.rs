@@ -147,7 +147,7 @@ mod tests {
             let src_file = temp_file("a");
 
             assert_eq!(
-                transfer_path(src_file.path(), &Path::new("b"), TransferMode::Move) // Mode is irrelevant
+                transfer_path(src_file.path(), Path::new("b"), TransferMode::Move) // Mode is irrelevant
                     .map_err(unpack_fse_error),
                 Err((
                     debug_fse_error_kind(ErrorKind::NotFound),

@@ -351,7 +351,7 @@ mod tests {
     }
 
     fn run(args: &[&str]) -> Cli {
-        Cli::try_parse_from(&[&["rew"], args].concat()).unwrap()
+        Cli::try_parse_from([&["rew"], args].concat()).unwrap()
     }
 
     mod parse_single_byte_char {

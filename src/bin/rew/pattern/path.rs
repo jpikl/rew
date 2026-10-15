@@ -39,7 +39,7 @@ pub fn canonicalize(value: String, working_dir: &Path) -> BaseResult<String> {
             if cfg!(windows)
                 && result.ends_with(MAIN_SEPARATOR)
                 && !matches!(
-                    Path::new(&result).components().last(),
+                    Path::new(&result).components().next_back(),
                     Some(Component::RootDir)
                 )
             {
@@ -110,7 +110,7 @@ pub fn normalize(value: &str) -> BaseResult<String> {
 
 pub fn get_parent_directory(value: String) -> BaseResult<String> {
     let path = Path::new(&value);
-    match path.components().last() {
+    match path.components().next_back() {
         Some(Component::Prefix(_)) => into_string(PathBuf::from(value).join(Component::RootDir)),
         Some(Component::RootDir) => Ok(value),
         Some(Component::CurDir | Component::ParentDir) | None => {
@@ -140,7 +140,7 @@ pub fn get_file_name(value: &str) -> BaseResult<String> {
 }
 
 pub fn get_last_name(value: &str) -> BaseResult<String> {
-    match Path::new(value).components().last() {
+    match Path::new(value).components().next_back() {
         Some(component @ (Component::Normal(_) | Component::CurDir | Component::ParentDir)) => {
             to_string(&component)
         }
@@ -225,8 +225,8 @@ mod tests {
     #[                 test_case("",             "{work}"           ; "empty")]
     #[cfg_attr(unix,   test_case("file.ext",     "{work}/file.ext"  ; "relative"))]
     #[cfg_attr(unix,   test_case("/file.ext",    "/file.ext"        ; "absolute"))]
-    #[cfg_attr(window, test_case("file.ext",     "{work}\\file.ext" ; "relative"))]
-    #[cfg_attr(window, test_case("C:\\file.ext", "C:\\file.ext"     ; "absolute"))]
+    #[cfg_attr(windows, test_case("file.ext",     "{work}\\file.ext" ; "relative"))]
+    #[cfg_attr(windows, test_case("C:\\file.ext", "C:\\file.ext"     ; "absolute"))]
     fn to_absolute(input: &str, output: &str) {
         let working_dir = std::env::current_dir().unwrap();
         assert_eq!(
@@ -238,8 +238,8 @@ mod tests {
     #[                 test_case("",                     ""             ; "empty")]
     #[cfg_attr(unix,   test_case("file.ext",             "file.ext"     ; "relative" ))]
     #[cfg_attr(unix,   test_case("{work}/../file.ext",   "../file.ext"  ; "absolute"))]
-    #[cfg_attr(window, test_case("file.ext",             "file.ext"     ; "relative"))]
-    #[cfg_attr(window, test_case("{work}\\..\\file.ext", "..\\file.ext" ; "absolute"))]
+    #[cfg_attr(windows, test_case("file.ext",             "file.ext"     ; "relative"))]
+    #[cfg_attr(windows, test_case("{work}\\..\\file.ext", "..\\file.ext" ; "absolute"))]
     fn to_relative(input: &str, output: &str) {
         let working_dir = std::env::current_dir().unwrap();
         assert_eq!(

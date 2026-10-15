@@ -116,7 +116,7 @@ mod tests {
     #[test]
     fn unpack_io_error() {
         assert_eq!(
-            super::unpack_io_error(Error::new(ErrorKind::Other, "test")),
+            super::unpack_io_error(Error::other("test")),
             (ErrorKind::Other, "test".into())
         );
     }

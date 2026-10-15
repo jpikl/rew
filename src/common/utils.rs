@@ -1,19 +1,7 @@
 use std::io::{Error, ErrorKind, Result};
 
-static mut STATIC_STRINGS: Vec<String> = Vec::new();
-
 pub fn into_static_str(value: String) -> &'static str {
-    unsafe {
-        // Well, this is ugly but the current usage should be actually safe:
-        // 1) It's used only by cli.rs to generate static strings for clap attributes.
-        // 2) Values are never modified after being pushed to vector.
-        // 3) Vectors is only modified / accessed by a single thread.
-        STATIC_STRINGS.push(value);
-        STATIC_STRINGS
-            .last()
-            .expect("Expected at least one static string result")
-            .as_str()
-    }
+    Box::leak(value.into_boxed_str())
 }
 
 pub fn str_from_utf8(data: &[u8]) -> Result<&str> {
@@ -50,10 +38,7 @@ mod tests {
 
         #[test]
         fn ok() {
-            assert_eq!(
-                str_from_utf8(&[b'a', b'b', b'c'][..]).map_err(unpack_io_error),
-                Ok("abc")
-            );
+            assert_eq!(str_from_utf8(b"abc").map_err(unpack_io_error), Ok("abc"));
         }
 
         #[test]

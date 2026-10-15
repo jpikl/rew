@@ -124,6 +124,6 @@ mod tests {
     }
 
     fn run(args: &[&str]) -> Cli {
-        Cli::try_parse_from(&[&["cpb"], args].concat()).unwrap()
+        Cli::try_parse_from([&["cpb"], args].concat()).unwrap()
     }
 }

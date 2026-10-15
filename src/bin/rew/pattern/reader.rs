@@ -52,11 +52,11 @@ impl<T: AsChar> Reader<T> {
         self.peek().map(T::as_char)
     }
 
-    pub fn peek_to_end(&self) -> Chars<T> {
+    pub fn peek_to_end(&self) -> Chars<'_, T> {
         self.peek_to_end_at(self.index)
     }
 
-    fn peek_to_end_at(&self, index: usize) -> Chars<T> {
+    fn peek_to_end_at(&self, index: usize) -> Chars<'_, T> {
         Chars::from(&self.chars[index..])
     }
 
@@ -80,13 +80,13 @@ impl<T: AsChar> Reader<T> {
         }
     }
 
-    pub fn read_to_end(&mut self) -> Chars<T> {
+    pub fn read_to_end(&mut self) -> Chars<'_, T> {
         let index = self.index;
         self.seek_to_end();
         self.peek_to_end_at(index)
     }
 
-    pub fn read_until(&mut self, delimiter: &T) -> Chars<T> {
+    pub fn read_until(&mut self, delimiter: &T) -> Chars<'_, T> {
         for i in self.index..self.chars.len() {
             if self.chars[i].as_char() == delimiter.as_char() {
                 let index = self.index;

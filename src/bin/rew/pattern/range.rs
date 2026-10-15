@@ -91,7 +91,7 @@ impl<T: RangeType> Range<T> {
                         let char = reader.read();
 
                         Err(Error {
-                            kind: ErrorKind::ExpectedRangeDelimiter(char.map(Clone::clone)),
+                            kind: ErrorKind::ExpectedRangeDelimiter(char.cloned()),
                             range: position..reader.position(),
                         })
                     }

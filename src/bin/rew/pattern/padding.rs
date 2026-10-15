@@ -49,7 +49,7 @@ impl Padding {
         value
     }
 
-    fn expand(&self) -> Cow<String> {
+    fn expand(&self) -> Cow<'_, str> {
         match self {
             Self::Fixed(value) => Cow::Borrowed(value),
             Self::Repeated(repetition) => Cow::Owned(repetition.expand("")),

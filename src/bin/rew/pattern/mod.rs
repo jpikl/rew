@@ -64,7 +64,7 @@ impl Pattern {
         })
     }
 
-    pub fn eval(&self, input: &str, context: &eval::Context) -> eval::Result<String> {
+    pub fn eval(&self, input: &str, context: &eval::Context) -> eval::Result<'_, String> {
         let mut output = String::new();
 
         for item in &self.items {

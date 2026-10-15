@@ -56,10 +56,10 @@ impl Lexer {
                 self.reader.seek();
                 Token::Pipe
             }
-            Some(_) => match self.read_chars() {
-                Ok(chars) => Token::Raw(chars),
-                Err(error) => return Err(error),
-            },
+            Some(_) => {
+                let chars = self.read_chars()?;
+                Token::Raw(chars)
+            }
             None => return Ok(None),
         };
         let end = self.reader.position();
