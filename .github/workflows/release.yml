@@ -6,6 +6,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  RUST_TOOLCHAIN: "1.99.0"
 
 jobs:
   release:
@@ -51,13 +52,13 @@ jobs:
 
     steps:
       - name: Install toolchain
-        uses: dtolnay/rust-toolchain@1.99.1
+        uses: dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f
         with:
-          toolchain: stable
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
 
       - name: Install cross
         if: matrix.use-cross
-        uses: taiki-e/install-action@cross
+        uses: taiki-e/install-action@519337945e58281259ed45b2d4f70886f026ee6a # cross
 
       - name: Install strip
         if: matrix.binutils-target != ''
@@ -67,7 +68,7 @@ jobs:
           sudo apt-get install -y binutils-${{ matrix.binutils-target }}
 
       - name: Checkout sources
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Run cargo build
         if: ${{ !matrix.use-cross }}
@@ -104,7 +105,7 @@ jobs:
           fi
 
       - name: Upload release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           files: |
             target/${{ matrix.target }}/release/rew-*.tar.gz
@@ -118,12 +119,12 @@ jobs:
     needs: release
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Install toolchain
-        uses: dtolnay/rust-toolchain@1.99.1
+        uses: dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f
         with:
-          toolchain: stable
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
 
       - name: Run cargo publish
         run: cargo publish --allow-dirty
